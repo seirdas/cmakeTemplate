@@ -7,6 +7,9 @@ project(MiProyect)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Make Windows headers use wide character set
+add_definitions(/D UNICODE /D _UNICODE)
+
 # Encontrar todos los archivos .cpp, .h y .hpp en la carpeta src
 file(GLOB_RECURSE SOURCES 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp 
@@ -27,7 +30,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>"
 )
 
-# Especifica el proyecto principal para Visual Studio
+# Configuraciones específicas para Visual Studio
 if (CMAKE_GENERATOR MATCHES "Visual Studio")
-  set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+	# Especifica el proyecto principal
+	set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+	# Allow for using folders
+	set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()

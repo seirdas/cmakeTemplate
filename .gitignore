@@ -24,7 +24,7 @@
 *.ffs_db
 *old
 *orig
-*.vs*
+*.vs
 *sensitive*
 *enc_temp_folder*
 *Debug*
