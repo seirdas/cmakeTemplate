@@ -34,4 +34,5 @@
 *.pkf
 *.lnk
 *Install*
-solutions\*
+/solutions
+/build
