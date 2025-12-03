@@ -1,0 +1,91 @@
+{
+  "version": 4,
+  "configurePresets": [
+    {
+      "name": "ninja-linux-native",
+      "displayName": "Ninja Linux (nativo)",
+      "description": "Build nativo Linux con g++",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ninja-linux-native",
+      "toolchainFile": "cmake/toolchains/linux-native.cmake",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "ninja-linux-mingw-ucrt",
+      "displayName": "Ninja Linux -> Windows (MinGW-w64 UCRT)",
+      "description": "Cross-compile en Linux para Windows usando MinGW-w64 UCRT",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ninja-linux-mingw-ucrt",
+      "toolchainFile": "cmake/toolchains/mingw-ucrt.cmake",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "ninja-windows-mingw64",
+      "displayName": "Ninja Windows (MinGW-w64 classic)",
+      "description": "Build en Windows con MinGW-w64 (mingw64). Ejecuta desde MSYS2 MinGW64 o añade ruta a PATH si es necesario.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ninja-windows-mingw64",
+      "toolchainFile": "cmake/toolchains/mingw-mingw64.cmake",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "ninja-windows-mingw-ucrt",
+      "displayName": "Ninja Windows (MinGW-w64 UCRT)",
+      "description": "Build en Windows con MinGW-w64 UCRT. Ejecuta desde MSYS2 UCRT64.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ninja-windows-mingw-ucrt",
+      "toolchainFile": "cmake/toolchains/mingw-ucrt.cmake",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "linux-native-debug",
+      "displayName": "Build Linux Debug (nativo)",
+      "configurePreset": "ninja-linux-native",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-native-release",
+      "displayName": "Build Linux Release (nativo)",
+      "configurePreset": "ninja-linux-native",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-mingw-ucrt-debug",
+      "displayName": "Build Linux->Windows Debug (mingw-ucrt)",
+      "configurePreset": "ninja-linux-mingw-ucrt",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-mingw-ucrt-release",
+      "displayName": "Build Linux->Windows Release (mingw-ucrt)",
+      "configurePreset": "ninja-linux-mingw-ucrt",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-mingw64-debug",
+      "displayName": "Build Windows Debug (mingw64)",
+      "configurePreset": "ninja-windows-mingw64",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-mingw64-release",
+      "displayName": "Build Windows Release (mingw64)",
+      "configurePreset": "ninja-windows-mingw64",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-mingw-ucrt-debug",
+      "displayName": "Build Windows Debug (mingw-ucrt)",
+      "configurePreset": "ninja-windows-mingw-ucrt",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-mingw-ucrt-release",
+      "displayName": "Build Windows Release (mingw-ucrt)",
+      "configurePreset": "ninja-windows-mingw-ucrt",
+      "configuration": "Release"
+    }
+  ]
+}
