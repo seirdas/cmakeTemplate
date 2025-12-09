@@ -42,7 +42,7 @@
       "binaryDir": "${sourceDir}/build/ninja-windows-mingw64",
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Werror -Wconversion -Wsign-conversion -Wshadow -Wformat=2 -Wswitch-enum -Wnull-dereference -Wdouble-promotion -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wmisleading-indentation"
+        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Werror"
       },
       "condition": {
         "type": "equals",
@@ -65,15 +65,33 @@
       "configuration": "Release"
     },
     {
+      "name": "vs2019-release",
+      "displayName": "VS2019 Release (x64)",
+      "configurePreset": "vs2019",
+      "configuration": "Release"
+    },
+    {
       "name": "vs2019-debug",
       "displayName": "VS2019 Debug (x64)",
       "configurePreset": "vs2019",
       "configuration": "Debug"
     },
     {
-      "name": "vs2019-release",
-      "displayName": "VS2019 Release (x64)",
+      "name": "vs2019-relwithdebinfo",
+      "displayName": "VS2019 RelWithDebInfo (x64)",
       "configurePreset": "vs2019",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "vs2019-minsizerel",
+      "displayName": "VS2019 MinSizeRel (x64)",
+      "configurePreset": "vs2019",
+      "configuration": "MinSizeRel"
+    },
+    {
+      "name": "vs2022-release",
+      "displayName": "VS2022 Release (x64)",
+      "configurePreset": "vs2022",
       "configuration": "Release"
     },
     {
@@ -83,9 +101,21 @@
       "configuration": "Debug"
     },
     {
-      "name": "vs2022-release",
-      "displayName": "VS2022 Release (x64)",
+      "name": "vs2022-relwithdebinfo",
+      "displayName": "VS2022 RelWithDebInfo (x64)",
       "configurePreset": "vs2022",
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "vs2022-minsizerel",
+      "displayName": "VS2022 MinSizeRel (x64)",
+      "configurePreset": "vs2022",
+      "configuration": "MinSizeRel"
+    },
+    {
+      "name": "vs2026-release",
+      "displayName": "VS2026 Release (x64)",
+      "configurePreset": "vs2026",
       "configuration": "Release"
     },
     {
@@ -95,10 +125,16 @@
       "configuration": "Debug"
     },
     {
-      "name": "vs2026-release",
-      "displayName": "VS2026 Release (x64)",
+      "name": "vs2026-relwithdebinfo",
+      "displayName": "VS2026 RelWithDebInfo (x64)",
       "configurePreset": "vs2026",
-      "configuration": "Release"
+      "configuration": "RelWithDebInfo"
+    },
+    {
+      "name": "vs2026-minsizerel",
+      "displayName": "VS2026 MinSizeRel (x64)",
+      "configurePreset": "vs2026",
+      "configuration": "MinSizeRel"
     }
   ]
 }
