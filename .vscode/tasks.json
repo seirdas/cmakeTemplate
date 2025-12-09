@@ -2,133 +2,32 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build Debug (VS2019)",
+      "label": "CMake: build for debug",
       "type": "shell",
       "command": "cmake",
       "args": [
         "--build",
-        "${workspaceFolder}\\build\\vs2019",
+        "${workspaceFolder}/build/${command:cmake.activeConfigurePresetName}",
         "--config",
-        "Debug",
-        "--target",
-        "ALL_BUILD"
+        "Debug"
       ],
-      "group": "build",
-      "problemMatcher": "$msCompile"
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$msCompile"],
+      "detail": "Construye el proyecto usando CMake Tools"
     },
     {
-        "label": "Build Release (VS2019)",
-        "type": "shell",
-        "command": "cmake",
-        "args": [
-            "--build",
-        "${workspaceFolder}\\build\\vs2019",
-        "--config",
-        "Release",
-        "--target",
-        "ALL_BUILD"
-    ],
-    "group": "build",
-    "problemMatcher": "$msCompile"
-    },
-    {
-    "label": "Build Debug (VS2022)",
-    "type": "shell",
-    "command": "cmake",
-    "args": [
-        "--build",
-        "${workspaceFolder}\\build\\vs2022",
-        "--config",
-        "Debug",
-        "--target",
-        "ALL_BUILD"
-    ],
-    "group": "build",
-    "problemMatcher": "$msCompile"
-    },
-    {
-        "label": "Build Release (VS2022)",
-        "type": "shell",
-        "command": "cmake",
-        "args": [
-        "--build",
-        "${workspaceFolder}\\build\\vs2022",
-        "--config",
-        "Release",
-        "--target",
-        "ALL_BUILD"
-    ],
-    "group": "build",
-    "problemMatcher": "$msCompile"
-    },
-    {
-    "label": "Build Debug (VS2026)",
-    "type": "shell",
-    "command": "cmake",
-    "args": [
-        "--build",
-        "${workspaceFolder}\\build\\vs2026",
-        "--config",
-        "Debug",
-        "--target",
-        "ALL_BUILD"
-    ],
-    "group": "build",
-    "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "Build Release (VS2026)",
+      "label": "CMake: configure",
       "type": "shell",
       "command": "cmake",
       "args": [
-        "--build",
-        "${workspaceFolder}\\build\\vs2026",
-        "--config",
-        "Release",
-        "--target",
-        "ALL_BUILD"
+        "--preset",
+        "${command:cmake.activeConfigurePresetName}"
       ],
-      "group": "build",
-      "problemMatcher": "$msCompile"
-    },
-    {
-        "label": "CMake: Configure (MinGW Ninja)",
-        "type": "shell",
-        "command": "cmake",
-        "args": [
-            "--preset",
-            "ninja-windows-mingw64"
-        ],
-        "group": "build",
-        "presentation": {
-            "reveal": "always",
-            "panel": "new"
-        },
-        "problemMatcher": []
-    },
-    {
-        "label": "CMake: Build (MinGW Debug)",
-        "type": "shell",
-        "command": "cmake",
-        "args": [
-            "--build",
-            "${workspaceFolder}/build/ninja-windows-mingw64",
-            "--config",
-            "Debug"
-        ],
-        "group": {
-            "kind": "build",
-            "isDefault": true
-        },
-        "dependsOn": "CMake: Configure (MinGW Ninja)",
-        "presentation": {
-            "reveal": "always",
-            "panel": "new"
-        },
-        // El 'problemMatcher' de GCC/Clang ayudará a detectar errores de compilación
-        "problemMatcher": [
-            "$gcc"
-        ]
+      "problemMatcher": ["$msCompile"],
+      "detail": "Configura el proyecto"
     }
   ]
 }
