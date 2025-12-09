@@ -3,7 +3,7 @@
   "configurePresets": [
     {
       "name": "vs2019",
-      "displayName": "Visual Studio 2019 (x64)",
+      "displayName": "🔵 Visual Studio 2019 (x64)",
       "description": "Genera solución .sln para Visual Studio 2019 (x64).",
       "generator": "Visual Studio 16 2019",
       "binaryDir": "${sourceDir}/build/vs2019",
@@ -14,7 +14,7 @@
     },
     {
       "name": "vs2022",
-      "displayName": "Visual Studio 2022 (x64)",
+      "displayName": "🟢 Visual Studio 2022 (x64)",
       "description": "Genera solución .sln para Visual Studio 2022 (x64).",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build/vs2022",
@@ -25,7 +25,7 @@
     },
     {
       "name": "vs2026",
-      "displayName": "Visual Studio 2026 (x64)",
+      "displayName": "🟣 Visual Studio 2026 (x64)",
       "description": "Genera solución .sln para Visual Studio 2026 (x64).",
       "generator": "Visual Studio 18 2026",
       "binaryDir": "${sourceDir}/build/vs2026",
@@ -36,7 +36,7 @@
     },
     {
       "name": "ninja-windows-mingw64",
-      "displayName": "Ninja Windows (MinGW-w64 classic)",
+      "displayName": "🟡 Ninja Windows (MinGW-w64 classic)",
       "description": "Build en Windows con MinGW-w64.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/ninja-windows-mingw64",
@@ -66,73 +66,73 @@
     },
     {
       "name": "vs2019-release",
-      "displayName": "VS2019 Release (x64)",
+      "displayName": "🚀 VS2019 Release (x64)",
       "configurePreset": "vs2019",
       "configuration": "Release"
     },
     {
       "name": "vs2019-debug",
-      "displayName": "VS2019 Debug (x64)",
+      "displayName": "🐞 VS2019 Debug (x64)",
       "configurePreset": "vs2019",
       "configuration": "Debug"
     },
     {
       "name": "vs2019-relwithdebinfo",
-      "displayName": "VS2019 RelWithDebInfo (x64)",
+      "displayName": "🔍 VS2019 RelWithDebInfo (x64)",
       "configurePreset": "vs2019",
       "configuration": "RelWithDebInfo"
     },
     {
       "name": "vs2019-minsizerel",
-      "displayName": "VS2019 MinSizeRel (x64)",
+      "displayName": "📦 VS2019 MinSizeRel (x64)",
       "configurePreset": "vs2019",
       "configuration": "MinSizeRel"
     },
     {
       "name": "vs2022-release",
-      "displayName": "VS2022 Release (x64)",
+      "displayName": "🚀 VS2022 Release (x64)",
       "configurePreset": "vs2022",
       "configuration": "Release"
     },
     {
       "name": "vs2022-debug",
-      "displayName": "VS2022 Debug (x64)",
+      "displayName": "🐞 VS2022 Debug (x64)",
       "configurePreset": "vs2022",
       "configuration": "Debug"
     },
     {
       "name": "vs2022-relwithdebinfo",
-      "displayName": "VS2022 RelWithDebInfo (x64)",
+      "displayName": "🔍 VS2022 RelWithDebInfo (x64)",
       "configurePreset": "vs2022",
       "configuration": "RelWithDebInfo"
     },
     {
       "name": "vs2022-minsizerel",
-      "displayName": "VS2022 MinSizeRel (x64)",
+      "displayName": "📦 VS2022 MinSizeRel (x64)",
       "configurePreset": "vs2022",
       "configuration": "MinSizeRel"
     },
     {
       "name": "vs2026-release",
-      "displayName": "VS2026 Release (x64)",
+      "displayName": "🚀 VS2026 Release (x64)",
       "configurePreset": "vs2026",
       "configuration": "Release"
     },
     {
       "name": "vs2026-debug",
-      "displayName": "VS2026 Debug (x64)",
+      "displayName": "🐞 VS2026 Debug (x64)",
       "configurePreset": "vs2026",
       "configuration": "Debug"
     },
     {
       "name": "vs2026-relwithdebinfo",
-      "displayName": "VS2026 RelWithDebInfo (x64)",
+      "displayName": "🔍 VS2026 RelWithDebInfo (x64)",
       "configurePreset": "vs2026",
       "configuration": "RelWithDebInfo"
     },
     {
       "name": "vs2026-minsizerel",
-      "displayName": "VS2026 MinSizeRel (x64)",
+      "displayName": "📦 VS2026 MinSizeRel (x64)",
       "configurePreset": "vs2026",
       "configuration": "MinSizeRel"
     }
