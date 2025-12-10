@@ -2,14 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "CMake: build for debug",
+      "label": "CMake: build",
       "type": "shell",
       "command": "cmake",
       "args": [
         "--build",
-        "${workspaceFolder}/build/${command:cmake.activeConfigurePresetName}",
+        "${workspaceFolder}\\build\\${command:cmake.activeConfigurePresetName}",
         "--config",
-        "Debug"
+        "${command:cmake.buildType}"
       ],
       "group": {
         "kind": "build",

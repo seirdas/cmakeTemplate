@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "F5 Debug (CMake Tools)",
+      "name": "Run Target",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${command:cmake.launchTargetPath}",
@@ -10,7 +10,7 @@
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "console": "externalTerminal",
+      "console": "integratedTerminal",
       "preLaunchTask": "CMake: build"
     }
   ]
