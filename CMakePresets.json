@@ -9,7 +9,8 @@
       "binaryDir": "${sourceDir}/build/vs2019",
       "architecture": "x64",
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/W3 /WX /EHsc"
+        "CMAKE_CXX_FLAGS": "/W3 /WX /EHsc /ZI",
+        "CMAKE_CXX_FLAGS_DEBUG": "/W3 /WX /EHsc /ZI /Od"
       }
     },
     {
@@ -20,7 +21,8 @@
       "binaryDir": "${sourceDir}/build/vs2022",
       "architecture": "x64",
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/W3 /WX /EHsc"
+        "CMAKE_CXX_FLAGS": "/W3 /WX /EHsc /ZI",
+        "CMAKE_CXX_FLAGS_DEBUG": "/W3 /WX /EHsc /ZI /Od"
       }
     },
     {
@@ -31,7 +33,8 @@
       "binaryDir": "${sourceDir}/build/vs2026",
       "architecture": "x64",
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/W3 /WX /EHsc"
+        "CMAKE_CXX_FLAGS": "/W3 /WX /EHsc /ZI",
+        "CMAKE_CXX_FLAGS_DEBUG": "/W3 /WX /EHsc /ZI /Od"
       }
     },
     {
