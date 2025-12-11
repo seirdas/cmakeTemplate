@@ -1,17 +1,48 @@
 {
   "version": "0.2.0",
   "configurations": [
+
+    // Configuración para depuración con MSVC (Compiladores de Visual Studio)
     {
-      "name": "Run Target",
+      "name": "🌑 MSVC",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${command:cmake.launchTargetPath}",
-      "args": [],
-      "stopAtEntry": false,
+      "preLaunchTask": "CMake: build",
       "cwd": "${workspaceFolder}",
-      "environment": [],
-      "console": "integratedTerminal",
-      "preLaunchTask": "CMake: build"
+      "stopAtEntry": false,
+      "console": "integratedTerminal"
+    },
+
+    // Configuración para depuración con MSYS y GDB (Compiladores como MinGW o GCC en MSYS2)
+    {
+      "name": "🌕 MSYS",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "preLaunchTask": "CMake: build", 
+      "cwd": "${workspaceFolder}",
+      "externalConsole": false,
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+        }
+      ],
+
+      // Ruta de debugger para cada SO
+      "windows": {
+        "miDebuggerPath": "${workspaceFolder}/debugger/gdb.exe",
+        "MIMode": "gdb"
+      },
+      "linux": {
+        "miDebuggerPath": "/usr/bin/gdb",
+        "MIMode": "gdb"
+      },
+      "osx": {
+        "miDebuggerPath": "/usr/bin/lldb",
+        "MIMode": "lldb"
+      }
     }
   ]
 }
