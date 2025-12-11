@@ -1,0 +1,21 @@
+{
+    // Disable telemetry
+    "telemetry.telemetryLevel": "off",
+    "telemetry.editStats.details.enabled": false,
+    "telemetry.editStats.showDecorations": false,
+    "telemetry.editStats.enabled": false,
+    "telemetry.editStats.showStatusBar": false,
+    "telemetry.feedback.enabled": false,
+    "telemetry.enableTelemetry": false,
+
+    "editor.mouseWheelZoom": true,
+    "cmake.configurePreset": "vs2026",
+    "cmake.additionalCompilerSearchDirs": [
+        "C:/msys64/mingw32/bin",
+        "C:/msys64/mingw64/bin",
+        "C:/msys64/clang32/bin",
+        "C:/msys64/clang64/bin",
+        "C:/msys64/clangarm64/bin",
+        "C:/msys64/ucrt64/bin"
+    ],
+}
