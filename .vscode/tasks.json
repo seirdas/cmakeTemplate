@@ -17,17 +17,6 @@
       },
       "problemMatcher": ["$msCompile"],
       "detail": "Construye el proyecto usando CMake Tools"
-    },
-    {
-      "label": "CMake: configure",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--preset",
-        "${command:cmake.activeConfigurePresetName}"
-      ],
-      "problemMatcher": ["$msCompile"],
-      "detail": "Configura el proyecto"
     }
   ]
 }
