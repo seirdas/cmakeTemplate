@@ -8,8 +8,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 project(${PROJECT_NAME})
 
-# Make Windows headers use wide character set
-add_definitions(/D UNICODE /D _UNICODE)
+# Make Windows headers use wide character set - COMPATIBLE CON MINGW
+if(MSVC)
+    # Para Visual Studio
+    add_definitions(/D UNICODE /D _UNICODE)
+else()
+    # Para MinGW/GCC
+    add_definitions(-DUNICODE -D_UNICODE)
+endif()
 
 # Encontrar todos los archivos .cpp, .h y .hpp en la carpeta src
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
