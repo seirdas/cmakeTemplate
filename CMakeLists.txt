@@ -16,7 +16,7 @@ else()
     # Para MinGW/GCC
     add_definitions(-DUNICODE -D_UNICODE)
 endif()
-
+    
 # Encontrar todos los archivos .cpp, .h y .hpp en la carpeta src
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
@@ -27,6 +27,17 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES} )
 
 # Incluir la carpeta include para los archivos de cabecera
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Vincula la librería de hilos al ejecutable
+if (NOT MSVC)
+  # Encuentra la librería de hilos necesaria para GCC/MinGW
+  find_package(Threads REQUIRED)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
+  # VINCULACIÓN ESTÁTICA de HILOS
+  target_link_libraries(${PROJECT_NAME} PRIVATE -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic)
+  # VINCULACIÓN ESTÁTICA de C++ (STL) y GCC (Soporte de compilador)
+  target_link_libraries(${PROJECT_NAME} PRIVATE -static-libgcc -static-libstdc++)
+endif()
 
 # Colocar los binarios por configuración en executable/{configuration}/ dentro del build dir
 # Ej.: executable/Debug/ejecutable.exe
