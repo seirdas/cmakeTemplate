@@ -63,16 +63,13 @@
     }
   ],
   "buildPresets": [
-    // 🟡 MinGW-w64
     {
-      "name": "windows-mingw64-debug",
-      "displayName": "🐞 Mingw64 (Debug)",
+      "name": "mingw64",
+      "displayName": "🧶 Mingw64",
       "configurePreset": "mingw64",
-      //"configuration": "Debug",
       "targets": [ "all" ]
     },
 
-    // 🔵 Visual Studio 2019
     {
       "name": "vs2019-release",
       "displayName": "🚀 VS2019 Release (x64)",
@@ -98,7 +95,6 @@
       "configuration": "MinSizeRel"
     },
 
-    // 🟢 Visual Studio 2022
     {
       "name": "vs2022-release",
       "displayName": "🚀 VS2022 Release (x64)",
@@ -124,7 +120,6 @@
       "configuration": "MinSizeRel"
     },
 
-    // 🟣 Visual Studio 2026
     {
       "name": "vs2026-release",
       "displayName": "🚀 VS2026 Release (x64)",
