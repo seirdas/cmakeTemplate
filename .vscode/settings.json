@@ -4,8 +4,8 @@
     "mingw.binPath": "C:/msys64/mingw64/bin",
 
 
-
-    "cmake.allowCommentsInPresetsFile": true,
+    // No se pueden poner comentarios en la generación manual por comandos
+    "cmake.allowCommentsInPresetsFile": false,
     "cmake.cmakePath": "cmake",
     "cmake.options.statusBarVisibility": "compact",
 
