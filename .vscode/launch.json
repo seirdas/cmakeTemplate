@@ -16,40 +16,21 @@
 
     // Configuración para depuración con MSYS y GDB (Compiladores como MinGW o GCC en MSYS2)
     {
-      "name": "🌕 MSYS",
+      "name": "🌕 MSYS/MinGW_w64",
       "type": "cppdbg",
       "request": "launch",
       "program": "${command:cmake.launchTargetPath}",
       "preLaunchTask": "CMake: build", 
       "cwd": "${workspaceFolder}",
-      "environment": [
-        {
-          "name": "PATH",
-          "value": "C:\\msys64\\mingw64\\bin;${env:PATH}"
-        }
-      ],  
       "externalConsole": false,
       "MIMode": "gdb",
+      "miDebuggerPath": "C:/msys64/mingw64/bin/gdb.exe",
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
           "text": "-enable-pretty-printing",
         }
-      ],
-
-      // Ruta de debugger para cada SO
-      "windows": {
-        "miDebuggerPath": "${workspaceFolder}/debugger/gdb.exe",
-        "MIMode": "gdb"
-      },
-      "linux": {
-        "miDebuggerPath": "/usr/bin/gdb",
-        "MIMode": "gdb"
-      },
-      "osx": {
-        "miDebuggerPath": "/usr/bin/lldb",
-        "MIMode": "lldb"
-      }
+      ]
     }
   ]
 }
