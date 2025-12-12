@@ -16,3 +16,6 @@ Se descargará MinGW en `C:/msys64` por defecto.
     pacman -S mingw-w64-x86_64-toolchain
     ```
 Se descargará MinGW en `C:/msys64/mingw64` por defecto. Los binarios como `gcc.exe` o `gdb.exe` estarán en la ruta `C:/msys64/mingw64/bin`.
+
+
+> Los comandos de la extensión CMake Tools están [aquí](https://github.com/microsoft/vscode-cmake-tools/blob/main/docs/cmake-settings.md)

@@ -5,7 +5,51 @@
 
 
 
-    // Disable telemetry
+    "cmake.allowCommentsInPresetsFile": true,
+    "cmake.cmakePath": "cmake",
+    "cmake.options.statusBarVisibility": "compact",
+
+    "terminal.integrated.env.windows": {
+        "PATH": "C:\\msys64\\mingw64\\bin;${env:PATH}"
+    },
+    "cmake.options.advanced": { 
+        "ctest": { 
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        },
+        "testPreset": { 
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        },
+        "kit": { 
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        }, 
+        "variant": { 
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        }, 
+        "launchTarget": { 
+            "statusBarVisibility": "visible", 
+            "inheritDefault": "visible",
+        },
+        "workflow": {
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        },
+        "workflowPreset": {
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        },
+        "cpack": {
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        },
+        "packagePreset": {
+            "statusBarVisibility": "hidden",
+            "projectStatusVisibility": "hidden"
+        }
+    },
 
     
     // Otras configuraciones

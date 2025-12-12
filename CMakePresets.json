@@ -48,7 +48,7 @@
         "PATH": "C:/msys64/mingw64/bin;$penv{PATH}"
       },
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Werror -g",
+        "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wsign-conversion -Wuninitialized -Wformat",
         "CMAKE_C_COMPILER": "gcc.exe",
         "CMAKE_CXX_COMPILER": "g++.exe",
         "CMAKE_RC_COMPILER": "windres.exe",
@@ -66,8 +66,9 @@
     // 🟡 MinGW-w64
     {
       "name": "windows-mingw64-debug",
-      "displayName": "Mingw64 (Debug)",
+      "displayName": "🐞 Mingw64 (Debug)",
       "configurePreset": "mingw64",
+      //"configuration": "Debug",
       "targets": [ "all" ]
     },
 
