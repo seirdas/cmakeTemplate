@@ -1,5 +1,14 @@
 {
+
+    // Custom paths
+    "mingw.binPath": "C:/msys64/mingw64/bin",
+
+
+
     // Disable telemetry
+
+    
+    // Otras configuraciones
     "telemetry.enableTelemetry": false,
     "telemetry.telemetryLevel": "off",
     "telemetry.editStats.details.enabled": false,
@@ -7,14 +16,5 @@
     "telemetry.editStats.enabled": false,
     "telemetry.editStats.showStatusBar": false,
     "telemetry.feedback.enabled": false,
-
     "editor.mouseWheelZoom": true,
-    "cmake.additionalKits": [],
-    "cmake.allowCommentsInPresetsFile": true,
-    "cmake.cmakePath": "cmake",
-    "cmake.options.statusBarVisibility": "compact",
-
-    "terminal.integrated.env.windows": {
-        "PATH": "C:\\msys64\\mingw64\\bin;${env:PATH}"
-    }
 }
