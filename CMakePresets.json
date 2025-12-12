@@ -39,16 +39,21 @@
     },
     {
       "name": "mingw64",
-      "displayName": "🟡 MinGW-w64",
+      "displayName": "🟡 MinGW-x64",
       "description": "Build en Windows con MinGW-w64.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/ninja-windows-mingw64",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/build/mingw64",
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
       "environment": {
         "PATH": "C:/msys64/mingw64/bin;$penv{PATH}"
       },
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Werror"
+        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Werror -g",
+        "CMAKE_C_COMPILER": "gcc.exe",
+        "CMAKE_CXX_COMPILER": "g++.exe",
+        "CMAKE_RC_COMPILER": "windres.exe",
+        "CMAKE_MAKE_PROGRAM": "mingw32-make.exe",
+        "CMAKE_BUILD_TYPE":"Debug"
       },
       "condition": {
         "type": "equals",
@@ -58,18 +63,15 @@
     }
   ],
   "buildPresets": [
+    // 🟡 MinGW-w64
     {
       "name": "windows-mingw64-debug",
-      "displayName": "Mingw64 Debug",
+      "displayName": "Mingw64 (Debug)",
       "configurePreset": "mingw64",
       "targets": [ "all" ]
     },
-    {
-      "name": "windows-mingw64-release",
-      "displayName": "Mingw64 Release",
-      "configurePreset": "mingw64",
-      "targets": [ "all" ]
-    },
+
+    // 🔵 Visual Studio 2019
     {
       "name": "vs2019-release",
       "displayName": "🚀 VS2019 Release (x64)",
@@ -94,6 +96,8 @@
       "configurePreset": "vs2019",
       "configuration": "MinSizeRel"
     },
+
+    // 🟢 Visual Studio 2022
     {
       "name": "vs2022-release",
       "displayName": "🚀 VS2022 Release (x64)",
@@ -118,6 +122,8 @@
       "configurePreset": "vs2022",
       "configuration": "MinSizeRel"
     },
+
+    // 🟣 Visual Studio 2026
     {
       "name": "vs2026-release",
       "displayName": "🚀 VS2026 Release (x64)",

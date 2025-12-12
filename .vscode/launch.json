@@ -22,7 +22,14 @@
       "program": "${command:cmake.launchTargetPath}",
       "preLaunchTask": "CMake: build", 
       "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "C:\\msys64\\mingw64\\bin;${env:PATH}"
+        }
+      ],  
       "externalConsole": false,
+      "MIMode": "gdb",
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
