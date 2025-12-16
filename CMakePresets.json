@@ -44,16 +44,9 @@
       "generator": "MinGW Makefiles",
       "binaryDir": "${sourceDir}/build/mingw64",
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
-      "environment": {
-        "PATH": "C:/msys64/mingw64/bin;$penv{PATH}"
-      },
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wsign-conversion -Wuninitialized -Wformat",
-        "CMAKE_C_COMPILER": "gcc.exe",
-        "CMAKE_CXX_COMPILER": "g++.exe",
-        "CMAKE_RC_COMPILER": "windres.exe",
-        "CMAKE_MAKE_PROGRAM": "mingw32-make.exe",
-        "CMAKE_BUILD_TYPE":"Debug"
+        "CMAKE_BUILD_TYPE":"mingw64"
       },
       "condition": {
         "type": "equals",
@@ -67,7 +60,11 @@
       "name": "mingw64",
       "displayName": "🧶 Mingw64",
       "configurePreset": "mingw64",
-      "targets": [ "all" ]
+      "targets": [ "all" ],
+      "jobs": 4,
+      "environment": {
+        "PATH": "C:/msys64/mingw64/bin;$penv{PATH}"
+      }
     },
 
     {
