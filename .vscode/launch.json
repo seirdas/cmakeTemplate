@@ -29,6 +29,12 @@
           "description": "Enable pretty-printing for gdb",
           "text": "-enable-pretty-printing",
         }
+      ],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:mingw.binPath};$env{PATH}"
+        }
       ]
     }
   ]

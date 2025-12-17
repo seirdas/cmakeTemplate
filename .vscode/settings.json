@@ -1,6 +1,6 @@
 {
 
-    // Custom paths
+    // Custom paths for visual studio code launch
     "mingw.binPath": "C:/msys64/mingw64/bin",
 
 
@@ -8,10 +8,6 @@
     "cmake.allowCommentsInPresetsFile": false,
     "cmake.cmakePath": "cmake",
     "cmake.options.statusBarVisibility": "compact",
-
-    "terminal.integrated.env.windows": {
-        "PATH": "C:\\msys64\\mingw64\\bin;${env:PATH}"
-    },
     "cmake.options.advanced": { 
         "ctest": { 
             "statusBarVisibility": "hidden",
