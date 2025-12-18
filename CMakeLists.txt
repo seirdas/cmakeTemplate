@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set the proyect name from the root folder
-get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+# Set the project name from the root folder
+get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME CACHE)
 project(${PROJECT_NAME})
 
 # Make Windows headers use wide character set - COMPATIBLE CON MINGW
