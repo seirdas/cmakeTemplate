@@ -46,10 +46,12 @@
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wsign-conversion -Wuninitialized -Wformat",
-        "CMAKE_BUILD_TYPE":"mingw64"
+        "CMAKE_BUILD_TYPE":"mingw64",
+        "MINGW_PATH": "${env.MINGW_PATH}",
+        "MINGW_BIN": "${env.MINGW_PATH}/bin"
       },
       "environment": {
-        "MINGW_PATH": "C:/msys64/mingw64/bin"
+        "MINGW_PATH": "C:/msys64/mingw64"
       }
     }
   ],
@@ -61,8 +63,9 @@
       "targets": [ "all" ],
       "jobs": 3,
       "environment": {
-        "PATH": "$env{MINGW_PATH};$penv{PATH}"
-      }
+        "PATH": "$env{MINGW_PATH}/bin;$penv{PATH}"
+      },
+      "cleanFirst": true
     },
 
     {
