@@ -1,16 +1,19 @@
 
 # TODO
 - [ ] README Documentar compatibilidades con Visual Studio, vscode y vscodium
-
+- [ ] NO AÑADIR ARCHIVOS/CLASES (.cpp, .h) DESDE VISUAL STUDIO DIRECTAMENTE
+- [ ] El nombre de proyecto lo toma directamente del nombre de la carpeta
 
 ---
+
+
 
 # Generación de proyectos
 
 ## Generación manual
 1. Se necesita descargar e instalar **cmake**. Se puede hacer:
-- [Desde aquí](https://cmake.org/download/)
-- Desde `winget`
+- Desde [aquí](https://cmake.org/download/).
+- Desde `winget` en cmd:
 ```bash
 winget install Kitware.CMake
 ```
@@ -39,8 +42,8 @@ Abrir la carpeta en Visual Studio y se generará automáticamente.
 
 ## Configuración MSYS2 MinGW-x64
 1. Se necesita descargar MSYS2. Se puede hacer:
-- [Desde aquí](https://www.msys2.org) 
-- Desde winget
+	- [Desde aquí](https://www.msys2.org) 
+	- Desde `winget` en cmd:
     ```bash
     winget install MSYS.MSYS
     ```
