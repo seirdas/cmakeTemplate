@@ -9,7 +9,9 @@
         "--build",
         "${workspaceFolder}\\build\\${command:cmake.activeConfigurePresetName}",
         "--config",
-        "${command:cmake.buildType}"
+        "${command:cmake.buildType}",
+        "--parallel",
+        "4"
       ],
       "options": {
         "cwd": "${workspaceFolder}",

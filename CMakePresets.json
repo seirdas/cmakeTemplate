@@ -61,7 +61,7 @@
       "displayName": "🧶 Mingw64",
       "configurePreset": "mingw64",
       "targets": [ "all" ],
-      "jobs": 3,
+      "jobs": 4,
       "environment": {
         "PATH": "$env{MINGW_PATH}/bin;$penv{PATH}"
       },

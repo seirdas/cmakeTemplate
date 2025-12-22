@@ -3,10 +3,15 @@
     // Custom paths for visual studio code launch
     "mingw.binPath": "C:/msys64/mingw64/bin",
 
-
     // No se pueden poner comentarios en la generación manual por comandos
     "cmake.allowCommentsInPresetsFile": false,
+
+    // Cambiar si cmake está instalado en otro sitio
     "cmake.cmakePath": "cmake",
+    "cmake.buildBeforeRun": true,
+    "cmake.parallelJobs": 4,
+
+    // Opciones de visualización en vscode de cmake
     "cmake.options.statusBarVisibility": "compact",
     "cmake.options.advanced": { 
         "ctest": { 
