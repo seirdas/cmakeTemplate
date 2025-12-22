@@ -11,6 +11,12 @@
         "--config",
         "${command:cmake.buildType}"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH":"${config:mingw.binPath};${env:PATH}"
+        }
+      },
       "group": {
         "kind": "build",
         "isDefault": true
