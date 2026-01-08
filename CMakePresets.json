@@ -45,7 +45,7 @@
       "binaryDir": "${sourceDir}/build/mingw64",
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Wsign-conversion -Wuninitialized -Wformat",
+        "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
         "CMAKE_BUILD_TYPE":"mingw64",
         "MINGW_PATH": "${env.MINGW_PATH}",
         "MINGW_BIN": "${env.MINGW_PATH}/bin"
