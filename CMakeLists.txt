@@ -16,17 +16,31 @@ else()
     # Para MinGW/GCC
     add_definitions(-DUNICODE -D_UNICODE)
 endif()
-    
+
 # Encontrar todos los archivos .cpp, .h y .hpp en la carpeta src
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
 
 # Crear el ejecutable a partir de los archivos .cpp
-add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES} )
+if(WIN32)
+    add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${RESOURCES})
+else()
+    add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
+endif()
+
+# Copia todo el contenido de la carpeta 'config' a la carpeta del binario
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/config"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+)
 
 # Incluir la carpeta include para los archivos de cabecera
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+# Importar librerías externas
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external)
 
 # Vincula la librería de hilos al ejecutable
 if (NOT MSVC)
