@@ -1,4 +1,5 @@
 
+# CMake minimum version and project setup
 cmake_minimum_required(VERSION 3.10)
 # Establecer estándar C++
 set(CMAKE_CXX_STANDARD 20)
@@ -12,22 +13,10 @@ project(${PROJECT_NAME})
 
 
 
-# Make Windows headers use wide character set - COMPATIBLE CON MINGW
-if(MSVC)
-    # Para Visual Studio
-    add_definitions(/D UNICODE /D _UNICODE)
-else()
-    # Para MinGW/GCC
-    add_definitions(-DUNICODE -D_UNICODE)
-endif()
-
-
-
 # Librerías externas (necesita conexión a internet si no hay build)
 # Se puede modificar la versión descargada en el GIT_TAG
 # Ctrl+Click en link -> Tags (Verified)
 include(FetchContent)
-set(CMAKE_TLS_VERIFY OFF)
 
 # glfw (Ventanas)
 FetchContent_Declare(
@@ -35,11 +24,18 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/glfw/glfw.git
   GIT_TAG 3.4
 )
+
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # <--- Desactiva boing, gears, etc.
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)    # <--- Desactiva los tests
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)     # <--- Desactiva la documentación
+# Obligar a usar la librería de tiempo de ejecución dinámica en MSVC
 FetchContent_MakeAvailable(glfw)
+# Configurar runtime dinámico para glfw en MSVC
+if(MSVC)
+  set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
+endif()
+
 
 
 # IMGUI (Interfaz)
@@ -70,7 +66,7 @@ FetchContent_MakeAvailable(json)
 
 
 
-# Encontrar todos los archivos .cpp, .h y .hpp en la carpeta src
+# Encontrar todos los archivos .cpp, .h y .hpp
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
@@ -86,8 +82,20 @@ endif()
 
 
 
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw OpenGL32)
-# Incluir la carpeta include para los archivos de cabecera
+# Rutas de inclusión de librerías externas
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+  glfw 
+  OpenGL32
+  nlohmann_json::nlohmann_json
+)
+find_package(OpenGL REQUIRED) # Requerido para ImGui con OpenGL
+if(OpenGL_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL)
+endif()
+
+
+
+# Rutas de archivos de cabecera del proyecto
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # Librería de ImGui (GUI)
 target_include_directories(${PROJECT_NAME} PRIVATE 
@@ -96,20 +104,58 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   nlohmann_json::nlohmann_json
 )
 
-find_package(OpenGL REQUIRED)
+
+
+# Configuración específica para MSVC
+if(MSVC)
+  # Especifica el proyecto principal
+  set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+  # Usar el main normal aunque sea una App de Windows
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
+  # Configurar runtime dinámico para el proyecto en MSVC
+  set_target_properties(${PROJECT_NAME} PROPERTIES 
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+  )
+  # Configurar runtime dinámico para glfw en MSVC
+  set_target_properties(glfw PROPERTIES 
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+  )
+  # Configurar GLFW para usar runtime dinámico en MSVC
+  set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
+  # 3. Librerías de sistema necesarias
+  target_link_libraries(${PROJECT_NAME} PRIVATE 
+      imm32.lib 
+      dwmapi.lib 
+      uxtheme.lib 
+      version.lib 
+      shell32.lib
+      ucrt.lib
+      vcruntime.lib
+      msvcrt.lib
+  )
+  # Eliminar conflictos de librerías por defecto
+  target_link_options(${PROJECT_NAME} PRIVATE 
+    "/NODEFAULTLIB:LIBCMT" 
+    "/NODEFAULTLIB:LIBCMTD"
+    )
+endif()
 
 
 
-# Vincula la librería de hilos al ejecutable (si no es MSVC)
+
+
+# Configuración específica para GCC/MinGW
 if (NOT MSVC)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
   # Vinculación de hilos, C++ (STL) y GCC (Soporte de compilador) para GCC/MinGW
   find_package(Threads REQUIRED)
   target_link_libraries(${PROJECT_NAME} PRIVATE 
-    Threads::Threads
     -static-libgcc -static-libstdc++
     -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic
   )
 endif()
+
+
 
 
 

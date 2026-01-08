@@ -7,7 +7,7 @@
       "name": "🌑 MSVC",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${command:cmake.launchTargetPath}",
+      "program": "${command:cmake.getLaunchTargetPath}",
       "preLaunchTask": "CMake: build",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
