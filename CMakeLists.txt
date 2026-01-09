@@ -24,19 +24,11 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/glfw/glfw.git
   GIT_TAG 3.4
 )
-
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # <--- Desactiva boing, gears, etc.
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)    # <--- Desactiva los tests
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)     # <--- Desactiva la documentación
-# Obligar a usar la librería de tiempo de ejecución dinámica en MSVC
+set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # Desactiva boing, gears, etc.
+set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE) # Desactiva los tests
+set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE) # Desactiva la documentación
 FetchContent_MakeAvailable(glfw)
-# Configurar runtime dinámico para glfw en MSVC
-if(MSVC)
-  set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
-endif()
-
-
 
 # IMGUI (Interfaz)
 FetchContent_Declare(
@@ -55,7 +47,6 @@ file(GLOB IMGUI_SOURCES
     "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
 )
 
-
 # JSON (nlohmann/json)
 FetchContent_Declare(
   json
@@ -70,14 +61,15 @@ FetchContent_MakeAvailable(json)
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
-
+# Incluir carpeta de recursos
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/resources)
 
 
 # Crear el ejecutable a partir de los archivos .cpp
 if(WIN32)
     add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${RESOURCES} ${IMGUI_SOURCES})
 else()
-    add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
+    add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES} ${IMGUI_SOURCES})
 endif()
 
 
@@ -124,24 +116,24 @@ if(MSVC)
   set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
   # 3. Librerías de sistema necesarias
   target_link_libraries(${PROJECT_NAME} PRIVATE 
-      imm32.lib 
       dwmapi.lib 
-      uxtheme.lib 
-      version.lib 
-      shell32.lib
-      ucrt.lib
-      vcruntime.lib
-      msvcrt.lib
+      imm32.lib
+      version.lib
   )
-  # Eliminar conflictos de librerías por defecto
-  target_link_options(${PROJECT_NAME} PRIVATE 
-    "/NODEFAULTLIB:LIBCMT" 
-    "/NODEFAULTLIB:LIBCMTD"
-    )
+
+  # Configurar runtime dinámico para imgui en MSVC
+  set_target_properties(${PROJECT_NAME} PROPERTIES 
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+  )
 endif()
 
 
-
+if(MSVC)
+  # Agrupar archivos de cabecera, fuente y recursos en carpetas
+  source_group("Include"  FILES ${HEADERS})
+  source_group("Source"   FILES ${SOURCES})
+  source_group("Resources" FILES ${RESOURCES})
+endif()
 
 
 # Configuración específica para GCC/MinGW

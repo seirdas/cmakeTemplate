@@ -4,13 +4,6 @@
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-# Read the configuration file (from toolchains/readINI.cmake)
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/toolchains/readINI.cmake")
-  include("${CMAKE_CURRENT_SOURCE_DIR}/toolchains/readINI.cmake")
-  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/CMakeConfig.ini")
-    readConfigFile("${CMAKE_CURRENT_SOURCE_DIR}/CMakeConfig.ini")   
-  endif()
-endif()
 
 # Añadir mingw al path para poder usar sus dependencias
 set(ENV{PATH} "${MINGW_BIN};$ENV{PATH}")
@@ -23,7 +16,7 @@ set(CMAKE_C_FLAGS "-B${MINGW_BIN} ${CMAKE_C_FLAGS}" CACHE STRING "C Flags" FORCE
 # Establecer los compiladores, comprobando su existencia
 set(CMAKE_C_COMPILER "${MINGW_BIN}/gcc.exe" CACHE STRING "C Compiler" )
 set(CMAKE_CXX_COMPILER "${MINGW_BIN}/g++.exe" CACHE STRING "CXX Compiler" )
-set(CMAKE_RC_COMPILER "${MINGW_BIN}/windres.exe" CACHE STRING "RC Compiler" )
+set(CMAKE_RC_COMPILER "${MINGW_BIN}/windres.exe" CACHE STRING "RC Compiler" FORCE)
 set(CMAKE_MAKE_PROGRAM "${MINGW_BIN}/mingw32-make.exe" CACHE STRING "Make Program" )
 
 # Mostrar mensajes
@@ -39,7 +32,7 @@ if(NOT CMAKE_TOOLCHAIN_FILE_PROCESSED)
   message(STATUS "RC Compiler found at ${CMAKE_RC_COMPILER}")
   endif()
   if(EXISTS "${CMAKE_MAKE_PROGRAM}")
-      message(STATUS "Make Program found at ${CMAKE_MAKE_PROGRAM}")
+  message(STATUS "Make Program found at ${CMAKE_MAKE_PROGRAM}")
   endif()
 endif()
 
@@ -68,7 +61,8 @@ set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lwinp
 set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic")
 set(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic")
 
-
+# Definiciones comunes
+add_definitions(-DUNICODE -D_UNICODE)
 
 # Ninja puede estar en otro lugar, buscar alternativas
 # find_program(NINJA_EXE ninja PATHS "${MINGW_BIN}" "C:/Program Files/Ninja" "C:/ninja")
