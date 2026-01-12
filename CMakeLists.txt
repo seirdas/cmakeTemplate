@@ -1,169 +1,227 @@
 
+# ==============================
+# CMakeLists.txt - Configuración del proyecto CMake
+# ==============================
+
 # CMake minimum version and project setup
 cmake_minimum_required(VERSION 3.10)
-# Establecer estándar C++
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-
 
 # Set the project name from the root folder
 get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME CACHE)
 project(${PROJECT_NAME})
 
 
+## ==============================TEMPORAL DE MSVC==============================
+if (MSVC)
+message(STATUS "Configuring MSVC Toolchain for Dynamic Runtime")
 
-# Librerías externas (necesita conexión a internet si no hay build)
-# Se puede modificar la versión descargada en el GIT_TAG
-# Ctrl+Click en link -> Tags (Verified)
+
+  # Definiciones de compatibilidad
+  add_compile_definitions(
+      _CRT_SECURE_NO_WARNINGS
+      NOMINMAX
+      WIN32_LEAN_AND_MEAN
+  )
+
+  message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+
+endif()
+# ==============================FIN TEMPORAL DE MSVC==============================
+
+
+# Establecer estándar C++
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+
+# ===============================
+# Librerías externas
+# ===============================
 include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)                              # menos salida en consola
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "")  # Evitar que FetchContent vuelva a actualizar el repositorio cada vez
 
-# glfw (Ventanas)
+# ------------------------------
+# LIBRERÍA CON GLFW + IMGUI + OTRAS DEPENDENCIAS
+# ------------------------------
+
+# GLFW (Ventanas) ___________________________
+message(STATUS "Fetching GLFW library...")
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # No construir ejemplos
+set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)    # No construir tests
+set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)    # No construir documentación
+set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)    # No instalar
 FetchContent_Declare(
   glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
   GIT_TAG 3.4
+  GIT_SHALLOW    TRUE         # habilita --depth 1
 )
-set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # Desactiva boing, gears, etc.
-set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE) # Desactiva los tests
-set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE) # Desactiva la documentación
+if (MSVC)
+  set(GLFW_USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
+endif()
 FetchContent_MakeAvailable(glfw)
+find_package(OpenGL REQUIRED)   # Incluir librería de OpenGL (GLFW la usa para renderizar)
 
-# IMGUI (Interfaz)
+
+# IMGUI (Interfaz) ___________________________
+message(STATUS "Fetching ImGui library...")
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
   GIT_TAG v1.92.5
+  GIT_SHALLOW    TRUE          # habilita --depth 1
 )
 FetchContent_MakeAvailable(imgui)
 FetchContent_GetProperties(imgui SOURCE_DIR IMGUI_DIR)
 file(GLOB IMGUI_SOURCES 
-    "${IMGUI_DIR}/imgui.cpp"
-    "${IMGUI_DIR}/imgui_draw.cpp"
-    "${IMGUI_DIR}/imgui_tables.cpp"
-    "${IMGUI_DIR}/imgui_widgets.cpp"
-    "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
-    "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp"
+"${IMGUI_DIR}/*.cpp"
+"${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
+"${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp" 
 )
 
-# JSON (nlohmann/json)
+# Crear librería estática para ImGui + Vincular con GLFW
+add_library(imgui_lib STATIC ${IMGUI_SOURCES})
+target_link_libraries(imgui_lib PUBLIC glfw OpenGL::GL)                         # Vincular con GLFW y OpenGL
+target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends) # Directorios propios
+# target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
+
+# -------------------------------
+# Librería de asio (redes) con dependencias
+# -------------------------------
+
+# Asio (Red - Standalone)
+FetchContent_Declare(
+    asio_network
+    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+    GIT_TAG asio-1-36-0
+    GIT_SHALLOW    TRUE        # habilita --depth 1
+)
+FetchContent_MakeAvailable(asio_network)
+# Crear una librería estática de red + Vincular con Winsock2 en Windows
+add_library(asio_lib INTERFACE)
+target_include_directories(asio_lib INTERFACE "${asio_network_SOURCE_DIR}/asio/include")  # Incluir headers de Asio
+target_compile_definitions(asio_lib INTERFACE ASIO_STANDALONE)                            # Definir ASIO_STANDALONE para usar Asio sin Boost
+target_link_libraries(asio_lib INTERFACE $<$<PLATFORM_ID:Windows>:ws2_32 mswsock>)        # Winsock2 para networking en Windows
+
+
+# ==============================
+# Headers / Interfaces externas
+# ==============================
+
+# JSON (lectura/escritura de json)
+message(STATUS "Fetching JSON library...")
 FetchContent_Declare(
   json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
   GIT_TAG        v3.11.3
+  GIT_SHALLOW    TRUE         # habilita --depth 1
 )
 FetchContent_MakeAvailable(json)
 
+# Miniaudio (Audio - Simple y potente)
+message(STATUS "Fetching Miniaudio library...")
+set(MA_ENABLE_VORBIS OFF CACHE BOOL "" FORCE)  # No construir soporte para Vorbis
+set(MA_ENABLE_OPUS OFF CACHE BOOL "" FORCE)    # No construir soporte para Opus
+set(MA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # No construir ejemplos
+FetchContent_Declare(
+  miniaudio
+  GIT_REPOSITORY https://github.com/mackron/miniaudio.git
+  GIT_TAG        0.11.23          # o la versión que necesites
+  GIT_SHALLOW    TRUE            # habilita --depth 1
+)
+FetchContent_MakeAvailable(miniaudio)
 
+
+# ===============================
+# Configuración del proyecto (código fuente propio)
+# ==============================
 
 # Encontrar todos los archivos .cpp, .h y .hpp
 file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
-# Incluir carpeta de recursos
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/resources)
 
 
-# Crear el ejecutable a partir de los archivos .cpp
-if(WIN32)
-    add_executable(${PROJECT_NAME} WIN32 ${SOURCES} ${RESOURCES} ${IMGUI_SOURCES})
-else()
-    add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES} ${IMGUI_SOURCES})
-endif()
 
+# ===============================
+# Crear el ejecutable
+# ===============================
 
-
-# Rutas de inclusión de librerías externas
-target_link_libraries(${PROJECT_NAME} PRIVATE 
-  glfw 
-  OpenGL32
-  nlohmann_json::nlohmann_json
-)
-find_package(OpenGL REQUIRED) # Requerido para ImGui con OpenGL
-if(OpenGL_FOUND)
-    target_link_libraries(${PROJECT_NAME} PRIVATE OpenGL::GL)
-endif()
-
-
-
-# Rutas de archivos de cabecera del proyecto
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-# Librería de ImGui (GUI)
+# Crear el ejecutable principal
+add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
+# Rutas de archivos de cabecera del proyecto (archivos .h propios)
 target_include_directories(${PROJECT_NAME} PRIVATE 
-  ${IMGUI_DIR} 
-  ${IMGUI_DIR}/backends
-  nlohmann_json::nlohmann_json
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+)  
+# Enlazar librerías externas
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+  imgui_lib     # Incluye ImGui + GLFW + OpenGL
+  asio_lib      # Incluye Asio + Winsock2 (Windows)
+  nlohmann_json::nlohmann_json  # JSON
 )
 
 
 
-# Configuración específica para MSVC
+# ===============================
+# Configuración específica del compilador
+# ===============================
+
 if(MSVC)
+# Configuración específica para MSVC
+
+  target_compile_options(${PROJECT_NAME} PRIVATE
+    /W3
+    /EHsc
+    $<$<CONFIG:Debug>:/ZI>
+    $<$<CONFIG:Debug>:/Od>
+  )
+
+  target_link_libraries(${PROJECT_NAME} PRIVATE
+    user32 gdi32 shell32
+    imm32 ole32 uuid
+    ws2_32
+  )
+
   # Especifica el proyecto principal
   set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
   # Usar el main normal aunque sea una App de Windows
   set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
-  # Configurar runtime dinámico para el proyecto en MSVC
-  set_target_properties(${PROJECT_NAME} PROPERTIES 
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
-  )
-  # Configurar runtime dinámico para glfw en MSVC
-  set_target_properties(glfw PROPERTIES 
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
-  )
-  # Configurar GLFW para usar runtime dinámico en MSVC
-  set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
-  # 3. Librerías de sistema necesarias
-  target_link_libraries(${PROJECT_NAME} PRIVATE 
-      dwmapi.lib 
-      imm32.lib
-      version.lib
-  )
-
-  # Configurar runtime dinámico para imgui en MSVC
-  set_target_properties(${PROJECT_NAME} PROPERTIES 
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
-  )
-endif()
-
-
-if(MSVC)
   # Agrupar archivos de cabecera, fuente y recursos en carpetas
-  source_group("Include"  FILES ${HEADERS})
-  source_group("Source"   FILES ${SOURCES})
-  source_group("Resources" FILES ${RESOURCES})
-endif()
+  source_group("Include"    FILES ${HEADERS})
+  source_group("Source"     FILES ${SOURCES})
+  source_group("Resources"  FILES ${RESOURCES})
 
+elseif(MINGW)
+  # Configuración específica para GCC/MinGW
 
-# Configuración específica para GCC/MinGW
-if (NOT MSVC)
-  target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
-  # Vinculación de hilos, C++ (STL) y GCC (Soporte de compilador) para GCC/MinGW
-  find_package(Threads REQUIRED)
-  target_link_libraries(${PROJECT_NAME} PRIVATE 
-    -static-libgcc -static-libstdc++
-    -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic
+  # Librerías de sistema (Crucial para que compile ImGui/GLFW/Asio)
+  target_link_libraries(${PROJECT_NAME} PRIVATE
+    winpthread
+    user32 gdi32 shell32 kernel32
+    comdlg32 imm32 ole32 uuid
   )
 endif()
 
 
-
-
+# ===============================
+# Configuración post-build
+# ===============================
 
 # Copia todo el contenido de la carpeta 'config' a la carpeta del binario
 add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_SOURCE_DIR}/config"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+  TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  "${CMAKE_CURRENT_SOURCE_DIR}/config"
+  "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )
-
-
-
-# Colocar los binarios por configuración en executable/{configuration}/ dentro del build dir
-# Ej.: executable/Debug/ejecutable.exe
-set_target_properties(${PROJECT_NAME} PROPERTIES
+    
+# Configurar como aplicación de ventana sin consola en Windows
+set_target_properties(${PROJECT_NAME} PROPERTIES 
+  WIN32_EXECUTABLE $<BOOL:${WIN32}>
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>"
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>"

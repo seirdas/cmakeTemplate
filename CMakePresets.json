@@ -8,11 +8,7 @@
       "generator": "Visual Studio 16 2019",
       "toolchainFile": "toolchains/msvc.cmake",
       "binaryDir": "${sourceDir}/build/vs2019",
-      "architecture": "x64",
-      "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/W3 /EHsc /ZI",
-        "CMAKE_CXX_FLAGS_DEBUG": "/W3 /EHsc /ZI /Od"
-      }
+      "architecture": "x64"
     },
     {
       "name": "vs2022",
@@ -21,11 +17,7 @@
       "generator": "Visual Studio 17 2022",
       "toolchainFile": "toolchains/msvc.cmake",
       "binaryDir": "${sourceDir}/build/vs2022",
-      "architecture": "x64",
-      "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/W3 /EHsc /ZI",
-        "CMAKE_CXX_FLAGS_DEBUG": "/W3 /EHsc /ZI /Od"
-      }
+      "architecture": "x64"
     },
     {
       "name": "vs2026",
@@ -34,11 +26,7 @@
       "generator": "Visual Studio 18 2026",
       "toolchainFile": "toolchains/msvc.cmake",
       "binaryDir": "${sourceDir}/build/vs2026",
-      "architecture": "x64",
-      "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/W3 /EHsc /ZI",
-        "CMAKE_CXX_FLAGS_DEBUG": "/W3 /EHsc /ZI /Od"
-      }
+      "architecture": "x64"
     },
     {
       "name": "mingw64",
