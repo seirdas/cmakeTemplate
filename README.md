@@ -69,14 +69,14 @@ winget install Kitware.CMake
 
 
 ### TL;DR
-    Copia y pega este script para descargar las herramientas de compilación mingw por msys [WIP]:
+- Copia y pega este script en un cmd (con permisos de administrador) para descargar las herramientas de compilación mingw por msys [WIP]:
 
-    ```batch
-    winget install msys2.msys2
-    msys2 -msys -c pacman -Syu
-    msys2 -msys -c pacman -S mingw-w64-x86_64-toolchain
+```bash
+winget install msys2.msys2
+msys2 -msys -c pacman -Syu
+msys2 -msys -c pacman -S mingw-w64-x86_64-toolchain
 
-    ```
+```
 
 # Arquitectura de proyecto
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares). 
