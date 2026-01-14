@@ -68,6 +68,15 @@ winget install Kitware.CMake
     Los binarios como `gcc.exe` o `gdb.exe` estarán en la ruta `C:/msys64/mingw64/bin`.
 
 
+### TL;DR
+    Copia y pega este script para descargar las herramientas de compilación mingw por msys [WIP]:
+    ```cmd
+    winget install msys2.msys2
+    msys2 -msys -c pacman -Syu
+    msys2 -msys -c pacman -S mingw-w64-x86_64-toolchain
+    
+    ```
+
 # Arquitectura de proyecto
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares). 
     Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
