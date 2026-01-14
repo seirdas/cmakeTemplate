@@ -8,6 +8,42 @@
 - [x] ~~El nombre de proyecto lo toma directamente del nombre de la carpeta~~
 ---
 
+# Dependencias (Qué hay que instalar)
+## CMake
+Este proyecto utiliza CMake, una herramienta de automatización de compilación multiplataforma que simplifica el proceso de configuración y generación de archivos de construcción. Gracias a su capacidad para gestionar las dependencias y diferentes configuraciones del entorno, CMake facilita la compilación del proyecto en (y para) múltiples sistemas operativos. 
+
+Al implementar CMake, aseguramos que todos los desarrolladores usen una configuración unificada y consistente, mejorando la portabilidad y la mantenibilidad del código.
+
+Se necesita descargar e instalar **cmake**. Se puede hacer:
+- Desde [aquí](https://cmake.org/download/).
+- Desde `winget` en cmd:
+```bash
+winget install Kitware.CMake
+```
+
+
+
+## Build Tools de Visual Studio (MSVC)
+- [ ] TODO
+
+## MinGW
+1. Se necesita descargar MSYS2. Se puede hacer:
+	- [Desde aquí](https://www.msys2.org) 
+	- Desde `winget` en cmd:
+    ```bash
+    winget install MSYS.MSYS
+    ```
+Se descargará MSYS en `C:/msys64` por defecto. 
+La mayoría de rutas del proyecto orientado a la compilación con esta herramienta apuntan a este directorio.
+
+2. Abrir MSYS2 MinGW 64-bit shell e instalar el _toolchain_ de MinGW-w64:
+    ```bash
+    pacman -Syu
+    pacman -S mingw-w64-x86_64-toolchain
+    ```
+Se descargará MinGW en `C:/msys64/mingw64` por defecto (tarda un rato).
+Los binarios como `gcc.exe` o `gdb.exe` estarán en la ruta `C:/msys64/mingw64/bin`.
+
 
 # Arquitectura de proyecto
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares). 
@@ -27,13 +63,6 @@
 # Generación de proyectos
 
 ## Generación manual
-1. Se necesita descargar e instalar **cmake**. Se puede hacer:
-- Desde [aquí](https://cmake.org/download/).
-- Desde `winget` en cmd:
-```bash
-winget install Kitware.CMake
-```
-
 El proyecto está diseñado para permitir la generación de soluciones o "entornos" _Makefile_ a partir de presets de CMake.
 Lo habitual es configurar los proyectos en la carpeta `build`, que habrá que crear si no está creada:
 ```bash
@@ -51,19 +80,14 @@ cmake .. --preset mingw64 # Generar archivos Makefile para MinGW-w64 de MSYS
 # etc...
 ```
 
-### Presets con herramientas de compilación (Build Tools) de Visual Studio MSVC
-
-
-### Preset MinGW
-
-
 
 ## Generación con Visual Studio
-Descargar un entorno IDE de Visual Studio.
+Descargar y abrir la carpeta en un entorno IDE de Visual Studio.
 - [ ] TODO
 
 ## Generación con VSCode
 - [ ] TODO
+
 ### Arquitectura de configuración
 Visual Studio Code se apoya en los siguientes archivos que están en la carpeta `.vscode`:
 - **settings.json**:
@@ -96,22 +120,7 @@ Que se leerá en el `miDebuggerPath` del `launch.json` (no hay necesidad de modi
 - [ ] Pendiente
 
 ## Configuración MSYS2 MinGW-x64
-1. Se necesita descargar MSYS2. Se puede hacer:
-	- [Desde aquí](https://www.msys2.org) 
-	- Desde `winget` en cmd:
-    ```bash
-    winget install MSYS.MSYS
-    ```
-Se descargará MSYS en `C:/msys64` por defecto. 
-La mayoría de rutas del proyecto orientado a la compilación con esta herramienta apuntan a este directorio.
 
-2. Abrir MSYS2 MinGW 64-bit shell e instalar el _toolchain_ de MinGW-w64:
-    ```bash
-    pacman -Syu
-    pacman -S mingw-w64-x86_64-toolchain
-    ```
-Se descargará MinGW en `C:/msys64/mingw64` por defecto (tarda un rato).
-Los binarios como `gcc.exe` o `gdb.exe` estarán en la ruta `C:/msys64/mingw64/bin`.
 
 La ruta de mingw64 para los proyectos está definida en el preset de CMakePresets.json:
 ```json
