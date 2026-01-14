@@ -70,11 +70,12 @@ winget install Kitware.CMake
 
 ### TL;DR
     Copia y pega este script para descargar las herramientas de compilación mingw por msys [WIP]:
-    ```cmd
+
+    ```batch
     winget install msys2.msys2
     msys2 -msys -c pacman -Syu
     msys2 -msys -c pacman -S mingw-w64-x86_64-toolchain
-    
+
     ```
 
 # Arquitectura de proyecto
