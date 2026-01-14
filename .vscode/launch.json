@@ -15,7 +15,7 @@
 
     // Configuración para depuración con MSYS y GDB (Compiladores como MinGW o GCC en MSYS2)
     {
-      "name": "🌕 MSYS/MinGW_w64",
+      "name": "🌕 MinGW",
       "type": "cppdbg",
       "request": "launch",
       "program": "${command:cmake.getLaunchTargetPath}",
