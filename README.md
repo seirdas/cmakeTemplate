@@ -21,7 +21,7 @@ Se necesita descargar e instalar **cmake**. Se puede hacer:
 winget install Kitware.CMake
 ```
 
-
+ 
 
 ## Build Tools de Visual Studio (MSVC)
 - [ ] TODO
@@ -29,27 +29,50 @@ winget install Kitware.CMake
 ## MinGW
 1. Se necesita descargar MSYS2. Se puede hacer:
 	- [Desde aquí](https://www.msys2.org) 
-	- Desde `winget` en cmd:
+	- En Windows, desde _cmd_ con la herramienta `winget`:
     ```bash
     winget install MSYS.MSYS
     ```
-Se descargará MSYS en `C:/msys64` por defecto. 
-La mayoría de rutas del proyecto orientado a la compilación con esta herramienta apuntan a este directorio.
+    Se descargará MSYS en `C:/msys64` por defecto. 
+    La mayoría de rutas del proyecto orientado a la compilación con esta herramienta apuntan a este directorio.
 
 2. Abrir MSYS2 MinGW 64-bit shell e instalar el _toolchain_ de MinGW-w64:
     ```bash
     pacman -Syu
     pacman -S mingw-w64-x86_64-toolchain
     ```
-Se descargará MinGW en `C:/msys64/mingw64` por defecto (tarda un rato).
-Los binarios como `gcc.exe` o `gdb.exe` estarán en la ruta `C:/msys64/mingw64/bin`.
+    Va a aparecer una selección de varias dependencias o herramientas de compilación. 
+    ```bash
+    $ pacman -S mingw-w64-x86_64-toolchain
+    :: There are 13 members in group mingw-w64-x86_64-toolchain:
+    :: Repository mingw64
+    1) mingw-w64-x86_64-binutils  
+    2) mingw-w64-x86_64-crt  
+    3) mingw-w64-x86_64-gcc
+    4) mingw-w64-x86_64-gdb  
+    5) mingw-w64-x86_64-gdb-multiarch  
+    6) mingw-w64-x86_64-headers
+    7) mingw-w64-x86_64-libmangle  
+    8) mingw-w64-x86_64-libwinpthread  
+    9) mingw-w64-x86_64-make
+    10) mingw-w64-x86_64-pkgconf  
+    11) mingw-w64-x86_64-tools  
+    12) mingw-w64-x86_64-winpthreads
+    13) mingw-w64-x86_64-winstorecompat
+
+    Enter a selection (default=all):
+    ```
+
+    Por lo general, es más seguro instalar todas (pulsando enter).
+    Se descargará MinGW en `C:/msys64/mingw64` por defecto (tarda un rato).
+    Los binarios como `gcc.exe` o `gdb.exe` estarán en la ruta `C:/msys64/mingw64/bin`.
 
 
 # Arquitectura de proyecto
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares). 
     Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
 - **build**: Se genera automáticamente al configurar el proyecto con un preset específico. 
-    Estos archivos se generan automáticamente, por lo que no hay que tocarlos.
+    Almacenan el proyecto generado desde la configuración (_.sln_ de visual studio o Makefiles)
 - **config**: Archivos de configuración que serán copiados en la misma ruta del ejecutable (como `.json`, `.ini`, etc.).
 - **executable**: Binarios ejecutables (`.exe`) que se generar al hacer un _build_ del proyecto.
 - **include**: Archivos de cabecera (`.h`).

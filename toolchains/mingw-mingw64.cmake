@@ -1,9 +1,8 @@
+# ======================================
 # Toolchain para MSYS2 MinGW-x64.
-#
+# ======================================
 
-set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
-
+message(STATUS "Init MinGW toolchain")
 
 # Añadir mingw al path para poder usar sus dependencias
 set(ENV{PATH} "${MINGW_BIN};$ENV{PATH}")
