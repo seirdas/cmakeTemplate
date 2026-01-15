@@ -1,32 +1,19 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include "functions.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include "defines.h"
 
 #include "winMgr.h"
-
-
 #include <filesystem>
 
 
-int main(int argc, char** argv){
+int main([[maybe_unused]]int argc, char** argv){
 
     // Asegurar directorio del exe (para entorno de desarrollo)
     std::filesystem::current_path(std::filesystem::absolute(argv[0]).parent_path());
-
-
-    WinMgr winMgr;
-
-    winMgr.init();
-    winMgr.run();
-    winMgr.cleanup();
-
-
-
-    // TEST: solo escribir en consola si hay terminal asociada
+    // solo escribir en consola si hay terminal asociada
     #ifdef _WIN32
         if (AttachConsole(ATTACH_PARENT_PROCESS)) {
             freopen("CONOUT$", "w", stdout);
@@ -35,11 +22,12 @@ int main(int argc, char** argv){
             std::cout << "\033[2J\033[1;1H";
         }
     #endif
-    std::cout << std::endl;
-    std::cout << std::filesystem::current_path() << argc << std::endl;
-    std::cout << "Hello" << myFunc() << std::endl;
 
+    WinMgr winMgr;
 
+    winMgr.init();
+    winMgr.run();
+    winMgr.cleanup();
 
 
     // TEST: Hilos

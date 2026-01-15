@@ -59,8 +59,6 @@ void WinMgr::run(){
                 glfwSetWindowShouldClose(window, true);
             }
 
-            Button("Juan Andres");
-
             End();
         }
 
