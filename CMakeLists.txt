@@ -41,7 +41,10 @@ file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
 set(EXTERNAL_PATH ${CMAKE_SOURCE_DIR}/external)
+file(MAKE_DIRECTORY ${EXTERNAL_PATH})
 
+message(STATUS ${CMAKE_SOURCE_DIR})
+message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 # ===============================
@@ -51,9 +54,15 @@ include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)                              # menos salida en consola
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "")  # Evitar que FetchContent vuelva a actualizar el repositorio cada vez
 
+# Forzamos a FetchContent a usar ruta común 
+## set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external")
+message(STATUS "FETCHCONTENT_BASE_DIR en ${FETCHCONTENT_BASE_DIR}")
+
 # ------------------------------
 # LIBRERÍA GRÁFICA CON GLFW + IMGUI + OTRAS DEPENDENCIAS
 # ------------------------------
+
+set(GLOBAL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/external")
 
 # GLFW (Ventanas) ___________________________
 message(STATUS "Fetching GLFW library...")
@@ -61,15 +70,16 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # No construir ejemplos
 set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)    # No construir tests
 set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)    # No construir documentación
 set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)    # No instalar
+if (MSVC)
+  set(GLFW_USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
+endif()
 FetchContent_Declare(
   glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
   GIT_TAG 3.4
   GIT_SHALLOW    TRUE         # habilita --depth 1
+  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/glfw_src"
 )
-if (MSVC)
-  set(GLFW_USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
-endif()
 FetchContent_MakeAvailable(glfw)
 find_package(OpenGL REQUIRED)   # Incluir librería de OpenGL (GLFW la usa para renderizar)
 
@@ -81,13 +91,14 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
   GIT_TAG v1.92.5
   GIT_SHALLOW    TRUE          # habilita --depth 1
+  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/imgui_src"
 )
 FetchContent_MakeAvailable(imgui)
 FetchContent_GetProperties(imgui SOURCE_DIR IMGUI_DIR)
 file(GLOB IMGUI_SOURCES 
-"${IMGUI_DIR}/*.cpp"
-"${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
-"${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp" 
+  "${IMGUI_DIR}/*.cpp"
+  "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp"
+  "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp" 
 )
 
 # Crear librería estática con ImGui + GLFW ____________________________
@@ -97,7 +108,7 @@ target_link_libraries(imgui_lib PUBLIC
   OpenGL::GL          # OpenGL                
   $<$<PLATFORM_ID:Windows>:user32 gdi32 shell32>  # Librerías de sistema en Windows
   )
-target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends) # Directorios propios
+target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)   # Directorios propios
 # target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
 
 # -------------------------------
@@ -225,6 +236,11 @@ if(MSVC)
 
   # Especifica el proyecto principal
   set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+  # 
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    VS_DEBUGGER_COMMAND "$<TARGET_FILE:${PROJECT_NAME}>"
+    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+  )
   # Usar el main normal aunque sea una App de Windows
   set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
   # Agrupar archivos de cabecera, fuente y recursos en carpetas
