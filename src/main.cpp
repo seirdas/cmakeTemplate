@@ -6,14 +6,16 @@
 #include "defines.h"
 
 #include "winMgr.h"
+
+
 #include <filesystem>
 
 
-int main([[maybe_unused]]int argc, char** argv){
+int main([[maybe_unused]] int argc, char** argv){
 
     // Asegurar directorio del exe (para entorno de desarrollo)
     std::filesystem::current_path(std::filesystem::absolute(argv[0]).parent_path());
-    // solo escribir en consola si hay terminal asociada
+    // Solo escribir en consola si hay terminal asociada
     #ifdef _WIN32
         if (AttachConsole(ATTACH_PARENT_PROCESS)) {
             freopen("CONOUT$", "w", stdout);
@@ -23,11 +25,22 @@ int main([[maybe_unused]]int argc, char** argv){
         }
     #endif
 
-    WinMgr winMgr;
 
-    winMgr.init();
-    winMgr.run();
-    winMgr.cleanup();
+
+    WinMgr win;
+
+    if (!win.init())
+        return -1;
+
+    // Bucle principal
+    while (win.isRunning())
+    {
+        win.frame();
+    }
+
+    win.close();
+
+
 
 
     // TEST: Hilos

@@ -1,24 +1,17 @@
 #pragma once
 
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h>
+struct GLFWwindow;
 
-using namespace ImGui;
-
-// Gestión de ventanas
-class WinMgr{
+class WinMgr
+{
 public:
-    WinMgr();
-    ~WinMgr();
+    bool init();
+    void frame();
+    void close();
 
-    void init();
-    void run();
-    void cleanup();
-
+    bool isRunning() const;
 
 private:
-    GLFWwindow* window;
+    GLFWwindow* window = nullptr;
 
 };
