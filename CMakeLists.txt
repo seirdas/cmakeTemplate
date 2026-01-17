@@ -89,7 +89,7 @@ message(STATUS "Fetching ImGui library...")
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG v1.92.5
+  GIT_TAG v1.92.5-docking      # o la versión que necesites
   GIT_SHALLOW    TRUE          # habilita --depth 1
   SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/imgui_src"
 )
