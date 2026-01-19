@@ -4,6 +4,22 @@
 
 message(STATUS "Init MinGW toolchain")
 
+# Buscar si Mingw existe en las rutas comunes
+if(NOT EXISTS "${MINGW_BIN}/gcc.exe")
+  message(STATUS "MINGW_PATH not found in preset's provided path, searching common paths...")
+  if(EXISTS "C:/msys64/mingw64/bin/g++.exe")
+    set(MINGW_PATH "C:/msys64/mingw64")
+  elseif(EXISTS "C:/mingw-w64/mingw64/bin/g++.exe")
+    set(MINGW_PATH "C:/mingw-w64/mingw64")
+  elseif(EXISTS "C:/mingw64/bin/g++.exe")
+    set(MINGW_PATH "C:/mingw64")
+  else()
+    message(FATAL_ERROR "Mingw installation not found. Please define MINGW_PATH in MinGW CMake configuration preset.")
+  endif()
+endif()
+set(MINGW_PATH "${MINGW_PATH}" CACHE STRING "MinGW installation path" FORCE)
+set(MINGW_BIN "${MINGW_PATH}/bin" CACHE STRING "MinGW binary path" FORCE)
+
 # Añadir mingw al path para poder usar sus dependencias
 set(ENV{PATH} "${MINGW_BIN};$ENV{PATH}")
 set(MINGW_PATH "${MINGW_PATH}" CACHE STRING "MinGW installation path" FORCE)

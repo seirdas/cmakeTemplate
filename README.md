@@ -8,6 +8,22 @@
 - [x] ~~El nombre de proyecto lo toma directamente del nombre de la carpeta~~
 ---
 
+
+# Arquitectura de proyecto
+- **.vscode**: Archivos de configuración para Visual Studio Code (o similares). 
+    Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
+- **build**: Se genera automáticamente al configurar el proyecto con un preset específico. 
+    Almacenan el proyecto generado desde la configuración (_.sln_ de visual studio o Makefiles)
+- **config**: Archivos de configuración que serán copiados en la misma ruta del ejecutable (como `.json`, `.ini`, etc.).
+- **executable**: Binarios ejecutables (`.exe`) que se generar al hacer un _build_ del proyecto.
+- **include**: Archivos de cabecera (`.h`).
+- **resources**: Imágenes, iconos, etc. para usar en el proyecto. 
+    Incluye el `resources.h` y el `resources.rc` que se compilan con el proyecto.
+- **src**: Archivos de código fuente (`.cpp`).
+- **toolchains**: Archivos de cmake específicos para distinguir tipos de compilaciones (MSVC, MinGW).
+- **Archivos cMake**: Incluye `CMakeLists.txt` para cmake y `CMakePresets.json` para presets de cmake. 
+
+
 # Dependencias (Qué hay que instalar)
 ## CMake
 Este proyecto utiliza CMake, una herramienta de automatización de compilación multiplataforma que simplifica el proceso de configuración y generación de archivos de construcción. Gracias a su capacidad para gestionar las dependencias y diferentes configuraciones del entorno, CMake facilita la compilación del proyecto en (y para) múltiples sistemas operativos. 
@@ -71,26 +87,12 @@ winget install Kitware.CMake
 ### TL;DR
 - Copia y pega este script en un cmd (con permisos de administrador) para descargar las herramientas de compilación mingw por msys [WIP]:
 
-```bash
-winget install msys2.msys2
-msys2 -msys -c pacman -Syu
-msys2 -msys -c pacman -S mingw-w64-x86_64-toolchain
+    ```bash
+    winget install msys2.msys2
+    C:\msys64\msys2.exe -msys -c "pacman -Syu"
+    C:\msys64\msys2.exe -msys -c "pacman -S mingw-w64-x86_64-toolchain"
 
-```
-
-# Arquitectura de proyecto
-- **.vscode**: Archivos de configuración para Visual Studio Code (o similares). 
-    Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
-- **build**: Se genera automáticamente al configurar el proyecto con un preset específico. 
-    Almacenan el proyecto generado desde la configuración (_.sln_ de visual studio o Makefiles)
-- **config**: Archivos de configuración que serán copiados en la misma ruta del ejecutable (como `.json`, `.ini`, etc.).
-- **executable**: Binarios ejecutables (`.exe`) que se generar al hacer un _build_ del proyecto.
-- **include**: Archivos de cabecera (`.h`).
-- **resources**: Imágenes, iconos, etc. para usar en el proyecto. 
-    Incluye el `resources.h` y el `resources.rc` que se compilan con el proyecto.
-- **src**: Archivos de código fuente (`.cpp`).
-- **toolchains**: Archivos de cmake específicos para distinguir tipos de compilaciones (MSVC, MinGW).
-- **Archivos cMake**: Incluye `CMakeLists.txt` para cmake y `CMakePresets.json` para presets de cmake. 
+    ```
 
 
 # Generación de proyectos
