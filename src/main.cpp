@@ -1,19 +1,19 @@
 #include <iostream>
-#include <thread>
-#include <chrono>
-#include <nlohmann/json.hpp>
-#include <fstream>
+#include <thread>               // Hilos
+#include <chrono>   
+#include <fstream>              // Gestiona archivos
+#include <filesystem>           // Controla directorios, rutas, etc.
+#include <nlohmann/json.hpp>    // Manipula archivos .json
 #include "defines.h"
-
 #include "winMgr.h"
 
 
-#include <filesystem>
 
 
-int main([[maybe_unused]] int argc, char** argv){
 
-    // Asegurar directorio del exe (para entorno de desarrollo)
+int main(int /*argc*/, char** argv){
+
+    // Asegurar directorio del exe (para archivos de entorno de desarrollo)
     std::filesystem::current_path(std::filesystem::absolute(argv[0]).parent_path());
     // Solo escribir en consola si hay terminal asociada
     #ifdef _WIN32
@@ -27,18 +27,14 @@ int main([[maybe_unused]] int argc, char** argv){
 
 
 
-    WinMgr win;
-
-    if (!win.init())
+    WinMgr ventana;
+    if (!ventana.init())
         return -1;
-
-    // Bucle principal
-    while (win.isRunning())
-    {
-        win.frame();
-    }
-
-    win.close();
+    
+    while (ventana.isRunning())
+        ventana.frame();
+    
+    ventana.close();
 
 
 
