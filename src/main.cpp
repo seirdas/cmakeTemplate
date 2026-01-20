@@ -1,14 +1,11 @@
-#include <iostream>
+#include <iostream>             // Entrada/Salida estándar
 #include <thread>               // Hilos
-#include <chrono>   
+#include <chrono>               // Controla tiempos de espera
 #include <fstream>              // Gestiona archivos
 #include <filesystem>           // Controla directorios, rutas, etc.
 #include <nlohmann/json.hpp>    // Manipula archivos .json
-#include "defines.h"
-#include "winMgr.h"
-
-
-
+#include "defines.h"            // Definiciones generales
+#include "winMgr.h"             // Clase winMgr de gestión de ventanas
 
 
 int main(int /*argc*/, char** argv){
@@ -32,7 +29,7 @@ int main(int /*argc*/, char** argv){
         return -1;
     
     while (ventana.isRunning())
-        ventana.frame();
+        ventana.CuadroPrincipal();
     
     ventana.close();
 

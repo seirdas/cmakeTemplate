@@ -17,13 +17,8 @@
 
 using namespace ImGui;
 
-// General ---------------------------------------------------------------------
+// General ------------------------------------------------------------------------------
 
-
-// Inicialización -----------------------------------------------------------------
-
-///@brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.
-///https://github.com/ocornut/imgui/wiki/Getting-Started#example-if-you-are-using-glfw--openglwebgl
 bool WinMgr::init() {
     if (!glfwInit()) return false;
 
@@ -66,39 +61,6 @@ bool WinMgr::init() {
     return true;
 }
 
-
-void WinMgr::StartFrame(){
-    glfwPollEvents();
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-}
-
-
-
-void WinMgr::frame() {
-
-    StartFrame();
-
-
-    ShowDemoWindow();
-
-    Begin("Panel Flotante"); 
-    Text("Soy un panel real.");
-
-	DibujarSidebar();
-	Style_VisualStudio();
-    
-    if (Button("Cerrar App")) {
-        glfwSetWindowShouldClose(window, true);
-    }
-    End();
-
-
-    renderizar();
-}
-
 void WinMgr::renderizar(){
     // Renderiza
     ImGui::Render();
@@ -110,9 +72,14 @@ void WinMgr::renderizar(){
     glfwSwapBuffers(window);
 }
 
+void WinMgr::initCuadro(){
+    glfwPollEvents();
 
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+}
 
-//@brief Limpieza de recursos
 void WinMgr::close() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -127,18 +94,50 @@ void WinMgr::close() {
     glfwTerminate();
 }
 
-
 bool WinMgr::isRunning() const
 {
     return window && !glfwWindowShouldClose(window);
 }
 
 
+// Bucle principal ----------------------------------------------------------------------
+
+void WinMgr::CuadroPrincipal() {
+    initCuadro();
+	// ======= Contenido de la ventana =======
+
+	Style_VisualStudio();
+    ShowDemoWindow();
+	ShowMetricsWindow();
+
+	Begin("Ventana");
+	Text("Hola culo");
+	Button("¡Presióname!");
+	End();
+	
+	// ======================================
+    renderizar();
+}
+
+
+/// -----------------------------------------------------
+/// INFORMACIÓN
+/// -------------------------------------
+
+//
+//	# Configuraciones de ventana
+//	- Buscar en imgui.h -> ImGuiWindowFlags_
+//  - Añadir en una variable: ImGuiWindowFlags window_flags = *********************;
+//	- Añadir a la ventana (en Begin("", nullptr, window_flags); )
+// 
+
 void WinMgr::DibujarSidebar() {
-    // Definimos flags para quitar la barra, el redimensionado y el movimiento
+
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | 
                                     ImGuiWindowFlags_NoMove | 
-                                    ImGuiWindowFlags_NoCollapse;
+                                    ImGuiWindowFlags_NoCollapse |
+									ImGuiWindowFlags_NoResize |
+									ImGuiWindowFlags_NoScrollbar;
 
     // Posicionamos la ventana en el extremo superior izquierdo (0,0)
     ImGui::SetNextWindowPos(ImVec2(0, 0));
@@ -196,9 +195,9 @@ void WinMgr::DibujarSidebar() {
     End();
 }
 
-// =======
-// Themes
-// =======
+
+
+// Temas --------------------------------------------------------------------------------
 
 ///@brief Comfy style by Giuseppe from ImThemes
 void WinMgr::Style_Confy(){
@@ -289,8 +288,8 @@ void WinMgr::Style_Confy(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.8f, 0.8f, 0.8f, 0.35f);
 }
 
+/// @brief Future Dark style by rewrking from ImThemes
 void WinMgr::Style_FutureDark(){
-    // Future Dark style by rewrking from ImThemes
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -378,8 +377,8 @@ void WinMgr::Style_FutureDark(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.19607843f, 0.1764706f, 0.54509807f, 0.5019608f);
 }
 
+/// @brief Moonlight style by rewrking from ImThemes
 void WinMgr::Style_Moonlight(){
-    // Moonlight style by Madam-Herta from ImThemes
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
