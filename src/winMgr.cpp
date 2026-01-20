@@ -38,7 +38,7 @@ bool WinMgr::init() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
     // Creación de ventana
-    window = glfwCreateWindow(sizeX, sizeY, "Demo", NULL, NULL);
+    window = glfwCreateWindow(sizeX, sizeY, AppName.c_str(), NULL, NULL);
     if(!window) {
         glfwTerminate();
         std::cerr << "Error al crear la ventana GLFW" << std::endl;
@@ -58,6 +58,7 @@ bool WinMgr::init() {
 
     // Configuración de estilo
     ImGui::StyleColorsDark();
+	Style_VisualStudio();
 
     // Tomar la ventana (para modificar cosas)
     #ifdef _WIN32
@@ -127,14 +128,13 @@ void WinMgr::endCuadro(){
 
 void WinMgr::BuclePrincipal() {
     initCuadro();
-	// ======= Contenido de la ventana =======
+    //ShowDemoWindow();     // Ventana de demostración
+	//ShowMetricsWindow();  // Ventana de métricas
 
-    ShowDemoWindow();
-	ShowMetricsWindow();
-
-    ImGuiWindowFlags window_flags =
-        ImGuiConfigFlags_DockingEnable|
-        ImGuiWindowFlags_NoCollapse;
+	// vvvvvvvvv Contenido de la ventana vvvvvvvvv
+    
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
+                                    ImGuiWindowFlags_NoCollapse;
     ImGui::Begin("Ventana Principal", nullptr, window_flags);
     ImGui::BeginGroup();
         ImGui::Text("Hola, mundo!");
@@ -142,8 +142,8 @@ void WinMgr::BuclePrincipal() {
     ImGui::EndGroup();
     End();
 	
-	Style_VisualStudio();
-	// ======================================
+	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
     endCuadro();
 }
 

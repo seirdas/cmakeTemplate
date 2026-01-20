@@ -29,9 +29,9 @@ int main(int /*argc*/, char** argv){
         return -1;
     
     while (ventana.isRunning())
-        ventana.CuadroPrincipal();
+        ventana.BuclePrincipal();
     
-    ventana.close();
+    ventana.cerrar();
 
 
 
