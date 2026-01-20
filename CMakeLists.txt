@@ -220,7 +220,7 @@ if (WIN32)
     oleaut32    # Automatización OLE
     uuid        # Soporte para GUIDs y UUIDs
     version     # Información de versión de archivos ejecutables
-    dwmapi
+    dwmapi      # Integración con el gestor de ventanas DWM
    )
 endif()
 
