@@ -185,8 +185,45 @@ add_library(miniaudio_lib STATIC
 )
 target_include_directories(miniaudio_lib PUBLIC ${miniaudio_SOURCE_DIR})
 target_link_libraries(miniaudio_lib PUBLIC
-  $<$<PLATFORM_ID:Windows>:winmm>
+  $<$<PLATFORM_ID:Windows>:winmm>  
+  $<$<PLATFORM_ID:Linux>:pthread dl m>
 )
+
+# -------------------------------
+# Librería DaisySP (DSP)
+# -------------------------------
+
+message(STATUS "Fetching DaisySP library...")
+
+FetchContent_Declare(
+  daisysp
+  GIT_REPOSITORY https://github.com/electro-smith/DaisySP.git
+  GIT_TAG        V1.0.0
+  GIT_SHALLOW    TRUE
+  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/daisysp_src"
+  EXCLUDE_FROM_ALL TRUE
+)
+FetchContent_MakeAvailable(daisysp)
+
+file(GLOB_RECURSE DAISYSP_SOURCES
+  "${daisysp_SOURCE_DIR}/Source/*.cpp"
+)
+# Crear una librería estática con DaisySP
+add_library(daisysp_lib STATIC ${DAISYSP_SOURCES})
+target_compile_definitions(daisysp_lib PUBLIC
+  DAISYSP_DESKTOP=1   # Supone entorno de escritorio, no sistema embebido
+)
+target_include_directories(daisysp_lib PUBLIC
+  "${daisysp_SOURCE_DIR}/Include"
+)
+if (MSVC)
+  target_compile_options(daisysp_lib PRIVATE /fp:fast)
+else()
+  target_compile_options(daisysp_lib PRIVATE -ffast-math)
+endif()
+
+
+
 
 
 
@@ -208,6 +245,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   asio_lib      # Librería creada con Asio + Winsock2 (Windows)
   nlohmann_json # Librería creada con nlohmann/json
   miniaudio_lib # Librería creada con Miniaudio + winmm (Windows)
+  daisysp_lib   # Librería creada con DaisySP ()
 )
 
 
