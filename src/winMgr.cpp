@@ -4,6 +4,7 @@
 // de la clase imgui de dialogo
 #include <GLFW/glfw3.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #ifdef _WIN32
@@ -14,6 +15,7 @@
 #endif
 #include "resources.h"  // icono
 
+using namespace ImGui;
 
 // General ---------------------------------------------------------------------
 
@@ -26,13 +28,10 @@ bool WinMgr::init() {
     if (!glfwInit()) return false;
 
     // 1. Configuración de la ventana GLFW para que sea un "lienzo" invisible
-    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);      // Sin bordes (WS_POPUP)
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Fondo transparente
-    glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);        // Siempre encima (TOPMOST)
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);      // Evitar cambios raros de tamaño
 
     // Creamos la ventana al tamaño de la pantalla o el que desees
-    window = glfwCreateWindow(1280, 720, "Overlay", NULL, NULL);
+    window = glfwCreateWindow(1280, 720, "Demo", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -42,7 +41,7 @@ bool WinMgr::init() {
     ImGuiIO& io = ImGui::GetIO(); (void)io; // No usar
     io.IniFilename = NULL;  // No usar archivo .ini de imgui
 
-        // Cargar fuente personalizada
+    // Cargar fuente personalizada
     io.Fonts->AddFontFromFileTTF("Archivo-Medium.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesDefault());
 
     // Configuración de estilo
@@ -59,7 +58,7 @@ bool WinMgr::init() {
 
         // Cambiar color de la barra de titulo (2)
         BOOL useDarkMode = TRUE;
-        DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
+        DwmSetWindowAttribute(hwnd, 20, &useDarkMode, sizeof(useDarkMode));
     #endif
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -76,6 +75,30 @@ void WinMgr::StartFrame(){
     ImGui::NewFrame();
 }
 
+
+
+void WinMgr::frame() {
+
+    StartFrame();
+
+
+    ShowDemoWindow();
+
+    Begin("Panel Flotante"); 
+    Text("Soy un panel real.");
+
+	DibujarSidebar();
+	Style_VisualStudio();
+    
+    if (Button("Cerrar App")) {
+        glfwSetWindowShouldClose(window, true);
+    }
+    End();
+
+
+    renderizar();
+}
+
 void WinMgr::renderizar(){
     // Renderiza
     ImGui::Render();
@@ -85,29 +108,6 @@ void WinMgr::renderizar(){
 
     // Intercambia los buffers
     glfwSwapBuffers(window);
-}
-
-void WinMgr::frame() {
-
-    StartFrame();
-
-
-    ImGui::ShowDemoWindow();
-
-    ImGui::Begin("Panel Flotante"); 
-    ImGui::Text("Soy un panel real.");
-    
-    if (ImGui::Button("Cerrar App")) {
-        glfwSetWindowShouldClose(window, true);
-    }
-    ImGui::End();
-
-    
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    glfwSwapBuffers(window);
-
-    renderizar();
 }
 
 
@@ -145,30 +145,55 @@ void WinMgr::DibujarSidebar() {
     
     // Forzamos el tamaño: ancho fijo (ej. 200px) y alto total de la pantalla
     float ancho_sidebar = 200.0f;
-    ImGui::SetNextWindowSize(ImVec2(ancho_sidebar, ImGui::GetIO().DisplaySize.y));
+    ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ancho_sidebar));
 
-    ImGui::SetNextWindowSizeConstraints(
-        ImVec2(150, ImGui::GetIO().DisplaySize.y), 
-        ImVec2(500, ImGui::GetIO().DisplaySize.y)
-    );
+    // ImGui::SetNextWindowSizeConstraints(
+    //     ImVec2(150, ImGui::GetIO().DisplaySize.y), 
+    //     ImVec2(500, ImGui::GetIO().DisplaySize.y)
+    // );
 
     // El nombre "Sidebar" es interno, no se verá porque quitamos la barra
-    ImGui::Begin("Sidebar", nullptr, window_flags);
+    Begin("Sidebar", nullptr, window_flags);
 
-    ImGuiStyle& style = ImGui::GetStyle();
-    // Color del borde de la ventana cuando pasas el ratón por encima para redimensionar
-    style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f); 
-    style.SeparatorTextBorderSize = 2.0f;
+	BeginGroup();
 
-    if(ImGui::Button("\uf186")) { 
-        /* Acción */
-    }
-    ImGui::Text("MENÚ");
-    ImGui::Separator();
-    if (ImGui::Button("Inicio", ImVec2(-1, 40))) { /* Acción */ }
-    if (ImGui::Button("Ajustes", ImVec2(-1, 40))) { /* Acción */ }
+		if(Button("\uf186")) { 
+			/* Acción */
+		}
+		Text("MENÚ");
 
-    ImGui::End();
+
+
+		Separator();
+		if (Button("Inicio", ImVec2(-1, 40))) { /* Acción */ }
+		if (Button("Ajustes", ImVec2(-1, 40))) { /* Acción */ }
+
+	EndGroup();
+
+	// Iniciamos una línea horizontal
+	BeginGroup();
+		// BOTÓN 1: Grupo vertical
+		BeginGroup();
+			Text("Ajustes"); 
+			Button("\uf013", ImVec2(40, 40)); // Icono de engranaje
+		EndGroup();
+	
+
+		
+		
+		// SEPARADOR VERTICAL
+		// Importante: El separador vertical necesita espacio para dibujarse
+		SeparatorEx(ImGuiSeparatorFlags_Vertical); 
+		
+		SameLine();
+
+		// BOTÓN 2: Grupo vertical
+		BeginGroup();
+			Text("Perfil");
+		EndGroup();
+	EndGroup();
+
+    End();
 }
 
 // =======
@@ -205,7 +230,6 @@ void WinMgr::Style_Confy(){
 	style.GrabRounding = 5.0f;
 	style.TabRounding = 5.0f;
 	style.TabBorderSize = 0.0f;
-	style.TabMinWidthForCloseButton = 0.0f;
 	style.ColorButtonPosition = ImGuiDir_Right;
 	style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
 	style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
@@ -474,7 +498,6 @@ void WinMgr::Style_VisualStudio()
 	style.GrabRounding = 2.0f;
 	style.TabRounding = 3.5f;
 	style.TabBorderSize = 0.0f;
-	style.TabMinWidthForCloseButton = 0.0f;
 	style.ColorButtonPosition = ImGuiDir_Right;
 	style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
 	style.SelectableTextAlign = ImVec2(0.0f, 0.0f);

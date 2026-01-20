@@ -16,11 +16,13 @@ private:
 
     void renderizar();
     void DibujarSidebar();
+    void StartFrame();
 
 // Themes _______________________________-
 private:
     void Style_Confy();
     void Style_FutureDark();
     void Style_Moonlight();
+    void Style_VisualStudio();
 
 };
