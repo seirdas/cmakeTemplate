@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 struct GLFWwindow;
 
 class WinMgr
@@ -13,30 +15,43 @@ public:
     /// @brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.
     bool init();
 
-    /// @brief Renderiza el contenido de ImGui en la ventana.
-    void renderizar();
-
-    /// @brief Inicia un nuevo frame de ImGui.
-    void initCuadro();
-    
-    /// @brief Cierra la ventana y libera los recursos asociados.
-    void close();
-
     /// @brief Comprueba si la ventana sigue abierta.
     /// @return	True si la ventana está abierta, false si se ha cerrado.
     bool isRunning() const;
 
+    /// @brief Cierra la ventana y libera los recursos asociados.
+    void cerrar();
+
 private:
+    /// @brief Inicia un nuevo frame de ImGui.
+    void initCuadro();
+
+    /// @brief Renderiza el contenido de ImGui en la ventana.
+    void endCuadro();
+
+    // Nombre de la aplicación/ventana
+    std::string AppName = "Demo";
+
+    // Tamaño de la ventana
+    unsigned int sizeX = 1280;
+    unsigned int sizeY = 720;
+
+    // Color de fondo RGBA
+    float clearColor[4] = {0.45f, 0.55f, 0.60f, 1.00f};
+
+    // Fuente personalizada
+    std::string customFont = "Archivo-Medium.ttf";
+    unsigned int fontSize = 18;
 
     // Puntero a la ventana GLFW
     GLFWwindow* window = nullptr;
 
 // Bucle principal ----------------------------------------------------------------------
 public:
-
     /// @brief Actualiza y renderiza un frame de la ventana.
-    void CuadroPrincipal();
+    void BuclePrincipal();
 
+private:
     /// @brief Dibuja una barra lateral fija en la ventana.
     void DibujarSidebar();
 

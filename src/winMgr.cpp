@@ -1,5 +1,13 @@
 
+/// ------------------------------- INFORMACIÓN -------------------------------------
+//	# Configuraciones de ventana
+//	- Buscar en imgui.h -> ImGuiWindowFlags_
+//  - Añadir en una variable: ImGuiWindowFlags window_flags = *********************;
+//	- Añadir a la ventana (en Begin("", nullptr, window_flags); )
+// ---------------------------------------------------------------------------------
+
 #include "winMgr.h"
+#include <iostream>
 
 // de la clase imgui de dialogo
 #include <GLFW/glfw3.h>
@@ -19,14 +27,23 @@ using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
+// Public methods
+
 bool WinMgr::init() {
     if (!glfwInit()) return false;
 
-    // 1. Configuración de la ventana GLFW para que sea un "lienzo" invisible
+    // 1. Configuración de la ventana GLFW
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Fondo transparente
+    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);               // Bordes y barra de título
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
-    // Creamos la ventana al tamaño de la pantalla o el que desees
-    window = glfwCreateWindow(1280, 720, "Demo", NULL, NULL);
+    // Creación de ventana
+    window = glfwCreateWindow(sizeX, sizeY, "Demo", NULL, NULL);
+    if(!window) {
+        glfwTerminate();
+        std::cerr << "Error al crear la ventana GLFW" << std::endl;
+        return false;
+    }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -37,7 +54,7 @@ bool WinMgr::init() {
     io.IniFilename = NULL;  // No usar archivo .ini de imgui
 
     // Cargar fuente personalizada
-    io.Fonts->AddFontFromFileTTF("Archivo-Medium.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesDefault());
+    io.Fonts->AddFontFromFileTTF(customFont.c_str(), fontSize, NULL, io.Fonts->GetGlyphRangesDefault());
 
     // Configuración de estilo
     ImGui::StyleColorsDark();
@@ -61,26 +78,12 @@ bool WinMgr::init() {
     return true;
 }
 
-void WinMgr::renderizar(){
-    // Renderiza
-    ImGui::Render();
-    glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // Intercambia los buffers
-    glfwSwapBuffers(window);
+bool WinMgr::isRunning() const
+{
+    return window && !glfwWindowShouldClose(window);
 }
 
-void WinMgr::initCuadro(){
-    glfwPollEvents();
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-}
-
-void WinMgr::close() {
+void WinMgr::cerrar() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -94,42 +97,57 @@ void WinMgr::close() {
     glfwTerminate();
 }
 
-bool WinMgr::isRunning() const
-{
-    return window && !glfwWindowShouldClose(window);
+
+// Private methods
+
+void WinMgr::initCuadro(){
+    glfwPollEvents();
+    
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
 }
+
+void WinMgr::endCuadro(){
+    // Renderiza
+    ImGui::Render();
+    glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    // Intercambia los buffers
+    glfwSwapBuffers(window);
+}
+
 
 
 // Bucle principal ----------------------------------------------------------------------
 
-void WinMgr::CuadroPrincipal() {
+// public methods
+
+void WinMgr::BuclePrincipal() {
     initCuadro();
 	// ======= Contenido de la ventana =======
 
-	Style_VisualStudio();
     ShowDemoWindow();
 	ShowMetricsWindow();
 
-	Begin("Ventana");
-	Text("Hola culo");
-	Button("¡Presióname!");
-	End();
+    ImGuiWindowFlags window_flags =
+        ImGuiConfigFlags_DockingEnable|
+        ImGuiWindowFlags_NoCollapse;
+    ImGui::Begin("Ventana Principal", nullptr, window_flags);
+    ImGui::BeginGroup();
+        ImGui::Text("Hola, mundo!");
+
+    ImGui::EndGroup();
+    End();
 	
+	Style_VisualStudio();
 	// ======================================
-    renderizar();
+    endCuadro();
 }
 
-
-/// -----------------------------------------------------
-/// INFORMACIÓN
-/// -------------------------------------
-
-//
-//	# Configuraciones de ventana
-//	- Buscar en imgui.h -> ImGuiWindowFlags_
-//  - Añadir en una variable: ImGuiWindowFlags window_flags = *********************;
-//	- Añadir a la ventana (en Begin("", nullptr, window_flags); )
-// 
+// private methods
 
 void WinMgr::DibujarSidebar() {
 
