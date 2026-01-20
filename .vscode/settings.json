@@ -5,6 +5,7 @@
 
     // No se pueden poner comentarios en la generación manual por comandos
     "cmake.allowCommentsInPresetsFile": false,
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
 
     // Cambiar si cmake está instalado en otro sitio
     "cmake.cmakePath": "cmake",
