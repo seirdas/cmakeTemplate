@@ -38,9 +38,8 @@ winget install Kitware.CMake
 ```
 
  
-
 ## Build Tools de Visual Studio (MSVC)
-- [ ] TODO
+La forma más sencilla de instalar las herramientas de compilación de Visual Studio es instalar el IDE de Visual Studio. La versión instalada corresponderá con las herramientas de compilación corresponderá con la versión instalada (VS2019, VS2022, VS2026...)
 
 ## MinGW
 1. Se necesita descargar MSYS2. Se puede hacer:
