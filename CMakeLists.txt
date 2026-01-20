@@ -79,6 +79,7 @@ FetchContent_Declare(
   GIT_TAG 3.4
   GIT_SHALLOW    TRUE         # habilita --depth 1
   SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/glfw_src"
+  EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(glfw)
 find_package(OpenGL REQUIRED)   # Incluir librería de OpenGL (GLFW la usa para renderizar)
@@ -92,6 +93,7 @@ FetchContent_Declare(
   GIT_TAG v1.92.5-docking      # o la versión que necesites
   GIT_SHALLOW    TRUE          # habilita --depth 1
   SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/imgui_src"
+  EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(imgui)
 FetchContent_GetProperties(imgui SOURCE_DIR IMGUI_DIR)
@@ -107,7 +109,7 @@ target_link_libraries(imgui_lib PUBLIC
   glfw                # GLFW
   OpenGL::GL          # OpenGL                
   $<$<PLATFORM_ID:Windows>:user32 gdi32 shell32>  # Librerías de sistema en Windows
-  )
+)
 target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)   # Directorios propios
 # target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
 
@@ -121,6 +123,8 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
     GIT_TAG asio-1-36-0
     GIT_SHALLOW    TRUE        # habilita --depth 1
+    SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/asio_src"
+    EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(asio_network)
 # Crear una librería estática de red + Vincular con Winsock2 en Windows
@@ -171,6 +175,8 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/mackron/miniaudio.git
   GIT_TAG        0.11.23          # o la versión que necesites
   GIT_SHALLOW    TRUE            # habilita --depth 1
+  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/miniaudio_src"
+  EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(miniaudio)
 # Crear una librería estática con Miniaudio
