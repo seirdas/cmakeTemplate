@@ -194,7 +194,7 @@ target_link_libraries(miniaudio_lib PUBLIC
 # -------------------------------
 
 message(STATUS "Fetching DaisySP library...")
-
+set(BUILD_DAISYSP_EXAMPLES  OFF CACHE BOOL "" FORCE)    # No construir ejemplos
 FetchContent_Declare(
   daisysp
   GIT_REPOSITORY https://github.com/electro-smith/DaisySP.git
@@ -206,12 +206,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(daisysp)
 
 file(GLOB_RECURSE DAISYSP_SOURCES
-  "${daisysp_SOURCE_DIR}/Source/*.cpp"
+  "${daisysp_SOURCE_DIR}/DaisySP-LGPL/Source/*.cpp"
 )
 # Crear una librería estática con DaisySP
 add_library(daisysp_lib STATIC ${DAISYSP_SOURCES})
 target_compile_definitions(daisysp_lib PUBLIC
   DAISYSP_DESKTOP=1   # Supone entorno de escritorio, no sistema embebido
+  _USE_MATH_DEFINES
 )
 target_include_directories(daisysp_lib PUBLIC
   "${daisysp_SOURCE_DIR}/Include"
@@ -221,7 +222,9 @@ if (MSVC)
 else()
   target_compile_options(daisysp_lib PRIVATE -ffast-math)
 endif()
-
+target_link_libraries(daisysp_lib PRIVATE
+    $<$<PLATFORM_ID:Linux>:asound>
+)
 
 
 
