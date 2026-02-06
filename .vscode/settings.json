@@ -58,5 +58,10 @@
     "telemetry.editStats.enabled": false,
     "telemetry.editStats.showStatusBar": false,
     "telemetry.feedback.enabled": false,
+
+    // Habilita zoom con Ctrl+wheel
     "editor.mouseWheelZoom": true,
+
+    // Formato comentarios doxygen
+    "C_Cpp.doxygen.generatedStyle": "/**"
 }
