@@ -43,9 +43,6 @@ file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
 set(EXTERNAL_PATH ${CMAKE_SOURCE_DIR}/external)
 file(MAKE_DIRECTORY ${EXTERNAL_PATH})
 
-message(STATUS ${CMAKE_SOURCE_DIR})
-message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})
-
 
 # ===============================
 # Librerías externas
@@ -62,7 +59,7 @@ message(STATUS "FETCHCONTENT_BASE_DIR en ${FETCHCONTENT_BASE_DIR}")
 # LIBRERÍA GRÁFICA CON GLFW + IMGUI + OTRAS DEPENDENCIAS
 # ------------------------------
 
-set(GLOBAL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/external")
+set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/external")
 
 # GLFW (Ventanas) ___________________________
 message(STATUS "Fetching GLFW library...")
@@ -73,12 +70,19 @@ set(GLFW_INSTALL        OFF CACHE BOOL "" FORCE)    # No instalar
 if (MSVC)
   set(GLFW_USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
 endif()
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/CMakeLists.txt")
+  message(STATUS "Using local GLFW source")
+  set(FETCHCONTENT_SOURCE_DIR_GLFW
+      "${EXTERNAL_LIB_PATH}/glfw_src"
+      CACHE PATH "" FORCE)
+endif()
 FetchContent_Declare(
   glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
   GIT_TAG 3.4
   GIT_SHALLOW    TRUE         # habilita --depth 1
-  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/glfw_src"
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/glfw_src"
   EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(glfw)
@@ -87,12 +91,19 @@ find_package(OpenGL REQUIRED)   # Incluir librería de OpenGL (GLFW la usa para 
 
 # IMGUI (Interfaz) ___________________________
 message(STATUS "Fetching ImGui library...")
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_src/.github")
+  message(STATUS "Using local IMGUI source")
+  set(FETCHCONTENT_SOURCE_DIR_IMGUI
+      "${EXTERNAL_LIB_PATH}/imgui_src"
+      CACHE PATH "" FORCE)
+endif()
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
   GIT_TAG v1.92.5-docking      # o la versión que necesites
   GIT_SHALLOW    TRUE          # habilita --depth 1
-  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/imgui_src"
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imgui_src"
   EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(imgui)
@@ -118,12 +129,19 @@ target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends) 
 # -------------------------------
 
 # Asio (Red - Standalone)
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.github")
+  message(STATUS "Using local asio source")
+  set(FETCHCONTENT_SOURCE_DIR_ASIO_NETWORK
+      "${EXTERNAL_LIB_PATH}/asio_src"
+      CACHE PATH "" FORCE)
+endif()
 FetchContent_Declare(
     asio_network
     GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
     GIT_TAG asio-1-36-0
     GIT_SHALLOW    TRUE        # habilita --depth 1
-    SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/asio_src"
+    SOURCE_DIR     "${EXTERNAL_LIB_PATH}/asio_src"
     EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(asio_network)
@@ -141,12 +159,12 @@ target_link_libraries(asio_lib INTERFACE
 
 # Descarga el archivo json.hpp del último commit de github (si no existe)
 # Se podría hacer también con el FetchContent pero tarda más
-file(MAKE_DIRECTORY ${EXTERNAL_PATH}/nlohmann)
-if (NOT EXISTS ${EXTERNAL_PATH}/nlohmann/json.hpp)
+file(MAKE_DIRECTORY ${EXTERNAL_LIB_PATH}/nlohmann)
+if (NOT EXISTS ${EXTERNAL_LIB_PATH}/nlohmann/json.hpp)
   message(STATUS "Downloading lastest release of nlohmann/json.hpp...")
   file(DOWNLOAD 
     "https://github.com/nlohmann/json/releases/latest/download/json.hpp"
-    "${EXTERNAL_PATH}/nlohmann/json.hpp"
+    "${EXTERNAL_LIB_PATH}/nlohmann/json.hpp"
     STATUS DOWNLOAD_STATUS
   )
   if(NOT DOWNLOAD_STATUS EQUAL 0)
@@ -158,7 +176,7 @@ endif()
 # Crear una librería de interfaz para nlohmann/json
 add_library(nlohmann_json INTERFACE)
 target_include_directories(nlohmann_json INTERFACE
-  ${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann
+  ${EXTERNAL_LIB_PATH}/nlohmann
 )
 
 
@@ -170,12 +188,19 @@ message(STATUS "Fetching Miniaudio library...")
 set(MA_ENABLE_VORBIS  OFF CACHE BOOL "" FORCE)  # No construir soporte para Vorbis
 set(MA_ENABLE_OPUS    OFF CACHE BOOL "" FORCE)  # No construir soporte para Opus
 set(MA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)  # No construir ejemplos
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/miniaudio_src/.github")
+  message(STATUS "Using local miniaudio source")
+  set(FETCHCONTENT_SOURCE_DIR_MINIAUDIO
+      "${EXTERNAL_LIB_PATH}/miniaudio_src"
+      CACHE PATH "" FORCE)
+endif()
 FetchContent_Declare(
   miniaudio
   GIT_REPOSITORY https://github.com/mackron/miniaudio.git
   GIT_TAG        0.11.23          # o la versión que necesites
   GIT_SHALLOW    TRUE            # habilita --depth 1
-  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/miniaudio_src"
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/miniaudio_src"
   EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(miniaudio)
@@ -195,12 +220,19 @@ target_link_libraries(miniaudio_lib PUBLIC
 
 message(STATUS "Fetching DaisySP library...")
 set(BUILD_DAISYSP_EXAMPLES  OFF CACHE BOOL "" FORCE)    # No construir ejemplos
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/daisysp_src/.github")
+  message(STATUS "Using local daisysp source")
+  set(FETCHCONTENT_SOURCE_DIR_DAISYSP
+      "${EXTERNAL_LIB_PATH}/daisysp_src"
+      CACHE PATH "" FORCE)
+endif()
 FetchContent_Declare(
   daisysp
   GIT_REPOSITORY https://github.com/electro-smith/DaisySP.git
   GIT_TAG        V1.0.0
   GIT_SHALLOW    TRUE
-  SOURCE_DIR     "${GLOBAL_SOURCE_DIR}/daisysp_src"
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/daisysp_src"
   EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(daisysp)

@@ -1,4 +1,3 @@
-*.gif
 *.obj
 *.ipch
 *.rprt
@@ -28,7 +27,6 @@
 *sensitive*
 *enc_temp_folder*
 *Debug*
-*Documentos*
 *autosave*
 *.bak
 *.pkf
@@ -36,3 +34,4 @@
 *Install*
 /solutions
 /build
+/external
