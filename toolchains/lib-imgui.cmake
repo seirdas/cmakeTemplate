@@ -77,7 +77,7 @@ target_link_libraries(imgui_lib PUBLIC
     gdi32     # Gráficos básicos de Windows
     shell32   # Funciones de shell de Windows
     imm32     # Soporte de IME (Input Method Editor) para entrada de texto avanzada
-  >  # Librerías de sistema en Windows
+  > 
 )
 target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)   # Directorios propios
 # target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
