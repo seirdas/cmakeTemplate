@@ -32,7 +32,7 @@
 *.pkf
 *.lnk
 *Install*
-/solutions
-/build
-/external
+*solutions
+*build
+*external
 doxygen*

@@ -6,7 +6,7 @@
       "displayName": "🔵 Visual Studio 2019 (x64)",
       "description": "Genera solución .sln para Visual Studio 2019 (x64).",
       "generator": "Visual Studio 16 2019",
-      "binaryDir": "${sourceDir}/build/vs2019",
+      "binaryDir": "${sourceDir}/_build/vs2019",
       "architecture": "x64"
     },
     {
@@ -14,7 +14,7 @@
       "displayName": "🟢 Visual Studio 2022 (x64)",
       "description": "Genera solución .sln para Visual Studio 2022 (x64).",
       "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build/vs2022",
+      "binaryDir": "${sourceDir}/_build/vs2022",
       "architecture": "x64"
     },
     {
@@ -22,7 +22,7 @@
       "displayName": "🟣 Visual Studio 2026 (x64)",
       "description": "Genera solución .sln para Visual Studio 2026 (x64).",
       "generator": "Visual Studio 18 2026",
-      "binaryDir": "${sourceDir}/build/vs2026",
+      "binaryDir": "${sourceDir}/_build/vs2026",
       "architecture": "x64"
     },
     {
@@ -30,14 +30,14 @@
       "displayName": "🟡 MinGW-x64",
       "description": "Build en Windows con MinGW-w64. Revisar MINGW_PATH en preset.",
       "generator": "MinGW Makefiles",
-      "binaryDir": "${sourceDir}/build/mingw64",
+      "binaryDir": "${sourceDir}/_build/mingw64",
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
-      "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
+        "cacheVariables": {
+            "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
         "CMAKE_BUILD_TYPE":"mingw64",
         "MINGW_PATH": "${env.MINGW_PATH}",
         "MINGW_BIN": "${env.MINGW_PATH}/bin"
-      },
+        },
       "environment": {
         "MINGW_PATH": "C:/msys64/mingw64"
       }
