@@ -12,10 +12,11 @@
 # Arquitectura de proyecto
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares). 
     Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
-- **build**: Se genera automáticamente al configurar el proyecto con un preset específico. 
+- **_build**: Se genera automáticamente al configurar el proyecto con un preset específico (puede borrarse si hay fallos).
     Almacenan el proyecto generado desde la configuración (_.sln_ de visual studio o Makefiles)
 - **config**: Archivos de configuración que serán copiados en la misma ruta del ejecutable (como `.json`, `.ini`, etc.).
 - **executable**: Binarios ejecutables (`.exe`) que se generar al hacer un _build_ del proyecto.
+- **_external**: Librerías externas descargadas a partir de CMake. Se genera automáticamente al configurar un proyecto (puede borrarse si hay fallos).
 - **include**: Archivos de cabecera (`.h`).
 - **resources**: Imágenes, iconos, etc. para usar en el proyecto. 
     Incluye el `resources.h` y el `resources.rc` que se compilan con el proyecto.
@@ -166,3 +167,6 @@ Esta ruta sirve para configurar, construir y compilar el proyecto.
 
 
 > Los comandos de la extensión CMake Tools están [aquí](https://github.com/microsoft/vscode-cmake-tools/blob/main/docs/cmake-settings.md)
+> Desinstalar ucrt:  pacman -Rs mingw-w64-ucrt-x86_64-toolchain
+> Desinstalar clang: pacman -Rs mingw-w64-clang-x86_64-toolchain
+> Clang de MSYS se descarga por defecto en C:\msys64\clang64\bin
