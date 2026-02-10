@@ -35,8 +35,8 @@
         "cacheVariables": {
             "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
         "CMAKE_BUILD_TYPE":"mingw64",
-        "MINGW_PATH": "${env.MINGW_PATH}",
-        "MINGW_BIN": "${env.MINGW_PATH}/bin"
+        "MINGW_PATH": "$env{MINGW_PATH}",
+        "MINGW_BIN": "$env{MINGW_PATH}/bin"
         },
       "environment": {
         "MINGW_PATH": "C:/msys64/mingw64"
