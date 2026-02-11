@@ -128,19 +128,101 @@ void WinMgr::endCuadro(){
 
 void WinMgr::BuclePrincipal() {
     initCuadro();
-    //ShowDemoWindow();     // Ventana de demostración
+	// Referencia a la ventana GLFW
+    ImGuiIO& io = ImGui::GetIO();
+
+    ShowDemoWindow();     // Ventana de demostración
 	//ShowMetricsWindow();  // Ventana de métricas
 
 	// vvvvvvvvv Contenido de la ventana vvvvvvvvv
-    
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
-                                    ImGuiWindowFlags_NoCollapse;
-    ImGui::Begin("Ventana Principal", nullptr, window_flags);
-    ImGui::BeginGroup();
-        ImGui::Text("Hola, mundo!");
 
+	// 1. BARRA DE MENÚ SUPERIOR
+	crearMainMenuBar();
+
+	// 1. Forzar bordes cuadrados y eliminar paddings innecesarios para el frame principal
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
+                                    ImGuiWindowFlags_NoCollapse |
+                                    ImGuiWindowFlags_NoResize |
+                                    ImGuiWindowFlags_NoScrollbar |
+                                    ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                    ImGuiWindowFlags_NoNav;
+
+        // Ventana que cubre todo el frame
+		SetNextWindowPos(ImVec2(0,MainMenuBar_Height));
+		SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y - MainMenuBar_Height));
+        ImGui::Begin("Ventana que cubre todo el frame", nullptr, window_flags);
+
+
+// --- LÓGICA DE PANELES INDEPENDIENTES ---
+    
+    // Variables estáticas para guardar las alturas (proporciones iniciales)
+    static float heightLeftTop = 0.70f;  // 70% para F1
+    static float heightRightTop = 0.20f; // 20% para F3
+    
+	float sizeSplitterVertical = 4.0f;
+    float totalHeight = ImGui::GetContentRegionAvail().y;
+    //float widthHalf = ImGui::GetContentRegionAvail().x * 0.5f;
+    float sizeX_Izq = ImGui::GetContentRegionAvail().x * 0.2f;
+    //float sizeX_Der = ImGui::GetContentRegionAvail().x - sizeX_Izq - sizeSplitterVertical; // Restamos el espacio del splitter vertical
+
+    // COLUMNA IZQUIERDA
+    ImGui::BeginGroup();
+    {
+        // Panel F1 (Arriba Izquierda)
+        BeginChild("F1", ImVec2(sizeX_Izq, totalHeight * heightLeftTop), true);
+        Text("F1 (70%% inicial)");
+		Button("hola");
+        EndChild();
+
+        // Splitter Horizontal Izquierdo
+        Button("##h_splitter_l", ImVec2(sizeX_Izq, 4.0f));
+        if (IsItemActive())
+            heightLeftTop += GetIO().MouseDelta.y / totalHeight;
+
+        // Panel F2 (Abajo Izquierda)
+        ImGui::BeginChild("F2", ImVec2(sizeX_Izq, 0), true); // Altura 0 para que rellene el resto
+        ImGui::Text("F2 (30%% inicial)");
+        ImGui::EndChild();
+    }
     ImGui::EndGroup();
-    End();
+
+    ImGui::SameLine(); // Pegamos la siguiente columna
+	Button("##v_splitter", ImVec2(sizeSplitterVertical, -FLT_MIN)); // Splitter Vertical
+	if (ImGui::IsItemActive())
+	{
+	    heightLeftTop += ImGui::GetIO().MouseDelta.y / totalHeight;
+	    heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
+	}
+	SameLine();
+
+    // COLUMNA DERECHA
+    ImGui::BeginGroup();
+    {
+        // Panel F3 (Arriba Derecha)
+        ImGui::BeginChild("F3", ImVec2(0, totalHeight * heightRightTop), true);
+        ImGui::Text("F3 (20%% inicial)");
+        ImGui::EndChild();
+
+        // Splitter Horizontal Derecho
+        ImGui::Button("##h_splitter_r", ImVec2(-FLT_MIN, 4.0f));
+        if (ImGui::IsItemActive())
+            heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
+
+        // Panel F4 (Abajo Derecha)
+        ImGui::BeginChild("F4", ImVec2(0, 0), true);
+        ImGui::Text("F4 (80%% inicial)");
+        ImGui::EndChild();
+    }
+    ImGui::EndGroup();
+
+    ImGui::End();
+    ImGui::PopStyleVar(3);
+
 	
 	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -149,70 +231,31 @@ void WinMgr::BuclePrincipal() {
 
 // private methods
 
-void WinMgr::DibujarSidebar() {
-
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | 
-                                    ImGuiWindowFlags_NoMove | 
-                                    ImGuiWindowFlags_NoCollapse |
-									ImGuiWindowFlags_NoResize |
-									ImGuiWindowFlags_NoScrollbar;
-
-    // Posicionamos la ventana en el extremo superior izquierdo (0,0)
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
-    
-    // Forzamos el tamaño: ancho fijo (ej. 200px) y alto total de la pantalla
-    float ancho_sidebar = 200.0f;
-    ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ancho_sidebar));
-
-    // ImGui::SetNextWindowSizeConstraints(
-    //     ImVec2(150, ImGui::GetIO().DisplaySize.y), 
-    //     ImVec2(500, ImGui::GetIO().DisplaySize.y)
-    // );
-
-    // El nombre "Sidebar" es interno, no se verá porque quitamos la barra
-    Begin("Sidebar", nullptr, window_flags);
-
-	BeginGroup();
-
-		if(Button("\uf186")) { 
-			/* Acción */
+void WinMgr::crearMainMenuBar() {
+	if (ImGui::BeginMainMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("New", "Ctrl+N")) { /* Acción */ }
+			if (ImGui::MenuItem("Open", "Ctrl+O")) { /* Acción */ }
+			ImGui::Separator();
+			if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(window, true); }
+			ImGui::EndMenu();
 		}
-		Text("MENÚ");
-
-
-
-		Separator();
-		if (Button("Inicio", ImVec2(-1, 40))) { /* Acción */ }
-		if (Button("Ajustes", ImVec2(-1, 40))) { /* Acción */ }
-
-	EndGroup();
-
-	// Iniciamos una línea horizontal
-	BeginGroup();
-		// BOTÓN 1: Grupo vertical
-		BeginGroup();
-			Text("Ajustes"); 
-			Button("\uf013", ImVec2(40, 40)); // Icono de engranaje
-		EndGroup();
-	
-
+		if (ImGui::BeginMenu("Edit")) {
+			if (ImGui::MenuItem("Undo", "Ctrl+Z")) {}
+			if (ImGui::MenuItem("Redo", "Ctrl+Y")) {}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Ajustes")) {
+			if (ImGui::MenuItem("Configurar conexión...")) { /* Abrir un popup de ajustes */ }
+			ImGui::EndMenu();
+		}
 		
-		
-		// SEPARADOR VERTICAL
-		// Importante: El separador vertical necesita espacio para dibujarse
-		SeparatorEx(ImGuiSeparatorFlags_Vertical); 
-		
-		SameLine();
+		// Guardamos el alto de la barra para ajustar la ventana de abajo
+		ImGui::EndMainMenuBar();
+	}
 
-		// BOTÓN 2: Grupo vertical
-		BeginGroup();
-			Text("Perfil");
-		EndGroup();
-	EndGroup();
-
-    End();
+	MainMenuBar_Height = ImGui::GetFrameHeightWithSpacing();
 }
-
 
 
 // Temas --------------------------------------------------------------------------------

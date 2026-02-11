@@ -32,6 +32,8 @@ private:
     // Nombre de la aplicación/ventana
     std::string AppName = "Demo";
 
+
+
     // Tamaño de la ventana
     unsigned int sizeX = 1280;
     unsigned int sizeY = 720;
@@ -52,8 +54,9 @@ public:
     void BuclePrincipal();
 
 private:
-    /// @brief Dibuja una barra lateral fija en la ventana.
-    void DibujarSidebar();
+    /// @brief Crea la barra de menú principal con opciones básicas.
+    void crearMainMenuBar();
+    float MainMenuBar_Height = 0.0f; // Almacena el alto de la barra de menú para ajustar la ventana principal
 
 // Temas --------------------------------------------------------------------------------
 private:
