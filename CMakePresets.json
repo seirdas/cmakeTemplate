@@ -28,19 +28,34 @@
     {
       "name": "mingw64",
       "displayName": "🟡 MinGW-x64",
-      "description": "Build en Windows con MinGW-w64. Revisar MINGW_PATH en preset.",
+      "description": "Genera Makefiles de MinGW-w64. Revisar MINGW_PATH en preset.",
       "generator": "MinGW Makefiles",
       "binaryDir": "${sourceDir}/_build/mingw64",
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
         "cacheVariables": {
-            "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
-        "CMAKE_BUILD_TYPE":"mingw64",
-        "MINGW_PATH": "$env{MINGW_PATH}",
-        "MINGW_BIN": "$env{MINGW_PATH}/bin"
+          "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
+          "CMAKE_BUILD_TYPE":"mingw64",
+          "MINGW_PATH": "$env{MINGW_PATH}"
         },
       "environment": {
         "MINGW_PATH": "C:/msys64/mingw64"
       }
+    },
+    {
+      "name": "clang64",
+      "displayName": "🟠 Clang",
+      "description": "Genera Makefiles para Clang. Revisar CLANG_PATH en preset.",
+      "generator": "MinGW Makefiles",
+      "binaryDir": "${sourceDir}/_build/clang64",
+      "toolchainFile": "toolchains/mingw-clang64.cmake", 
+        "cacheVariables": {
+            "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
+        "CMAKE_BUILD_TYPE":"clang64",
+        "CLANG_PATH": "$env{CLANG_PATH}"
+        },
+      "environment": {
+        "CLANG_PATH": "C:/msys64/clang64"
+        }
     }
   ],
   "buildPresets": [
@@ -53,30 +68,47 @@
       "environment": {
         "PATH": "$env{MINGW_PATH}/bin;$penv{PATH}"
       },
-      "cleanFirst": true
+      "cleanFirst": true,
+      "description": "Build con Mingw64"
+    },
+    {
+      "name": "clang64",
+      "displayName": "🟤 Clang64",
+      "configurePreset": "clang64",
+      "targets": [ "all" ],
+      "jobs": 4,
+      "environment": {
+        "PATH": "$env{CLANG_PATH}/bin;$penv{PATH}"
+      },
+      "cleanFirst": true,
+      "description": "Build con Clang64"
     },
 
     {
       "name": "vs2019-release",
       "displayName": "🚀 VS2019 Release (x64)",
+      "description": "Build en Release para Visual Studio 2019 (x64).",
       "configurePreset": "vs2019",
       "configuration": "Release"
     },
     {
       "name": "vs2019-debug",
       "displayName": "🐞 VS2019 Debug (x64)",
+      "description": "Build en Debug para Visual Studio 2019 (x64).",
       "configurePreset": "vs2019",
       "configuration": "Debug"
     },
     {
       "name": "vs2019-relwithdebinfo",
       "displayName": "🔍 VS2019 RelWithDebInfo (x64)",
+      "description": "Build en RelWithDebInfo para Visual Studio 2019 (x64).",
       "configurePreset": "vs2019",
       "configuration": "RelWithDebInfo"
     },
     {
       "name": "vs2019-minsizerel",
       "displayName": "📦 VS2019 MinSizeRel (x64)",
+      "description": "Build en MinSizeRel para Visual Studio 2019 (x64).",
       "configurePreset": "vs2019",
       "configuration": "MinSizeRel"
     },
@@ -84,24 +116,28 @@
     {
       "name": "vs2022-release",
       "displayName": "🚀 VS2022 Release (x64)",
+      "description": "Build en Release para Visual Studio 2022 (x64).",
       "configurePreset": "vs2022",
       "configuration": "Release"
     },
     {
       "name": "vs2022-debug",
       "displayName": "🐞 VS2022 Debug (x64)",
+      "description": "Build en Debug para Visual Studio 2022 (x64).",
       "configurePreset": "vs2022",
       "configuration": "Debug"
     },
     {
       "name": "vs2022-relwithdebinfo",
       "displayName": "🔍 VS2022 RelWithDebInfo (x64)",
+      "description": "Build en RelWithDebInfo para Visual Studio 2022 (x64).",
       "configurePreset": "vs2022",
       "configuration": "RelWithDebInfo"
     },
     {
       "name": "vs2022-minsizerel",
       "displayName": "📦 VS2022 MinSizeRel (x64)",
+      "description": "Build en MinSizeRel para Visual Studio 2022 (x64).",
       "configurePreset": "vs2022",
       "configuration": "MinSizeRel"
     },
@@ -109,24 +145,28 @@
     {
       "name": "vs2026-release",
       "displayName": "🚀 VS2026 Release (x64)",
+      "description": "Build en Release para Visual Studio 2026 (x64).",
       "configurePreset": "vs2026",
       "configuration": "Release"
     },
     {
       "name": "vs2026-debug",
       "displayName": "🐞 VS2026 Debug (x64)",
+      "description": "Build en Debug para Visual Studio 2026 (x64).",
       "configurePreset": "vs2026",
       "configuration": "Debug"
     },
     {
       "name": "vs2026-relwithdebinfo",
       "displayName": "🔍 VS2026 RelWithDebInfo (x64)",
+      "description": "Build en RelWithDebInfo para Visual Studio 2026 (x64).",
       "configurePreset": "vs2026",
       "configuration": "RelWithDebInfo"
     },
     {
       "name": "vs2026-minsizerel",
       "displayName": "📦 VS2026 MinSizeRel (x64)",
+      "description": "Build en MinSizeRel para Visual Studio 2026 (x64).",
       "configurePreset": "vs2026",
       "configuration": "MinSizeRel"
     }

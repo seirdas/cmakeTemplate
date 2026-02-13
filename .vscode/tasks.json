@@ -7,7 +7,7 @@
       "command": "cmake",
       "args": [
         "--build",
-        "${workspaceFolder}\\build\\${command:cmake.activeConfigurePresetName}",
+        "${workspaceFolder}\\_build\\${command:cmake.activeConfigurePresetName}",
         "--config",
         "${command:cmake.buildType}",
         "--parallel",
@@ -16,7 +16,7 @@
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {
-          "PATH":"${config:mingw.binPath};${env:PATH}"
+          "PATH":"${config:mingw.binPath};${config:clang.binPath};${env:PATH}"
         }
       },
       "group": {

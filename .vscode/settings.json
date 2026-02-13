@@ -2,6 +2,7 @@
 
     // Custom paths for visual studio code launch
     "mingw.binPath": "C:/msys64/mingw64/bin",
+    "clang.binPath": "C:/msys64/clang64/bin",
 
     // No se pueden poner comentarios en la generación manual por comandos
     "cmake.allowCommentsInPresetsFile": false,

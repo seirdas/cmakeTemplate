@@ -13,9 +13,9 @@
       "console": "integratedTerminal"
     },
 
-    // Configuración para depuración con MSYS y GDB (Compiladores como MinGW o GCC en MSYS2)
+    // Configuración para depuración con GDB (Compiladores como MinGW o GCC en MSYS2)
     {
-      "name": "🌕 MinGW",
+      "name": "🌕 GDB (MinGW)",
       "type": "cppdbg",
       "request": "launch",
       "program": "${command:cmake.getLaunchTargetPath}",
@@ -34,6 +34,31 @@
         {
           "name": "PATH",
           "value": "${config:mingw.binPath};$env{PATH}"
+        }
+      ]
+    },
+
+     // Configuración para depuración con Clang (usando LLDB como depurador)
+    {
+      "name": "🟢 LLDB (Clang)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.getLaunchTargetPath}",
+      "preLaunchTask": "CMake: build", 
+      "cwd": "${workspaceFolder}",
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "miDebuggerPath": "${config:clang.binPath}/lldb.exe",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for lldb",
+          "text": "-enable-pretty-printing",
+        }
+      ],
+      "environment": [
+        {
+          "name": "PATH",
+          "value": "${config:clang.binPath};$env{PATH}"
         }
       ]
     }
