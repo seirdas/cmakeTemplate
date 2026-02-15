@@ -33,7 +33,6 @@
       "binaryDir": "${sourceDir}/_build/mingw64",
       "toolchainFile": "toolchains/mingw-mingw64.cmake",
         "cacheVariables": {
-          "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
           "CMAKE_BUILD_TYPE":"mingw64",
           "MINGW_PATH": "$env{MINGW_PATH}"
         },
@@ -49,7 +48,6 @@
       "binaryDir": "${sourceDir}/_build/clang64",
       "toolchainFile": "toolchains/mingw-clang64.cmake", 
         "cacheVariables": {
-            "CMAKE_CXX_FLAGS": "-g -Werror -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat",
         "CMAKE_BUILD_TYPE":"clang64",
         "CLANG_PATH": "$env{CLANG_PATH}"
         },
