@@ -54,7 +54,7 @@ set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establ
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
 
 
-# Libreria asio network
+# Libreria asio network ( ANTES DE windows.h )
 option(USE_ASIO "Compilar con soporte para asio" ON)            # Activar/desactivar librería
 if(USE_ASIO)
     include(lib-asionetwork)                                    # Ejecuta el archivo toolchains/lib-asionetwork.cmake
@@ -83,14 +83,14 @@ if(USE_DAISYSP)
 endif()
 
 # Librería de IMGUI (gráficos, ventanas)
-option(USE_IMGUI "Compilar con soporte para IMGUI" OFF)          # Activar/desactivar librería
+option(USE_IMGUI "Compilar con soporte para IMGUI" ON)          # Activar/desactivar librería
 if(USE_IMGUI)
     include(lib-imgui)                                          # Ejecuta el archivo toolchains/lib-imgui.cmake
     add_definitions(-DUSE_IMGUI=1)                              # Definición para usar en el código C++
 endif()
 
 # Libreria json
-option(USE_JSON "Compilar con soporte para JSON" OFF)            # Activar/desactivar librería
+option(USE_JSON "Compilar con soporte para JSON" ON)            # Activar/desactivar librería
 if(USE_JSON)
     include(lib-json)                                           # Ejecuta el archivo toolchains/lib-json.cmake
     add_definitions(-DUSE_JSON=1)                               # Definición para usar en el código C++
@@ -108,18 +108,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/resources
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
-
-target_link_libraries(${PROJECT_NAME} PRIVATE 
-  $<$<BOOL:${USE_ASIO}>:asio_lib>                   # Librería creada con Asio + Winsock2 (Windows) 
-  $<$<BOOL:${USE_IMGUI}>:imgui_lib>                 # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JUCE}>:juce::juce_dsp>
-  $<$<BOOL:${USE_JUCE}>:juce::juce_audio_devices>
-  $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
-  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
-  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
-)
-
 
 
 # ===============================
@@ -169,22 +157,41 @@ elseif(MINGW)
     -Wall                      # Habilitar todas las advertencias
     -Wextra                    # Habilitar advertencias adicionales
     -Wpedantic                 # Habilitar advertencias estrictas de estándar
-    -Wshadow                    # Advertir sobre variables que ocultan otras
-    -Wuninitialized              # Advertir sobre variables no inicializadas
-    -Wformat=2                   # Advertir sobre problemas de formato en printf/scanf
+    -Wshadow                   # Advertir sobre variables que ocultan otras
+    -Wuninitialized            # Advertir sobre variables no inicializadas
+    -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
     $<$<CONFIG:Debug>:-g>      # Información de depuración
     $<$<CONFIG:Debug>:-O0>     # Sin optimizaciones en Debug
     $<$<CONFIG:Release>:-O2>   # Optimización para velocidad en Release
   )
 
+  set_target_properties(${PROJECT_NAME} PROPERTIES 
+    LINK_FLAGS "-static -static-libgcc -static-libstdc++"
+  )
+
   # Librerías de sistema 
   target_link_libraries(${PROJECT_NAME} PRIVATE
+    -static
     winpthread  # Hilos en Windows
     kernel32    # Funciones básicas de Windows
     comdlg32    # Diálogos comunes de Windows
   )
 endif()
 
+
+# ==============================
+# Enlazar con las librerías externas
+# ==============================
+
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+  $<$<BOOL:${USE_ASIO}>:asio_lib>                   # Librería creada con Asio + Winsock2 (Windows) 
+  $<$<BOOL:${USE_IMGUI}>:imgui_lib>                 # Librería creada con ImGui + GLFW + OpenGL
+  $<$<BOOL:${USE_JUCE}>:juce::juce_dsp>
+  $<$<BOOL:${USE_JUCE}>:juce::juce_audio_devices>
+  $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
+  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
+  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
+)
 
 # ===============================
 # Configuración post-build
