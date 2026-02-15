@@ -38,29 +38,17 @@
       ]
     },
 
-     // Configuración para depuración con Clang (usando LLDB como depurador)
+     // Configuración para depuración con Clang (usando LLDB y la extensión CodeLLDB)
     {
-      "name": "🟢 LLDB (Clang)",
-      "type": "cppdbg",
+      "name": "🟢 LLDB (CodeLLDB)",
+      "type": "lldb",
       "request": "launch",
       "program": "${command:cmake.getLaunchTargetPath}",
       "preLaunchTask": "CMake: build", 
       "cwd": "${workspaceFolder}",
-      "externalConsole": false,
-      "MIMode": "lldb",
-      "miDebuggerPath": "${config:clang.binPath}/lldb.exe",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for lldb",
-          "text": "-enable-pretty-printing",
-        }
-      ],
-      "environment": [
-        {
-          "name": "PATH",
-          "value": "${config:clang.binPath};$env{PATH}"
-        }
-      ]
+      "env":{
+        "PATH": "${config:clang.binPath};$env{PATH}"
+      }
     }
   ]
 }
