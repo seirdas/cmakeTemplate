@@ -154,16 +154,19 @@ if(MSVC)
 elseif(MINGW)
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-    -Wall                      # Habilitar todas las advertencias
-    -Wextra                    # Habilitar advertencias adicionales
-    -Wpedantic                 # Habilitar advertencias estrictas de estándar
-    -Wshadow                   # Advertir sobre variables que ocultan otras
-    -Wuninitialized            # Advertir sobre variables no inicializadas
-    -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
-    $<$<CONFIG:Debug>:-g>      # Información de depuración
-    $<$<CONFIG:Debug>:-O0>     # Sin optimizaciones en Debug
-    $<$<CONFIG:Release>:-O2>   # Optimización para velocidad en Release
+      -Wall                      # Habilitar todas las advertencias
+      -Wextra                    # Habilitar advertencias adicionales
+      -Wpedantic                 # Habilitar advertencias estrictas de estándar
+      -Wshadow                   # Advertir sobre variables que ocultan otras
+      -Wuninitialized            # Advertir sobre variables no inicializadas
+      -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
+
+      # Depuración y optimización según la configuración
+      $<$<NOT:$<CONFIG:Release>>:-g>   # Información de depuración en Debug
+      $<$<NOT:$<CONFIG:Release>>:-O0>  # Sin optimizaciones en Debug
+      $<$<CONFIG:Release>:-O2>         # Optimización para velocidad en Release
   )
+
 
   set_target_properties(${PROJECT_NAME} PROPERTIES 
     LINK_FLAGS "-static -static-libgcc -static-libstdc++"

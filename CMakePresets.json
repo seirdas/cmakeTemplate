@@ -3,7 +3,7 @@
     "configurePresets": [
         {
             "name": "vs2019",
-            "displayName": "🔵 Visual Studio 2019 (x64)",
+            "displayName": "🔴 Visual Studio 2019 (x64)",
             "description": "Genera solución .sln para Visual Studio 2019 (x64).",
             "generator": "Visual Studio 16 2019",
             "binaryDir": "${sourceDir}/_build/vs2019",
@@ -27,13 +27,13 @@
         },
         {
             "name": "mingw64",
-            "displayName": "🟡 MinGW-x64",
+            "displayName": "🟠 MinGW-x64",
             "description": "Genera Makefiles de MinGW-w64. Revisar MINGW_PATH en preset.",
             "generator": "MinGW Makefiles",
-            "binaryDir": "${sourceDir}/_build/mingw64",
+            "binaryDir": "${sourceDir}/_build/${presetName}",
             "toolchainFile": "toolchains/mingw-mingw64.cmake",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"mingw64",
+                "CMAKE_BUILD_TYPE":"Release",
                 "MINGW_PATH": "$env{MINGW_PATH}"
             },
             "environment": {
@@ -41,18 +41,36 @@
             }
         },
         {
+            "name": "mingw64-debug",
+            "displayName": "🔶 MinGW-x64 Debug",
+            "description": "Genera Makefiles de MinGW-w64 en Debug. Revisar MINGW_PATH en preset.",
+            "inherits": "mingw64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":"Debug"
+            }
+        },
+        {
             "name": "clang64",
-            "displayName": "🟠 Clang-x64",
-            "description": "Genera Makefiles para Clang. Revisar CLANG_PATH en preset.",
+            "displayName": "🔵 Clang-x64",
+            "description": "Genera Makefiles para Clang en Release. Revisar CLANG_PATH en preset.",
             "generator": "MinGW Makefiles",
             "binaryDir": "${sourceDir}/_build/${presetName}",
             "toolchainFile": "toolchains/mingw-clang64.cmake",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"clang64",
+                "CMAKE_BUILD_TYPE":"Release",
                 "CLANG_PATH": "$env{CLANG_PATH}"
             },
             "environment": {
                 "CLANG_PATH": "C:/msys64/clang64"
+            }
+        },
+        {
+            "name": "clang64-debug",
+            "displayName": "🔷 Clang-x64 Debug",
+            "description": "Genera Makefiles para Clang. Revisar CLANG_PATH en preset.",
+            "inherits": "clang64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":"Debug"
             }
         }
     ],
