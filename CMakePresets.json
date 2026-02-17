@@ -88,6 +88,13 @@
             "description": "Build con Mingw64"
         },
         {
+            "name": "mingw64-debug",
+            "displayName": "🧶 Mingw64 (Debug)",
+            "configurePreset": "mingw64-debug",
+            "inherits": "mingw64"
+        },
+
+        {
             "name": "clang64",
             "displayName": "🟤 Clang64",
             "configurePreset": "clang64",
@@ -98,6 +105,12 @@
             },
             "cleanFirst": true,
             "description": "Build con Clang64"
+        },
+        {
+            "name": "clang64-debug",
+            "displayName": "🟤 Clang64 (Debug)",
+            "configurePreset": "clang64-debug",
+            "inherits": "clang64"
         },
 
         {
