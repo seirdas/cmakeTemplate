@@ -40,13 +40,15 @@ int main(int /*argc*/, char** argv){
         std::cout << "Receptor UDP iniciado, esperando paquetes..." << std::endl;
 
         // De momento diseñado para recibir un paquete
-        std::vector<char> packet = receiver.getNextPacket();
+        //std::vector<char> packet = receiver.getNextPacket();
 
-        std::cout << "Paquete recibido de " << packet.size() << " bytes." << std::endl;
-        std::cout << "Contenido (hex): ";
-        for (size_t i = 0; i < std::min(packet.size(), static_cast<size_t>(16)); ++i) {
-            std::cout << std::hex << static_cast<int>(packet[i]) << " " << std::endl;
-        }
+        // std::cout << "Paquete recibido de " << packet.size() << " bytes." << std::endl;
+        // std::cout << "Contenido (hex): ";
+        // for (size_t i = 0; i < std::min(packet.size(), static_cast<size_t>(16)); ++i) {
+        //     std::cout << std::hex << static_cast<int>(packet[i]) << " " << std::endl;
+        // }
+
+        std::cout << "Aquí se procesaría el paquete recibido, por ejemplo pasándolo a la clase de lógica." << std::endl;
 
         /* Aqui la clase de la lógica ya gestiona el paquete. */
         // logicMgr.processPacket(packet);

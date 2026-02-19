@@ -25,12 +25,16 @@ public:
      * @param port - Puerto en el que se desea recibir los datos UDP.
      * @param packet_size - Tamaño máximo de los paquetes UDP que se esperan recibir. Elimina el paquete si es diferente a este tamaño. Si es 0, se aceptan paquetes de cualquier tamaño.
      */
-    UdpReceiver(const std::string& ipLocal = "", short port, unsigned int _packet_size = 0) 
-        : socket_(io_context_, asio::ip::udp::endpoint(asio::ip::udp::v4(), port)),
-        packet_size(_packet_size)
+    UdpReceiver(const std::string& ipLocal = "", short port = 0, unsigned int _packet_size = 0) :
+        socket_(io_context_), packet_size(_packet_size)
         {
             is_running_ = false;
             asio::ip::udp::endpoint endpoint;
+
+            if (port==0) {
+                std::cerr << "Warning: Port 0 specified, socket won't be created." << std::endl;
+                return;
+            }
             
             // Si la ip local es vacía, se enlaza a todas las interfaces
             if (ipLocal.empty())
@@ -115,7 +119,8 @@ private:
         }
 
         // Añade el paquete recibido a la cola listo para gestionar
-        queue_.push(std::move( std::vector(recv_buffer_.begin(), recv_buffer_.begin() + bytes_recvd)) );
+        std::vector data = std::vector(recv_buffer_.begin(), recv_buffer_.begin() + bytes_recvd);
+        queue_.push(std::move( data ) );
             
     }
 
@@ -159,7 +164,7 @@ private:
         std::lock_guard<std::mutex> lock(mutex_);
         return queue_.empty();
     }
-    
+
 
     std::queue<std::vector<char>> queue_;   // Cola de datos recibidos
     mutable std::mutex mutex_;              // Mutex para proteger el acceso a la cola
