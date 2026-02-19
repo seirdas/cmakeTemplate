@@ -122,6 +122,12 @@ if (WIN32)
     version     # Información de versión de archivos ejecutables
     dwmapi      # Integración con el gestor de ventanas DWM
    )
+
+  set_target_properties(${PROJECT_NAME} PROPERTIES 
+    WIN32_EXECUTABLE $<CONFIG:Release>      # No usar consola en Release
+    LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
+  )
+
 endif()
 
 # Configuración específica para MSVC
@@ -137,7 +143,8 @@ if(MSVC)
 
   # Especifica el proyecto principal
   set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
-  # 
+  
+  # Configuración para depuración en Visual Studio: establecer el ejecutable y el directorio de trabajo
   set_target_properties(${PROJECT_NAME} PROPERTIES
     VS_DEBUGGER_COMMAND "$<TARGET_FILE:${PROJECT_NAME}>"
     VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
@@ -148,6 +155,13 @@ if(MSVC)
   source_group("Include"    FILES ${HEADERS})
   source_group("Source"     FILES ${SOURCES})
   source_group("Resources"  FILES ${RESOURCES})
+
+  # Definiciones para compatibilidad con Windows 7 o superior (Windows 7 = 0x0601)
+  target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    _WIN32_WINNT=0x0601       # Windows 7 o superior
+    WINVER=0x0601             # Windows 7 o superior
+    NTDDI_VERSION=0x06010000  # Windows 7 o superior
+  )
 
 
 # Configuración específica para GCC/MinGW
@@ -209,7 +223,6 @@ add_custom_command(
 )
 # Configurar carpetas de salida del ejecutable y librerías
 set_target_properties(${PROJECT_NAME} PROPERTIES 
-  WIN32_EXECUTABLE $<BOOL:${WIN32}>     # Indica si es una aplicación de Windows (sin consola)
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>" # Carpeta de salida del ejecutable
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>" # Carpeta de salida de librerías estáticas
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>" # Carpeta de salida de librerías dinámicas
