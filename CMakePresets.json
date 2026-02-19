@@ -85,13 +85,15 @@
                 "PATH": "$env{MINGW_PATH}/bin;$penv{PATH}"
             },
             "cleanFirst": true,
-            "description": "Build con Mingw64"
+            "description": "Build con Mingw64",
+            "configuration": "Release"
         },
         {
             "name": "mingw64-debug",
             "displayName": "🧶 Mingw64 (Debug)",
             "configurePreset": "mingw64-debug",
-            "inherits": "mingw64"
+            "inherits": "mingw64",
+            "configuration": "Debug"
         },
 
         {
@@ -104,13 +106,15 @@
                 "PATH": "$env{CLANG_PATH}/bin;$penv{PATH}"
             },
             "cleanFirst": true,
-            "description": "Build con Clang64"
+            "description": "Build con Clang64",
+            "configuration": "Release"
         },
         {
             "name": "clang64-debug",
             "displayName": "🟤 Clang64 (Debug)",
             "configurePreset": "clang64-debug",
-            "inherits": "clang64"
+            "inherits": "clang64",
+            "configuration": "Debug"
         },
 
         {
