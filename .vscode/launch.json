@@ -40,7 +40,7 @@
 
      // Configuración para depuración con Clang (usando LLDB y la extensión CodeLLDB)
     {
-      "name": "🟢 LLDB (CodeLLDB)",
+      "name": "🟤 LLDB (CodeLLDB extension)",
       "type": "lldb",
       "request": "launch",
       "program": "${command:cmake.getLaunchTargetPath}",
