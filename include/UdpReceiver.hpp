@@ -7,6 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
+#include <iostream>
 
 /**
  * @brief Gestiona la recepción de datos UDP de forma asíncrona. Permite configurar la IP local, el puerto y el tamaño máximo de los paquetes.
@@ -24,8 +25,9 @@ public:
      * @param port - Puerto en el que se desea recibir los datos UDP.
      * @param packet_size - Tamaño máximo de los paquetes UDP que se esperan recibir. Elimina el paquete si es diferente a este tamaño. Si es 0, se aceptan paquetes de cualquier tamaño.
      */
-    UdpReceiver(const std::string& ipLocal = "", short port, unsigned int packet_size = 0) 
-        : socket_(io_context_, asio::ip::udp::endpoint(asio::ip::udp::v4(), port))
+    UdpReceiver(const std::string& ipLocal = "", short port, unsigned int _packet_size = 0) 
+        : socket_(io_context_, asio::ip::udp::endpoint(asio::ip::udp::v4(), port)),
+        packet_size(_packet_size)
         {
             is_running_ = false;
             asio::ip::udp::endpoint endpoint;
@@ -33,6 +35,7 @@ public:
             // Si la ip local es vacía, se enlaza a todas las interfaces
             if (ipLocal.empty())
                 endpoint = asio::ip::udp::endpoint(asio::ip::udp::v4(), port);
+            // Si se proporciona una IP local, se enlaza a esa IP concreta
             else {
                 // Convertir la cadena a asio::ip::address
                 asio::ip::address address = asio::ip::make_address(ipLocal, ec);
@@ -51,13 +54,12 @@ public:
 
 
     //Primero:
-    //Registras que quieres recibir datos.
-    //Arrancas el hilo que ejecuta el loop.
-
+    //  Registras que quieres recibir datos.
+    //  Arrancas el hilo que ejecuta el loop.
     //Cuando llegan datos:
-    //El SO notifica
-    //io_context despierta
-    //Ejecuta tu lambda
+    //  El SO notifica
+    //  io_context despierta
+    //  Ejecuta tu lambda
 
     void start() {
         if (is_running_) return;
@@ -80,53 +82,63 @@ public:
 private:
     void start_receive() {
 
-        // Cuando llega un paquete, se ejecuta esta lambda que maneja la recepción de datos
+        // Se espera aquí a que llegue un paquete UDP. Cuando llegue, se ejecutará la lambda.
         socket_.async_receive_from(
             asio::buffer(recv_buffer_), remote_endpoint_,
             [this](std::error_code ec, std::size_t bytes_recvd) {
-            handle_receive(ec, bytes_recvd);
-        }
+                // Esto se ejecuta cada vez que llega un paquete.
+                handle_receive(ec, bytes_recvd);
+                start_receive(); // Volver a esperar el siguiente paquete
+            }
         );
     }
 
     void handle_receive(std::error_code ec, std::size_t bytes_recvd) {
-        // Si el programa se está cerrando, ignoramos
-        if (!is_running_)
+        // Si el programa se está cerrando o fue cancelado, salimos
+        if (!is_running_ && ec == asio::error::operation_aborted){
+            std::cerr << "Receive operation aborted, stopping receiver." << std::endl;
             return;
-
-        // Si la operación fue cancelada (por stop())
-        if (ec == asio::error::operation_aborted)
-            return;
-
-        if (!ec) {
-            std::vector<char> data(
-                recv_buffer_.begin(),
-                recv_buffer_.begin() + bytes_recvd
-            );
-
-            queue_.push(std::move(data));
-
-            // Volvemos a esperar más datos
-            
-        } else {
-            // Opcional: loggear error real
-            std::cerr << "Receive error: " << ec.message() << "\n";
         }
+
+        if (ec) {
+            std::cerr << "Receive error: " << ec.message() << std::endl;
+            return;
+        }
+
+        if(bytes_recvd == 0) {
+            std::cerr << "Received empty packet from " << remote_endpoint_ << std::endl;
+            return;
+        }
+
+        if (packet_size!=0 && bytes_recvd!=packet_size){
+            std::cerr << "Received packet size different from expected (" << bytes_recvd << " bytes, expected " << packet_size << " bytes) from " << remote_endpoint_ << std::endl;
+        }
+
+        // Añade el paquete recibido a la cola listo para gestionar
+        queue_.push(std::move( std::vector(recv_buffer_.begin(), recv_buffer_.begin() + bytes_recvd)) );
+            
     }
 
-    asio::io_context io_context_;       // Contexto de E/S para operaciones asíncronas
-    
-    asio::ip::udp::socket socket_;                // Socket UDP para recibir datos
-    asio::ip::udp::endpoint remote_endpoint_;     // Endpoint remoto desde el que se reciben los datos
-    std::array<char, 2048> recv_buffer_;
-    std::thread worker_thread_;
-    std::atomic<bool> is_running_;
+    // Variables miembro 
 
-    asio::error_code ec;
+    asio::io_context io_context_;               // Contexto de E/S para operaciones asíncronas
+    asio::ip::udp::socket socket_;              // Socket UDP para recibir datos
+    asio::ip::udp::endpoint remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
+    std::vector<char> recv_buffer_;             // Buffer para almacenar los datos recibidos
+    unsigned int packet_size;                   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
+    std::thread worker_thread_;                 // Hilo para ejecutar el io_context y procesar eventos asíncronos
+    std::atomic<bool> is_running_;              // Flag para controlar el estado de ejecución 
+    asio::error_code ec;                        // Variable para almacenar errores de asio
 
 
-// Gestión de cola de datos
+// Gestión de cola de datos ------------------------------------------------------------
 public:
+    std::vector<char> getNextPacket() {
+        return pop();
+    }
+
+
+private:
     void push(std::vector<char> data) {
         std::lock_guard<std::mutex> lock(mutex_);
         queue_.push(std::move(data));
@@ -137,7 +149,7 @@ public:
         std::unique_lock<std::mutex> lock(mutex_);
         // El hilo se duerme aquí hasta que la cola no esté vacía
         condition_.wait(lock, [this] { return !queue_.empty(); });
-        
+
         std::vector<char> data = std::move(queue_.front());
         queue_.pop();
         return data;
@@ -147,14 +159,10 @@ public:
         std::lock_guard<std::mutex> lock(mutex_);
         return queue_.empty();
     }
+    
 
-
-private:
-
-    std::queue<std::vector<char>> queue_;
-    mutable std::mutex mutex_;
-    std::condition_variable condition_;
-
-
+    std::queue<std::vector<char>> queue_;   // Cola de datos recibidos
+    mutable std::mutex mutex_;              // Mutex para proteger el acceso a la cola
+    std::condition_variable condition_;     // Condición para notificar al main que hay datos nuevos
 
 };
