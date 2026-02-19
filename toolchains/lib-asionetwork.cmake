@@ -30,7 +30,19 @@ FetchContent_MakeAvailable(asio_network)
 # Crear una librería estática de red + Vincular con Winsock2 en Windows
 add_library(asio_lib INTERFACE)
 target_include_directories(asio_lib INTERFACE "${asio_network_SOURCE_DIR}/asio/include")  # Incluir headers de Asio
-target_compile_definitions(asio_lib INTERFACE ASIO_STANDALONE)                            # Definir ASIO_STANDALONE para usar Asio sin Boost
+
+# Definir ASIO_STANDALONE para usar Asio sin Boost
+target_compile_definitions(asio_lib INTERFACE 
+  ASIO_STANDALONE
+)
+
+# Vincular con las librerías de sockets de Windows
 target_link_libraries(asio_lib INTERFACE
-  $<$<PLATFORM_ID:Windows>:ws2_32 mswsock>  # Librerías de sockets en Windows
-)     
+  $<$<PLATFORM_ID:Windows>:ws2_32>     # Winsock2 - API de sockets de Windows
+  $<$<PLATFORM_ID:Windows>:mswsock>    # Microsoft Winsock Extensions
+  $<$<PLATFORM_ID:Windows>:wsock32>    # Winsock - API de sockets antigua (a veces requerida)
+)
+
+target_compile_options(asio_lib INTERFACE
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-shadow>
+)

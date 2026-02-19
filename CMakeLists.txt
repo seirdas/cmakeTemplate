@@ -39,8 +39,8 @@ endif()
 # ==============================
 
 # Encontrar todos los archivos .cpp, .h y .hpp
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
+file(GLOB_RECURSE SOURCES   CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE HEADERS   CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 file(GLOB_RECURSE RESOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
 
 
@@ -54,6 +54,13 @@ set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establ
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
 
 
+# Libreria asio network ( ANTES DE windows.h )
+option(USE_ASIO "Compilar con soporte para asio" ON)            # Activar/desactivar librería
+if(USE_ASIO)
+    include(lib-asionetwork)                                    # Ejecuta el archivo toolchains/lib-asionetwork.cmake
+    add_definitions(-DUSE_ASIO=1)                               # Definición para usar en el código C++
+endif()
+
 # Librería de JUCE (audio)
 option(USE_JUCE "Compilar con soporte para JUCE DSP" OFF)       # Activar/desactivar librería
 if(USE_JUCE)
@@ -62,14 +69,14 @@ if(USE_JUCE)
 endif()
 
 # Librería miniaudio
-option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)  # Activar/desactivar librería
+option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" OFF)  # Activar/desactivar librería
 if(USE_MINIAUDIO)
     include(lib-miniaudio)                                      # Ejecuta el archivo toolchains/lib-miniaudio.cmake
     add_definitions(-DUSE_MINIAUDIO=1)                          # Definición para usar en el código C++
 endif()
 
 # Librería daisySP
-option(USE_DAISYSP "Compilar con soporte para daisySP" ON)      # Activar/desactivar librería
+option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
 if(USE_DAISYSP)
     include(lib-daisysp)                                        # Ejecuta el archivo toolchains/lib-daisysp.cmake
     add_definitions(-DUSE_DAISYSP=1)                            # Definición para usar en el código C++
@@ -89,13 +96,6 @@ if(USE_JSON)
     add_definitions(-DUSE_JSON=1)                               # Definición para usar en el código C++
 endif()
 
-# Libreria asio network
-option(USE_ASIO "Compilar con soporte para asio" ON)            # Activar/desactivar librería
-if(USE_ASIO)
-    include(lib-asionetwork)                                    # Ejecuta el archivo toolchains/lib-asionetwork.cmake
-    add_definitions(-DUSE_ASIO=1)                               # Definición para usar en el código C++
-endif()
-
 
 # ===============================
 # Crear el ejecutable
@@ -108,18 +108,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/resources
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-
-
-target_link_libraries(${PROJECT_NAME} PRIVATE 
-  $<$<BOOL:${USE_ASIO}>:asio_lib>                   # Librería creada con Asio + Winsock2 (Windows) 
-  $<$<BOOL:${USE_IMGUI}>:imgui_lib>                 # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JUCE}>:juce::juce_dsp>
-  $<$<BOOL:${USE_JUCE}>:juce::juce_audio_devices>
-  $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
-  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
-  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
-)
-
 
 
 # ===============================
@@ -164,14 +152,49 @@ if(MSVC)
 
 # Configuración específica para GCC/MinGW
 elseif(MINGW)
+  # Opciones de compilación
+  target_compile_options(${PROJECT_NAME} PRIVATE
+      -Wall                      # Habilitar todas las advertencias
+      -Wextra                    # Habilitar advertencias adicionales
+      -Wpedantic                 # Habilitar advertencias estrictas de estándar
+      -Wshadow                   # Advertir sobre variables que ocultan otras
+      -Wuninitialized            # Advertir sobre variables no inicializadas
+      -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
+
+      # Depuración y optimización según la configuración
+      $<$<NOT:$<CONFIG:Release>>:-g>   # Información de depuración en Debug
+      $<$<NOT:$<CONFIG:Release>>:-O0>  # Sin optimizaciones en Debug
+      $<$<CONFIG:Release>:-O2>         # Optimización para velocidad en Release
+  )
+
+
+  set_target_properties(${PROJECT_NAME} PROPERTIES 
+    LINK_FLAGS "-static -static-libgcc -static-libstdc++"
+  )
+
   # Librerías de sistema 
   target_link_libraries(${PROJECT_NAME} PRIVATE
+    -static
     winpthread  # Hilos en Windows
     kernel32    # Funciones básicas de Windows
     comdlg32    # Diálogos comunes de Windows
   )
 endif()
 
+
+# ==============================
+# Enlazar con las librerías externas
+# ==============================
+
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+  $<$<BOOL:${USE_ASIO}>:asio_lib>                   # Librería creada con Asio + Winsock2 (Windows) 
+  $<$<BOOL:${USE_IMGUI}>:imgui_lib>                 # Librería creada con ImGui + GLFW + OpenGL
+  $<$<BOOL:${USE_JUCE}>:juce::juce_dsp>
+  $<$<BOOL:${USE_JUCE}>:juce::juce_audio_devices>
+  $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
+  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
+  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
+)
 
 # ===============================
 # Configuración post-build
