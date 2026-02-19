@@ -3,47 +3,58 @@
 #include <chrono>               // Controla tiempos de espera
 #include <fstream>              // Gestiona archivos
 #include <filesystem>           // Controla directorios, rutas, etc.
-#include <nlohmann/json.hpp>    // Manipula archivos .json
-#include "defines.h"            // Definiciones generales
+#include <json.hpp>             // Manipula archivos .json
 #include "winMgr.h"             // Clase winMgr de gestión de ventanas
+#include "UdpReceiver.hpp"      // Clase UdpReceiver para recibir datos UDP de forma asíncrona
+#include "defines.h"            // Definiciones generales
 
 
 int main(int /*argc*/, char** argv){
 
     // Asegurar directorio del exe (para archivos de entorno de desarrollo)
     std::filesystem::current_path(std::filesystem::absolute(argv[0]).parent_path());
-    // Solo escribir en consola si hay terminal asociada
-    #ifdef _WIN32
-        if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-            freopen("CONOUT$", "w", stdout);
-            freopen("CONOUT$", "w", stderr);
-            // Código ANSI para limpiar pantalla y resetear cursor
-            std::cout << "\033[2J\033[1;1H";
+
+
+
+    // Ventana UI
+    std::thread UIThread([]() {
+        WinMgr ventana;
+        if (!ventana.init())
+            std::cerr << "Error al inicializar la ventana" << std::endl;
+        
+        while (ventana.isRunning())
+            ventana.BuclePrincipal();
+        
+        ventana.cerrar();
+        std::cout << "La ventana se ha cerrado, el hilo de UI termina ahora." << std::endl;
+    });
+
+
+
+
+    std::thread SocketThread([]() {
+        UdpReceiver receiver("", 8080, 0);
+        std::cout << "Socket UDP configurado para recibir en el puerto 8080." << std::endl;
+
+        receiver.start();
+        std::cout << "Receptor UDP iniciado, esperando paquetes..." << std::endl;
+
+        // De momento diseñado para recibir un paquete
+        std::vector<char> packet = receiver.getNextPacket();
+
+        std::cout << "Paquete recibido de " << packet.size() << " bytes." << std::endl;
+        std::cout << "Contenido (hex): ";
+        for (size_t i = 0; i < std::min(packet.size(), static_cast<size_t>(16)); ++i) {
+            std::cout << std::hex << static_cast<int>(packet[i]) << " " << std::endl;
         }
-    #endif
 
-
-
-    WinMgr ventana;
-    if (!ventana.init())
-        return -1;
-    
-    while (ventana.isRunning())
-        ventana.BuclePrincipal();
-    
-    ventana.cerrar();
-
-
-
-
-    // TEST: Hilos
-    std::thread worker([]() {
-        std::this_thread::sleep_for(std::chrono::seconds(3));
-        std::cout << "Mensaje: el hilo ha esperado 3 segundos y termina ahora." << std::endl;
+        /* Aqui la clase de la lógica ya gestiona el paquete. */
+        // logicMgr.processPacket(packet);
     });
     
-    // Esperar a que el hilo termine antes de salir
-    worker.join();
+    // Esperar a que los hilos terminen antes de salir
+    UIThread.join();
+    SocketThread.join();
 
     return 0;
 }
