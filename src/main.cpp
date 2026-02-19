@@ -52,6 +52,12 @@ int main(int /*argc*/, char** argv){
 
         /* Aqui la clase de la lógica ya gestiona el paquete. */
         // logicMgr.processPacket(packet);
+
+        // Para este ejemplo, simplemente esperamos un tiempo antes de detener el receptor
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+
+        receiver.stop();
+        std::cout << "Receptor UDP detenido, el hilo de socket termina ahora." << std::endl;
     });
     
     // Esperar a que los hilos terminen antes de salir
