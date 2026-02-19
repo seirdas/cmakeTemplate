@@ -15,7 +15,7 @@ if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.github")
       CACHE PATH "" FORCE)
 endif()
 
-# declara el recurso externo que CMake descargará y hará disponible como una sub‑carpeta del proyecto
+# Declarar dependencia externa
 FetchContent_Declare(
     asio_network
     GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
@@ -24,6 +24,7 @@ FetchContent_Declare(
     SOURCE_DIR     "${EXTERNAL_LIB_PATH}/asio_src"
     EXCLUDE_FROM_ALL TRUE
 )
+# Hacerla disponible
 FetchContent_MakeAvailable(asio_network)
 
 # Crear una librería estática de red + Vincular con Winsock2 en Windows

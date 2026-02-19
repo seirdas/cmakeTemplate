@@ -2,6 +2,8 @@
 # Librería cycfi/q (Header-only, Functional)
 # -------------------------------
 
+include(FetchContent)
+
 message(STATUS "Fetching cycfi/q library...")
 
 # Usa la librería ya descargada en external/ si existe
@@ -21,15 +23,12 @@ FetchContent_Declare(
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/q_src"
   EXCLUDE_FROM_ALL TRUE
 )
-
 # Hacerla disponible
 FetchContent_MakeAvailable(q)
 
 # Crear librería INTERFACE (header-only)
 add_library(q_lib INTERFACE)
-
 target_include_directories(q_lib INTERFACE
   ${q_SOURCE_DIR}/include
 )
-
 target_compile_features(q_lib INTERFACE cxx_std_17)

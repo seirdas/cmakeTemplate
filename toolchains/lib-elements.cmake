@@ -110,8 +110,8 @@ endif()
 message(STATUS "Fetching cycfi/elements library...")
 
 # Desactivar extras
-set(ELEMENTS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(ELEMENTS_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+set(ELEMENTS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # No construir ejemplos
+set(ELEMENTS_BUILD_TESTS    OFF CACHE BOOL "" FORCE) # No construir tests
 
 if (EXISTS "${EXTERNAL_LIB_PATH}/elements_src/.git")
   message(STATUS "Using local cycfi/elements source")
@@ -124,7 +124,7 @@ FetchContent_Declare(
   elements
   GIT_REPOSITORY https://github.com/cycfi/elements.git
   GIT_TAG        master
-  GIT_SHALLOW    TRUE
+  GIT_SHALLOW    TRUE   # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/elements_src"
   EXCLUDE_FROM_ALL TRUE
 )
@@ -142,11 +142,11 @@ add_library(elements_lib INTERFACE)
 if (UNIX AND NOT APPLE)
   message(STATUS "Finding Linux dependencies for Elements...")
 
-  find_package(X11 REQUIRED)
-  find_package(Freetype REQUIRED)
-  find_package(Fontconfig REQUIRED)
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(WAYLAND REQUIRED wayland-client)
+  find_package(X11 REQUIRED)        # Librerías de ventanas X11
+  find_package(Freetype REQUIRED)   # Render de fuentes
+  find_package(Fontconfig REQUIRED) # Configuración de fuentes
+  find_package(PkgConfig REQUIRED)  # Para encontrar Wayland
+  pkg_check_modules(WAYLAND REQUIRED wayland-client) # Librerías de ventanas Wayland
 endif()
 
 
