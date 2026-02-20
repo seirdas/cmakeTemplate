@@ -82,7 +82,7 @@ target_link_libraries(imgui_lib PUBLIC
 target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)   # Directorios propios
 # target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
 
-target_compile_definitions(imgui_lib PRIVATE
+target_compile_definitions(imgui_lib PUBLIC
     $<$<PLATFORM_ID:Windows>:
       GLFW_EXPOSE_NATIVE_WIN32  # Exponer funciones nativas de Windows en GLFW
     >
