@@ -23,6 +23,7 @@ if (MSVC)
   # Definiciones de compatibilidad
   add_compile_definitions(
       _CRT_SECURE_NO_WARNINGS # Desactivar advertencias de funciones inseguras
+      _SCL_SECURE_NO_WARNINGS # Desactivar advertencias de seguridad en STL
       NOMINMAX                # Evitar definición de macros min y max
       WIN32_LEAN_AND_MEAN     # Excluir APIs innecesarias de Windows.h
   )
