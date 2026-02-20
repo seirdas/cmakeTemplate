@@ -27,6 +27,12 @@ using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
+WinMgr::WinMgr() = default;
+
+WinMgr::~WinMgr(){
+	cerrar();
+}
+
 // Public methods
 
 bool WinMgr::init() {
@@ -131,7 +137,7 @@ void WinMgr::BuclePrincipal() {
 	// Referencia a la ventana GLFW
     ImGuiIO& io = ImGui::GetIO();
 
-    ShowDemoWindow();     // Ventana de demostración
+    //ShowDemoWindow();     // Ventana de demostración
 	//ShowMetricsWindow();  // Ventana de métricas
 
 	// vvvvvvvvv Contenido de la ventana vvvvvvvvv
