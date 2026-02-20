@@ -31,7 +31,7 @@
             "description": "Genera Makefiles de MinGW-w64. Revisar MINGW_PATH en preset.",
             "generator": "MinGW Makefiles",
             "binaryDir": "${sourceDir}/_build/${presetName}",
-            "toolchainFile": "toolchains/mingw-mingw64.cmake",
+            "toolchainFile": "${sourceDir}/toolchains/mingw-mingw64.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Release",
                 "MINGW_PATH": "$env{MINGW_PATH}"
@@ -55,7 +55,7 @@
             "description": "Genera Makefiles para Clang en Release. Revisar CLANG_PATH en preset.",
             "generator": "MinGW Makefiles",
             "binaryDir": "${sourceDir}/_build/${presetName}",
-            "toolchainFile": "toolchains/mingw-clang64.cmake",
+            "toolchainFile": "${sourceDir}/toolchains/mingw-clang64.cmake",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Release",
                 "CLANG_PATH": "$env{CLANG_PATH}"
