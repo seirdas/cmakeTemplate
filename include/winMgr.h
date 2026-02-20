@@ -57,6 +57,9 @@ private:
     // Puntero a la ventana GLFW
     GLFWwindow* window = nullptr;
 
+    // Indica si la ventana se ha cerrado para evitar cerrar varias veces
+    bool cerrado;  
+
 // Bucle principal ----------------------------------------------------------------------
 public:
 

@@ -27,10 +27,12 @@ using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
-WinMgr::WinMgr() = default;
+WinMgr::WinMgr() : cerrado(false) {
 
-WinMgr::~WinMgr(){
-	cerrar();
+}
+
+WinMgr::~WinMgr() {
+	if(!cerrado) cerrar();
 }
 
 // Public methods
@@ -102,6 +104,7 @@ void WinMgr::cerrar() {
     }
 
     glfwTerminate();
+	cerrado = true;
 }
 
 
