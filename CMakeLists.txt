@@ -128,6 +128,13 @@ if (WIN32)
     LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
   )
 
+  # Definir _WIN32_WINNT para el ejecutable
+  target_compile_definitions(${PROJECT_NAME} PRIVATE 
+    _WIN32_WINNT=0x0601
+    WINVER=0x0601
+    NTDDI_VERSION=0x06010000
+  )
+
 endif()
 
 # Configuración específica para MSVC
@@ -193,6 +200,11 @@ elseif(MINGW)
     kernel32    # Funciones básicas de Windows
     comdlg32    # Diálogos comunes de Windows
   )
+
+  # Silenciar advertencia de variable no usada
+  if(CMAKE_TOOLCHAIN_FILE)
+      message(STATUS "Utilizando toolchain: ${CMAKE_TOOLCHAIN_FILE}")
+  endif() 
 endif()
 
 
