@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <iostream>
+#include "IAppControl.hpp"     // Interfaz de comunicación entre miembros de la aplicación
 
 struct GLFWwindow;
 
@@ -8,9 +10,22 @@ class WinMgr
 {
 // General ------------------------------------------------------------------------------
 public:
-    // Constructor y destructor
-    WinMgr();
-    ~WinMgr();
+
+    /**
+     * @brief Constructor por defecto.
+     */
+    WinMgr(IAppControl* controller);
+
+    /**
+     * @brief Destructor. Llama a cerrar() para liberar recursos.
+     * @note Virtual para evitar comportamientos inesperados en clases derivadas.
+     */
+    virtual ~WinMgr();
+
+    /**
+     * @brief Inicia el bucle principal de la ventana. Este método bloquea hasta que la ventana se cierre.
+     */
+    void run();
 
     /**
      * @brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.
@@ -30,6 +45,7 @@ public:
     void cerrar();
 
 private:
+
     /**
     * @brief Inicia un nuevo frame de ImGui.
     */
@@ -41,24 +57,27 @@ private:
     void endCuadro();
 
     // Nombre de la aplicación/ventana
-    std::string AppName = "Demo";
+    std::string AppName_ = "Demo";
 
     // Tamaño de la ventana
-    unsigned int sizeX = 1280;
-    unsigned int sizeY = 720;
+    unsigned int sizeX_ = 1280;
+    unsigned int sizeY_ = 720;
 
     // Color de fondo RGBA
-    float clearColor[4] = {0.45f, 0.55f, 0.60f, 1.00f};
+    float clearColor_[4] = {0.45f, 0.55f, 0.60f, 1.00f};
 
     // Fuente personalizada
-    std::string customFont = "Archivo-Medium.ttf";
-    unsigned int fontSize = 18;
+    std::string customFont_ = "Archivo-Medium.ttf";
+    unsigned int fontSize_ = 18;
 
     // Puntero a la ventana GLFW
-    GLFWwindow* window = nullptr;
+    GLFWwindow* window_ = nullptr;
+
+    // Puntero al controlador de la aplicación para comunicación entre miembros
+    IAppControl* controller_;
 
     // Indica si la ventana se ha cerrado para evitar cerrar varias veces
-    bool cerrado;  
+    bool cerrado_ = false;  
 
 // Bucle principal ----------------------------------------------------------------------
 public:
@@ -67,14 +86,14 @@ public:
      * @brief Bucle principal de la ventana. Se encarga de iniciar un nuevo frame, renderizar el contenido de ImGui, y actualizar la ventana.
      *        Se llama repetidamente mientras la ventana esté abierta.
      */
-    void BuclePrincipal();
+    virtual void BuclePrincipal();
 
 private:
     /**
      * @brief Crea la barra de menú principal.
      */
     void crearMainMenuBar();
-    float MainMenuBar_Height = 0.0f; // Almacena el alto de la barra de menú para ajustar la ventana principal
+    float MainMenuBar_Height_ = 0.0f; // Almacena el alto de la barra de menú para ajustar la ventana principal
 
 // Temas --------------------------------------------------------------------------------
 private:

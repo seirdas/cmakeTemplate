@@ -6,7 +6,7 @@
 //	- Añadir a la ventana (en Begin("", nullptr, window_flags); )
 // ---------------------------------------------------------------------------------
 
-#include "winMgr.h"
+#include "winMgr.h"				// Clase winMgr de gestión de ventanas
 #include <iostream>
 
 // de la clase imgui de dialogo
@@ -15,27 +15,38 @@
 #include <imgui_internal.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include "resources.h"  // icono
 #ifdef _WIN32
-    #define GLFW_EXPOSE_NATIVE_WIN32
     #include <GLFW/glfw3native.h>
     #include <windows.h>
     #include <dwmapi.h>
 #endif
-#include "resources.h"  // icono
 
 using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
-WinMgr::WinMgr() : cerrado(false) {
+WinMgr::WinMgr(IAppControl* controller) : controller_(controller), cerrado_(false) {
 
 }
 
 WinMgr::~WinMgr() {
-	if(!cerrado) cerrar();
+	if(!cerrado_) cerrar();
 }
 
 // Public methods
+
+void WinMgr::run() {
+	if (!init()) {
+		std::cerr << "Error al inicializar la ventana" << std::endl;
+		return;
+	}
+	
+	while (isRunning())
+		BuclePrincipal();
+	
+	cerrar();
+}
 
 bool WinMgr::init() {
     if (!glfwInit()) return false;
@@ -46,13 +57,13 @@ bool WinMgr::init() {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
     // Creación de ventana
-    window = glfwCreateWindow(sizeX, sizeY, AppName.c_str(), NULL, NULL);
-    if(!window) {
+    window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
+    if(!window_) {
         glfwTerminate();
         std::cerr << "Error al crear la ventana GLFW" << std::endl;
         return false;
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window_);
     glfwSwapInterval(1);
 
     // Inicializa ImGui
@@ -62,7 +73,7 @@ bool WinMgr::init() {
     io.IniFilename = NULL;  // No usar archivo .ini de imgui
 
     // Cargar fuente personalizada
-    io.Fonts->AddFontFromFileTTF(customFont.c_str(), fontSize, NULL, io.Fonts->GetGlyphRangesDefault());
+    io.Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io.Fonts->GetGlyphRangesDefault());
 
     // Configuración de estilo
     ImGui::StyleColorsDark();
@@ -71,7 +82,7 @@ bool WinMgr::init() {
     // Tomar la ventana (para modificar cosas)
     #ifdef _WIN32
         HINSTANCE hInstance = GetModuleHandle(NULL);
-        HWND hwnd = glfwGetWin32Window(window);
+        HWND hwnd = glfwGetWin32Window(window_);
 
         // Cargar el icono de la ventana utilizando WinAPI
         HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
@@ -82,14 +93,14 @@ bool WinMgr::init() {
         DwmSetWindowAttribute(hwnd, 20, &useDarkMode, sizeof(useDarkMode));
     #endif
 
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(window_, true);
     ImGui_ImplOpenGL3_Init("#version 130");     // Versión de OpenGL
     return true;
 }
 
 bool WinMgr::isRunning() const
 {
-    return window && !glfwWindowShouldClose(window);
+    return window_ && !glfwWindowShouldClose(window_);
 }
 
 void WinMgr::cerrar() {
@@ -97,14 +108,14 @@ void WinMgr::cerrar() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    if (window)
+    if (window_)
     {
-        glfwDestroyWindow(window);
-        window = nullptr;
+        glfwDestroyWindow(window_);
+        window_ = nullptr;
     }
 
     glfwTerminate();
-	cerrado = true;
+	cerrado_ = true;
 }
 
 
@@ -121,12 +132,12 @@ void WinMgr::initCuadro(){
 void WinMgr::endCuadro(){
     // Renderiza
     ImGui::Render();
-    glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+    glClearColor(clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
     // Intercambia los buffers
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(window_);
 }
 
 
@@ -162,8 +173,8 @@ void WinMgr::BuclePrincipal() {
                                     ImGuiWindowFlags_NoNav;
 
         // Ventana que cubre todo el frame
-		SetNextWindowPos(ImVec2(0,MainMenuBar_Height));
-		SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y - MainMenuBar_Height));
+		SetNextWindowPos(ImVec2(0,MainMenuBar_Height_));
+		SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y - MainMenuBar_Height_));
         ImGui::Begin("Ventana que cubre todo el frame", nullptr, window_flags);
 
 
@@ -176,25 +187,25 @@ void WinMgr::BuclePrincipal() {
 	float sizeSplitterVertical = 4.0f;
     float totalHeight = ImGui::GetContentRegionAvail().y;
     //float widthHalf = ImGui::GetContentRegionAvail().x * 0.5f;
-    float sizeX_Izq = ImGui::GetContentRegionAvail().x * 0.2f;
-    //float sizeX_Der = ImGui::GetContentRegionAvail().x - sizeX_Izq - sizeSplitterVertical; // Restamos el espacio del splitter vertical
+    float sizeX__Izq = ImGui::GetContentRegionAvail().x * 0.2f;
+    //float sizeX__Der = ImGui::GetContentRegionAvail().x - sizeX__Izq - sizeSplitterVertical; // Restamos el espacio del splitter vertical
 
     // COLUMNA IZQUIERDA
     ImGui::BeginGroup();
     {
         // Panel F1 (Arriba Izquierda)
-        BeginChild("F1", ImVec2(sizeX_Izq, totalHeight * heightLeftTop), true);
+        BeginChild("F1", ImVec2(sizeX__Izq, totalHeight * heightLeftTop), true);
         Text("F1 (70%% inicial)");
 		Button("hola");
         EndChild();
 
         // Splitter Horizontal Izquierdo
-        Button("##h_splitter_l", ImVec2(sizeX_Izq, 4.0f));
+        Button("##h_splitter_l", ImVec2(sizeX__Izq, 4.0f));
         if (IsItemActive())
             heightLeftTop += GetIO().MouseDelta.y / totalHeight;
 
         // Panel F2 (Abajo Izquierda)
-        ImGui::BeginChild("F2", ImVec2(sizeX_Izq, 0), true); // Altura 0 para que rellene el resto
+        ImGui::BeginChild("F2", ImVec2(sizeX__Izq, 0), true); // Altura 0 para que rellene el resto
         ImGui::Text("F2 (30%% inicial)");
         ImGui::EndChild();
     }
@@ -246,7 +257,7 @@ void WinMgr::crearMainMenuBar() {
 			if (ImGui::MenuItem("New", "Ctrl+N")) { /* Acción */ }
 			if (ImGui::MenuItem("Open", "Ctrl+O")) { /* Acción */ }
 			ImGui::Separator();
-			if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(window, true); }
+			if (ImGui::MenuItem("Exit")) { glfwSetWindowShouldClose(window_, true); }
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Edit")) {
@@ -263,7 +274,7 @@ void WinMgr::crearMainMenuBar() {
 		ImGui::EndMainMenuBar();
 	}
 
-	MainMenuBar_Height = ImGui::GetFrameHeightWithSpacing();
+	MainMenuBar_Height_ = ImGui::GetFrameHeightWithSpacing();
 }
 
 
