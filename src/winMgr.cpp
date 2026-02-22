@@ -20,32 +20,26 @@
     #include <GLFW/glfw3native.h>
     #include <windows.h>
     #include <dwmapi.h>
+	#ifndef GLFW_EXPOSE_NATIVE_WIN32
+		#define GLFW_EXPOSE_NATIVE_WIN32
+	#endif
 #endif
 
 using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
-WinMgr::WinMgr(IAppControl* controller) : controller_(controller), cerrado_(false) {
-
+WinMgr::WinMgr(IAppControl* controller) : controller_(controller) {
+	if (controller_==nullptr)
+		std::cerr << "[WinMgr] Cannot handle any controller." << std::endl;
 }
 
 WinMgr::~WinMgr() {
 	if(!cerrado_) cerrar();
 }
 
-// Public methods
-
-void WinMgr::run() {
-	if (!init()) {
-		std::cerr << "Error al inicializar la ventana" << std::endl;
-		return;
-	}
-	
-	while (isRunning())
-		BuclePrincipal();
-	
-	cerrar();
+void WinMgr::setController(IAppControl* controller){
+	controller_ = controller;
 }
 
 bool WinMgr::init() {
@@ -60,7 +54,7 @@ bool WinMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        std::cerr << "Error al crear la ventana GLFW" << std::endl;
+        std::cerr << "[WinMgr] Error al crear la ventana GLFW" << std::endl;
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -98,6 +92,21 @@ bool WinMgr::init() {
     return true;
 }
 
+void WinMgr::run() {
+
+	std::cout << "[WinMgr] Inicializando ventana..." << std::endl;
+	if (!init()) {
+		std::cerr << "[WinMgr] Error al inicializar la ventana." << std::endl;
+		return;
+	}
+	
+	while (isRunning())
+		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
+	
+	std::cout << "[WinMgr] Cerrando ventana" << std::endl;
+	cerrar();
+}
+
 bool WinMgr::isRunning() const
 {
     return window_ && !glfwWindowShouldClose(window_);
@@ -119,8 +128,6 @@ void WinMgr::cerrar() {
 }
 
 
-// Private methods
-
 void WinMgr::initCuadro(){
     glfwPollEvents();
     
@@ -139,12 +146,6 @@ void WinMgr::endCuadro(){
     // Intercambia los buffers
     glfwSwapBuffers(window_);
 }
-
-
-
-// Bucle principal ----------------------------------------------------------------------
-
-// public methods
 
 void WinMgr::BuclePrincipal() {
     initCuadro();
@@ -249,8 +250,6 @@ void WinMgr::BuclePrincipal() {
     endCuadro();
 }
 
-// private methods
-
 void WinMgr::crearMainMenuBar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -280,7 +279,9 @@ void WinMgr::crearMainMenuBar() {
 
 // Temas --------------------------------------------------------------------------------
 
-///@brief Comfy style by Giuseppe from ImThemes
+/**
+ * @brief Comfy style by Giuseppe from ImThemes
+ */
 void WinMgr::Style_Confy(){
 	ImGuiStyle& style = ImGui::GetStyle();
 	
@@ -369,7 +370,9 @@ void WinMgr::Style_Confy(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.8f, 0.8f, 0.8f, 0.35f);
 }
 
-/// @brief Future Dark style by rewrking from ImThemes
+/**
+ * @brief Future Dark style by rewrking from ImThemes
+ */
 void WinMgr::Style_FutureDark(){
 	ImGuiStyle& style = ImGui::GetStyle();
 	
@@ -458,7 +461,9 @@ void WinMgr::Style_FutureDark(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.19607843f, 0.1764706f, 0.54509807f, 0.5019608f);
 }
 
-/// @brief Moonlight style by rewrking from ImThemes
+/**
+ * @brief Moonlight style by rewrking from ImThemes
+ */
 void WinMgr::Style_Moonlight(){
 	ImGuiStyle& style = ImGui::GetStyle();
 	
@@ -547,7 +552,9 @@ void WinMgr::Style_Moonlight(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.19607843f, 0.1764706f, 0.54509807f, 0.5019608f);
 }
 
-///@brief Rounded Visual Studio style by RedNicStone from ImThemes
+/**
+ * @brief Rounded Visual Studio style by RedNicStone from ImThemes
+ */
 void WinMgr::Style_VisualStudio()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
