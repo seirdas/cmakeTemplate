@@ -20,8 +20,8 @@ int main(int /*argc*/, char** argv){
 
     // Socket
     std::cout << "Inicializando socket..." << std::endl;
-    UdpReceiver receiver(8080);
-    receiver.start();
+    UdpReceiver receiver;
+    receiver.start(8080);
     
     // Ventana UI
     WinMgr ventana;
