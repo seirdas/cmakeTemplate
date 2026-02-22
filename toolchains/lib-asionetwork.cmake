@@ -45,4 +45,5 @@ target_link_libraries(asio_lib INTERFACE
 
 target_compile_options(asio_lib INTERFACE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-shadow>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter>
 )
