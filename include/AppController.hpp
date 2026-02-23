@@ -1,20 +1,20 @@
 
 #pragma once
 
-#include <iostream>             // Entrada/Salida estándar
+#include <string>               // String
 #include <thread>               // Hilos
 #include <fstream>              // Gestiona archivos
 
 #include <json.hpp>             // Manipula archivos .json
 
-#include "winMgr.h"             // Clase winMgr de gestión de ventanas
-#include "UdpReceiver.hpp"      // Clase UdpReceiver para recibir datos UDP de forma asíncrona
+#include "winMgr.h"             // Clase de gestión de ventana UI
+#include "NetMgr.hpp"           // Clase para gestionar sockets
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
-#define VERSION 0.7
+#define VERSION 0.8
 
 /**
- * @brief Clase principal de la aplicación. Gestiona la ventana y el receptor UDP, y coordina la comunicación entre ellos.
+ * @brief Clase principal de la aplicación. Coordina la comunicación entre miembros.
  * @details Esta clase extiende la interfaz IAppControl para permitir la comunicación entre sus miembros
  */
 class AppController : public IAppControl
@@ -60,11 +60,9 @@ public:
 
 private:
 
-
     /************ Variables ********************************************************/
 
-    UdpReceiver receiver1_;                          // Receptor UDP para recibir datos de forma asíncrona
-    UdpReceiver receiver2_;                          // Receptor UDP para recibir datos de forma asíncrona
+    NetMgr      net_;                               // Gestor de sockets de red
     WinMgr      ui_;                                // Gestor de ventanas para la interfaz gráfica
     std::string version_ = std::to_string(VERSION); // Versión de la aplicación
 };
