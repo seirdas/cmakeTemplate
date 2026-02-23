@@ -1,0 +1,70 @@
+
+#pragma once
+
+#include <iostream>             // Entrada/Salida estándar
+#include <thread>               // Hilos
+#include <fstream>              // Gestiona archivos
+
+#include <json.hpp>             // Manipula archivos .json
+
+#include "winMgr.h"             // Clase winMgr de gestión de ventanas
+#include "UdpReceiver.hpp"      // Clase UdpReceiver para recibir datos UDP de forma asíncrona
+#include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
+
+#define VERSION 0.7
+
+/**
+ * @brief Clase principal de la aplicación. Gestiona la ventana y el receptor UDP, y coordina la comunicación entre ellos.
+ * @details Esta clase extiende la interfaz IAppControl para permitir la comunicación entre sus miembros
+ */
+class AppController : public IAppControl
+{
+public:
+// General ------------------------------------------------------------------------------
+
+    /**
+     * @brief Constructor de AppController. 
+     */
+    AppController();
+
+    /**
+     * @brief Destructor de AppController.
+     */
+    ~AppController();
+
+    /**
+     * @brief Inicializa los miembros de la aplicación
+     */
+    bool init();
+
+    /**
+     * @brief Ejecuta la aplicación. Inicia el receptor UDP y la ventana UI.
+     * @return 0 si todo se ejecutó correctamente, otro en caso de error.
+     */
+    int run();
+
+// IAppControl methods ------------------------------------------------------------
+    /**
+     * @brief Implementación del método de IAppControl para devolver la versión de la aplicación.
+     * @return La versión de la aplicación como una cadena de texto.
+     * @note const evita que el método modifique la variable "version_" o cualquiera.
+     */
+    std::string getVersion() const noexcept override { return version_; }
+
+    /**
+     * @brief Implementación del método de IAppControl para devolver el puerto en el que el receptor UDP está escuchando.
+     * @return El puerto del receptor UDP. Si el receptor no está en ejecución, devuelve -1.
+     * @note const evita que el método modifique cualquier variable miembro de la clase.
+     */
+    int get_SocketPort() const noexcept override { return 1; }
+
+private:
+
+
+    /************ Variables ********************************************************/
+
+    UdpReceiver receiver1_;                          // Receptor UDP para recibir datos de forma asíncrona
+    UdpReceiver receiver2_;                          // Receptor UDP para recibir datos de forma asíncrona
+    WinMgr      ui_;                                // Gestor de ventanas para la interfaz gráfica
+    std::string version_ = std::to_string(VERSION); // Versión de la aplicación
+};

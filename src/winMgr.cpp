@@ -43,7 +43,13 @@ void WinMgr::setController(IAppControl* controller){
 }
 
 bool WinMgr::init() {
-    if (!glfwInit()) return false;
+	
+	std::cout << "[WinMgr] Inicializando ventana..." << std::endl;
+
+    if (!glfwInit()) {
+		std::cerr << "[WinMgr] glfwInit Error" << std::endl;
+		return false;
+	}
 
     // 1. Configuración de la ventana GLFW
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Fondo transparente
@@ -94,12 +100,6 @@ bool WinMgr::init() {
 
 void WinMgr::run() {
 
-	std::cout << "[WinMgr] Inicializando ventana..." << std::endl;
-	if (!init()) {
-		std::cerr << "[WinMgr] Error al inicializar la ventana." << std::endl;
-		return;
-	}
-	
 	while (isRunning())
 		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
 	
