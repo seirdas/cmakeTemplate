@@ -35,7 +35,7 @@ WinMgr::WinMgr(IAppControl* controller) : controller_(controller) {
 }
 
 WinMgr::~WinMgr() {
-	if(!cerrado_) cerrar();
+	cerrar();
 }
 
 void WinMgr::setController(IAppControl* controller){
@@ -113,6 +113,10 @@ bool WinMgr::isRunning() const
 }
 
 void WinMgr::cerrar() {
+	// No intentar cerrar de nuevo (excepción)
+	if(cerrado_) 
+		return;
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
