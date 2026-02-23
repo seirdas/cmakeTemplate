@@ -19,20 +19,11 @@ project(${PROJECT_NAME})
 # Activa la salida de los comandos de depuración durante la generación
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
 if (MSVC)
-  # Definiciones de compatibilidad
-  add_compile_definitions(
-      _CRT_SECURE_NO_WARNINGS # Desactivar advertencias de funciones inseguras
-      _SCL_SECURE_NO_WARNINGS # Desactivar advertencias de seguridad en STL
-      NOMINMAX                # Evitar definición de macros min y max
-      WIN32_LEAN_AND_MEAN     # Excluir APIs innecesarias de Windows.h
-  )
-
   message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-
 endif()
-
 
 
 # ===============================
@@ -53,7 +44,6 @@ set(FETCHCONTENT_QUIET OFF)                                             # menos 
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "")                 # Evitar que FetchContent vuelva a actualizar el repositorio cada vez
 set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establece donde descargar las librerías externas
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
-
 
 # Libreria asio network ( ANTES DE windows.h )
 option(USE_ASIO "Compilar con soporte para asio" ON)            # Activar/desactivar librería
@@ -116,6 +106,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # ===============================
 
 if (WIN32)
+
+  # Linkado de librerías del sistema Windows
   target_link_libraries(${PROJECT_NAME} PRIVATE
     ole32       # AudioDrivers: Component Object Model (COM) y OLE
     oleaut32    # AudioDrivers: Automatización OLE
@@ -124,21 +116,37 @@ if (WIN32)
     dwmapi      # Integración con el gestor de ventanas DWM
    )
 
+  # Propiedades para sistema Windows
   set_target_properties(${PROJECT_NAME} PROPERTIES 
-    WIN32_EXECUTABLE $<CONFIG:Release>      # No usar consola en Release
-    LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
+    WIN32_EXECUTABLE $<CONFIG:Release>                    # No usar consola en Release
   )
 
-  # Definir _WIN32_WINNT para el ejecutable
+  if (MSVC)
+  target_link_options(${PROJECT_NAME} PRIVATE 
+    $<$<CONFIG:Release>:/SUBSYSTEM:WINDOWS>
+    LINK_FLAGS "/ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
+  )
+  elseif (MINGW)
+    target_link_options(${PROJECT_NAME} PRIVATE 
+      $<$<CONFIG:Release>:-mwindows>
+    )
+  endif()
+
+  # Definiciones para compatibilidad
   target_compile_definitions(${PROJECT_NAME} PRIVATE 
-    _WIN32_WINNT=0x0601
-    WINVER=0x0601
-    NTDDI_VERSION=0x06010000
+    _WIN32_WINNT=0x0601       # Windows 7 o superior
+    WINVER=0x0601             # Windows 7 o superior
+    NTDDI_VERSION=0x06010000  # Windows 7 o superior
+    _CRT_SECURE_NO_WARNINGS   # Desactivar advertencias de funciones inseguras
+    _SCL_SECURE_NO_WARNINGS   # Desactivar advertencias de seguridad en STL
+    NOMINMAX                  # Evitar definición de macros min y max
+    WIN32_LEAN_AND_MEAN       # Excluir APIs innecesarias de Windows.h
   )
 
 endif()
 
-# Configuración específica para MSVC
+
+# Configuración específica para MSVC (IDE Visual Studio)
 if(MSVC)
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
@@ -151,52 +159,45 @@ if(MSVC)
 
   # Especifica el proyecto principal
   set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
-  
-  # Configuración para depuración en Visual Studio: establecer el ejecutable y el directorio de trabajo
-  set_target_properties(${PROJECT_NAME} PROPERTIES
-    VS_DEBUGGER_COMMAND "$<TARGET_FILE:${PROJECT_NAME}>"
-    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-  )
-  # Usar el main normal aunque sea una App de Windows
-  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
+
   # Agrupar archivos de cabecera, fuente y recursos en carpetas
   source_group("Include"    FILES ${HEADERS})
   source_group("Source"     FILES ${SOURCES})
   source_group("Resources"  FILES ${RESOURCES})
 
-  # Definiciones para compatibilidad con Windows 7 o superior (Windows 7 = 0x0601)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE 
-    _WIN32_WINNT=0x0601       # Windows 7 o superior
-    WINVER=0x0601             # Windows 7 o superior
-    NTDDI_VERSION=0x06010000  # Windows 7 o superior
-  )
 
+  # Configuración específica para GCC/MinGW y Clang
+elseif (MINGW)
 
-# Configuración específica para GCC/MinGW
-elseif(MINGW)
+  # Mensajes de información sobre el compilador
+  message(STATUS "Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
+  message(STATUS "Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
+  message(STATUS "Compiler path: ${CMAKE_CXX_COMPILER}")
+
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-      -Wall                      # Habilitar todas las advertencias
-      -Wextra                    # Habilitar advertencias adicionales
-      -Wpedantic                 # Habilitar advertencias estrictas de estándar
-      -Wshadow                   # Advertir sobre variables que ocultan otras
-      -Wuninitialized            # Advertir sobre variables no inicializadas
-      -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
+    -Wall                      # Habilitar todas las advertencias
+    -Wextra                    # Habilitar advertencias adicionales
+    -Wpedantic                 # Habilitar advertencias estrictas de estándar
+    -Wshadow                   # Advertir sobre variables que ocultan otras
+    -Wuninitialized            # Advertir sobre variables no inicializadas
+    -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
+    -Wshadow                   # Advertir de variables re-declaradas
+    -Wunused-parameter         # Advertir de variables que no se usan
 
-      # Depuración y optimización según la configuración
-      $<$<NOT:$<CONFIG:Release>>:-g>   # Información de depuración en Debug
-      $<$<NOT:$<CONFIG:Release>>:-O0>  # Sin optimizaciones en Debug
-      $<$<CONFIG:Release>:-O2>         # Optimización para velocidad en Release
+    # Depuración y optimización según la configuración
+    $<$<NOT:$<CONFIG:Release>>:-g>   # Información de depuración en Debug
+    $<$<NOT:$<CONFIG:Release>>:-O0>  # Sin optimizaciones en Debug
+    $<$<CONFIG:Release>:-O2>         # Optimización para velocidad en Release
   )
 
-
+  # Linkado estático de librerías de std c++
   set_target_properties(${PROJECT_NAME} PROPERTIES 
     LINK_FLAGS "-static -static-libgcc -static-libstdc++"
   )
 
   # Librerías de sistema 
   target_link_libraries(${PROJECT_NAME} PRIVATE
-    -static
     winpthread  # Hilos en Windows
     kernel32    # Funciones básicas de Windows
     comdlg32    # Diálogos comunes de Windows
@@ -206,6 +207,7 @@ elseif(MINGW)
   if(CMAKE_TOOLCHAIN_FILE)
       message(STATUS "Utilizando toolchain: ${CMAKE_TOOLCHAIN_FILE}")
   endif() 
+
 endif()
 
 
@@ -234,6 +236,7 @@ add_custom_command(
   "${CMAKE_CURRENT_SOURCE_DIR}/config"
   "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )
+
 # Configurar carpetas de salida del ejecutable y librerías
 set_target_properties(${PROJECT_NAME} PROPERTIES 
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<CONFIG>" # Carpeta de salida del ejecutable
