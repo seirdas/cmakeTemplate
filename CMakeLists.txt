@@ -124,7 +124,7 @@ if (WIN32)
   if (MSVC)
   target_link_options(${PROJECT_NAME} PRIVATE 
     $<$<CONFIG:Release>:/SUBSYSTEM:WINDOWS>
-    LINK_FLAGS "/ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
+    "/ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
   )
   elseif (MINGW)
     target_link_options(${PROJECT_NAME} PRIVATE 
