@@ -18,7 +18,9 @@ set(CLANG_PATH "${CLANG_PATH}" CACHE STRING "Clang installation path" FORCE)
 set(CLANG_BIN "${CLANG_BIN}" CACHE STRING "Clang binary path" FORCE)
 
 set(CMAKE_CXX_FLAGS "-B${CLANG_BIN} ${CMAKE_CXX_FLAGS}" CACHE STRING "CXX Flags" FORCE)
+set(CMAKE_CXX_FLAGS "--target=x86_64-w64-windows-gnu ${CMAKE_CXX_FLAGS}" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS "-B${CLANG_BIN} ${CMAKE_C_FLAGS}" CACHE STRING "C Flags" FORCE)
+set(CMAKE_C_FLAGS   "--target=x86_64-w64-windows-gnu ${CMAKE_C_FLAGS}" CACHE STRING "" FORCE)
 
 # Establecer los compiladores, comprobando su existencia
 #ESTE ES EL PARRAFO IMPORTANTE

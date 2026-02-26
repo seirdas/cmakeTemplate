@@ -33,6 +33,10 @@ bool UdpReceiver::init(short local_port, const std::string& local_ip, unsigned i
         std::cerr << "Packet size exceeds maximum UDP packet size." << std::endl;
         return false;
     }
+    
+    // Redimensionar el buffer de recepción al tamaño esperado de los paquetes
+    this->rcv_packet_size_ = rcv_packet_size;
+    recv_buffer_.resize(rcv_packet_size_ > 0 ? rcv_packet_size_ : MAX_UDP_PACKET_SIZE);
 
     // Abrir (bind) el socket
     if (openSocket(local_port, local_ip) && socket_.is_open()) {
@@ -46,10 +50,6 @@ bool UdpReceiver::init(short local_port, const std::string& local_ip, unsigned i
         if (ec) std::cerr << "Error closing socket after failure: " << ec.message() << std::endl;
         return false;
     }
-
-    // Redimensionar el buffer de recepción al tamaño esperado de los paquetes
-    this->rcv_packet_size_ = rcv_packet_size;
-    recv_buffer_.resize(rcv_packet_size_ > 0 ? rcv_packet_size_ : MAX_UDP_PACKET_SIZE);
 
     return true;
 }

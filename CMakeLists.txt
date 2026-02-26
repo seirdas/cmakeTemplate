@@ -121,17 +121,6 @@ if (WIN32)
     WIN32_EXECUTABLE $<CONFIG:Release>                    # No usar consola en Release
   )
 
-  if (MSVC)
-  target_link_options(${PROJECT_NAME} PRIVATE 
-    $<$<CONFIG:Release>:/SUBSYSTEM:WINDOWS>
-    "/ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
-  )
-  elseif (MINGW)
-    target_link_options(${PROJECT_NAME} PRIVATE 
-      $<$<CONFIG:Release>:-mwindows>
-    )
-  endif()
-
   # Definiciones para compatibilidad
   target_compile_definitions(${PROJECT_NAME} PRIVATE 
     _WIN32_WINNT=0x0601       # Windows 7 o superior
@@ -143,6 +132,29 @@ if (WIN32)
     WIN32_LEAN_AND_MEAN       # Excluir APIs innecesarias de Windows.h
   )
 
+  if (MINGW)
+
+    target_link_options(${PROJECT_NAME} PRIVATE 
+      $<$<CONFIG:Release>:-mwindows>
+    )
+
+    # Código de instrumentación ASan para desbordamientos de memoria
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      target_compile_options(${PROJECT_NAME} PRIVATE
+          $<$<CONFIG:Debug>:
+            -fsanitize=address
+            -fno-omit-frame-pointer
+          >
+      )
+      target_link_options(${PROJECT_NAME} PRIVATE
+          $<$<CONFIG:Debug>:
+            -fsanitize=address
+          >
+      )
+    endif()
+
+  endif()
+
 endif()
 
 
@@ -152,9 +164,17 @@ if(MSVC)
   target_compile_options(${PROJECT_NAME} PRIVATE
     /W3                       # Nivel de advertencia 3
     /EHsc                     # Manejo de excepciones en C++
-    $<$<CONFIG:Debug>:/ZI>    # Información de depuración
-    $<$<CONFIG:Debug>:/Od>    # Desactivar optimizaciones en Debug
+    $<$<CONFIG:Debug>:
+      /ZI                     # Información de depuración
+      /Od                     # Desactivar optimizaciones en Debug
+    >  
     $<$<CONFIG:Release>:/O2>  # Optimización para velocidad en Release
+  )
+
+  # Usar main normal, subsistema windows
+  target_link_options(${PROJECT_NAME} PRIVATE 
+    $<$<CONFIG:Release>:/SUBSYSTEM:WINDOWS>
+    "/ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
   )
 
   # Especifica el proyecto principal
@@ -182,13 +202,16 @@ elseif (MINGW)
     -Wshadow                   # Advertir sobre variables que ocultan otras
     -Wuninitialized            # Advertir sobre variables no inicializadas
     -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
-    -Wshadow                   # Advertir de variables re-declaradas
     -Wunused-parameter         # Advertir de variables que no se usan
 
     # Depuración y optimización según la configuración
-    $<$<NOT:$<CONFIG:Release>>:-g>   # Información de depuración en Debug
-    $<$<NOT:$<CONFIG:Release>>:-O0>  # Sin optimizaciones en Debug
-    $<$<CONFIG:Release>:-O2>         # Optimización para velocidad en Release
+    $<$<NOT:$<CONFIG:Release>>:
+      -g    # Información de depuración en Debug
+      -O0   # Sin optimizaciones en Debug
+    >   
+    $<$<CONFIG:Release>:
+      -O2   # Optimización para velocidad en Release
+    >
   )
 
   # Linkado estático de librerías de std c++
