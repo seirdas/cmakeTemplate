@@ -12,11 +12,11 @@ AppController::AppController() : ui_(this) {
 AppController::~AppController() {
     
     // Cerrar sockets
-    std::cout << "Cerrando sockets..." << std::endl;
+    std::cout << "[AppController] Closing sockets and I/O..." << std::endl;
     net_.stop();
     
     // Cerrar ventana UI
-    std::cout << "Cerrando ventana UI..." << std::endl;
+    std::cout << "[AppController] Closing UI..." << std::endl;
     ui_.cerrar();
 
 }

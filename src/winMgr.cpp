@@ -44,10 +44,10 @@ void WinMgr::setController(IAppControl* controller){
 
 bool WinMgr::init() {
 	
-	std::cout << "[WinMgr] Inicializando ventana..." << std::endl;
+	std::cout << "[WinMgr] initializating window..." << std::endl;
 
     if (!glfwInit()) {
-		std::cerr << "[WinMgr] glfwInit Error" << std::endl;
+		std::cerr << "[WinMgr] glfwInit error." << std::endl;
 		return false;
 	}
 
@@ -60,7 +60,7 @@ bool WinMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        std::cerr << "[WinMgr] Error al crear la ventana GLFW" << std::endl;
+        std::cerr << "[WinMgr] glfwCreateWindow error." << std::endl;
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -103,12 +103,11 @@ void WinMgr::run() {
 	while (isRunning())
 		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
 	
-	std::cout << "[WinMgr] Cerrando ventana" << std::endl;
+	std::cout << "[WinMgr] Closing window..." << std::endl;
 	cerrar();
 }
 
-bool WinMgr::isRunning() const
-{
+bool WinMgr::isRunning() const {
     return window_ && !glfwWindowShouldClose(window_);
 }
 
@@ -132,7 +131,7 @@ void WinMgr::cerrar() {
 }
 
 
-void WinMgr::initCuadro(){
+void WinMgr::initCuadro() {
     glfwPollEvents();
     
     ImGui_ImplOpenGL3_NewFrame();
@@ -140,7 +139,7 @@ void WinMgr::initCuadro(){
     ImGui::NewFrame();
 }
 
-void WinMgr::endCuadro(){
+void WinMgr::endCuadro() {
     // Renderiza
     ImGui::Render();
     glClearColor(clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]);
@@ -283,10 +282,7 @@ void WinMgr::crearMainMenuBar() {
 
 // Temas --------------------------------------------------------------------------------
 
-/**
- * @brief Comfy style by Giuseppe from ImThemes
- */
-void WinMgr::Style_Confy(){
+void WinMgr::Style_Confy() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -374,10 +370,7 @@ void WinMgr::Style_Confy(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.8f, 0.8f, 0.8f, 0.35f);
 }
 
-/**
- * @brief Future Dark style by rewrking from ImThemes
- */
-void WinMgr::Style_FutureDark(){
+void WinMgr::Style_FutureDark() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -465,10 +458,7 @@ void WinMgr::Style_FutureDark(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.19607843f, 0.1764706f, 0.54509807f, 0.5019608f);
 }
 
-/**
- * @brief Moonlight style by rewrking from ImThemes
- */
-void WinMgr::Style_Moonlight(){
+void WinMgr::Style_Moonlight() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -556,11 +546,7 @@ void WinMgr::Style_Moonlight(){
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.19607843f, 0.1764706f, 0.54509807f, 0.5019608f);
 }
 
-/**
- * @brief Rounded Visual Studio style by RedNicStone from ImThemes
- */
-void WinMgr::Style_VisualStudio()
-{
+void WinMgr::Style_VisualStudio() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;

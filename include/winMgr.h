@@ -77,9 +77,25 @@ public:
     void crearMainMenuBar();
     
     // Temas --------------------------------------------------------------------------------
+    
+    /**
+    * @brief Comfy style by Giuseppe from ImThemes
+    */
     void Style_Confy();
+
+    /**
+    * @brief Future Dark style by rewrking from ImThemes
+    */
     void Style_FutureDark();
+
+    /**
+    * @brief Moonlight style by rewrking from ImThemes
+    */
     void Style_Moonlight();
+    
+    /**
+    * @brief Rounded Visual Studio style by RedNicStone from ImThemes
+    */
     void Style_VisualStudio();
     
     

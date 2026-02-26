@@ -39,12 +39,16 @@ target_compile_definitions(asio_lib INTERFACE
 
 # Vincular con las librerías de sockets de Windows
 target_link_libraries(asio_lib INTERFACE
-  $<$<PLATFORM_ID:Windows>:ws2_32>     # Winsock2 - API de sockets de Windows
-  $<$<PLATFORM_ID:Windows>:mswsock>    # Microsoft Winsock Extensions
-  $<$<PLATFORM_ID:Windows>:wsock32>    # Winsock - API de sockets antigua (a veces requerida)
+  $<$<PLATFORM_ID:Windows>:
+    ws2_32      # Winsock2 - API de sockets de Windows
+    mswsock     # Microsoft Winsock Extensions
+    wsock32     # Winsock - API de sockets antigua (a veces requerida)
+  >    
 )
 
 target_compile_options(asio_lib INTERFACE
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-shadow>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wno-unused-parameter>
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
+      -Wno-shadow
+      -Wno-unused-parameter
+    >
 )

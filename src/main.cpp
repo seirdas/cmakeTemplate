@@ -9,7 +9,6 @@ int main(int /*argc*/, char** argv){
     if (std::filesystem::exists(path))
         std::filesystem::current_path(path.parent_path());
 
-
     // Instancia controladora de la aplicación
     AppController App;
     if (App.init())
