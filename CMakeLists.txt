@@ -60,7 +60,7 @@ if(USE_JUCE)
 endif()
 
 # Librería miniaudio
-option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" OFF)  # Activar/desactivar librería
+option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)  # Activar/desactivar librería
 if(USE_MINIAUDIO)
     include(lib-miniaudio)                                      # Ejecuta el archivo toolchains/lib-miniaudio.cmake
     add_definitions(-DUSE_MINIAUDIO=1)                          # Definición para usar en el código C++
@@ -142,13 +142,13 @@ if (WIN32)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       target_compile_options(${PROJECT_NAME} PRIVATE
           $<$<CONFIG:Debug>:
-            -fsanitize=address
+            # -fsanitize=address      # NECESITA LA DLL libclang_rt.asan_dynamic-x86_64.dll
             -fno-omit-frame-pointer
           >
       )
       target_link_options(${PROJECT_NAME} PRIVATE
           $<$<CONFIG:Debug>:
-            -fsanitize=address
+            # -fsanitize=address      # NECESITA LA DLL libclang_rt.asan_dynamic-x86_64.dll
           >
       )
     endif()

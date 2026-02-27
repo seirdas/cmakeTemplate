@@ -27,14 +27,22 @@ FetchContent_Declare(
 # Hace disponible el recurso
 FetchContent_MakeAvailable(miniaudio)
 
-
-
 # Crear una librería estática con Miniaudio
 add_library(miniaudio_lib STATIC
   ${miniaudio_SOURCE_DIR}/miniaudio.c
 )
 target_include_directories(miniaudio_lib PUBLIC ${miniaudio_SOURCE_DIR})
 target_link_libraries(miniaudio_lib PUBLIC
-  $<$<PLATFORM_ID:Windows>:winmm>  
-  $<$<PLATFORM_ID:Linux>:pthread dl m>
+  $<$<PLATFORM_ID:Windows>:
+    winmm
+  >  
+  $<$<PLATFORM_ID:Linux>:
+    pthread
+    dl
+    m 
+    asound
+  >
+  $<$<PLATFORM_ID:APPLE>:
+    "-framework CoreFoundation" "-framework CoreAudio" "-framework AudioUnit"
+  >
 )

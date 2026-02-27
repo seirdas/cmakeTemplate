@@ -9,6 +9,7 @@
 
 #include "winMgr.h"             // Clase de gestión de ventana UI
 #include "NetMgr.hpp"           // Clase para gestionar sockets
+#include "SoundMgr.hpp"        // Clase para gestionar audio
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 #define VERSION 0.8
@@ -64,5 +65,7 @@ private:
 
     NetMgr      net_;                               // Gestor de sockets de red
     WinMgr      ui_;                                // Gestor de ventanas para la interfaz gráfica
+    SoundMgr    snd_;                               // Gestor de audio
+
     std::string version_ = std::to_string(VERSION); // Versión de la aplicación
 };
