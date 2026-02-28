@@ -2,8 +2,11 @@
 # TODO
 - [ ] README Documentar compatibilidades con Visual Studio, vscode y vscodium
 - [ ] README: NO AÑADIR ARCHIVOS/CLASES (.cpp, .h) DESDE VISUAL STUDIO DIRECTAMENTE
-- [ ] Compilación Ninja / Ninja Multi-config
-- [ ] Compilación Clang `pacman -S mingw-w64-clang-x86_64-toolchain`
+- [ ] README: Documentar compilación en IDE Visual Studio.
+- [ ] README: Documentar Clang.
+- [ ] README: Documentar depuración Clang LLDB en vscode con la extensión CodeLLDB.
+- [x] ~~Compilación Ninja Multi-config~~
+- [x] ~~Compilación Clang `pacman -S mingw-w64-clang-x86_64-toolchain`~~
 - [x] ~~En Mingw al cambiar el main.cpp no funciona bien la recompilación.~~
 - [x] ~~El nombre de proyecto lo toma directamente del nombre de la carpeta~~
 ---
@@ -14,7 +17,7 @@
     Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
 - **_build**: Se genera automáticamente al configurar el proyecto con un preset específico (puede borrarse si hay fallos).
     Almacenan el proyecto generado desde la configuración (_.sln_ de visual studio o Makefiles)
-- **config**: Archivos de configuración que serán copiados en la misma ruta del ejecutable (como `.json`, `.ini`, etc.).
+- **dependencies**: Archivos de dependencias que serán copiados en la misma ruta del ejecutable al compilar (como `.json`, `.ini`, etc.).
 - **executable**: Binarios ejecutables (`.exe`) que se generar al hacer un _build_ del proyecto.
 - **_external**: Librerías externas descargadas a partir de CMake. Se genera automáticamente al configurar un proyecto (puede borrarse si hay fallos).
 - **include**: Archivos de cabecera (`.h`).
@@ -42,6 +45,13 @@ winget install Kitware.CMake
 ## Build Tools de Visual Studio (MSVC)
 La forma más sencilla de instalar las herramientas de compilación de Visual Studio es instalar el IDE de Visual Studio. La versión instalada corresponderá con las herramientas de compilación corresponderá con la versión instalada (VS2019, VS2022, VS2026...)
 
+Sin embargo, los compiladores MSVC de 2019 y 2022 se pueden descargar independientemente del IDE de Visual Studio:
+- [Build Tools v16 2019](https://aka.ms/vs/16/release/vs_BuildTools.exe) 
+- [Build Tools v17 2022](https://aka.ms/vs/16/release/vs_BuildTools.exe) 
+
+En este caso, principalmente habría que seleccionar **Desarrollo de aplicaciones de escritorio en C++** en las cargas de trabajo de Visual Studio Installer.
+
+
 ## MinGW
 1. Se necesita descargar MSYS2. Se puede hacer:
 	- [Desde aquí](https://www.msys2.org) 
@@ -57,29 +67,8 @@ La forma más sencilla de instalar las herramientas de compilación de Visual St
     pacman -Syu
     pacman -S mingw-w64-x86_64-toolchain
     ```
-    Va a aparecer una selección de varias dependencias o herramientas de compilación. 
-    ```bash
-    $ pacman -S mingw-w64-x86_64-toolchain
-    :: There are 13 members in group mingw-w64-x86_64-toolchain:
-    :: Repository mingw64
-    1) mingw-w64-x86_64-binutils  
-    2) mingw-w64-x86_64-crt  
-    3) mingw-w64-x86_64-gcc
-    4) mingw-w64-x86_64-gdb  
-    5) mingw-w64-x86_64-gdb-multiarch  
-    6) mingw-w64-x86_64-headers
-    7) mingw-w64-x86_64-libmangle  
-    8) mingw-w64-x86_64-libwinpthread  
-    9) mingw-w64-x86_64-make
-    10) mingw-w64-x86_64-pkgconf  
-    11) mingw-w64-x86_64-tools  
-    12) mingw-w64-x86_64-winpthreads
-    13) mingw-w64-x86_64-winstorecompat
 
-    Enter a selection (default=all):
-    ```
-
-    Por lo general, es más seguro instalar todas (pulsando enter).
+    Por lo general, es más seguro instalar todas las dependencias (pulsando enter).
     Se descargará MinGW en `C:/msys64/mingw64` por defecto (tarda un rato).
     Los binarios como `gcc.exe` o `gdb.exe` estarán en la ruta `C:/msys64/mingw64/bin`.
 
@@ -99,14 +88,14 @@ La forma más sencilla de instalar las herramientas de compilación de Visual St
 
 ## Generación manual
 El proyecto está diseñado para permitir la generación de soluciones o "entornos" _Makefile_ a partir de presets de CMake.
-Lo habitual es configurar los proyectos en la carpeta `build`, que habrá que crear si no está creada:
+Lo habitual es configurar los proyectos en la carpeta `_build`, que habrá que crear si no está creada:
 ```bash
-mkdir build
-cd build
+mkdir _build
+cd _build
 ```
 
 Dentro de la carpeta build se pueden generar las configuraciones del proyecto a partir de los presets definidos en `CMakePresets.json`.
-Estas son las opciones posibles, desde los presets de `CMakePresets.json`:
+Estas son algunas de las opciones posibles, desde los presets de `CMakePresets.json`:
 ```bash
 cmake .. --preset vs2019 # Generar solución para Visual Studio 2019
 cmake .. --preset vs2022 # Generar solución para Visual Studio 2022
@@ -127,6 +116,7 @@ Descargar y abrir la carpeta en un entorno IDE de Visual Studio.
 Visual Studio Code se apoya en los siguientes archivos que están en la carpeta `.vscode`:
 - **settings.json**:
 - **tasks.json**:
+
 #### launch.json
 Ejecuta el programa. Las configuraciones aparecen en el panel lateral izquierdo por defecto, que también aparece con el shortcut `Ctrl+Shift+D`. 
 Desde ahí, se puede configurar el depurador a lanzar, con el botón de símbolo de _Play_ o `F5`. 
@@ -135,7 +125,10 @@ Habitualmente dentro del _launch_ hay un `preLaunchTask`, que es un task que se 
 
 ### Configure
 
+
 ### Build
+
+
 #### MSVC
 
 #### MinGW
