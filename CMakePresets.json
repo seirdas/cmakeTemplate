@@ -27,95 +27,195 @@
         },
         {
             "name": "mingw64",
-            "displayName": "🟠 MinGW-x64",
-            "description": "Genera Makefiles de MinGW-w64. Revisar MINGW_PATH en preset.",
-            "generator": "MinGW Makefiles",
+            "description": "Plantilla oculta para heredar las opciones comunes de mingw64",
             "binaryDir": "${sourceDir}/_build/${presetName}",
             "toolchainFile": "${sourceDir}/toolchains/mingw-mingw64.cmake",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"Release",
-                "MINGW_PATH": "$env{MINGW_PATH}"
+                "MINGW_PATH":"$env{MINGW_PATH}"
             },
             "environment": {
                 "MINGW_PATH": "C:/msys64/mingw64"
-            }
+            },
+            "hidden": true
+        },
+        {
+            "name": "mingw64-ninja",
+            "displayName": "🟠 Ninja MinGW-x64",
+            "description": "Genera Makefiles de MinGW-w64. Necesita tener instalado Ninja.",
+            "generator": "Ninja Multi-Config",
+            "inherits": "mingw64",
+            "environment": {
+                "NINJA_PATH":"${sourceDir}/other"
+            },
+            "hidden": false
+        },
+        {
+            "name": "mingw64-release",
+            "displayName": "🔶 MinGW-x64 Release",
+            "generator": "MinGW Makefiles",
+            "description": "Genera Makefiles de MinGW-w64 en Release. Revisar MINGW_PATH en preset.",
+            "inherits": "mingw64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":"Release"
+            },
+            "hidden": false
         },
         {
             "name": "mingw64-debug",
             "displayName": "🔶 MinGW-x64 Debug",
+            "generator": "MinGW Makefiles",
             "description": "Genera Makefiles de MinGW-w64 en Debug. Revisar MINGW_PATH en preset.",
             "inherits": "mingw64",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Debug"
-            }
+            },
+            "hidden": false
         },
         {
             "name": "clang64",
-            "displayName": "🔵 Clang-x64",
-            "description": "Genera Makefiles para Clang en Release. Revisar CLANG_PATH en preset.",
-            "generator": "MinGW Makefiles",
+            "description": "Plantilla oculta para heredar las opciones comunes de mingw64",
             "binaryDir": "${sourceDir}/_build/${presetName}",
             "toolchainFile": "${sourceDir}/toolchains/mingw-clang64.cmake",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"Release",
-                "CLANG_PATH": "$env{CLANG_PATH}"
+                "CLANG_PATH":"$env{CLANG_PATH}"
             },
             "environment": {
                 "CLANG_PATH": "C:/msys64/clang64"
-            }
+            },
+            "hidden": true
+        },
+        {
+            "name": "clang64-ninja",
+            "displayName": "🔵 Clang-x64 Ninja",
+            "generator": "Ninja Multi-Config",
+            "description": "Genera Makefiles para Clang. Necesita tener instalado Ninja.",
+            "inherits": "clang64",
+            "environment": {
+                "NINJA_PATH":"${sourceDir}/other"
+            },
+            "hidden": false
+        },
+        {
+            "name": "clang64-release",
+            "displayName": "🔷 Clang-x64 Release",
+            "generator": "MinGW Makefiles",
+            "description": "Genera Makefiles para Clang en Release. Revisar CLANG_PATH en preset.",
+            "inherits": "clang64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":"Release"
+            },
+            "hidden": false
         },
         {
             "name": "clang64-debug",
             "displayName": "🔷 Clang-x64 Debug",
-            "description": "Genera Makefiles para Clang. Revisar CLANG_PATH en preset.",
+            "generator": "MinGW Makefiles",
+            "description": "Genera Makefiles para Clang en Debug. Revisar CLANG_PATH en preset.",
             "inherits": "clang64",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Debug"
-            }
+            },
+            "hidden": false
         }
     ],
     "buildPresets": [
         {
             "name": "mingw64",
-            "displayName": "🧶 Mingw64",
-            "configurePreset": "mingw64",
-            "targets": [ "all" ],
-            "jobs": 4,
             "environment": {
-                "PATH": "$env{MINGW_PATH}/bin;$penv{PATH}"
+                "PATH": "C:/msys64/mingw64/bin;C:/Users/Sergio/Desktop/cmavi/other;$penv{PATH}"
             },
-            "cleanFirst": true,
-            "description": "Build con Mingw64",
-            "configuration": "Release"
+            "cleanFirst": false,
+            "jobs": 4,
+            "description": "Plantilla oculta para heredar configuraciones comunes",
+            "hidden": true
+        },
+        {
+            "name": "mingw64-release",
+            "targets": [ "all" ],
+            "displayName": "🔷 Mingw64 (Release)",
+            "configurePreset": "mingw64-release",
+            "inherits": "mingw64",
+            "configuration": "Release",
+            "hidden":false
         },
         {
             "name": "mingw64-debug",
-            "displayName": "🧶 Mingw64 (Debug)",
+            "targets": [ "all" ],
+            "displayName": "🔷 Mingw64 (Debug)",
             "configurePreset": "mingw64-debug",
             "inherits": "mingw64",
-            "configuration": "Debug"
+            "configuration": "Debug",
+            "hidden": false
         },
-
+        {
+            "name": "mingw64-ninja-release",
+            "displayName": "🚀 Mingw64 Release (x64)",
+            "description": "Build en Release para Mingw64 (x64).",
+            "configurePreset": "mingw64-ninja",
+            "configuration": "Release",
+            "hidden": false
+        },
+        {
+            "name": "mingw64-ninja-debug",
+            "displayName": "🐞 Mingw64 Debug (x64)",
+            "description": "Build en Debug para Mingw64 (x64).",
+            "configurePreset": "mingw64-ninja",
+            "configuration": "Debug",
+            "hidden": false
+        },
         {
             "name": "clang64",
-            "displayName": "🟤 Clang64",
             "configurePreset": "clang64",
-            "targets": [ "all" ],
             "jobs": 4,
             "environment": {
-                "PATH": "$env{CLANG_PATH}/bin;$penv{PATH}"
+                "PATH": "$env{CLANG_PATH}/bin;$env{NINJA_PATH}/bin;$penv{PATH}"
             },
-            "cleanFirst": true,
-            "description": "Build con Clang64",
-            "configuration": "Release"
+            "description": "Plantilla oculta para heredar configuraciones comunes",
+            "hidden": true
+        },
+        {
+            "name": "clang64-release",
+            "targets": [ "all" ],
+            "displayName": "🟤 Clang64 (Release)",
+            "configurePreset": "clang64-release",
+            "inherits": "clang64",
+            "configuration": "Release",
+            "hidden": false
         },
         {
             "name": "clang64-debug",
+            "targets": [ "all" ],
             "displayName": "🟤 Clang64 (Debug)",
             "configurePreset": "clang64-debug",
             "inherits": "clang64",
-            "configuration": "Debug"
+            "configuration": "Debug",
+            "hidden": false
         },
+        {
+            "name": "clang64-ninja-release",
+            "displayName": "🚀 Clang Release (x64)",
+            "description": "Build en Release para Clang (x64).",
+            "configurePreset": "clang64-ninja",
+            "configuration": "Release",
+            "hidden": false
+        },
+        {
+            "name": "clang64-ninja-debug",
+            "displayName": "🐞 Clang Debug (x64)",
+            "description": "Build en Debug para Clang (x64).",
+            "configurePreset": "clang64-ninja",
+            "configuration": "Debug",
+            "hidden": false
+        },
+        {
+            "name": "clang64-ninja-relwithdebinfo",
+            "displayName": "🔍 Clang RelWithDebInfo (x64)",
+            "description": "Build en RelWithDebInfo para Clang (x64).",
+            "configurePreset": "clang64-ninja",
+            "configuration": "RelWithDebInfo",
+            "hidden": false
+        },
+
 
         {
             "name": "vs2019-release",

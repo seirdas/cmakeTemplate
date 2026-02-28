@@ -4,20 +4,7 @@
 
 message(STATUS "Init MinGW toolchain")
 
-# Buscar si Mingw existe en las rutas comunes
-if(NOT EXISTS "${MINGW_BIN}/gcc.exe")
-  message(STATUS "MINGW_PATH not found in preset's provided path, searching common paths...")
-  if(EXISTS "C:/msys64/mingw64/bin/g++.exe")
-    set(MINGW_PATH "C:/msys64/mingw64")
-  elseif(EXISTS "C:/mingw-w64/mingw64/bin/g++.exe")
-    set(MINGW_PATH "C:/mingw-w64/mingw64")
-  elseif(EXISTS "C:/mingw64/bin/g++.exe")
-    set(MINGW_PATH "C:/mingw64")
-  else()
-    message(FATAL_ERROR "Mingw installation not found. Please define MINGW_PATH in MinGW CMake configuration preset.")
-  endif()
-endif()
-set(MINGW_PATH "${MINGW_PATH}" CACHE STRING "MinGW installation path" FORCE)
+set(MINGW_PATH "$ENV{MINGW_PATH}" CACHE STRING "MinGW installation path" FORCE)
 set(MINGW_BIN "${MINGW_PATH}/bin" CACHE STRING "MinGW binary path" FORCE)
 
 # Añadir mingw al path para poder usar sus dependencias
@@ -25,19 +12,26 @@ set(ENV{PATH} "${MINGW_BIN};$ENV{PATH}")
 set(MINGW_PATH "${MINGW_PATH}" CACHE STRING "MinGW installation path" FORCE)
 set(MINGW_BIN "${MINGW_BIN}" CACHE STRING "MinGW installation path" FORCE)
 
-set(CMAKE_CXX_FLAGS "-B${MINGW_BIN} ${CMAKE_CXX_FLAGS}" CACHE STRING "CXX Flags" FORCE)
-set(CMAKE_C_FLAGS "-B${MINGW_BIN} ${CMAKE_C_FLAGS}" CACHE STRING "C Flags" FORCE)
+set(CMAKE_CXX_FLAGS "-B${MINGW_BIN} ${CMAKE_CXX_FLAGS}" CACHE STRING "CXX Flags")
+set(CMAKE_C_FLAGS "-B${MINGW_BIN} ${CMAKE_C_FLAGS}" CACHE STRING "C Flags")
 
 # Establecer los compiladores, comprobando su existencia
 set(CMAKE_C_COMPILER "${MINGW_BIN}/gcc.exe" CACHE STRING "C Compiler" )
 set(CMAKE_CXX_COMPILER "${MINGW_BIN}/g++.exe" CACHE STRING "CXX Compiler" )
 set(CMAKE_RC_COMPILER "${MINGW_BIN}/windres.exe" CACHE STRING "RC Compiler" FORCE)
-set(CMAKE_MAKE_PROGRAM "${MINGW_BIN}/mingw32-make.exe" CACHE STRING "Make Program" )
+if (CMAKE_GENERATOR MATCHES "Ninja")
+    message(STATUS "Toolchain: Configuring with NINJA Generator")
+    set(CMAKE_MAKE_PROGRAM "$ENV{NINJA_PATH}/ninja.exe" CACHE STRING "Ninja Make Program")
+    set(ENV{PATH} "$ENV{NINJA_PATH};$ENV{PATH}")
+else()
+    message(STATUS "Toolchain: Configuring with MAKE generator")
+    set(CMAKE_MAKE_PROGRAM "${MINGW_BIN}/mingw32-make.exe" CACHE STRING "Make Program" FORCE)
+endif()
 
 # Mostrar mensajes
 if(NOT CMAKE_TOOLCHAIN_FILE_PROCESSED)
   set(CMAKE_TOOLCHAIN_FILE_PROCESSED TRUE CACHE INTERNAL "Evitar doble mensaje")
-  if ( EXISTS "${CMAKE_C_COMPILER}")
+  if (EXISTS "${CMAKE_C_COMPILER}")
   message(STATUS "C Compiler found at ${CMAKE_C_COMPILER}.")
   endif()
   if (EXISTS "${CMAKE_CXX_COMPILER}")
@@ -74,13 +68,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # Definiciones comunes
 add_definitions(-DUNICODE -D_UNICODE)
 
-# Ninja puede estar en otro lugar, buscar alternativas
-# find_program(NINJA_EXE ninja PATHS "${MINGW_BIN}" "C:/Program Files/Ninja" "C:/ninja")
-# if(NINJA_EXE)
-#     message(STATUS "Ninja encontrado en: ${NINJA_EXE}")
-#     set(CMAKE_MAKE_PROGRAM "${NINJA_EXE}")
-# else()
-#     # Si no hay ninja, usar mingw32-make
-#     set(CMAKE_MAKE_PROGRAM "${MINGW_BIN}/mingw32-make.exe")
-#     message(STATUS "Ninja no encontrado, usando mingw32-make")
-# endif()
+# Descomentar esto para pararse y debugear este archivo.
+# message(FATAL_ERROR debugStop)

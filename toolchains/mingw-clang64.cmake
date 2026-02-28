@@ -4,12 +4,7 @@
 
 message(STATUS "Init Clang toolchain")
 
-# Añadir clang al path para poder usar sus dependencias
-set(ENV{PATH} "${CLANG_BIN};$ENV{PATH}")
-set(CLANG_PATH "${CLANG_PATH}" CACHE STRING "Clang installation path" FORCE)
-set(CLANG_BIN "${CLANG_BIN}" CACHE STRING "Clang binary path" FORCE)
-
-set(CLANG_PATH "${CLANG_PATH}" CACHE STRING "Clang installation path" FORCE)
+set(CLANG_PATH "$ENV{CLANG_PATH}" CACHE STRING "Clang installation path" FORCE)
 set(CLANG_BIN "${CLANG_PATH}/bin" CACHE STRING "Clang binary path" FORCE)
 
 # Añadir clang al path para poder usar sus dependencias
@@ -23,11 +18,17 @@ set(CMAKE_C_FLAGS "-B${CLANG_BIN} ${CMAKE_C_FLAGS}" CACHE STRING "C Flags" FORCE
 set(CMAKE_C_FLAGS   "--target=x86_64-w64-windows-gnu ${CMAKE_C_FLAGS}" CACHE STRING "" FORCE)
 
 # Establecer los compiladores, comprobando su existencia
-#ESTE ES EL PARRAFO IMPORTANTE
 set(CMAKE_C_COMPILER   "${CLANG_BIN}/clang.exe"      CACHE STRING "C Compiler" FORCE)
 set(CMAKE_CXX_COMPILER "${CLANG_BIN}/clang++.exe"    CACHE STRING "CXX Compiler" FORCE)
 set(CMAKE_RC_COMPILER  "${CLANG_BIN}/llvm-windres.exe" CACHE STRING "RC Compiler" FORCE)
-set(CMAKE_MAKE_PROGRAM "${CLANG_BIN}/mingw32-make.exe" CACHE STRING "Make Program" FORCE)
+if (CMAKE_GENERATOR MATCHES "Ninja")
+    message(STATUS "Toolchain: Configuring with NINJA Generator")
+    set(CMAKE_MAKE_PROGRAM "$ENV{NINJA_PATH}/ninja.exe" CACHE STRING "Ninja Make Program")
+    set(ENV{PATH} "$ENV{NINJA_PATH};$ENV{PATH}")
+else()
+    message(STATUS "Toolchain: Configuring with MAKE generator")
+    set(CMAKE_MAKE_PROGRAM "${MINGW_BIN}/mingw32-make.exe" CACHE STRING "Make Program" FORCE)
+endif()
 
 # Mostrar mensajes
 if(NOT CMAKE_TOOLCHAIN_FILE_PROCESSED)
@@ -68,14 +69,3 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # Definiciones comunes
 add_definitions(-DUNICODE -D_UNICODE)
-
-# Ninja puede estar en otro lugar, buscar alternativas
-# find_program(NINJA_EXE ninja PATHS "${MINGW_BIN}" "C:/Program Files/Ninja" "C:/ninja")
-# if(NINJA_EXE)
-#     message(STATUS "Ninja encontrado en: ${NINJA_EXE}")
-#     set(CMAKE_MAKE_PROGRAM "${NINJA_EXE}")
-# else()
-#     # Si no hay ninja, usar mingw32-make
-#     set(CMAKE_MAKE_PROGRAM "${MINGW_BIN}/mingw32-make.exe")
-#     message(STATUS "Ninja no encontrado, usando mingw32-make")
-# endif()
