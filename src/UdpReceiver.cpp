@@ -7,7 +7,7 @@
 // General ------------------------------------------------------------------------------
 
 UdpReceiver::UdpReceiver(asio::io_context& io)
-    : socket_(io), rcv_packet_size_(0)
+    : socket_(io), rcv_packet_size_(0), ignore_dupe_(true)
 {
     
 }
@@ -184,12 +184,23 @@ void UdpReceiver::handle_received_packet(std::error_code ec, std::size_t bytes_r
         std::cerr << "[UdpReceiver] Reception queue overloaded with " << getQueueSize() << " elements" << std::endl;
         return;
     }
+    
+    // Redimensiona el paquete al tamaño que se espera recibir 
+    std::vector<char> data(recv_buffer_.begin(), recv_buffer_.begin() + bytes_recvd);
+    
+    // Descarta el paquete si es igual que el anterior (si está activada esta opción)
+    if(ignore_dupe_ && compareLast(data) ) {
+        std::cout << "[UdpReceiver] Received packet same as last. Ignoring..." << std::endl;
+        return;
+    }
 
     // Añade el paquete recibido a la cola listo para gestionar
-    std::vector<char> data(recv_buffer_.begin(), recv_buffer_.begin() + bytes_recvd);
     savePacket(std::move( data ) ); 
 }
 
+void UdpReceiver::discardOnDupe(bool enable){
+    ignore_dupe_ = enable;
+}
 
 
 // Gestión de cola de datos ------------------------------------------------------------
@@ -235,4 +246,15 @@ unsigned short UdpReceiver::getQueueSize() const{
 void UdpReceiver::clearQueue(){
     std::lock_guard<std::mutex> lock(mutex_);
     queue_ = std::queue<std::vector<char>>{};
+}
+
+bool UdpReceiver::compareLast(std::vector<char> const& data) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // Devuelve false si la cola está vacía
+    if (queue_.empty()) 
+        return false;
+
+    // Devuelve si es igual que el anterior
+    return queue_.front() == data;
 }

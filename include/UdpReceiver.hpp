@@ -65,6 +65,12 @@ public:
      * @brief Devuelve el primer paquete recibido de la cola. Si la cola está vacía, espera hasta que llegue un nuevo paquete.
      */
     std::vector<char> getFirstPacket();
+    
+    /**
+     * @brief Opción para rechazar el paquete de datos si es igual que el último recibido.
+     * @param enable true para descartar duplicado, false en caso contrario.
+     */
+    void discardOnDupe(bool enable);
 
 private:
     
@@ -118,6 +124,12 @@ private:
      */
     void clearQueue();
 
+    /**
+     * @brief Compara un paquete de datos con el primer elemento que se va a obtener de la tabla
+     * @return true si es igual, false en caso contrario.
+     */
+    bool compareLast(std::vector<char> const& data);
+
 
     /************ Variables ********************************************************/
 
@@ -133,4 +145,5 @@ private:
     mutable std::mutex            mutex_;       // Mutex para proteger el acceso a la cola
     std::condition_variable       condition_;   // Condición para notificar al main que hay datos nuevos
     const std::size_t             MAX_QUEUE_ELEMENTS = 20;  // Número máximo de elementos en la cola
+    bool                          ignore_dupe_; // Flag para eliminar el paquete si es el mismo que el anterior
 };
