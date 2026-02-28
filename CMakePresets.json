@@ -132,7 +132,7 @@
         {
             "name": "mingw64-release",
             "targets": [ "all" ],
-            "displayName": "🔷 Mingw64 (Release)",
+            "displayName": "🔶 Mingw64 (Release)",
             "configurePreset": "mingw64-release",
             "inherits": "mingw64",
             "configuration": "Release",
@@ -141,7 +141,7 @@
         {
             "name": "mingw64-debug",
             "targets": [ "all" ],
-            "displayName": "🔷 Mingw64 (Debug)",
+            "displayName": "🔶 Mingw64 (Debug)",
             "configurePreset": "mingw64-debug",
             "inherits": "mingw64",
             "configuration": "Debug",
@@ -176,7 +176,7 @@
         {
             "name": "clang64-release",
             "targets": [ "all" ],
-            "displayName": "🟤 Clang64 (Release)",
+            "displayName": "🔷 Clang64 (Release)",
             "configurePreset": "clang64-release",
             "inherits": "clang64",
             "configuration": "Release",
@@ -185,7 +185,7 @@
         {
             "name": "clang64-debug",
             "targets": [ "all" ],
-            "displayName": "🟤 Clang64 (Debug)",
+            "displayName": "🔷 Clang64 (Debug)",
             "configurePreset": "clang64-debug",
             "inherits": "clang64",
             "configuration": "Debug",
