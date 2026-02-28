@@ -18,7 +18,7 @@ if (NOT EXISTS ${EXTERNAL_LIB_PATH}/nlohmann/json.hpp)
       message(FATAL_ERROR "Error downloading json.hpp")
   endif()
 else()
-  message(STATUS "nlohmann's json.hpp found")
+  message(STATUS "Using local json.hpp source")
 endif()
 
 

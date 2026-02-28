@@ -5,6 +5,8 @@
 
 # CMake minimum version and project setup
 cmake_minimum_required(VERSION 3.10)
+
+# Sistema objetivo
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
@@ -45,18 +47,11 @@ set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "")                 # Evitar
 set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establece donde descargar las librerías externas
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
 
-# Libreria asio network ( ANTES DE windows.h )
+# Libreria asio network ( incluir ANTES DE windows.h )
 option(USE_ASIO "Compilar con soporte para asio" ON)            # Activar/desactivar librería
 if(USE_ASIO)
     include(lib-asionetwork)                                    # Ejecuta el archivo toolchains/lib-asionetwork.cmake
     add_definitions(-DUSE_ASIO=1)                               # Definición para usar en el código C++
-endif()
-
-# Librería de JUCE (audio)
-option(USE_JUCE "Compilar con soporte para JUCE DSP" OFF)       # Activar/desactivar librería
-if(USE_JUCE)
-    include(lib-juce)                                           # Ejecuta el archivo toolchains/lib-JUCE.cmake
-    add_definitions(-DUSE_JUCE=1)                               # Definición para usar en el código C++
 endif()
 
 # Librería miniaudio
@@ -66,18 +61,11 @@ if(USE_MINIAUDIO)
     add_definitions(-DUSE_MINIAUDIO=1)                          # Definición para usar en el código C++
 endif()
 
-# Librería daisySP
-option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
-if(USE_DAISYSP)
-    include(lib-daisysp)                                        # Ejecuta el archivo toolchains/lib-daisysp.cmake
-    add_definitions(-DUSE_DAISYSP=1)                            # Definición para usar en el código C++
-endif()
-
 # Librería de IMGUI (gráficos, ventanas)
 option(USE_IMGUI "Compilar con soporte para IMGUI" ON)          # Activar/desactivar librería
 if(USE_IMGUI)
-    include(lib-imgui)                                          # Ejecuta el archivo toolchains/lib-imgui.cmake
-    add_definitions(-DUSE_IMGUI=1)                              # Definición para usar en el código C++
+include(lib-imgui)                                              # Ejecuta el archivo toolchains/lib-imgui.cmake
+add_definitions(-DUSE_IMGUI=1)                                  # Definición para usar en el código C++
 endif()
 
 # Libreria json
@@ -85,6 +73,29 @@ option(USE_JSON "Compilar con soporte para JSON" ON)            # Activar/desact
 if(USE_JSON)
     include(lib-json)                                           # Ejecuta el archivo toolchains/lib-json.cmake
     add_definitions(-DUSE_JSON=1)                               # Definición para usar en el código C++
+    endif()
+    
+# Libreria Piper TTS
+option(USE_PIPER "Compilar con soporte para PIPER" OFF)          # Activar/desactivar librería
+if(USE_PIPER)
+include(lib-piperTTS)                                           # Ejecuta el archivo toolchains/lib-piperTTS.cmake
+add_definitions(-DUSE_PIPER=1)                                  # Definición para usar en el código C++
+endif()
+
+# Librerías no probadas aún:
+
+# Librería daisySP
+option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
+if(USE_DAISYSP)
+include(lib-daisysp)                                            # Ejecuta el archivo toolchains/lib-daisysp.cmake
+add_definitions(-DUSE_DAISYSP=1)                                # Definición para usar en el código C++
+endif()
+
+# Librería de JUCE (audio)
+option(USE_JUCE "Compilar con soporte para JUCE DSP" OFF)       # Activar/desactivar librería
+if(USE_JUCE)
+    include(lib-juce)                                           # Ejecuta el archivo toolchains/lib-JUCE.cmake
+    add_definitions(-DUSE_JUCE=1)                               # Definición para usar en el código C++
 endif()
 
 
@@ -98,7 +109,7 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE 
   ${CMAKE_CURRENT_SOURCE_DIR}/resources
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
+  )
 
 
 # ===============================
@@ -248,15 +259,23 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
 )
 
+if ($<BOOL:${USE_PIPER}>)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
+      $<TARGET_FILE_DIR:${PROJECT_NAME}>
+      COMMENT "Copiando ONNX TTS Runtime DLL al directorio de salida..."
+  )
+endif()
+
 # ===============================
 # Configuración post-build
 # ===============================
 
 # Copia todo el contenido de la carpeta 'config' a la carpeta del binario
-add_custom_command(
-  TARGET ${PROJECT_NAME} POST_BUILD
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
-  "${CMAKE_CURRENT_SOURCE_DIR}/config"
+  "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/"
   "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )
 

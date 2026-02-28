@@ -18,7 +18,7 @@ if (MSVC)
 endif()
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/CMakeLists.txt")
+if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/.github")
   message(STATUS "Using local GLFW source")
   set(FETCHCONTENT_SOURCE_DIR_GLFW
       "${EXTERNAL_LIB_PATH}/glfw_src"

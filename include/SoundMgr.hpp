@@ -11,10 +11,12 @@ public:
     }
 
     ~SoundMgr(){
+        std::cout << "[SoundMgr] Closing sound engine..." << std::endl;
         ma_engine_uninit(&engine_);
     }
 
     bool init(){
+        std::cout << "[SoundMgr] Initializating sound engine..." << std::endl;
         ma_result res = ma_engine_init(NULL, &engine_);
         return (res == MA_SUCCESS) ? true : false;
     }
