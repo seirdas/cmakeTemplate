@@ -1,0 +1,1 @@
+Colocar aquí los archivos que necesitan ir en la misma ruta que el .exe
