@@ -98,7 +98,10 @@ public:
     */
     void Style_VisualStudio();
     
-    
+    /**
+     * @brief Microsoft style by usernameiwantedwasalreadytaken from ImThemes
+     */
+    void Style_Microfost();
     
     
     
@@ -108,7 +111,7 @@ public:
     std::string     AppName_        = "Demo";                           // Nombre de la aplicación/ventana
     unsigned int    sizeX_          = 1280;                             // Tamaño horizontal (x) de la ventana
     unsigned int    sizeY_          = 720;                              // Tamaño vertical (y) de la ventana
-    float           clearColor_[4]  = {0.45f, 0.55f, 0.60f, 1.00f};     // Color de fondo RGBA
+    float           clearColor_[4]  = {1.00f, 1.00f, 1.00f, 1.00f};     // Color de fondo RGBA
     std::string     customFont_     = "Archivo-Medium.ttf";             // Fuente personalizada
     unsigned int    fontSize_       = 18;                               // Tamaño de fuente predeterminado
     GLFWwindow*     window_         = nullptr;                          // Puntero a la ventana GLFW
