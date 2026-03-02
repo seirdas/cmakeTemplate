@@ -1,149 +1,129 @@
 
+#pragma once
+
 #include <miniaudio.h>
-#include <iostream>
-
-#include <iostream>
-#include <thread>
 #include <atomic>
-#include <chrono>
+#include <string>
 
-
-class SoundMgr{
+/**
+  * @class SoundMgr
+  * @brief Gestor de reproducción y grabación de audio basado en miniaudio.
+  *  Proporciona inicialización y parada del motor de audio (ma_engine),
+  *  y funcionalidades de grabación a WAV con manejo de encoder y dispositivo
+  *  de captura. 
+  *  La inicialización del motor se controla mediante un flag atómico
+  *  para comprobaciones seguras en entornos multihilo.
+  *  Notas de diseño:
+  *     El callback de captura (dataCallback) es estático y debe ser seguro para
+  *  ejecución en hilo de audio; evitar operaciones de E/S que puedan bloquear.
+  *     Los flags compartidos usan std::atomic para operaciones atómicas y para
+  *  evitar condiciones de carrera entre hilos.
+  * @date March 2, 2026
+  */
+class SoundMgr {
 
 public:
-    SoundMgr(){
 
-    }
+// General ------------------------------------------------------------------------------
 
-    ~SoundMgr(){
-        std::cout << "[SoundMgr] Closing sound engine..." << std::endl;
-        ma_engine_uninit(&engine_);
-    }
+    /**
+     * @brief Constructor.
+     */
+    SoundMgr();
 
-    bool init(){
-        std::cout << "[SoundMgr] Initializating sound engine..." << std::endl;
-        ma_result res = ma_engine_init(NULL, &engine_);
-        return (res == MA_SUCCESS) ? true : false;
-    }
+    /**
+     * @brief Destructor.
+     */
+    ~SoundMgr();
 
-    void test(){
-        ma_engine_play_sound(&engine_, "DefaultDance.mp3", NULL);
-    }
+    /**
+     * @brief Inicialización del motor de audio.
+     * @returns 
+     */
+    bool init();
 
-    void test2(){
-        ma_engine_play_sound(&engine_, "chinos.mp3", NULL);
-    }
+    /**
+    * @brief Para el motor de audio.
+    * @returns True Si la parada ha sido correcta, false en caso contrario. 
+    */
+    bool stop();
 
-    void record(){
-        int a = 0;
-        a = 2+a;
+    void test();
 
-        std::cout << "[SoundMgr] Recording 5 seconds to output.wav..." << std::endl;
+    void test2();
 
-        const ma_uint32 sampleRate = 44100;
-        const ma_uint32 channels = 2;
-        const ma_uint32 secondsToRecord = 10;
+// Grabación ----------------------------------------------------------------------------
 
-        struct RecordingContext {
-            ma_encoder encoder;
-            std::atomic<uint64_t> framesWritten;
-            uint64_t maxFrames;
-        };
+    /**
+     * @brief Inicia la grabación en un archivo wav.
+     * @param filename Nombre del archivo (sin extensión).
+     */
+    bool StartRec(std::string const& filename);
 
-        RecordingContext ctx{};
-        ctx.framesWritten = 0;
-        ctx.maxFrames = (uint64_t)sampleRate * secondsToRecord;
+    /**
+     * @brief Para la grabación.
+     * @return true si la parada ha sido correcta, false en caso contrario.
+     */
+    bool StopRec();
 
-        // --- Encoder WAV ---
-        ma_encoder_config encoderConfig =
-            ma_encoder_config_init(ma_encoding_format_wav,
-                                ma_format_s16,
-                                channels,
-                                sampleRate);
-
-        if (ma_encoder_init_file("output.wav", &encoderConfig, &ctx.encoder) != MA_SUCCESS) {
-            std::cout << "[SoundMgr] Failed to initialize encoder." << std::endl;
-            return;
-        }
-
-        // --- Callback de captura ---
-        auto dataCallback = [](ma_device* device, void* output, const void* input, ma_uint32 frameCount)
-        {
-            RecordingContext* ctx = (RecordingContext*)device->pUserData;
-
-            if (input == nullptr)
-                return;
-
-            uint64_t framesRemaining = ctx->maxFrames - ctx->framesWritten.load();
-            uint64_t framesToWrite = frameCount;
-
-            if (framesToWrite > framesRemaining)
-                framesToWrite = framesRemaining;
-
-            if (framesToWrite > 0) {
-                ma_uint64 actuallyWritten = 0;
-
-                ma_result res = ma_encoder_write_pcm_frames(
-                    &ctx->encoder,
-                    input,
-                    framesToWrite,
-                    &actuallyWritten
-                );
-
-                if (res == MA_SUCCESS) {
-                    ctx->framesWritten += actuallyWritten;
-                }
-            }
-
-            (void)output;
-        };
-
-        // --- Configuración dispositivo ---
-        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
-        deviceConfig.capture.format = ma_format_s16;
-        deviceConfig.capture.channels = channels;
-        deviceConfig.sampleRate = sampleRate;
-        deviceConfig.dataCallback = dataCallback;
-        deviceConfig.pUserData = &ctx;
-
-        ma_device device;
-        if (ma_device_init(nullptr, &deviceConfig, &device) != MA_SUCCESS) {
-            std::cout << "[SoundMgr] Failed to initialize capture device." << std::endl;
-            ma_encoder_uninit(&ctx.encoder);
-            return;
-        }
-
-        if (ma_device_start(&device) != MA_SUCCESS) {
-            std::cout << "[SoundMgr] Failed to start capture device." << std::endl;
-            ma_device_uninit(&device);
-            ma_encoder_uninit(&ctx.encoder);
-            return;
-        }
-
-        // Esperar hasta terminar
-        unsigned int count=0;
-        while (ctx.framesWritten < ctx.maxFrames) {
-            std::cout << count << ": frameswritten" << ctx.framesWritten;
-            std::cout << ", maxFrames: " << ctx.maxFrames << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(400));
-            count++;
-        }
-
-        ma_device_stop(&device);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-        ma_device_uninit(&device);
-        ma_encoder_uninit(&ctx.encoder);
-
-        std::cout << "[SoundMgr] Recording finished." << std::endl;
-    }
+    /**
+     * @brief Indica si está grabando actualmente.
+     * @return True si está grabando, false en caso contrario.
+     */
+    bool isRecording();
 
 
 
 private:
 
+    // Métodos para grabación
+    /**
+    * @brief Inicialización de encoder de grabación a wav
+    */
+    bool initWavEncoder();
+
+    /**
+     * @brief Configuración de dispositivo de grabación
+     */
+    bool initRecorder();
+
+    /**
+     * @brief Callback de captura/grabación.
+     * @details Se llama constantemente mientras escribe.
+     * @param device Dispositivo de grabación.
+     * @param output Salida.
+     * @param input Entrada.
+     * @param frameCount Contador de muestras.
+     */
+    static void dataCallback(
+        ma_device*  device, 
+        void*       output, 
+        const void* input, 
+        ma_uint32   frameCount);
+
+
     /************ Variables ********************************************************/
 
-    ma_engine engine_;
+    // Motor de audio
+    ma_engine engine_;                              // Motor de audio.
+    std::atomic<bool> engine_initialized_;          // Flag para saber si el motor de audio está inicializado.
 
+    // Motor de grabación
+
+    /**
+    * @brief Estructura de datos de grabación
+    */
+    struct RecordingContext {
+        std::string             filename;       // Nombre del archivo a grabar (.wav)
+        ma_encoder              encoder;        // Encoder.
+        std::atomic<uint64_t>   framesWritten;  // Muestras escritas en el archivo.
+        uint64_t                maxFrames;      // Máximo de muestras a escribir en el archivo.
+        std::atomic<bool>       recording;      // Flag que indica si está grabando.
+    };
+
+    RecordingContext    ctx_;                         // Estructura de contexto/datos de grabación
+    ma_device           device_;                         
+    ma_uint32           sampleRate      = 44100;      // Frecuencia de muestreo de grabación.
+    ma_uint32           channels        = 2;          // Canales de grabación.
+    ma_uint32           secondsToRecord = 60*60;      // Segundos máximos de grabación (1h por defecto).
 };
