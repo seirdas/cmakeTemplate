@@ -76,7 +76,7 @@ if(USE_JSON)
     endif()
     
 # Libreria Piper TTS
-option(USE_PIPER "Compilar con soporte para PIPER" OFF)          # Activar/desactivar librería
+option(USE_PIPER "Compilar con soporte para PIPER" ON)          # Activar/desactivar librería
 if(USE_PIPER)
 include(lib-piperTTS)                                           # Ejecuta el archivo toolchains/lib-piperTTS.cmake
 add_definitions(-DUSE_PIPER=1)                                  # Definición para usar en el código C++
@@ -91,25 +91,18 @@ include(lib-daisysp)                                            # Ejecuta el arc
 add_definitions(-DUSE_DAISYSP=1)                                # Definición para usar en el código C++
 endif()
 
-# Librería de JUCE (audio)
-option(USE_JUCE "Compilar con soporte para JUCE DSP" OFF)       # Activar/desactivar librería
-if(USE_JUCE)
-    include(lib-juce)                                           # Ejecuta el archivo toolchains/lib-JUCE.cmake
-    add_definitions(-DUSE_JUCE=1)                               # Definición para usar en el código C++
-endif()
-
-
 # ===============================
 # Crear el ejecutable
 # ===============================
 
 # Crear el ejecutable principal
 add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
+
 # Rutas de archivos de cabecera del proyecto (archivos .h propios)
 target_include_directories(${PROJECT_NAME} PRIVATE 
   ${CMAKE_CURRENT_SOURCE_DIR}/resources
   ${CMAKE_CURRENT_SOURCE_DIR}/include
-  )
+)
 
 
 # ===============================
@@ -249,16 +242,17 @@ endif()
 # Enlazar con las librerías externas
 # ==============================
 
+# Se enlazan automáticamente si están activas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
   $<$<BOOL:${USE_ASIO}>:asio_lib>                   # Librería creada con Asio + Winsock2 (Windows) 
   $<$<BOOL:${USE_IMGUI}>:imgui_lib>                 # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JUCE}>:juce::juce_dsp>
-  $<$<BOOL:${USE_JUCE}>:juce::juce_audio_devices>
   $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
+  $<$<BOOL:${USE_PIPER}>:piper_lib>                 # Librería creada con Piper (TTS)
 )
 
+# Para Piper TTS se necesita la dll del onnx runtime
 if ($<BOOL:${USE_PIPER}>)
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -272,7 +266,7 @@ endif()
 # Configuración post-build
 # ===============================
 
-# Copia todo el contenido de la carpeta 'config' a la carpeta del binario
+# Copia todo el contenido de la carpeta 'dependencies' a la carpeta del binario
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/"
