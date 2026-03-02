@@ -14,8 +14,12 @@ AppController::AppController() : ui_(this) {
 AppController::~AppController() {
     
     // Cerrar sockets
-    std::cout << "[AppController] Closing sockets and I/O..." << std::endl;
+    std::cout << "[AppController] Closing sockets and network I/O..." << std::endl;
     net_.stop();
+
+    // Cerrar módulo de sonido
+    std::cout << "[AppController] Closing sound module..." << std::endl;
+    snd_.stop();
     
     // Cerrar ventana UI
     std::cout << "[AppController] Closing UI..." << std::endl;
@@ -50,15 +54,13 @@ int AppController::run() {
     // De momento no gestiono los paquetes recibidos por sockets
 
     // Audio test
-    snd_.test();
-    snd_.test2();
 
-    snd_.record();
-
+    snd_.StartRec("prueba2");
 
     // Ventana UI
     ui_.run();      // <-- Este método bloquea hasta que la ventana se cierre
 
+    snd_.StopRec();
 
     return 0;
 }
