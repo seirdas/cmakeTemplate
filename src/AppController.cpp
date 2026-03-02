@@ -53,6 +53,9 @@ int AppController::run() {
     snd_.test();
     snd_.test2();
 
+    snd_.record();
+
+
     // Ventana UI
     ui_.run();      // <-- Este método bloquea hasta que la ventana se cierre
 
