@@ -1,6 +1,7 @@
 #include <iostream>             // Entrada/Salida estándar
 #include "NetMgr.hpp"
 
+// General ------------------------------------------------------------------------------
 
 NetMgr::NetMgr(std::size_t thread_count)
     : work_guard_(asio::make_work_guard(io_context_)),
