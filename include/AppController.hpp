@@ -9,17 +9,28 @@
 
 #include "winMgr.h"             // Clase de gestión de ventana UI
 #include "NetMgr.hpp"           // Clase para gestionar sockets
-#include "SoundMgr.hpp"        // Clase para gestionar audio
+#include "SoundMgr.hpp"         // Clase para gestionar audio
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 #define VERSION 0.8
 
 /**
- * @brief Clase principal de la aplicación. Coordina la comunicación entre miembros.
- * @details Esta clase extiende la interfaz IAppControl para permitir la comunicación entre sus miembros
- */
-class AppController : public IAppControl
-{
+  *  @class AppController
+  *  @brief Clase principal que coordina los subsistemas de la aplicación.
+  *  @details AppController implementa la interfaz IAppControl y actúa como núcleo
+  *   de la aplicación, inicializando y gestionando los componentes principales.
+  *   Proporciona métodos para inicializar los módulos y 
+  *   ejecutar el flujo principal de la aplicación.
+  *   Comportamiento:
+  *      init() inicializa los miembros necesarios (red, UI, audio, etc.).
+  *      run() Mantiene el ciclo de vida de la aplicación hasta su finalización.
+  *  @note La variable VERSION se usa para construir version_.
+  *  @author
+  *  @see IAppControl
+  *  @date March 2, 2026
+  */
+class AppController : public IAppControl {
+
 public:
 // General ------------------------------------------------------------------------------
 
@@ -58,6 +69,8 @@ public:
      * @note const evita que el método modifique cualquier variable miembro de la clase.
      */
     int get_SocketPort() const noexcept override { return 1; }
+
+    // Añadir aquí métodos de IAppControl...
 
 private:
 

@@ -1,20 +1,47 @@
 #pragma once
 
-#include <asio.hpp>
-#include <thread>
-#include <atomic>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <vector>
+#include <asio.hpp>             // asio external lib
+#include <thread>               // Hilos
+#include <atomic>               // Variables atómicas
+#include <queue>                // Colas
+#include <mutex>                // Mutex (Cerrojos) para concurrencia
+#include <condition_variable>   // Variable condicional para concurrencia
+#include <vector>               // Vectores
 
 
 /**
- * @brief Gestiona la recepción de datos UDP de forma asíncrona. Permite configurar la IP local, el puerto y el tamaño máximo de los paquetes.
- *          Los datos recibidos se almacenan en una cola compartida, accesible mediante métodos de push/pop. 
- *          El receptor se ejecuta en un hilo separado para no bloquear el hilo principal.
- * @note NECESITA asio::io_context, preferiblemente desde una clase controladora (NetMgr) 
- */
+  * @class UdpReceiver
+  * @brief Receptor UDP asíncrono con cola de paquetes y ejecución en hilo separado.
+  * @details UdpReceiver gestiona la recepción de paquetes UDP usando un
+  * asio::io_context proporcionado externamente. 
+  * Proporciona:
+  *     Inicialización y enlace del socket a una IP/puerto locales.
+  *     Recepción asíncrona de datos y almacenamiento en una cola protegida.
+  *     Operaciones thread-safe para obtener paquetes (bloqueante), descartar
+  * duplicados y controlar el ciclo de vida del receptor.
+  * Diseño y comportamiento:
+  *     Requiere un único io_context (normalmente gestionado por NetMgr) para
+  * funcionar correctamente.
+  *     Ejecuta las operaciones de E/S en un hilo separado para no bloquear el
+  * hilo principal de la aplicación.
+  *     La cola de paquetes está protegida por mutex y condition_variable; hasta
+  * MAX_QUEUE_ELEMENTS paquetes se mantienen en memoria.
+  *     Si rcv_packet_size_ != 0, los paquetes de tamaño distinto se descartan.
+  *     El flag ignore_dupe_ permite evitar almacenar paquetes idénticos al
+  * último recibido.
+  * Seguridad y notas de implementación:
+  *     Las funciones públicas que acceden a la cola son seguras para concurrencia
+  * salvo indicación contraria; los datos se transfieren por copia para
+  * evitar condiciones de carrera.
+  *     Evitar operaciones bloqueantes o de larga duración en callbacks de
+  * E/S (handle_received_packet) para no retrasar la aceptación de nuevos
+  * paquetes.
+  *     El destructor detiene la recepción y cierra el socket para garantizar una
+  * limpieza correcta.
+  * @see NetMgr, asio::io_context
+  * @author
+  * @date March 2, 2026 
+  */
 class UdpReceiver {
 
 public:

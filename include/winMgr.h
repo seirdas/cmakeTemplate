@@ -6,11 +6,36 @@
 
 struct GLFWwindow;
 
-class WinMgr
-{
+
+/**
+  * @class WinMgr
+  * @brief Gestor de ventana y loop principal usando GLFW, OpenGL e ImGui.
+  *  WinMgr inicializa y gestiona la ventana principal de la aplicación, configura
+  *  ImGui, proporciona el bucle principal de renderizado y utilidades para
+  *  estilos visuales. 
+  *  Comunica con el resto de la aplicación mediante la interfaz IAppControl suministrada.
+  *  Uso:
+  *      Crear una instancia (opcionalmente pasando un IAppControl).
+  *      Llamar init() para inicializar GLFW/OpenGL/ImGui y crear la ventana.
+  *      Llamar run() para ejecutar el bucle principal (bloqueante hasta el cierre).
+  *      Comprobar isRunning() para decidir acciones desde fuera.
+  *      Llamar cerrar() para liberar recursos manualmente.
+  *  Características y notas:
+  * @note El destructor virtual garantiza la limpieza correcta en clases derivadas.
+  * @note Los métodos privados initCuadro() y endCuadro() encapsulan el inicio y fin de
+  *  cada frame de ImGui.
+  * @note BuclePrincipal() puede ser sobreescrito para modificar los elementos de la UI.
+  * @note Proporciona varias funciones de estilo (Style_Confy, Style_FutureDark, etc.)
+  *  para configurar la apariencia de ImGui.
+  * @note Evita cerrar recursos múltiples mediante la bandera cerrado_.
+  * @see IAppControl
+  * @date March 2, 2026 
+  */
+class WinMgr {
+
 public:
 
-    // General __________________________________
+// General ------------------------------------------------------------------------------
 
     /**
      * @brief Constructor por defecto.
@@ -52,7 +77,7 @@ public:
      */
     void cerrar();
 
-//private:
+private:
     // Bucle principal __________________________
 
     /**
@@ -76,7 +101,7 @@ public:
      */
     void crearMainMenuBar();
     
-    // Temas --------------------------------------------------------------------------------
+// Temas --------------------------------------------------------------------------------
     
     /**
     * @brief Comfy style by Giuseppe from ImThemes
