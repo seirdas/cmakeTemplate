@@ -14,5 +14,4 @@ int main(int /*argc*/, char** argv){
     if (App.init())
         return App.run();
     /*else*/ return -1;
-
 }
