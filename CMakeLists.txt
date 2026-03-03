@@ -56,42 +56,49 @@ set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establ
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
 
 # Libreria asio network ( incluir ANTES DE windows.h )
-option(USE_ASIO "Compilar con soporte para asio" ON)            # Activar/desactivar librería
+option(USE_ASIO "Compilar con soporte para asio" ON)         # Activar/desactivar librería
 if(USE_ASIO)
-    include(lib-asionetwork)                                    # Ejecuta el archivo toolchains/lib-asionetwork.cmake
-    add_definitions(-DUSE_ASIO=1)                               # Definición para usar en el código C++
+  include(lib-asionetwork)                                   # Ejecuta el archivo toolchains/lib-asionetwork.cmake
+  add_definitions(-DUSE_ASIO=1)                              # Definición para usar en el código C++
 endif()
 
 # Librería miniaudio
 option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)  # Activar/desactivar librería
 if(USE_MINIAUDIO)
-    include(lib-miniaudio)                                      # Ejecuta el archivo toolchains/lib-miniaudio.cmake
-    add_definitions(-DUSE_MINIAUDIO=1)                          # Definición para usar en el código C++
+  include(lib-miniaudio)                                     # Ejecuta el archivo toolchains/lib-miniaudio.cmake
+  add_definitions(-DUSE_MINIAUDIO=1)                         # Definición para usar en el código C++
 endif()
 
 # Librería de IMGUI (gráficos, ventanas)
-option(USE_IMGUI "Compilar con soporte para IMGUI" ON)          # Activar/desactivar librería
+option(USE_IMGUI "Compilar con soporte para IMGUI" ON)       # Activar/desactivar librería
 if(USE_IMGUI)
-include(lib-imgui)                                              # Ejecuta el archivo toolchains/lib-imgui.cmake
-add_definitions(-DUSE_IMGUI=1)                                  # Definición para usar en el código C++
+  include(lib-imgui)                                         # Ejecuta el archivo toolchains/lib-imgui.cmake
+  add_definitions(-DUSE_IMGUI=1)                             # Definición para usar en el código C++
 endif()
 
 # Libreria json
-option(USE_JSON "Compilar con soporte para JSON" ON)            # Activar/desactivar librería
+option(USE_JSON "Compilar con soporte para JSON" ON)         # Activar/desactivar librería
 if(USE_JSON)
-    include(lib-json)                                           # Ejecuta el archivo toolchains/lib-json.cmake
-    add_definitions(-DUSE_JSON=1)                               # Definición para usar en el código C++
-    endif()
+  include(lib-json)                                          # Ejecuta el archivo toolchains/lib-json.cmake
+  add_definitions(-DUSE_JSON=1)                              # Definición para usar en el código C++
+endif()
+
+# Libreria stb
+option(USE_JSON "Compilar con soporte para STB" ON)          # Activar/desactivar librería
+if(USE_STB)
+  include(lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
+  add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
+endif()
     
-# Libreria Piper TTS
-option(USE_PIPER "Compilar con soporte para PIPER" ON)          # Activar/desactivar librería
+    # Librerías no probadas aún:
+    
+# Libreria Piper TTS (REVISAR LICENCIAS)
+option(USE_PIPER "Compilar con soporte para PIPER" OFF)          # Activar/desactivar librería
 if(USE_PIPER)
 include(lib-piperTTS)                                           # Ejecuta el archivo toolchains/lib-piperTTS.cmake
 add_definitions(-DUSE_PIPER=1)                                  # Definición para usar en el código C++
 endif()
-
-# Librerías no probadas aún:
-
+    
 # Librería daisySP
 option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
 if(USE_DAISYSP)
@@ -261,6 +268,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
   $<$<BOOL:${USE_PIPER}>:piper_lib>                 # Librería creada con Piper (TTS)
+  $<$<BOOL:${USE_STB}>:stb_lib>                     # Librería creada con STB
 )
 
 # Para Piper TTS se necesita la dll del onnx runtime
