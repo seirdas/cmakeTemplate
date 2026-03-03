@@ -6,9 +6,19 @@
 # CMake minimum version and project setup
 cmake_minimum_required(VERSION 3.10)
 
-# Sistema objetivo
-set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
+# Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
+if (MSVC)
+  message(STATUS "Force using SDK 10.0 for Visual Studio")
+  set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "Windows SDK version" FORCE)
+  set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "10.0")
+
+  message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
+# Sistema objetivo (Solo usar cuando se vaya a hacer cross-compiling)
+# set(CMAKE_SYSTEM_NAME Windows)
+# set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
 # Establecer estándar C++
 set(CMAKE_CXX_STANDARD 20)
@@ -21,12 +31,10 @@ project(${PROJECT_NAME})
 # Activa la salida de los comandos de depuración durante la generación
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
-if (MSVC)
-  message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-endif()
-
+# Información de compilación
+message(STATUS "Generator: ${CMAKE_GENERATOR}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
 # ===============================
 # Configuración del proyecto (código fuente propio)
@@ -134,6 +142,8 @@ if (WIN32)
     _SCL_SECURE_NO_WARNINGS   # Desactivar advertencias de seguridad en STL
     NOMINMAX                  # Evitar definición de macros min y max
     WIN32_LEAN_AND_MEAN       # Excluir APIs innecesarias de Windows.h
+    CINTERFACE 
+    COBJMACROS
   )
 
   if (MINGW)
@@ -168,6 +178,7 @@ if(MSVC)
   target_compile_options(${PROJECT_NAME} PRIVATE
     /W3                       # Nivel de advertencia 3
     /EHsc                     # Manejo de excepciones en C++
+    /permissive
     $<$<CONFIG:Debug>:
       /ZI                     # Información de depuración
       /Od                     # Desactivar optimizaciones en Debug
