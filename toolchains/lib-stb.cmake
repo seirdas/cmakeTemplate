@@ -18,8 +18,8 @@ endif()
 # Declarar dependencia externa
 FetchContent_Declare(
     stb
-    GIT_REPOSITORY https://github.com/chriskohlhoff/stb.git
-    GIT_TAG stb-1-36-0
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
     GIT_SHALLOW    TRUE        # habilita --depth 1
     SOURCE_DIR     "${EXTERNAL_LIB_PATH}/stb_src"
     EXCLUDE_FROM_ALL TRUE

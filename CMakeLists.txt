@@ -84,7 +84,7 @@ if(USE_JSON)
 endif()
 
 # Libreria stb
-option(USE_JSON "Compilar con soporte para STB" ON)          # Activar/desactivar librería
+option(USE_STB "Compilar con soporte para STB" ON)          # Activar/desactivar librería
 if(USE_STB)
   include(lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
