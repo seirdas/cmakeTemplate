@@ -2,7 +2,8 @@
 
 #include <string>
 #include <iostream>
-#include "IAppControl.hpp"     // Interfaz de comunicación entre miembros de la aplicación
+#include <GL/gl.h>
+#include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 struct GLFWwindow;
 
@@ -100,6 +101,18 @@ private:
      * @brief Crea la barra de menú principal.
      */
     void crearMainMenuBar();
+
+
+    /**
+     * @brief Carga una textura de imagen desde un archivo de imagen.
+     * @note Soporte para png.
+     * @param filename Ruta del archivo de imagen que se va a cargar.
+     * @param outWidth Salida del ancho de la textura cargada.
+     * @param outHeight Salida de la altura de la textura cargada.
+     * @return GLuint El identificador de la textura cargada.
+     */
+    GLuint LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight);
+    
     
 // Temas --------------------------------------------------------------------------------
     
@@ -143,6 +156,16 @@ private:
     IAppControl*    controller_     = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
     bool            cerrado_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
+    // Imágenes
+    GLuint playTexture_ = 0;
+    int playW_ = 0;
+    int playH_ = 0;
+
+    // Variables (MenuBar)
     float           MainMenuBar_Height_       = 0.0f;                   // Almacena el alto de la barra de menú para ajustar la ventana principal
+    
+    // Elementos (1)
+    int      sl_volume = 2;
+    float    sl_pitch = 0;
 
 };

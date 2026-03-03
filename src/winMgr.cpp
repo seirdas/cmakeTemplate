@@ -7,6 +7,7 @@
 // ---------------------------------------------------------------------------------
 
 #include "winMgr.h"				// Clase winMgr de gestión de ventanas
+#include <stb_image.h>          // Implementación para soporte de imágenes.
 #include <iostream>
 
 // de la clase imgui de dialogo
@@ -199,20 +200,10 @@ void WinMgr::BuclePrincipal() {
     ImGui::BeginGroup();
     {
         // Panel F1 (Arriba Izquierda)
-        BeginChild("F1", ImVec2(sizeX__Izq, totalHeight * heightLeftTop), true);
+        BeginChild("F1", ImVec2(sizeX__Izq, totalHeight), true);
         Text("F1 (70%% inicial)");
 		Button("hola");
         EndChild();
-
-        // Splitter Horizontal Izquierdo
-        Button("##h_splitter_l", ImVec2(sizeX__Izq, 4.0f));
-        if (IsItemActive())
-            heightLeftTop += GetIO().MouseDelta.y / totalHeight;
-
-        // Panel F2 (Abajo Izquierda)
-        ImGui::BeginChild("F2", ImVec2(sizeX__Izq, 0), true); // Altura 0 para que rellene el resto
-        ImGui::Text("F2 (30%% inicial)");
-        ImGui::EndChild();
     }
     ImGui::EndGroup();
 
@@ -220,8 +211,8 @@ void WinMgr::BuclePrincipal() {
 	Button("##v_splitter", ImVec2(sizeSplitterVertical, -FLT_MIN)); // Splitter Vertical
 	if (ImGui::IsItemActive())
 	{
-	    heightLeftTop += ImGui::GetIO().MouseDelta.y / totalHeight;
-	    heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
+	    heightLeftTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
+	    heightRightTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
 	}
 	SameLine();
 
@@ -239,9 +230,19 @@ void WinMgr::BuclePrincipal() {
             heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
 
         // Panel F4 (Abajo Derecha)
-        ImGui::BeginChild("F4", ImVec2(0, 0), true);
-        ImGui::Text("F4 (80%% inicial)");
-        ImGui::EndChild();
+        ImGui::BeginChild("F4", ImVec2(0, 0), false);
+
+			unsigned int boxSize= (GetContentRegionAvail().y+GetContentRegionAvail().x)/2 * 0.4;
+
+			PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); 
+			BeginChild("Module 1",ImVec2(boxSize,boxSize*.5), true);
+				Text("Module 1");
+				SliderInt("Volume",&sl_volume,0,100,"%d");
+				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
+			EndChild();
+			PopStyleVar();
+
+        EndChild();
     }
     ImGui::EndGroup();
 
@@ -268,8 +269,8 @@ void WinMgr::crearMainMenuBar() {
 			if (ImGui::MenuItem("Redo", "Ctrl+Y")) {}
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Ajustes")) {
-			if (ImGui::MenuItem("Configurar conexión...")) { /* Abrir un popup de ajustes */ }
+		if (ImGui::BeginMenu("Settings")) {
+			if (ImGui::MenuItem("Connections...")) { /* Abrir un popup de ajustes */ }
 			ImGui::EndMenu();
 		}
 		
@@ -277,9 +278,35 @@ void WinMgr::crearMainMenuBar() {
 		ImGui::EndMainMenuBar();
 	}
 
-	MainMenuBar_Height_ = ImGui::GetFrameHeightWithSpacing();
+	MainMenuBar_Height_ = ImGui::GetFrameHeight();
 }
 
+GLuint WinMgr::LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight)
+{
+	int channels;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data = stbi_load(filename, &outWidth, &outHeight, &channels, 4);
+	if (!data)
+	{
+		std::cerr << "[WinMgr] Error loading image: " << filename << std::endl;
+		return 0;
+	}
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+				outWidth, outHeight,
+				0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	stbi_image_free(data);
+
+	return texture;
+};
 
 // Temas --------------------------------------------------------------------------------
 
