@@ -6,9 +6,19 @@
 # CMake minimum version and project setup
 cmake_minimum_required(VERSION 3.10)
 
-# Sistema objetivo
-set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_SYSTEM_PROCESSOR x86_64)
+# Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
+if (MSVC)
+  message(STATUS "Force using SDK 10.0 for Visual Studio")
+  set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "Windows SDK version" FORCE)
+  set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "10.0")
+
+  message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
+# Sistema objetivo (Solo usar cuando se vaya a hacer cross-compiling)
+# set(CMAKE_SYSTEM_NAME Windows)
+# set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
 # Establecer estándar C++
 set(CMAKE_CXX_STANDARD 20)
@@ -21,12 +31,10 @@ project(${PROJECT_NAME})
 # Activa la salida de los comandos de depuración durante la generación
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
-if (MSVC)
-  message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
-  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-endif()
-
+# Información de compilación
+message(STATUS "Generator: ${CMAKE_GENERATOR}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER}")
+message(STATUS "Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
 # ===============================
 # Configuración del proyecto (código fuente propio)
@@ -48,42 +56,49 @@ set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establ
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
 
 # Libreria asio network ( incluir ANTES DE windows.h )
-option(USE_ASIO "Compilar con soporte para asio" ON)            # Activar/desactivar librería
+option(USE_ASIO "Compilar con soporte para asio" ON)         # Activar/desactivar librería
 if(USE_ASIO)
-    include(lib-asionetwork)                                    # Ejecuta el archivo toolchains/lib-asionetwork.cmake
-    add_definitions(-DUSE_ASIO=1)                               # Definición para usar en el código C++
+  include(lib-asionetwork)                                   # Ejecuta el archivo toolchains/lib-asionetwork.cmake
+  add_definitions(-DUSE_ASIO=1)                              # Definición para usar en el código C++
 endif()
 
 # Librería miniaudio
 option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)  # Activar/desactivar librería
 if(USE_MINIAUDIO)
-    include(lib-miniaudio)                                      # Ejecuta el archivo toolchains/lib-miniaudio.cmake
-    add_definitions(-DUSE_MINIAUDIO=1)                          # Definición para usar en el código C++
+  include(lib-miniaudio)                                     # Ejecuta el archivo toolchains/lib-miniaudio.cmake
+  add_definitions(-DUSE_MINIAUDIO=1)                         # Definición para usar en el código C++
 endif()
 
 # Librería de IMGUI (gráficos, ventanas)
-option(USE_IMGUI "Compilar con soporte para IMGUI" ON)          # Activar/desactivar librería
+option(USE_IMGUI "Compilar con soporte para IMGUI" ON)       # Activar/desactivar librería
 if(USE_IMGUI)
-include(lib-imgui)                                              # Ejecuta el archivo toolchains/lib-imgui.cmake
-add_definitions(-DUSE_IMGUI=1)                                  # Definición para usar en el código C++
+  include(lib-imgui)                                         # Ejecuta el archivo toolchains/lib-imgui.cmake
+  add_definitions(-DUSE_IMGUI=1)                             # Definición para usar en el código C++
 endif()
 
 # Libreria json
-option(USE_JSON "Compilar con soporte para JSON" ON)            # Activar/desactivar librería
+option(USE_JSON "Compilar con soporte para JSON" ON)         # Activar/desactivar librería
 if(USE_JSON)
-    include(lib-json)                                           # Ejecuta el archivo toolchains/lib-json.cmake
-    add_definitions(-DUSE_JSON=1)                               # Definición para usar en el código C++
-    endif()
+  include(lib-json)                                          # Ejecuta el archivo toolchains/lib-json.cmake
+  add_definitions(-DUSE_JSON=1)                              # Definición para usar en el código C++
+endif()
+
+# Libreria stb
+option(USE_STB "Compilar con soporte para STB" ON)          # Activar/desactivar librería
+if(USE_STB)
+  include(lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
+  add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
+endif()
     
-# Libreria Piper TTS
-option(USE_PIPER "Compilar con soporte para PIPER" ON)          # Activar/desactivar librería
+    # Librerías no probadas aún:
+    
+# Libreria Piper TTS (REVISAR LICENCIAS)
+option(USE_PIPER "Compilar con soporte para PIPER" OFF)          # Activar/desactivar librería
 if(USE_PIPER)
 include(lib-piperTTS)                                           # Ejecuta el archivo toolchains/lib-piperTTS.cmake
 add_definitions(-DUSE_PIPER=1)                                  # Definición para usar en el código C++
 endif()
-
-# Librerías no probadas aún:
-
+    
 # Librería daisySP
 option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
 if(USE_DAISYSP)
@@ -134,6 +149,8 @@ if (WIN32)
     _SCL_SECURE_NO_WARNINGS   # Desactivar advertencias de seguridad en STL
     NOMINMAX                  # Evitar definición de macros min y max
     WIN32_LEAN_AND_MEAN       # Excluir APIs innecesarias de Windows.h
+    CINTERFACE 
+    COBJMACROS
   )
 
   if (MINGW)
@@ -168,6 +185,7 @@ if(MSVC)
   target_compile_options(${PROJECT_NAME} PRIVATE
     /W3                       # Nivel de advertencia 3
     /EHsc                     # Manejo de excepciones en C++
+    /permissive
     $<$<CONFIG:Debug>:
       /ZI                     # Información de depuración
       /Od                     # Desactivar optimizaciones en Debug
@@ -250,6 +268,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
   $<$<BOOL:${USE_PIPER}>:piper_lib>                 # Librería creada con Piper (TTS)
+  $<$<BOOL:${USE_STB}>:stb_lib>                     # Librería creada con STB
 )
 
 # Para Piper TTS se necesita la dll del onnx runtime
