@@ -79,7 +79,7 @@ public:
     void cerrar();
 
 private:
-    // Bucle principal __________________________
+    // Bucle principal ____________________________________
 
     /**
     * @brief Inicia un nuevo frame de ImGui.
@@ -102,17 +102,30 @@ private:
      */
     void crearMainMenuBar();
 
+    // Carga de imágenes __________________________________
+    
+    /**
+     * @brief Prepara las imágenes que se van a representar.
+     */
+    void loadImages();
 
+    /**
+     * @brief Libera los recursos de las imágenes cargadas.
+     * @note Se hace al cerrar la aplicación
+     */
+    void unloadImages();
+    
     /**
      * @brief Carga una textura de imagen desde un archivo de imagen.
      * @note Soporte para png.
      * @param filename Ruta del archivo de imagen que se va a cargar.
      * @param outWidth Salida del ancho de la textura cargada.
      * @param outHeight Salida de la altura de la textura cargada.
-     * @return GLuint El identificador de la textura cargada.
+     * @return intptr_t El identificador de la textura cargada.
      */
-    GLuint LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight);
+    intptr_t LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight);
     
+
     
 // Temas --------------------------------------------------------------------------------
     
@@ -157,9 +170,9 @@ private:
     bool            cerrado_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
     // Imágenes
-    GLuint playTexture_ = 0;
-    int playW_ = 0;
-    int playH_ = 0;
+    GLuint img_cat_ = 0;
+    int catW_ = 0;
+    int catH_ = 0;
 
     // Variables (MenuBar)
     float           MainMenuBar_Height_       = 0.0f;                   // Almacena el alto de la barra de menú para ajustar la ventana principal

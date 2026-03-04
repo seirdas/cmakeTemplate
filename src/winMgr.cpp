@@ -21,9 +21,6 @@
     #include <GLFW/glfw3native.h>
     #include <windows.h>
     #include <dwmapi.h>
-	#ifndef GLFW_EXPOSE_NATIVE_WIN32
-		#define GLFW_EXPOSE_NATIVE_WIN32
-	#endif
 #endif
 
 using namespace ImGui;
@@ -77,7 +74,6 @@ bool WinMgr::init() {
     io.Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io.Fonts->GetGlyphRangesDefault());
 
     // Configuración de estilo
-    
 	ImGui::StyleColorsLight();
 	Style_Microfost();
 
@@ -91,9 +87,12 @@ bool WinMgr::init() {
         SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 
         // Cambiar color de la barra de titulo (2)
-        BOOL useDarkMode = TRUE;
+        BOOL useDarkMode = FALSE;
         DwmSetWindowAttribute(hwnd, 20, &useDarkMode, sizeof(useDarkMode));
     #endif
+
+	// Carga de imágenes
+	loadImages();
 
     ImGui_ImplGlfw_InitForOpenGL(window_, true);
     ImGui_ImplOpenGL3_Init("#version 130");     // Versión de OpenGL
@@ -121,14 +120,16 @@ void WinMgr::cerrar() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
     if (window_)
     {
         glfwDestroyWindow(window_);
         window_ = nullptr;
     }
-
     glfwTerminate();
+
+	// Liberar recursos de imágenes cargadas
+	unloadImages();
+	
 	cerrado_ = true;
 }
 
@@ -222,6 +223,7 @@ void WinMgr::BuclePrincipal() {
         // Panel F3 (Arriba Derecha)
         ImGui::BeginChild("F3", ImVec2(0, totalHeight * heightRightTop), true);
         ImGui::Text("F3 (20%% inicial)");
+		Image(img_cat_, ImVec2(200,100));
         ImGui::EndChild();
 
         // Splitter Horizontal Derecho
@@ -230,16 +232,21 @@ void WinMgr::BuclePrincipal() {
             heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
 
         // Panel F4 (Abajo Derecha)
-        ImGui::BeginChild("F4", ImVec2(0, 0), false);
+        BeginChild("F4", ImVec2(0, 0), false);
 
 			unsigned int boxSize= (GetContentRegionAvail().y+GetContentRegionAvail().x)/2 * 0.4;
 
 			PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); 
-			BeginChild("Module 1",ImVec2(boxSize,boxSize*.5), true);
-				Text("Module 1");
-				SliderInt("Volume",&sl_volume,0,100,"%d");
-				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
-			EndChild();
+			for (int i = 0; i<4; i++) {
+				BeginChild("Module",ImVec2(boxSize,boxSize*.5), true);
+					Text("Module");
+					SliderInt("Volume",&sl_volume,0,100,"%d");
+					SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
+				EndChild();
+
+				SameLine();
+
+			}
 			PopStyleVar();
 
         EndChild();
@@ -281,10 +288,21 @@ void WinMgr::crearMainMenuBar() {
 	MainMenuBar_Height_ = ImGui::GetFrameHeight();
 }
 
-GLuint WinMgr::LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight)
+void WinMgr::loadImages() {
+	std::cout << "[WinMgr] Unloading images..." << std::endl;
+	img_cat_ = LoadTextureFromFile("cat.png", catW_, catH_);
+}
+
+void WinMgr::unloadImages() {
+	if (img_cat_) { glDeleteTextures(1, &img_cat_); img_cat_ = 0; }
+}
+
+intptr_t WinMgr::LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight)
 {
 	int channels;
-	stbi_set_flip_vertically_on_load(true);
+	//stbi_set_flip_vertically_on_load(true);
+
+	// Carga de archivo de imagen
 	unsigned char* data = stbi_load(filename, &outWidth, &outHeight, &channels, 4);
 	if (!data)
 	{
@@ -292,6 +310,7 @@ GLuint WinMgr::LoadTextureFromFile(const char* filename, int& outWidth, int& out
 		return 0;
 	}
 
+	// Textura desde imagen
 	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -305,7 +324,10 @@ GLuint WinMgr::LoadTextureFromFile(const char* filename, int& outWidth, int& out
 
 	stbi_image_free(data);
 
-	return texture;
+	std::cout << "[WinMgr] Loaded image " << filename << std::endl;
+
+	// Convertimos el ID de OpenGL (32 bits) a un entero que quepa en un puntero (64 bits)
+    return (intptr_t)texture;
 };
 
 // Temas --------------------------------------------------------------------------------
