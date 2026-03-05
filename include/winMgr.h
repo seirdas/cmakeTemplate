@@ -94,6 +94,11 @@ private:
     void endCuadro();
 
     /**
+     * @brief Llama a funciones con combinaciones de teclas.
+     */
+    void captureKeys();
+
+    /**
      * @brief Bucle principal de la ventana. Se encarga de iniciar un nuevo frame, renderizar el contenido de ImGui, y actualizar la ventana.
      *        Se llama repetidamente mientras la ventana esté abierta.
      */
@@ -139,7 +144,6 @@ private:
      */
     void updateFontSize(int delta);
 
-    
 // Temas --------------------------------------------------------------------------------
     
     /**
@@ -174,15 +178,16 @@ private:
     // Propiedades de la ventana ________________
     ImGuiStyle*     style_          = nullptr;                          // Modificar ajustes de estilo
     ImGuiIO*        io_             = nullptr;                          // Manejar entrada/salida
-    
+    bool            captureKeys_    = false;                            // Modo Debug de detección de teclas
+
     std::string     AppName_        = "Demo";                           // Nombre de la aplicación/ventana
     unsigned int    sizeX_          = 1280;                             // Tamaño horizontal (x) de la ventana
     unsigned int    sizeY_          = 720;                              // Tamaño vertical (y) de la ventana
     
     std::string     customFont_     = "Archivo-Medium.ttf";             // Fuente personalizada
     unsigned int    fontSize_       = 16;                               // Tamaño de fuente predeterminado
-    unsigned int const MAX_FONT_SIZE_ = 35;
-    unsigned int const MIN_FONT_SIZE_ = 10;
+    unsigned int const MAX_FONT_SIZE_ = 30;
+    unsigned int const MIN_FONT_SIZE_ = 14;
 
     GLFWwindow*     window_         = nullptr;                          // Puntero a la ventana GLFW
     IAppControl*    controller_     = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
@@ -191,9 +196,10 @@ private:
     // Imágenes _________________________________
 
     struct imageData {      // Datos de imagen
-        GLuint tex = 0;
-        int x = 0;
-        int y = 0;
+        const char* name={};// Nombre de la imagen (para ID)
+        uintptr_t tex = 0;  // Puntero a textura (lo que usa imgui)
+        int x = 0;          // resolución width (ancho)
+        int y = 0;          // resolución height (alto)
     };
     // Cargar las imágenes en la función loadImages
     std::unordered_map<std::string, imageData> images_;       // Mapa de imágenes cargadas

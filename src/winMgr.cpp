@@ -156,10 +156,27 @@ void WinMgr::endCuadro() {
     glfwSwapBuffers(window_);
 }
 
+void WinMgr::captureKeys() {
+
+	// Modo debug de detección de teclas
+	if (captureKeys_)
+		for (int key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; key++)
+			if (ImGui::IsKeyPressed((ImGuiKey)key))
+				printf("Key pressed: %d\n", key);
+
+	// Aumentar el tamaño de la fuente Ctrl+"+"
+	if (io_->KeyCtrl && (IsKeyPressed((ImGuiKey)605) || IsKeyPressed((ImGuiKey)626)) )
+	updateFontSize(1);
+	
+	// Reducir el tamaño de la fuente Ctrl+"-"
+	if (io_->KeyCtrl && (IsKeyPressed(ImGuiKey_Minus) || IsKeyPressed((ImGuiKey)625)) )
+		updateFontSize(-1);
+
+}
+
 void WinMgr::BuclePrincipal() {
     initCuadro();
-	// Referencia a la ventana GLFW
-    ImGuiIO& io = ImGui::GetIO();
+	captureKeys();
 
     //ShowDemoWindow();     // Ventana de demostración
 	//ShowMetricsWindow();  // Ventana de métricas
@@ -176,7 +193,7 @@ void WinMgr::BuclePrincipal() {
     PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); 
 
 	SetNextWindowPos(ImVec2(0,MainMenuBar_Height_));
-	SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y - MainMenuBar_Height_));
+	SetNextWindowSize(ImVec2(io_->DisplaySize.x, io_->DisplaySize.y - MainMenuBar_Height_));
     
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
                                     ImGuiWindowFlags_NoCollapse |
@@ -244,13 +261,6 @@ void WinMgr::ventanaPrincipal() {
 	EndGroup();
 
 	SameLine(); // Pegamos la siguiente columna
-	Button("##v_splitter", ImVec2(sizeSplitterVertical, -FLT_MIN)); // Splitter Vertical
-	if (IsItemActive())
-	{
-		heightLeftTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
-		heightRightTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
-	}
-	SameLine();
 
 	// COLUMNA DERECHA
 	BeginGroup();
@@ -273,6 +283,25 @@ void WinMgr::ventanaPrincipal() {
 
 			BeginChild("Module",ImVec2(boxSize,boxSize*.5), true);
 				Text("Module");
+
+				if (ImageButton(
+						"##BTN_play", 
+						images_["play.png"].tex, 
+						ImVec2(20,20),
+						ImVec2(0,0), 
+						ImVec2(1,1)
+					)
+				){
+					std::cout << "Button pressed" << std::endl;
+				}
+				SameLine();
+				if (ImageButton("##BTN_pause", images_["pause.png"].tex, ImVec2(20,20))){
+					std::cout << "Button pressed" << std::endl;
+				}
+				SameLine();
+				if (ImageButton("##BTN_stop", images_["stop.png"].tex, ImVec2(20,20))){
+					std::cout << "Button pressed" << std::endl;
+				}
 				SliderInt("Volume",&sl_volume,0,100,"%d");
 				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
 			EndChild();
@@ -285,16 +314,6 @@ void WinMgr::ventanaPrincipal() {
 				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
 			EndChild();
 
-			if (ImGui::Button("Fuente +"))
-			{
-				updateFontSize(1);
-			}
-
-			if (ImGui::Button("Fuente -"))
-			{
-				updateFontSize(-1);
-			}
-
 		EndChild();
 	}
 	EndGroup();
@@ -305,21 +324,29 @@ void WinMgr::loadImages() {
 
 	// Añadir aquí las imágenes que se desean cargar
 	addTextureFromFile("cat.png");
-	addTextureFromFile("dog.png");
+	addTextureFromFile("play.png");
+	addTextureFromFile("stop.png");
+	addTextureFromFile("pause.png");
 
 }
 
 void WinMgr::unloadImages() {
 	std::cout << "[WinMgr]	Unloading images..." << std::endl;
 
+	GLuint glTex;
+
 	// Descargar todas las imágenes guardadas
 	for (auto & img : images_) {
-		if (img.second.tex) {
-			std::cout << "[WinMgr]	Deleting texture cache of " << img.first << std::endl;
-			glDeleteTextures(1 , &img.second.tex);
-			img.second.tex = 0;
-		}
-	}
+        if (img.second.tex != 0) {
+            std::cout << "[WinMgr] Deleting texture: " << img.first << std::endl;
+            
+            // Convertimos el uintptr_t de vuelta a GLuint para OpenGL
+            glTex = (GLuint)img.second.tex;
+            glDeleteTextures(1, &glTex);
+            
+            img.second.tex = 0; // Limpiar para evitar usos accidentales
+        }
+    }
 }
 
 void WinMgr::addTextureFromFile(std::string filename) {
@@ -343,13 +370,14 @@ void WinMgr::addTextureFromFile(std::string filename) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Guardar la textura generada
-	img_data.tex = texture;
+	img_data.tex = (uintptr_t)texture;
 
 	// Liberar memoria de datos de imagen temporales
 	stbi_image_free(data);
 
 	// Guardar la imagen en el mapa de imágenes
 	images_[filename] = img_data;
+	images_[filename].name = filename.c_str();
 	
 	std::cout << "[WinMgr]	Loaded image " << filename << std::endl;
     return;
