@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <imgui.h>
 #include <unordered_map>
 #include <GL/gl.h>
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
@@ -103,6 +104,11 @@ private:
      */
     void crearMainMenuBar();
 
+    /**
+     * @brief Crea la ventana principal
+     */
+    void ventanaPrincipal();
+
     // Carga de imágenes __________________________________
     
     /**
@@ -119,6 +125,7 @@ private:
     /**
      * @brief Carga una textura de imagen desde un archivo de imagen.
      * @note Soporte para png.
+     * @example USO: images_["filename.png"].tex
      * @param filename Ruta del archivo de imagen que se va a cargar.
      * @param outWidth Salida del ancho de la textura cargada.
      * @param outHeight Salida de la altura de la textura cargada.
@@ -126,6 +133,11 @@ private:
      */
     void addTextureFromFile(std::string filename);
     
+    /**
+     * @brief Actualiza el tamaño de la fuente mostrada.
+     * @param delta diferencia de tamaño (+1, +2, -1, -2...) 
+     */
+    void updateFontSize(int delta);
 
     
 // Temas --------------------------------------------------------------------------------
@@ -160,12 +172,18 @@ private:
     /************ Variables ********************************************************/
     
     // Propiedades de la ventana ________________
+    ImGuiStyle*     style_          = nullptr;                          // Modificar ajustes de estilo
+    ImGuiIO*        io_             = nullptr;                          // Manejar entrada/salida
+    
     std::string     AppName_        = "Demo";                           // Nombre de la aplicación/ventana
     unsigned int    sizeX_          = 1280;                             // Tamaño horizontal (x) de la ventana
     unsigned int    sizeY_          = 720;                              // Tamaño vertical (y) de la ventana
-    float           clearColor_[4]  = {1.00f, 1.00f, 1.00f, 1.00f};     // Color de fondo RGBA
+    
     std::string     customFont_     = "Archivo-Medium.ttf";             // Fuente personalizada
-    unsigned int    fontSize_       = 18;                               // Tamaño de fuente predeterminado
+    unsigned int    fontSize_       = 16;                               // Tamaño de fuente predeterminado
+    unsigned int const MAX_FONT_SIZE_ = 35;
+    unsigned int const MIN_FONT_SIZE_ = 10;
+
     GLFWwindow*     window_         = nullptr;                          // Puntero a la ventana GLFW
     IAppControl*    controller_     = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
     bool            cerrado_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces

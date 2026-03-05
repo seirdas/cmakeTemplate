@@ -12,7 +12,6 @@
 
 // de la clase imgui de dialogo
 #include <GLFW/glfw3.h>
-#include <imgui.h>
 #include <imgui_internal.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
@@ -29,7 +28,7 @@ using namespace ImGui;
 
 WinMgr::WinMgr(IAppControl* controller) : controller_(controller) {
 	if (controller_==nullptr)
-		std::cerr << "[WinMgr] Cannot handle any controller." << std::endl;
+		std::cerr << "[WinMgr]	Cannot handle any controller." << std::endl;
 }
 
 WinMgr::~WinMgr() {
@@ -41,15 +40,20 @@ void WinMgr::setController(IAppControl* controller){
 }
 
 bool WinMgr::init() {
-	
-	std::cout << "[WinMgr] initializating window..." << std::endl;
+
+	std::cout << "[WinMgr]	Initializating UI..." << std::endl;
+
+	if (controller_!=nullptr)
+		std::cout << "[WinMgr]	Linked with IAppController" << std::endl;
+	else
+		std::cerr << "[WinMgr]	ERROR No controller linked." << std::endl;
 
     if (!glfwInit()) {
-		std::cerr << "[WinMgr] glfwInit error." << std::endl;
+		std::cerr << "[WinMgr]	ERROR glfwInit error." << std::endl;
 		return false;
 	}
 
-    // 1. Configuración de la ventana GLFW
+    // Configuración de la ventana GLFW
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Fondo transparente
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);               // Bordes y barra de título
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
@@ -58,7 +62,7 @@ bool WinMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        std::cerr << "[WinMgr] glfwCreateWindow error." << std::endl;
+        std::cerr << "[WinMgr]	EEROR glfwCreateWindow error." << std::endl;
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -67,14 +71,16 @@ bool WinMgr::init() {
     // Inicializa ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io; // No usar
-    io.IniFilename = NULL;  // No usar archivo .ini de imgui
-
+	
+	style_ = &GetStyle();
+    io_ = &GetIO(); (void)io_; 
+	
     // Cargar fuente personalizada
-    io.Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io.Fonts->GetGlyphRangesDefault());
+    io_->IniFilename = NULL;  // No usar archivo .ini de imgui
+    io_->Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io_->Fonts->GetGlyphRangesDefault());
 
     // Configuración de estilo
-	ImGui::StyleColorsLight();
+	StyleColorsLight();
 	Style_Microfost();
 
     // Propiedades de ventana de windows
@@ -104,7 +110,7 @@ void WinMgr::run() {
 	while (isRunning())
 		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
 	
-	std::cout << "[WinMgr] Closing window..." << std::endl;
+	std::cout << "[WinMgr]	Closing window..." << std::endl;
 	cerrar();
 }
 
@@ -145,11 +151,8 @@ void WinMgr::initCuadro() {
 void WinMgr::endCuadro() {
     // Renderiza
     ImGui::Render();
-    glClearColor(clearColor_[0], clearColor_[1], clearColor_[2], clearColor_[3]);
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    // Intercambia los buffers
     glfwSwapBuffers(window_);
 }
 
@@ -163,13 +166,17 @@ void WinMgr::BuclePrincipal() {
 
 	// vvvvvvvvv Contenido de la ventana vvvvvvvvv
 
-	// 1. BARRA DE MENÚ SUPERIOR
+	// BARRA DE MENÚ SUPERIOR
 	crearMainMenuBar();
 
-	// 1. Forzar bordes cuadrados y eliminar paddings innecesarios para el frame principal
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	// Forzar bordes cuadrados y eliminar paddings innecesarios para el frame principal
+    PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+    PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); 
+
+	SetNextWindowPos(ImVec2(0,MainMenuBar_Height_));
+	SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y - MainMenuBar_Height_));
     
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
                                     ImGuiWindowFlags_NoCollapse |
@@ -179,82 +186,11 @@ void WinMgr::BuclePrincipal() {
                                     ImGuiWindowFlags_NoBringToFrontOnFocus |
                                     ImGuiWindowFlags_NoNav;
 
-        // Ventana que cubre todo el frame
-		SetNextWindowPos(ImVec2(0,MainMenuBar_Height_));
-		SetNextWindowSize(ImVec2(io.DisplaySize.x, io.DisplaySize.y - MainMenuBar_Height_));
-        ImGui::Begin("Ventana que cubre todo el frame", nullptr, window_flags);
-
-
-// --- LÓGICA DE PANELES INDEPENDIENTES ---
-    
-    // Variables estáticas para guardar las alturas (proporciones iniciales)
-    static float heightLeftTop = 0.70f;  // 70% para F1
-    static float heightRightTop = 0.20f; // 20% para F3
-    
-	float sizeSplitterVertical = 4.0f;
-    float totalHeight = ImGui::GetContentRegionAvail().y;
-    //float widthHalf = ImGui::GetContentRegionAvail().x * 0.5f;
-    float sizeX__Izq = ImGui::GetContentRegionAvail().x * 0.2f;
-    //float sizeX__Der = ImGui::GetContentRegionAvail().x - sizeX__Izq - sizeSplitterVertical; // Restamos el espacio del splitter vertical
-
-    // COLUMNA IZQUIERDA
-    ImGui::BeginGroup();
-    {
-        // Panel F1 (Arriba Izquierda)
-        BeginChild("F1", ImVec2(sizeX__Izq, totalHeight), true);
-        Text("F1 (70%% inicial)");
-		Button("hola");
-        EndChild();
-    }
-    ImGui::EndGroup();
-
-    ImGui::SameLine(); // Pegamos la siguiente columna
-	Button("##v_splitter", ImVec2(sizeSplitterVertical, -FLT_MIN)); // Splitter Vertical
-	if (ImGui::IsItemActive())
-	{
-	    heightLeftTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
-	    heightRightTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
-	}
-	SameLine();
-
-    // COLUMNA DERECHA
-    ImGui::BeginGroup();
-    {
-        // Panel F3 (Arriba Derecha)
-        ImGui::BeginChild("F3", ImVec2(0, totalHeight * heightRightTop), true);
-        ImGui::Text("F3 (20%% inicial)");
-		Image(images_["cat.png"].tex, ImVec2(200,100));
-        ImGui::EndChild();
-
-        // Splitter Horizontal Derecho
-        ImGui::Button("##h_splitter_r", ImVec2(-FLT_MIN, 4.0f));
-        if (ImGui::IsItemActive())
-            heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
-
-        // Panel F4 (Abajo Derecha)
-        BeginChild("F4", ImVec2(0, 0), false);
-
-			unsigned int boxSize= (GetContentRegionAvail().y+GetContentRegionAvail().x)/2 * 0.4;
-
-			PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); 
-			for (int i = 0; i<4; i++) {
-				BeginChild("Module",ImVec2(boxSize,boxSize*.5), true);
-					Text("Module");
-					SliderInt("Volume",&sl_volume,0,100,"%d");
-					SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
-				EndChild();
-
-				SameLine();
-
-			}
-			PopStyleVar();
-
-        EndChild();
-    }
-    ImGui::EndGroup();
-
-    ImGui::End();
-    ImGui::PopStyleVar(3);
+	// Ventana que cubre todo el frame
+	Begin("Ventana que cubre todo el frame", nullptr, window_flags);
+		ventanaPrincipal();
+    End();
+    PopStyleVar(4);
 
 	
 	// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -288,8 +224,84 @@ void WinMgr::crearMainMenuBar() {
 	MainMenuBar_Height_ = ImGui::GetFrameHeight();
 }
 
+void WinMgr::ventanaPrincipal() {
+	// Variables estáticas para guardar las alturas (proporciones iniciales)
+	static float heightLeftTop = 0.70f;  // 70% para F1
+	static float heightRightTop = 0.20f; // 20% para F3
+	
+	float sizeSplitterVertical = 4.0f;
+	float totalHeight = ImGui::GetContentRegionAvail().y;
+	float sizeX__Izq = ImGui::GetContentRegionAvail().x * 0.2f;
+
+	// COLUMNA IZQUIERDA
+	BeginGroup();
+	{
+		// Panel F1 (Arriba Izquierda)
+		BeginChild("F1", ImVec2(sizeX__Izq, totalHeight), true);
+		Text("F1 (70%% inicial)");
+		EndChild();
+	}
+	EndGroup();
+
+	SameLine(); // Pegamos la siguiente columna
+	Button("##v_splitter", ImVec2(sizeSplitterVertical, -FLT_MIN)); // Splitter Vertical
+	if (IsItemActive())
+	{
+		heightLeftTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
+		heightRightTop 	+= ImGui::GetIO().MouseDelta.y / totalHeight;
+	}
+	SameLine();
+
+	// COLUMNA DERECHA
+	BeginGroup();
+	{
+		// Panel F3 (Arriba Derecha)
+		BeginChild("F3", ImVec2(0, totalHeight * heightRightTop), true);
+		Text("F3 (20%% inicial)");
+		Image(images_["cat.png"].tex, ImVec2(200,100));
+		EndChild();
+
+		// Splitter Horizontal Derecho
+		Button("##h_splitter_r", ImVec2(-FLT_MIN, 4.0f));
+		if (ImGui::IsItemActive())
+			heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
+
+		// Panel F4 (Abajo Derecha)
+		BeginChild("F4", ImVec2(0, 0), false);
+
+			unsigned int boxSize= (GetContentRegionAvail().y+GetContentRegionAvail().x)/2 * 0.4;
+
+			BeginChild("Module",ImVec2(boxSize,boxSize*.5), true);
+				Text("Module");
+				SliderInt("Volume",&sl_volume,0,100,"%d");
+				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
+			EndChild();
+
+			SameLine();
+
+			BeginChild("Module2",ImVec2(boxSize,boxSize*.5), true);
+				Text("Module");
+				SliderInt("Volume",&sl_volume,0,100,"%d");
+				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
+			EndChild();
+
+			if (ImGui::Button("Fuente +"))
+			{
+				updateFontSize(1);
+			}
+
+			if (ImGui::Button("Fuente -"))
+			{
+				updateFontSize(-1);
+			}
+
+		EndChild();
+	}
+	EndGroup();
+}
+
 void WinMgr::loadImages() {
-	std::cout << "[WinMgr] Loading images..." << std::endl;
+	std::cout << "[WinMgr]	Loading images..." << std::endl;
 
 	// Añadir aquí las imágenes que se desean cargar
 	addTextureFromFile("cat.png");
@@ -298,12 +310,12 @@ void WinMgr::loadImages() {
 }
 
 void WinMgr::unloadImages() {
-	std::cout << "[WinMgr] Unloading images..." << std::endl;
+	std::cout << "[WinMgr]	Unloading images..." << std::endl;
 
 	// Descargar todas las imágenes guardadas
 	for (auto & img : images_) {
 		if (img.second.tex) {
-			std::cout << "[WinMgr] Deleting texture cache of " << img.first << std::endl;
+			std::cout << "[WinMgr]	Deleting texture cache of " << img.first << std::endl;
 			glDeleteTextures(1 , &img.second.tex);
 			img.second.tex = 0;
 		}
@@ -318,7 +330,7 @@ void WinMgr::addTextureFromFile(std::string filename) {
 	unsigned char* data = stbi_load(filename.c_str(), &img_data.x, &img_data.y, &channels, 4);
 	if (!data)
 	{
-		std::cerr << "[WinMgr] Error loading image: " << filename << std::endl;
+		std::cerr << "[WinMgr]	ERROR loading image: " << filename << std::endl;
 		return;
 	}
 
@@ -339,8 +351,27 @@ void WinMgr::addTextureFromFile(std::string filename) {
 	// Guardar la imagen en el mapa de imágenes
 	images_[filename] = img_data;
 	
-	std::cout << "[WinMgr] Loaded image " << filename << std::endl;
+	std::cout << "[WinMgr]	Loaded image " << filename << std::endl;
     return;
+};
+
+void WinMgr::updateFontSize(int delta) {
+
+	unsigned int size = style_->FontSizeBase+delta;
+
+	if (size > MAX_FONT_SIZE_){
+		std::cerr << "[WinMgr] WARN font size bigger than max allowed." << std::endl;
+		return;
+	}
+	if (size < MIN_FONT_SIZE_) {
+		std::cerr << "[WinMgr] WARN font size smaller than min allowed." << std::endl;
+		return;
+	}
+
+	style_->FontSizeBase = size;
+	style_->_NextFrameFontSizeBase = style_->FontSizeBase;
+    
+    std::cout << "[WinMgr] Font size adjusted to: " << style_->FontSizeBase << std::endl;
 };
 
 // Temas --------------------------------------------------------------------------------
