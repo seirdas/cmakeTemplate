@@ -1,7 +1,8 @@
 #pragma once
 
-#include <string>
 #include <iostream>
+#include <string>
+#include <unordered_map>
 #include <GL/gl.h>
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
@@ -123,7 +124,7 @@ private:
      * @param outHeight Salida de la altura de la textura cargada.
      * @return intptr_t El identificador de la textura cargada.
      */
-    intptr_t LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight);
+    void addTextureFromFile(std::string filename);
     
 
     
@@ -158,7 +159,7 @@ private:
     
     /************ Variables ********************************************************/
     
-    // Propiedades de la ventana
+    // Propiedades de la ventana ________________
     std::string     AppName_        = "Demo";                           // Nombre de la aplicación/ventana
     unsigned int    sizeX_          = 1280;                             // Tamaño horizontal (x) de la ventana
     unsigned int    sizeY_          = 720;                              // Tamaño vertical (y) de la ventana
@@ -169,16 +170,20 @@ private:
     IAppControl*    controller_     = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
     bool            cerrado_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
-    // Imágenes
-    GLuint img_cat_ = 0;
-    int catW_ = 0;
-    int catH_ = 0;
+    // Imágenes _________________________________
 
-    // Variables (MenuBar)
+    struct imageData {      // Datos de imagen
+        GLuint tex = 0;
+        int x = 0;
+        int y = 0;
+    };
+    // Cargar las imágenes en la función loadImages
+    std::unordered_map<std::string, imageData> images_;       // Mapa de imágenes cargadas
+
+    // Variables (MenuBar) ______________________
     float           MainMenuBar_Height_       = 0.0f;                   // Almacena el alto de la barra de menú para ajustar la ventana principal
     
-    // Elementos (1)
+    // Elementos (1) ____________________________
     int      sl_volume = 2;
     float    sl_pitch = 0;
-
 };

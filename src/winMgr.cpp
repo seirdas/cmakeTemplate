@@ -77,7 +77,7 @@ bool WinMgr::init() {
 	ImGui::StyleColorsLight();
 	Style_Microfost();
 
-    // Tomar la ventana (para modificar cosas)
+    // Propiedades de ventana de windows
     #ifdef _WIN32
         HINSTANCE hInstance = GetModuleHandle(NULL);
         HWND hwnd = glfwGetWin32Window(window_);
@@ -223,7 +223,7 @@ void WinMgr::BuclePrincipal() {
         // Panel F3 (Arriba Derecha)
         ImGui::BeginChild("F3", ImVec2(0, totalHeight * heightRightTop), true);
         ImGui::Text("F3 (20%% inicial)");
-		Image(img_cat_, ImVec2(200,100));
+		Image(images_["cat.png"].tex, ImVec2(200,100));
         ImGui::EndChild();
 
         // Splitter Horizontal Derecho
@@ -289,45 +289,58 @@ void WinMgr::crearMainMenuBar() {
 }
 
 void WinMgr::loadImages() {
-	std::cout << "[WinMgr] Unloading images..." << std::endl;
-	img_cat_ = LoadTextureFromFile("cat.png", catW_, catH_);
+	std::cout << "[WinMgr] Loading images..." << std::endl;
+
+	// Añadir aquí las imágenes que se desean cargar
+	addTextureFromFile("cat.png");
+	addTextureFromFile("dog.png");
+
 }
 
 void WinMgr::unloadImages() {
-	if (img_cat_) { glDeleteTextures(1, &img_cat_); img_cat_ = 0; }
+	std::cout << "[WinMgr] Unloading images..." << std::endl;
+
+	// Descargar todas las imágenes guardadas
+	for (auto & img : images_) {
+		if (img.second.tex) {
+			std::cout << "[WinMgr] Deleting texture cache of " << img.first << std::endl;
+			glDeleteTextures(1 , &img.second.tex);
+			img.second.tex = 0;
+		}
+	}
 }
 
-intptr_t WinMgr::LoadTextureFromFile(const char* filename, int& outWidth, int& outHeight)
-{
-	int channels;
-	//stbi_set_flip_vertically_on_load(true);
+void WinMgr::addTextureFromFile(std::string filename) {
+	imageData img_data;		// Variable temporal para almacenar datos de la imagen cargada
+	int channels;			// Canales de imagen
 
 	// Carga de archivo de imagen
-	unsigned char* data = stbi_load(filename, &outWidth, &outHeight, &channels, 4);
+	unsigned char* data = stbi_load(filename.c_str(), &img_data.x, &img_data.y, &channels, 4);
 	if (!data)
 	{
 		std::cerr << "[WinMgr] Error loading image: " << filename << std::endl;
-		return 0;
+		return;
 	}
 
 	// Textura desde imagen
 	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-				outWidth, outHeight,
-				0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,	img_data.x, img_data.y ,0 , GL_RGBA, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+	// Guardar la textura generada
+	img_data.tex = texture;
+
+	// Liberar memoria de datos de imagen temporales
 	stbi_image_free(data);
 
+	// Guardar la imagen en el mapa de imágenes
+	images_[filename] = img_data;
+	
 	std::cout << "[WinMgr] Loaded image " << filename << std::endl;
-
-	// Convertimos el ID de OpenGL (32 bits) a un entero que quepa en un puntero (64 bits)
-    return (intptr_t)texture;
+    return;
 };
 
 // Temas --------------------------------------------------------------------------------
