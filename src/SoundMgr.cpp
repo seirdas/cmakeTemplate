@@ -12,7 +12,7 @@ SoundMgr::~SoundMgr() {
 }
 
 bool SoundMgr::init() {
-    std::cout << "[SoundMgr] Initializating sound engine..." << std::endl;
+    std::cout << "[SoundMgr]    Initializating sound engine..." << std::endl;
 
     ma_result res = ma_engine_init(NULL, &engine_);
     engine_initialized_ = (res == MA_SUCCESS) ? true : false;
@@ -21,11 +21,15 @@ bool SoundMgr::init() {
 }
 
 bool SoundMgr::stop() {
-    std::cout << "[SoundMgr] Closing sound engine..." << std::endl;
+
+    // No hacer nada si ya se ha cerrado.
+    if (!engine_initialized_) return true;
+
+    std::cout << "[SoundMgr]    Closing sound engine..." << std::endl;
     
     // Parar grabaciones activas
     if(isRecording()){
-        std::cout << "[SoundMgr] Stopping running recorders..." << std::endl;
+        std::cout << "[SoundMgr]    Stopping running recorders..." << std::endl;
         StopRec();
     } 
     
@@ -54,7 +58,7 @@ bool SoundMgr::StartRec(std::string const& filename) {
     if (ctx_.recording)
         return false;
 
-    std::cout << "[SoundMgr] Start recording to " << filename << ".wav ..." << std::endl;
+    std::cout << "[SoundMgr]    Start recording to " << filename << ".wav ..." << std::endl;
 
     ctx_.filename = filename+".wav";
     ctx_.framesWritten.store(0);
@@ -84,8 +88,8 @@ bool SoundMgr::StopRec() {
     ma_device_stop(&device_);
     ma_device_uninit(&device_);
     ma_encoder_uninit(&ctx_.encoder);
-    std::cout << "[SoundMgr] Stopping record..." << std::endl;
-    std::cout << "[SoundMgr] Recorded " << ctx_.framesWritten.load() / sampleRate;
+    std::cout << "[SoundMgr]    Stopping record..." << std::endl;
+    std::cout << "[SoundMgr]    Recorded " << ctx_.framesWritten.load() / sampleRate;
     std::cout << " seconds to " << ctx_.filename << std::endl;
     return true;
 }
@@ -104,7 +108,7 @@ bool SoundMgr::initWavEncoder() {
 
     ma_result res = ma_encoder_init_file(ctx_.filename.c_str(), &encoderConfig, &ctx_.encoder);
     if (res != MA_SUCCESS) {
-        std::cout << "[SoundMgr] Failed to initialize encoder. Error code: " << res << std::endl;
+        std::cout << "[SoundMgr]    Failed to initialize encoder. Error code: " << res << std::endl;
         return false;
     }
 
@@ -120,14 +124,14 @@ bool SoundMgr::initRecorder() {
     deviceConfig.dataCallback       = dataCallback;
     deviceConfig.pUserData          = &ctx_;
     
-    std::cout << "[SoundMgr] Initializating capture device..." << std::endl;
+    std::cout << "[SoundMgr]    Initializating capture device..." << std::endl;
     if (ma_device_init(nullptr, &deviceConfig, &device_) != MA_SUCCESS) {
         std::cerr << "[SoundMgr] Failed to initialize capture device." << std::endl;
         ma_encoder_uninit(&ctx_.encoder);
         return false;
     }
 
-    std::cout << "[SoundMgr] Starting capturing device..." << std::endl;
+    std::cout << "[SoundMgr]    Starting capturing device..." << std::endl;
     if (ma_device_start(&device_) != MA_SUCCESS) {
         std::cerr << "[SoundMgr] Failed to start capture device." << std::endl;
         ma_device_uninit(&device_);
