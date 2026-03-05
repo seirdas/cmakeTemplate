@@ -142,7 +142,7 @@ private:
      * @brief Actualiza el tamaño de la fuente mostrada.
      * @param delta diferencia de tamaño (+1, +2, -1, -2...) 
      */
-    void updateFontSize(int delta);
+    void updateDensity(int delta);
 
 // Temas --------------------------------------------------------------------------------
     

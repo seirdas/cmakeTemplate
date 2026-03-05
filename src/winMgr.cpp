@@ -166,11 +166,11 @@ void WinMgr::captureKeys() {
 
 	// Aumentar el tamaño de la fuente Ctrl+"+"
 	if (io_->KeyCtrl && (IsKeyPressed((ImGuiKey)605) || IsKeyPressed((ImGuiKey)626)) )
-	updateFontSize(1);
+		updateDensity(1);
 	
 	// Reducir el tamaño de la fuente Ctrl+"-"
 	if (io_->KeyCtrl && (IsKeyPressed(ImGuiKey_Minus) || IsKeyPressed((ImGuiKey)625)) )
-		updateFontSize(-1);
+		updateDensity(-1);
 
 }
 
@@ -254,7 +254,7 @@ void WinMgr::ventanaPrincipal() {
 	BeginGroup();
 	{
 		// Panel F1 (Arriba Izquierda)
-		BeginChild("F1", ImVec2(sizeX__Izq, totalHeight), true);
+		BeginChild("##F1", ImVec2(sizeX__Izq, totalHeight), true);
 		Text("F1 (70%% inicial)");
 		EndChild();
 	}
@@ -266,7 +266,7 @@ void WinMgr::ventanaPrincipal() {
 	BeginGroup();
 	{
 		// Panel F3 (Arriba Derecha)
-		BeginChild("F3", ImVec2(0, totalHeight * heightRightTop), true);
+		BeginChild("##F3", ImVec2(0, totalHeight * heightRightTop), true);
 		Text("F3 (20%% inicial)");
 		Image(images_["cat.png"].tex, ImVec2(200,100));
 		EndChild();
@@ -277,29 +277,22 @@ void WinMgr::ventanaPrincipal() {
 			heightRightTop += ImGui::GetIO().MouseDelta.y / totalHeight;
 
 		// Panel F4 (Abajo Derecha)
-		BeginChild("F4", ImVec2(0, 0), false);
+		BeginChild("##F4", ImVec2(0, 0), false);
 
 			unsigned int boxSize= (GetContentRegionAvail().y+GetContentRegionAvail().x)/2 * 0.4;
 
-			BeginChild("Module",ImVec2(boxSize,boxSize*.5), true);
+			BeginChild("##Module",ImVec2(boxSize,boxSize*.5), true);
 				Text("Module");
 
-				if (ImageButton(
-						"##BTN_play", 
-						images_["play.png"].tex, 
-						ImVec2(20,20),
-						ImVec2(0,0), 
-						ImVec2(1,1)
-					)
-				){
+				if ( ImageButton("##BTN_play", images_["play.png"].tex, ImVec2(20,20)) ) {
 					std::cout << "Button pressed" << std::endl;
 				}
 				SameLine();
-				if (ImageButton("##BTN_pause", images_["pause.png"].tex, ImVec2(20,20))){
+				if ( ImageButton("##BTN_pause", images_["pause.png"].tex, ImVec2(20,20)) ) {
 					std::cout << "Button pressed" << std::endl;
 				}
 				SameLine();
-				if (ImageButton("##BTN_stop", images_["stop.png"].tex, ImVec2(20,20))){
+				if ( ImageButton("##BTN_stop", images_["stop.png"].tex, ImVec2(20,20)) ) {
 					std::cout << "Button pressed" << std::endl;
 				}
 				SliderInt("Volume",&sl_volume,0,100,"%d");
@@ -308,7 +301,7 @@ void WinMgr::ventanaPrincipal() {
 
 			SameLine();
 
-			BeginChild("Module2",ImVec2(boxSize,boxSize*.5), true);
+			BeginChild("##Module2",ImVec2(boxSize,boxSize*.5), true);
 				Text("Module");
 				SliderInt("Volume",&sl_volume,0,100,"%d");
 				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
@@ -383,23 +376,37 @@ void WinMgr::addTextureFromFile(std::string filename) {
     return;
 };
 
-void WinMgr::updateFontSize(int delta) {
+void WinMgr::updateDensity(int delta) {
 
-	unsigned int size = style_->FontSizeBase+delta;
+    int new_size = (int)style_->FontSizeBase + delta;
 
-	if (size > MAX_FONT_SIZE_){
-		std::cerr << "[WinMgr] WARN font size bigger than max allowed." << std::endl;
-		return;
-	}
-	if (size < MIN_FONT_SIZE_) {
-		std::cerr << "[WinMgr] WARN font size smaller than min allowed." << std::endl;
-		return;
-	}
+    if (new_size > (int)MAX_FONT_SIZE_) {
+        std::cerr << "[WinMgr] WARN font size bigger than max allowed." << std::endl;
+        return;
+    }
+    if (new_size < (int)MIN_FONT_SIZE_) {
+        std::cerr << "[WinMgr] WARN font size smaller than min allowed." << std::endl;
+        return;
+    }
 
-	style_->FontSizeBase = size;
-	style_->_NextFrameFontSizeBase = style_->FontSizeBase;
-    
-    std::cout << "[WinMgr] Font size adjusted to: " << style_->FontSizeBase << std::endl;
+    // Guardar factor de escala relativo al tamaño anterior
+    float prev = style_->FontSizeBase;
+    float next = (float)new_size;
+    float scale = (prev > 0.0f) ? (next / prev) : 1.0f;
+
+    // Aplicar nuevo tamaño de fuente
+    style_->FontSizeBase = next;
+    style_->_NextFrameFontSizeBase = style_->FontSizeBase;
+
+    // Escalar paddings y espacios que afectan a botones
+    style_->FramePadding = ImVec2(style_->FramePadding.x * scale, style_->FramePadding.y * scale);
+    style_->ItemSpacing = ImVec2(style_->ItemSpacing.x * scale, style_->ItemSpacing.y * scale);
+    style_->ItemInnerSpacing = ImVec2(style_->ItemInnerSpacing.x * scale, style_->ItemInnerSpacing.y * scale);
+    style_->WindowPadding = ImVec2(style_->WindowPadding.x * scale, style_->WindowPadding.y * scale);
+    style_->FrameRounding = style_->FrameRounding * scale;
+    style_->GrabRounding = style_->GrabRounding * scale;
+
+    std::cout << "[WinMgr] Density adjusted to font size: " << style_->FontSizeBase << std::endl;
 };
 
 // Temas --------------------------------------------------------------------------------
