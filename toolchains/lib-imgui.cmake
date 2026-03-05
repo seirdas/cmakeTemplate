@@ -66,12 +66,42 @@ file(GLOB IMGUI_SOURCES
   "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp" 
 )
 
+# IMPLOT (Gráficos) ___________________________
+message(STATUS "Fetching Implot library...")
 
-# Crear librería estática con ImGui + GLFW ____________________________
-add_library(imgui_lib STATIC ${IMGUI_SOURCES})
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/implot_src/.github")
+  message(STATUS "Using local ImPlot source")
+  set(FETCHCONTENT_SOURCE_DIR_IMPLOT
+      "${EXTERNAL_LIB_PATH}/implot_src"
+      CACHE PATH "" FORCE)
+endif()
+
+FetchContent_Declare(
+  implot
+  GIT_REPOSITORY https://github.com/epezent/implot.git
+  GIT_TAG v0.17   # o la versión que necesites
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/implot_src"
+  GIT_SHALLOW    TRUE
+  EXCLUDE_FROM_ALL TRUE
+)
+FetchContent_MakeAvailable(implot)
+FetchContent_GetProperties(implot SOURCE_DIR IMPLOT_DIR)
+
+file(GLOB IMPLOT_SOURCES
+  "${IMPLOT_DIR}/*.cpp"
+)
+
+# Crear librería estática con ImGui + Implot + GLFW ____________________________
+
+add_library(imgui_lib STATIC 
+  ${IMGUI_SOURCES}
+  ${IMPLOT_SOURCES}
+)
+
 target_link_libraries(imgui_lib PUBLIC 
   glfw                # GLFW
-  OpenGL::GL          # OpenGL                
+  OpenGL::GL          # OpenGL  
   $<$<PLATFORM_ID:Windows>:
     user32    # Ventanas y controles básicos de Windows
     gdi32     # Gráficos básicos de Windows
@@ -79,7 +109,13 @@ target_link_libraries(imgui_lib PUBLIC
     imm32     # Soporte de IME (Input Method Editor) para entrada de texto avanzada
   > 
 )
-target_include_directories(imgui_lib PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/backends)   # Directorios propios
+
+target_include_directories(imgui_lib PUBLIC 
+  ${IMGUI_DIR}            # imgui 
+  ${IMGUI_DIR}/backends   # imgui backends
+  ${IMPLOT_DIR}           # implot
+) 
+
 # target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
 
 target_compile_definitions(imgui_lib PUBLIC

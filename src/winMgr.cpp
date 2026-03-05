@@ -12,6 +12,7 @@
 
 // de la clase imgui de dialogo
 #include <GLFW/glfw3.h>
+#include <implot.h>
 #include <imgui_internal.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
