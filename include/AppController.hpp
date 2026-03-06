@@ -7,9 +7,9 @@
 
 #include <json.hpp>             // Manipula archivos .json
 
-#include "winMgr.h"             // Clase de gestión de ventana UI
-#include "NetMgr.hpp"           // Clase para gestionar sockets
-#include "SoundMgr.hpp"         // Clase para gestionar audio
+#include "ui/WinMgr.h"          // Clase de gestión de ventana UI
+#include "net/NetMgr.hpp"       // Clase para gestionar sockets
+#include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 #define VERSION 0.8

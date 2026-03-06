@@ -73,7 +73,6 @@ public:
     bool isRecording();
 
 
-
 private:
 
     // Métodos para grabación

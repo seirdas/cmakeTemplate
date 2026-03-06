@@ -6,7 +6,7 @@
 //	- Añadir a la ventana (en Begin("", nullptr, window_flags); )
 // ---------------------------------------------------------------------------------
 
-#include "winMgr.h"				// Clase winMgr de gestión de ventanas
+#include "ui/WinMgr.h"			// Clase de gestión de UI
 #include <stb_image.h>          // Implementación para soporte de imágenes.
 #include <iostream>
 

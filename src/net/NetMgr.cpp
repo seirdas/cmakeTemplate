@@ -1,5 +1,5 @@
 #include <iostream>             // Entrada/Salida estándar
-#include "NetMgr.hpp"
+#include "net/NetMgr.hpp"
 
 // General ------------------------------------------------------------------------------
 

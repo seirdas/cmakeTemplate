@@ -1,4 +1,4 @@
-#include "SoundMgr.hpp"
+#include "sound/SoundMgr.hpp"
 #include <iostream>
 
 // General ------------------------------------------------------------------------------
