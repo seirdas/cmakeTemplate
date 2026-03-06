@@ -12,9 +12,12 @@ SoundMgr::~SoundMgr() {
 }
 
 bool SoundMgr::init() {
-    std::cout << "[SoundMgr]    Initializating sound engine..." << std::endl;
 
-    ma_result res = ma_engine_init(NULL, &engine_);
+    // No hacer nada si ya se ha iniciado
+    if (engine_initialized_) return true;
+    std::cout << "[SoundMgr]    Initializating sound context..." << std::endl;
+
+    ma_result res = ma_context_init(NULL, 0, NULL, &snd_context_);
     engine_initialized_ = (res == MA_SUCCESS) ? true : false;
 
     return engine_initialized_;
@@ -24,147 +27,63 @@ bool SoundMgr::stop() {
 
     // No hacer nada si ya se ha cerrado.
     if (!engine_initialized_) return true;
+    std::cout << "[SoundMgr]    Closing sound engine and modules..." << std::endl;
 
-    std::cout << "[SoundMgr]    Closing sound engine..." << std::endl;
-    
-    // Parar grabaciones activas
-    if(isRecording()){
-        std::cout << "[SoundMgr]    Stopping running recorders..." << std::endl;
-        StopRec();
-    } 
-    
-    // Cerrar el motor de audio
-    if (engine_initialized_){
-        ma_engine_uninit(&engine_);
-        engine_initialized_ = false;
+    // Limpieza (destruir) los módulos creados
+    inputs_.clear();
+    //#TODO
+    //playbacks_.clear();
+
+    // Desinicializar el contexto global
+    ma_context_uninit(&snd_context_);
+    engine_initialized_ = false;
+
+    std::cout << "[SoundMgr]    Sound system stopped successfully." << std::endl;
+    return true;
+}
+
+bool SoundMgr::listInputDevices() {
+    // Si no está inicializado no se puede hacer nada
+    if (!engine_initialized_) return false;
+
+    ma_device_info* pCaptureDeviceInfos;
+    ma_uint32 captureDeviceCount;
+
+    // Obtenemos la información del contexto
+    if (ma_context_get_devices(&snd_context_, NULL, NULL, &pCaptureDeviceInfos, &captureDeviceCount) != MA_SUCCESS) {
+        std::cerr << "Error al obtener dispositivos de entrada." << std::endl;
+        return false;
+    }
+
+    std::cout << "\n--- DISPOSITIVOS DE ENTRADA (CAPTURE) ---" << std::endl;
+    for (ma_uint32 i = 0; i < captureDeviceCount; ++i) {
+        std::cout << "[" << i << "] " << pCaptureDeviceInfos[i].name;
+        if (pCaptureDeviceInfos[i].isDefault) std::cout << " (Predeterminado)";
+        std::cout << std::endl;
     }
 
     return true;
 }
 
-void SoundMgr::test() {
-    ma_engine_play_sound(&engine_, "DefaultDance.mp3", NULL);
-}
+bool SoundMgr::listOutputDevices() {
+    // Si no está inicializado no se puede hacer nada
+    if (!engine_initialized_) return false;
 
-void SoundMgr::test2() {
-    ma_engine_play_sound(&engine_, "chinos.mp3", NULL);
-}
+    ma_device_info* pPlaybackDeviceInfos;
+    ma_uint32 playbackDeviceCount;
 
-
-// Grabación ----------------------------------------------------------------------------
-
-bool SoundMgr::StartRec(std::string const& filename) {
-
-    if (ctx_.recording)
-        return false;
-
-    std::cout << "[SoundMgr]    Start recording to " << filename << ".wav ..." << std::endl;
-
-    ctx_.filename = filename+".wav";
-    ctx_.framesWritten.store(0);
-    ctx_.maxFrames = (uint64_t)sampleRate * secondsToRecord;
-
-    // --- Encoder WAV ---
-    if (!initWavEncoder())
-        return false;        
-
-    // --- Configuración dispositivo ---
-    if(!initRecorder()) {
-        
-        ma_device_uninit(&device_);
-        ma_encoder_uninit(&ctx_.encoder);
-
+    // El tercer y cuarto parámetro son para Playback
+    if (ma_context_get_devices(&snd_context_, &pPlaybackDeviceInfos, &playbackDeviceCount, NULL, NULL) != MA_SUCCESS) {
+        std::cerr << "Error al obtener dispositivos de salida." << std::endl;
         return false;
     }
 
-    ctx_.recording = true;
-    return true;
-}
-
-bool SoundMgr::StopRec() {
-    if (!ctx_.recording.exchange(false))
-        return true;
-
-    ma_device_stop(&device_);
-    ma_device_uninit(&device_);
-    ma_encoder_uninit(&ctx_.encoder);
-    std::cout << "[SoundMgr]    Stopping record..." << std::endl;
-    std::cout << "[SoundMgr]    Recorded " << ctx_.framesWritten.load() / sampleRate;
-    std::cout << " seconds to " << ctx_.filename << std::endl;
-    return true;
-}
-
-bool SoundMgr::isRecording() {
-    return ctx_.recording.load();
-}
-
-
-bool SoundMgr::initWavEncoder() {
-    ma_encoder_config encoderConfig =
-        ma_encoder_config_init( ma_encoding_format_wav,
-                                ma_format_s16,
-                                channels,
-                                sampleRate);
-
-    ma_result res = ma_encoder_init_file(ctx_.filename.c_str(), &encoderConfig, &ctx_.encoder);
-    if (res != MA_SUCCESS) {
-        std::cout << "[SoundMgr]    Failed to initialize encoder. Error code: " << res << std::endl;
-        return false;
+    std::cout << "\n--- DISPOSITIVOS DE SALIDA (PLAYBACK) ---" << std::endl;
+    for (ma_uint32 i = 0; i < playbackDeviceCount; ++i) {
+        std::cout << "[" << i << "] " << pPlaybackDeviceInfos[i].name;
+        if (pPlaybackDeviceInfos[i].isDefault) std::cout << " (Predeterminado)";
+        std::cout << std::endl;
     }
 
     return true;
-}
-
-bool SoundMgr::initRecorder() {
-    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
-
-    deviceConfig.capture.format     = ma_format_s16;
-    deviceConfig.capture.channels   = channels;
-    deviceConfig.sampleRate         = sampleRate;
-    deviceConfig.dataCallback       = dataCallback;
-    deviceConfig.pUserData          = &ctx_;
-    
-    std::cout << "[SoundMgr]    Initializating capture device..." << std::endl;
-    if (ma_device_init(nullptr, &deviceConfig, &device_) != MA_SUCCESS) {
-        std::cerr << "[SoundMgr] Failed to initialize capture device." << std::endl;
-        ma_encoder_uninit(&ctx_.encoder);
-        return false;
-    }
-
-    std::cout << "[SoundMgr]    Starting capturing device..." << std::endl;
-    if (ma_device_start(&device_) != MA_SUCCESS) {
-        std::cerr << "[SoundMgr] Failed to start capture device." << std::endl;
-        ma_device_uninit(&device_);
-        ma_encoder_uninit(&ctx_.encoder);
-        return false;
-    }
-
-    return true;
-}
-
-void SoundMgr::dataCallback(
-    ma_device*  device, 
-    void*       output, 
-    const void* input, 
-    ma_uint32   frameCount) 
-{
-    RecordingContext* ctx = (RecordingContext*)device->pUserData;
-    if (!input || !ctx->recording) return;
-
-    uint64_t framesWritten      = ctx->framesWritten.load();
-    uint64_t framesRemaining    = ctx->maxFrames - framesWritten;
-    uint64_t framesToWrite      = (frameCount > framesRemaining) ? framesRemaining : frameCount;
-
-    if (framesToWrite > 0) {
-        ma_uint64 actuallyWritten = 0;
-        if (ma_encoder_write_pcm_frames(&ctx->encoder, input, framesToWrite, &actuallyWritten) == MA_SUCCESS)
-            ctx->framesWritten += actuallyWritten;
-    }
-
-    // Límite automático: Marca y parada del dispositivo.
-    if (ctx->framesWritten >= ctx->maxFrames) {
-        ctx->recording = false;
-        ma_device_stop(device); 
-    }
-    (void)output;
 }

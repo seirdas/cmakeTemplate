@@ -2,11 +2,6 @@
 #include <chrono>               // Controla tiempos de espera
 #include <miniaudio.h>
 
-
-/********************************/
-// ----- APPCONTROLLER ----------/
-/********************************/
-
 // General ------------------------------------------------------------------------------
 
 AppController::AppController() : ui_(this), isRunning_(false) {
@@ -30,9 +25,12 @@ AppController::~AppController() {
     std::cout << "[AppController] Closing UI..." << std::endl;
     ui_.cerrar();
 
+    // Esperar a que terminen los hilos
+    std::cout << "[AppController] Closing running threads..." << std::endl;
     if (worker_.joinable())
             worker_.join();
 
+    std::cout << "[AppController] Exiting..." << std::endl;
 }
 
 bool AppController::init() {
@@ -61,8 +59,12 @@ int AppController::run() {
     // Iniciar sockets
     net_.start();
 
-    // Gestor de paquetes
-    worker_ = std::thread(&AppController::TWorker, this);
+    // Gestor de paquetes (#TODO)
+    //worker_ = std::thread(&AppController::TWorker, this);
+
+    // Sonido
+    snd_.listInputDevices();
+    snd_.listOutputDevices();
 
     // Ventana UI
     ui_.run();      // <-- Este método bloquea hasta que la ventana se cierre
@@ -70,14 +72,20 @@ int AppController::run() {
     return 0;
 }
 
+
+// Hilos --------------------------------------------------------------------------------
+
 void AppController::TWorker() {
 
     std::cout << "[AppController]   Initializating consumer thread..." << std::endl;
 
+    std::vector<char> data;
+
     while (isRunning_) {
         switch (mode_){
             case AppMode::ONLINE:
-                // Esperar a que net le de algo para trabajar
+                // Esperar a que net le de algo para procesar
+                data = net_.getDataFromSocket("Host");
             break;
             case AppMode::OFFLINE:
                 // Esperar a que la UI le de algo para procesar
@@ -91,6 +99,9 @@ void AppController::TWorker() {
 
         // Procesar el paquete (simulado)
         std::cout << "[AppController]   Procesando paquete de datos..." << std::endl;
+
+        std::cout << "Size of data" << data.size() << std::endl;
+
         std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
     }
 
@@ -132,5 +143,6 @@ bool AppController::getMode() const noexcept {
         case AppMode::OFFLINE:  return false;
     }
     // No debería llegar aquí nunca
+    std::cerr << "[AppController]   ERROR Undefined AppMode in consumer thread" << std::endl;
     return true;
 };
