@@ -11,9 +11,9 @@ struct GLFWwindow;
 
 
 /**
-  * @class WinMgr
+  * @class UiMgr
   * @brief Gestor de ventana y loop principal usando GLFW, OpenGL e ImGui.
-  *  WinMgr inicializa y gestiona la ventana principal de la aplicación, configura
+  *  UiMgr inicializa y gestiona la ventana principal de la aplicación, configura
   *  ImGui, proporciona el bucle principal de renderizado y utilidades para
   *  estilos visuales. 
   *  Comunica con el resto de la aplicación mediante la interfaz IAppControl suministrada.
@@ -34,7 +34,7 @@ struct GLFWwindow;
   * @see IAppControl
   * @date March 2, 2026 
   */
-class WinMgr {
+class UiMgr {
 
 public:
 
@@ -43,13 +43,13 @@ public:
     /**
      * @brief Constructor por defecto.
      */
-    WinMgr(IAppControl* ctrl_ = nullptr);
+    UiMgr(IAppControl* ctrl_ = nullptr);
     
     /**
      * @brief Destructor. Llama a cerrar() para liberar recursos.
      * @note Virtual para evitar comportamientos inesperados en clases derivadas.
      */
-    virtual ~WinMgr();
+    virtual ~UiMgr();
     
     /**
      * @brief Establece el controlador que usa para manejar otras clases.

@@ -7,7 +7,7 @@
 
 #include <json.hpp>             // Manipula archivos .json
 
-#include "ui/WinMgr.h"          // Clase de gestión de ventana UI
+#include "ui/UiMgr.h"          // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
@@ -94,7 +94,7 @@ private:
     /************ Variables ********************************************************/
 
     NetMgr      net_;                               // Gestor de sockets de red
-    WinMgr      ui_;                                // Gestor de ventanas para la interfaz gráfica
+    UiMgr       ui_;                                // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                               // Gestor de audio
 
     std::thread worker_;                            // gestor de paquetes

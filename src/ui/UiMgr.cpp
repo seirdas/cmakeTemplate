@@ -6,7 +6,7 @@
 //	- Añadir a la ventana (en Begin("", nullptr, window_flags); )
 // ---------------------------------------------------------------------------------
 
-#include "ui/WinMgr.h"			// Clase de gestión de UI
+#include "ui/UiMgr.h"			// Clase de gestión de UI
 #include <stb_image.h>          // Implementación para soporte de imágenes.
 #include <iostream>
 
@@ -27,30 +27,30 @@ using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
-WinMgr::WinMgr(IAppControl* controller) : ctrl_(controller) {
+UiMgr::UiMgr(IAppControl* controller) : ctrl_(controller) {
 	if (ctrl_==nullptr)
-		std::cerr << "[WinMgr]	Cannot handle any controller." << std::endl;
+		std::cerr << "[UiMgr]	Cannot handle any controller." << std::endl;
 }
 
-WinMgr::~WinMgr() {
+UiMgr::~UiMgr() {
 	cerrar();
 }
 
-void WinMgr::setController(IAppControl* controller){
+void UiMgr::setController(IAppControl* controller){
 	ctrl_ = controller;
 }
 
-bool WinMgr::init() {
+bool UiMgr::init() {
 
-	std::cout << "[WinMgr]	Initializating UI..." << std::endl;
+	std::cout << "[UiMgr]	Initializating UI..." << std::endl;
 
 	if (ctrl_!=nullptr)
-		std::cout << "[WinMgr]	Linked with IAppController" << std::endl;
+		std::cout << "[UiMgr]	Linked with IAppController" << std::endl;
 	else
-		std::cerr << "[WinMgr]	ERROR No controller linked." << std::endl;
+		std::cerr << "[UiMgr]	ERROR No controller linked." << std::endl;
 
     if (!glfwInit()) {
-		std::cerr << "[WinMgr]	ERROR glfwInit error." << std::endl;
+		std::cerr << "[UiMgr]	ERROR glfwInit error." << std::endl;
 		return false;
 	}
 
@@ -63,7 +63,7 @@ bool WinMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        std::cerr << "[WinMgr]	EEROR glfwCreateWindow error." << std::endl;
+        std::cerr << "[UiMgr]	EEROR glfwCreateWindow error." << std::endl;
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -73,16 +73,17 @@ bool WinMgr::init() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 	
+	// Obtener puntero a style e io para poder modificarlo
 	style_ = &GetStyle();
-    io_ = &GetIO(); (void)io_; 
+    io_ = &GetIO();
 	
     // Cargar fuente personalizada
     io_->IniFilename = NULL;  // No usar archivo .ini de imgui
     io_->Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io_->Fonts->GetGlyphRangesDefault());
 
     // Configuración de estilo
-	StyleColorsLight();
-	Style_Microfost();
+	StyleColorsDark();
+	Style_Confy();
 
     // Propiedades de ventana de windows
     #ifdef _WIN32
@@ -94,7 +95,7 @@ bool WinMgr::init() {
         SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 
         // Cambiar color de la barra de titulo (2)
-        BOOL useDarkMode = FALSE;
+        BOOL useDarkMode = TRUE;
         DwmSetWindowAttribute(hwnd, 20, &useDarkMode, sizeof(useDarkMode));
     #endif
 
@@ -106,20 +107,20 @@ bool WinMgr::init() {
     return true;
 }
 
-void WinMgr::run() {
+void UiMgr::run() {
 
 	while (isRunning())
 		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
 	
-	std::cout << "[WinMgr]	Closing window..." << std::endl;
+	std::cout << "[UiMgr]	Closing window..." << std::endl;
 	cerrar();
 }
 
-bool WinMgr::isRunning() const {
+bool UiMgr::isRunning() const {
     return window_ && !glfwWindowShouldClose(window_);
 }
 
-void WinMgr::cerrar() {
+void UiMgr::cerrar() {
 	// No intentar cerrar de nuevo (excepción)
 	if(cerrado_) 
 		return;
@@ -141,7 +142,7 @@ void WinMgr::cerrar() {
 }
 
 
-void WinMgr::initCuadro() {
+void UiMgr::initCuadro() {
     glfwPollEvents();
     
     ImGui_ImplOpenGL3_NewFrame();
@@ -149,7 +150,7 @@ void WinMgr::initCuadro() {
     ImGui::NewFrame();
 }
 
-void WinMgr::endCuadro() {
+void UiMgr::endCuadro() {
     // Renderiza
     ImGui::Render();
     glClear(GL_COLOR_BUFFER_BIT);
@@ -157,7 +158,7 @@ void WinMgr::endCuadro() {
     glfwSwapBuffers(window_);
 }
 
-void WinMgr::captureKeys() {
+void UiMgr::captureKeys() {
 
 	// Modo debug de detección de teclas
 	if (captureKeys_)
@@ -175,7 +176,7 @@ void WinMgr::captureKeys() {
 
 }
 
-void WinMgr::BuclePrincipal() {
+void UiMgr::BuclePrincipal() {
     initCuadro();
 	captureKeys();
 
@@ -216,7 +217,7 @@ void WinMgr::BuclePrincipal() {
     endCuadro();
 }
 
-void WinMgr::crearMainMenuBar() {
+void UiMgr::crearMainMenuBar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("New", "Ctrl+N")) { /* Acción */ }
@@ -242,7 +243,7 @@ void WinMgr::crearMainMenuBar() {
 	MainMenuBar_Height_ = ImGui::GetFrameHeight();
 }
 
-void WinMgr::ventanaPrincipal() {
+void UiMgr::ventanaPrincipal() {
 	// Variables estáticas para guardar las alturas (proporciones iniciales)
 	static float heightRightTop = 0.20f; // 20% para F3
 	
@@ -317,8 +318,8 @@ void WinMgr::ventanaPrincipal() {
 	EndGroup();
 }
 
-void WinMgr::loadImages() {
-	std::cout << "[WinMgr]	Loading images..." << std::endl;
+void UiMgr::loadImages() {
+	std::cout << "[UiMgr]	Loading images..." << std::endl;
 
 	// Añadir aquí las imágenes que se desean cargar
 	addTextureFromFile("cat.png");
@@ -328,15 +329,15 @@ void WinMgr::loadImages() {
 
 }
 
-void WinMgr::unloadImages() {
-	std::cout << "[WinMgr]	Unloading images..." << std::endl;
+void UiMgr::unloadImages() {
+	std::cout << "[UiMgr]	Unloading images..." << std::endl;
 
 	GLuint glTex;
 
 	// Descargar todas las imágenes guardadas
 	for (auto & img : images_) {
         if (img.second.tex != 0) {
-            std::cout << "[WinMgr] Deleting texture: " << img.first << std::endl;
+            std::cout << "[UiMgr] Deleting texture: " << img.first << std::endl;
             
             // Convertimos el uintptr_t de vuelta a GLuint para OpenGL
             glTex = (GLuint)img.second.tex;
@@ -347,7 +348,7 @@ void WinMgr::unloadImages() {
     }
 }
 
-void WinMgr::addTextureFromFile(std::string filename) {
+void UiMgr::addTextureFromFile(std::string filename) {
 	imageData img_data;		// Variable temporal para almacenar datos de la imagen cargada
 	int channels;			// Canales de imagen
 
@@ -355,7 +356,7 @@ void WinMgr::addTextureFromFile(std::string filename) {
 	unsigned char* data = stbi_load(filename.c_str(), &img_data.x, &img_data.y, &channels, 4);
 	if (!data)
 	{
-		std::cerr << "[WinMgr]	ERROR loading image: " << filename << std::endl;
+		std::cerr << "[UiMgr]	ERROR loading image: " << filename << std::endl;
 		return;
 	}
 
@@ -377,20 +378,20 @@ void WinMgr::addTextureFromFile(std::string filename) {
 	images_[filename] = img_data;
 	images_[filename].name = filename.c_str();
 	
-	std::cout << "[WinMgr]	Loaded image " << filename << std::endl;
+	std::cout << "[UiMgr]	Loaded image " << filename << std::endl;
     return;
 };
 
-void WinMgr::updateDensity(int delta) {
+void UiMgr::updateDensity(int delta) {
 
     int new_size = (int)style_->FontSizeBase + delta;
 
     if (new_size > (int)MAX_FONT_SIZE_) {
-        std::cerr << "[WinMgr] WARN font size bigger than max allowed." << std::endl;
+        std::cerr << "[UiMgr] WARN font size bigger than max allowed." << std::endl;
         return;
     }
     if (new_size < (int)MIN_FONT_SIZE_) {
-        std::cerr << "[WinMgr] WARN font size smaller than min allowed." << std::endl;
+        std::cerr << "[UiMgr] WARN font size smaller than min allowed." << std::endl;
         return;
     }
 
@@ -411,12 +412,12 @@ void WinMgr::updateDensity(int delta) {
     style_->FrameRounding = style_->FrameRounding * scale;
     style_->GrabRounding = style_->GrabRounding * scale;
 
-    std::cout << "[WinMgr] Density adjusted to font size: " << style_->FontSizeBase << std::endl;
+    std::cout << "[UiMgr] Density adjusted to font size: " << style_->FontSizeBase << std::endl;
 };
 
 // Temas --------------------------------------------------------------------------------
 
-void WinMgr::Style_Confy() {
+void UiMgr::Style_Confy() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -504,7 +505,7 @@ void WinMgr::Style_Confy() {
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.8f, 0.8f, 0.8f, 0.35f);
 }
 
-void WinMgr::Style_FutureDark() {
+void UiMgr::Style_FutureDark() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -592,7 +593,7 @@ void WinMgr::Style_FutureDark() {
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.19607843f, 0.1764706f, 0.54509807f, 0.5019608f);
 }
 
-void WinMgr::Style_Moonlight() {
+void UiMgr::Style_Moonlight() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -680,7 +681,7 @@ void WinMgr::Style_Moonlight() {
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.19607843f, 0.1764706f, 0.54509807f, 0.5019608f);
 }
 
-void WinMgr::Style_VisualStudio() {
+void UiMgr::Style_VisualStudio() {
 	ImGuiStyle& style = ImGui::GetStyle();
 	
 	style.Alpha = 1.0f;
@@ -768,7 +769,7 @@ void WinMgr::Style_VisualStudio() {
 	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.14509805f, 0.14509805f, 0.14901961f, 1.0f);
 }
 
-void WinMgr::Style_Microfost() {
+void UiMgr::Style_Microfost() {
 
 	// Microsoft style by usernameiwantedwasalreadytaken from ImThemes
 	ImGuiStyle& style = ImGui::GetStyle();
