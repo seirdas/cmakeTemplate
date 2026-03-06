@@ -257,10 +257,25 @@ void UiMgr::ventanaPrincipal() {
 		BeginChild("##F1", ImVec2(sizeX__Izq, totalHeight), true);
 		Text("F1 (70%% inicial)");
 
+		// Botón de modo
 		std::string txt_mode = (ctrl_->getMode()) ? "ONLINE" : "OFFLINE";
 		if (Button(txt_mode.c_str())){
 			ctrl_->setMode(!ctrl_->getMode());
 		}
+
+		// Botón para modo oscuro
+		if (Button("darkmode window")) {
+			BOOL useDarkMode = TRUE;
+			DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
+			std::cout << "[UiMgr]	Dark mode set" << std::endl;
+		}
+		// Botón para modo claro
+		if (Button("lightmode window")) {
+			BOOL useDarkMode = FALSE;
+			DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
+			std::cout << "[UiMgr]	Light mode set" << std::endl;
+		}
+		
 
 		EndChild();
 	}
