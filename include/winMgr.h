@@ -43,7 +43,7 @@ public:
     /**
      * @brief Constructor por defecto.
      */
-    WinMgr(IAppControl* controller = nullptr);
+    WinMgr(IAppControl* ctrl_ = nullptr);
     
     /**
      * @brief Destructor. Llama a cerrar() para liberar recursos.
@@ -190,7 +190,7 @@ private:
     unsigned int const MIN_FONT_SIZE_ = 14;
 
     GLFWwindow*     window_         = nullptr;                          // Puntero a la ventana GLFW
-    IAppControl*    controller_     = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
+    IAppControl*    ctrl_           = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
     bool            cerrado_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
     // Imágenes _________________________________

@@ -55,20 +55,44 @@ public:
      */
     int run();
 
-// IAppControl methods ------------------------------------------------------------
+
+// Hilos --------------------------------------------------------------------------------
+
+    /**
+     * @brief Hilo gestor de paquetes 
+     * @note En ONLINE toma paquetes del socket, en OFFLINE los toma de la UI
+     */
+    void TWorker();
+
+
+
+// IAppControl methods ------------------------------------------------------------------
+
     /**
      * @brief Implementación del método de IAppControl para devolver la versión de la aplicación.
      * @return La versión de la aplicación como una cadena de texto.
      * @note const evita que el método modifique la variable "version_" o cualquiera.
      */
-    std::string getVersion() const noexcept override { return version_; }
+    std::string getVersion() const noexcept override;
 
     /**
      * @brief Implementación del método de IAppControl para devolver el puerto en el que el receptor UDP está escuchando.
      * @return El puerto del receptor UDP. Si el receptor no está en ejecución, devuelve -1.
      * @note const evita que el método modifique cualquier variable miembro de la clase.
      */
-    int get_SocketPort() const noexcept override { return 1; }
+    int get_SocketPort() const noexcept override;
+
+    /**
+     * @brief Establece el modo online/offline
+     * @param line true = online, false = offline
+     */
+    void setMode(bool newMode) noexcept override;
+
+    /**
+     * @brief Obtiene el estado Online/Offline
+     * @returns true = online, false = offline
+     */
+    bool getMode() const noexcept override;
 
     // Añadir aquí métodos de IAppControl...
 
@@ -80,5 +104,10 @@ private:
     WinMgr      ui_;                                // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                               // Gestor de audio
 
-    std::string version_ = std::to_string(VERSION); // Versión de la aplicación
+    std::thread worker_;                            // gestor de paquetes
+
+    enum class AppMode      { ONLINE, OFFLINE };
+    std::atomic<AppMode>    mode_{AppMode::ONLINE};             // Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
+    
+    std::string             version_    = std::to_string(VERSION); // Versión de la aplicación
 };

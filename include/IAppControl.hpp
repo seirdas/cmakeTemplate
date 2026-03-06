@@ -39,4 +39,16 @@ public:
      */
     virtual int get_SocketPort() const noexcept = 0;
 
+    /**
+     * @brief Establece el modo de la aplicación.
+     * @param line true = online, false = offline
+     */
+    virtual void setMode(bool newMode) noexcept = 0;
+
+    /**
+     * @brief Obtiene el estado Online/Offline
+     * @returns true = online, false = offline
+     */
+    virtual bool getMode() const noexcept = 0;
+
 };

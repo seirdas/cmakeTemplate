@@ -27,8 +27,8 @@ using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
-WinMgr::WinMgr(IAppControl* controller) : controller_(controller) {
-	if (controller_==nullptr)
+WinMgr::WinMgr(IAppControl* controller) : ctrl_(controller) {
+	if (ctrl_==nullptr)
 		std::cerr << "[WinMgr]	Cannot handle any controller." << std::endl;
 }
 
@@ -37,14 +37,14 @@ WinMgr::~WinMgr() {
 }
 
 void WinMgr::setController(IAppControl* controller){
-	controller_ = controller;
+	ctrl_ = controller;
 }
 
 bool WinMgr::init() {
 
 	std::cout << "[WinMgr]	Initializating UI..." << std::endl;
 
-	if (controller_!=nullptr)
+	if (ctrl_!=nullptr)
 		std::cout << "[WinMgr]	Linked with IAppController" << std::endl;
 	else
 		std::cerr << "[WinMgr]	ERROR No controller linked." << std::endl;
@@ -244,10 +244,8 @@ void WinMgr::crearMainMenuBar() {
 
 void WinMgr::ventanaPrincipal() {
 	// Variables estáticas para guardar las alturas (proporciones iniciales)
-	static float heightLeftTop = 0.70f;  // 70% para F1
 	static float heightRightTop = 0.20f; // 20% para F3
 	
-	float sizeSplitterVertical = 4.0f;
 	float totalHeight = ImGui::GetContentRegionAvail().y;
 	float sizeX__Izq = ImGui::GetContentRegionAvail().x * 0.2f;
 
@@ -257,6 +255,12 @@ void WinMgr::ventanaPrincipal() {
 		// Panel F1 (Arriba Izquierda)
 		BeginChild("##F1", ImVec2(sizeX__Izq, totalHeight), true);
 		Text("F1 (70%% inicial)");
+
+		std::string txt_mode = (ctrl_->getMode()) ? "ONLINE" : "OFFLINE";
+		if (Button(txt_mode.c_str())){
+			ctrl_->setMode(!ctrl_->getMode());
+		}
+
 		EndChild();
 	}
 	EndGroup();
