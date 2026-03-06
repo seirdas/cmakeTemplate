@@ -89,6 +89,7 @@ bool UdpReceiver::isRunning() const {
     return socket_.is_open();
 }
 
+
 bool UdpReceiver::openSocket(short local_port, const std::string& local_ip){
 
     // Variable para almacenar errores de asio
@@ -198,18 +199,8 @@ void UdpReceiver::handle_received_packet(std::error_code ec, std::size_t bytes_r
     savePacket(std::move( data ) ); 
 }
 
-void UdpReceiver::discardOnDupe(bool enable){
-    ignore_dupe_ = enable;
-}
-
 
 // Gestión de cola de datos ------------------------------------------------------------
-
-void UdpReceiver::savePacket(std::vector<char> data) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    queue_.push(std::move(data));
-    condition_.notify_one(); // Avisa que hay datos
-}
 
 std::vector<char> UdpReceiver::getFirstPacket() {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -226,6 +217,21 @@ std::vector<char> UdpReceiver::getFirstPacket() {
     std::vector<char> data = std::move(queue_.front());
     queue_.pop();
     return data;
+}
+
+void UdpReceiver::discardOnDupe(bool enable){
+    ignore_dupe_ = enable;
+}
+
+void UdpReceiver::clearCache() {
+    clearQueue();
+}
+
+
+void UdpReceiver::savePacket(std::vector<char> data) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    queue_.push(std::move(data));
+    condition_.notify_one(); // Avisa que hay datos
 }
 
 bool UdpReceiver::isQueueEmpty() const {
@@ -258,3 +264,4 @@ bool UdpReceiver::compareLast(std::vector<char> const& data) {
     // Devuelve si es igual que el anterior
     return queue_.front() == data;
 }
+
