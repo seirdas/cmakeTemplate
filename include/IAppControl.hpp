@@ -18,6 +18,7 @@
   * @example MyClass(IAppControl* controller), con #include "IAppControl.hpp". 
   *  Instanciarlo con un parámetro MyClass inst(AppController). 
   *  Sólo leerá los métodos de IAppControl con las funciones definidas en AppController.
+  * @see AppController
   */
 class IAppControl {
 
@@ -34,14 +35,8 @@ public:
     virtual std::string getVersion() const noexcept = 0;
     
     /**
-     * @brief Método ejemplo para pedir información a uno de los miembros. 
-     * @return El puerto en el que el receptor UDP está escuchando.
-     */
-    virtual int get_SocketPort() const noexcept = 0;
-
-    /**
      * @brief Establece el modo de la aplicación.
-     * @param line true = online, false = offline
+     * @param newMode true = online, false = offline
      */
     virtual void setMode(bool newMode) noexcept = 0;
 

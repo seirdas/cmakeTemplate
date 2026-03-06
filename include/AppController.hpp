@@ -76,13 +76,6 @@ public:
     std::string getVersion() const noexcept override;
 
     /**
-     * @brief Implementación del método de IAppControl para devolver el puerto en el que el receptor UDP está escuchando.
-     * @return El puerto del receptor UDP. Si el receptor no está en ejecución, devuelve -1.
-     * @note const evita que el método modifique cualquier variable miembro de la clase.
-     */
-    int get_SocketPort() const noexcept override;
-
-    /**
      * @brief Establece el modo online/offline
      * @param line true = online, false = offline
      */
@@ -105,6 +98,7 @@ private:
     SoundMgr    snd_;                               // Gestor de audio
 
     std::thread worker_;                            // gestor de paquetes
+    std::atomic<bool> isRunning_;                   // flag para parar hilos
 
     enum class AppMode      { ONLINE, OFFLINE };
     std::atomic<AppMode>    mode_{AppMode::ONLINE};             // Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)

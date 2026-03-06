@@ -39,7 +39,6 @@
   *     El destructor detiene la recepción y cierra el socket para garantizar una
   * limpieza correcta.
   * @see NetMgr, asio::io_context
-  * @author
   * @date March 2, 2026 
   */
 class UdpReceiver {
@@ -52,7 +51,7 @@ public:
      * @brief Constructor. 
      * @param io Referencia a contexto de operaciones asíncronas.
      */
-    UdpReceiver(asio::io_context& io);
+    UdpReceiver(std::string name, asio::io_context& io);
 
     /**
      * @brief Destructor. Detiene la recepción de datos y cierra el socket.
@@ -81,6 +80,12 @@ public:
     short port() const;
 
     /**
+     * @brief Devuelve el nombre dado al socket
+     * @return Nombre del socket
+     */
+    const std::string& name() const;
+
+    /**
      * @brief Devuelve si el receptor UDP está en ejecución
      * @return true si el receptor UDP está en ejecución, false en caso contrario.
      */
@@ -98,6 +103,11 @@ public:
      * @param enable true para descartar duplicado, false en caso contrario.
      */
     void discardOnDupe(bool enable);
+
+    /**
+     * @brief Método público para limpiar la cola de datos.
+     */
+    void clearCache();
 
 private:
     
@@ -161,6 +171,7 @@ private:
     /************ Variables ********************************************************/
 
     // Configuración y estado del receptor UDP
+    std::string             name_;              // Nombre dado al socket para identificarlo
     asio::ip::udp::socket   socket_;            // Socket UDP para recibir datos
     asio::ip::udp::endpoint remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
     std::vector<char>       recv_buffer_;       // Buffer para almacenar los datos recibidos

@@ -56,15 +56,26 @@ public:
      * @brief Añade un socket.
      */
     bool addReceiver(
+        std::string         name,
         short               local_port, 
         const std::string&  local_ip = "", 
         unsigned int        rcv_packet_size = 0
     );
 
     /**
-     * @brief Detener y desvincular un socket activo.
+     * @brief Detener y desvincular un socket activo por puerto.
      */
     bool removeReceiver(short port);
+
+    /**
+     * @brief Detener y desvincular un socket activo por nombre.
+     */
+    bool removeReceiver(const std::string& name);
+
+    /**
+     * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
+     */
+    std::vector<char> getDataFromSocket(const std::string& name);
 
     /**
      * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
@@ -79,6 +90,11 @@ public:
      */
     void stop();
 
+    /**
+     * @brief Devuelve si la red está activa (el contexto i/o está corriendo)
+     */
+    bool isRunning();
+
 private:
 
     /************ Variables ********************************************************/
@@ -88,7 +104,7 @@ private:
     asio::executor_work_guard<asio::io_context::executor_type> work_guard_; // RAII para mantener vivo el io
 
     // Sockets e hilos de trabajo
-    std::unordered_map<short, std::unique_ptr<UdpReceiver>> receivers_;     // Mapa de sockets abiertos.
+    std::unordered_map<std::string, std::unique_ptr<UdpReceiver>> receivers_;     // Mapa de sockets abiertos.
     std::vector<std::thread>                                threads_;       // Hilos procesando operaciones asíncronas.
     std::size_t                                             thread_count_;  // Numero máximo de hilos gestionando operaciones asíncronas.
 };

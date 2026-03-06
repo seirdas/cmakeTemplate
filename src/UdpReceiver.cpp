@@ -6,8 +6,8 @@
 
 // General ------------------------------------------------------------------------------
 
-UdpReceiver::UdpReceiver(asio::io_context& io)
-    : socket_(io), rcv_packet_size_(0), ignore_dupe_(true)
+UdpReceiver::UdpReceiver(std::string name, asio::io_context& io)
+    : name_(name), socket_(io), rcv_packet_size_(0), ignore_dupe_(true)
 {
     
 }
@@ -83,6 +83,10 @@ short UdpReceiver::port() const {
     } else {
         return -1; // Indica que el socket no está abierto
     }
+}
+
+const std::string& UdpReceiver::name() const {
+    return name_;
 }
 
 bool UdpReceiver::isRunning() const {
