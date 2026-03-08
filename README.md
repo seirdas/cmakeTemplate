@@ -1,3 +1,6 @@
+# Descripción
+Este proyecto es una plantilla base diseñada para agilizar el inicio de proyectos en C++ moderno. Su objetivo principal es evitar que el desarrollador tenga que configurar manualmente el sistema de construcción, las pruebas y la gestión de dependencias cada vez que empieza un programa nuevo, y agilizar el desarrollo a partir de un entorno preparado para integrar librerías y usar diferentes configuraciones/compiladores según interés.
+
 # Arquitectura de proyecto
 
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares).  Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
