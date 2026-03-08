@@ -298,7 +298,7 @@ void UiMgr::ventanaPrincipal() {
 		// Panel F3 (Arriba Derecha)
 		BeginChild("##F3", ImVec2(0, totalHeight * heightRightTop), true);
 		Text("F3 (20%% inicial)");
-		Image(images_["cat.png"].tex, ImVec2(200,100));
+		Image(images_["imageres/cat.png"].tex, ImVec2(200,100));
 		EndChild();
 
 		// Splitter Horizontal Derecho
@@ -312,15 +312,15 @@ void UiMgr::ventanaPrincipal() {
 			BeginChild("##Module",ImVec2(boxSize,boxSize*0.5f), true);
 				Text("Module");
 
-				if ( ImageButton("##BTN_play", images_["play.png"].tex, ImVec2(20,20)) ) {
+				if ( ImageButton("##BTN_play", images_["imageres/play.png"].tex, ImVec2(20,20)) ) {
 					std::cout << "Button pressed" << std::endl;
 				}
 				SameLine();
-				if ( ImageButton("##BTN_pause", images_["pause.png"].tex, ImVec2(20,20)) ) {
+				if ( ImageButton("##BTN_pause", images_["imageres/pause.png"].tex, ImVec2(20,20)) ) {
 					std::cout << "Button pressed" << std::endl;
 				}
 				SameLine();
-				if ( ImageButton("##BTN_stop", images_["stop.png"].tex, ImVec2(20,20)) ) {
+				if ( ImageButton("##BTN_stop", images_["imageres/stop.png"].tex, ImVec2(20,20)) ) {
 					std::cout << "Button pressed" << std::endl;
 				}
 				SliderInt("Volume",&sl_volume,0,100,"%d");
@@ -344,10 +344,10 @@ void UiMgr::loadImages() {
 	std::cout << "[UiMgr]	Loading images..." << std::endl;
 
 	// Añadir aquí las imágenes que se desean cargar
-	addTextureFromFile("cat.png");
-	addTextureFromFile("play.png");
-	addTextureFromFile("stop.png");
-	addTextureFromFile("pause.png");
+	addTextureFromFile("imageres/cat.png");
+	addTextureFromFile("imageres/play.png");
+	addTextureFromFile("imageres/stop.png");
+	addTextureFromFile("imageres/pause.png");
 
 }
 
