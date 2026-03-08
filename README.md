@@ -96,16 +96,6 @@ Se descargará Clang en `C:/msys64/clang64` por defecto (tarda un rato). Los bin
 
 ---
 
-<<<<<<< HEAD
-=======
-Para desinstalar los toolchains, desde la consola de _MSYS_:
-
-```bash
-pacman -Rs mingw-w64-x86_64-toolchain         # Desinstalar MinGW
-pacman -Rs mingw-w64-clang-x86_64-toolchain   # Desinstalar Clang
-```
-
->>>>>>> d296d7dc282b44a6b68ccad763ab41996a811868
 La ruta de mingw64 para los proyectos está definida en el preset de `CMakePresets.json`. Esta ruta sirve para configurar, construir y compilar el proyecto. Puede modificarse.
 
 ```json
@@ -122,7 +112,6 @@ En Visual Studio Code (o VSCodium), para usar los comandos de _build_ y _Run_ ha
     "clang.binPath": "C:/msys64/clang64/bin",
 ```
 
-<<<<<<< HEAD
 ---
 
 Para desinstalar los toolchains, desde la consola de _MSYS_:
@@ -145,23 +134,12 @@ pacman -Rs mingw-w64-clang-x86_64-toolchain   # Desinstalar Clang
   
 ## Ninja
 
-Por defecto sólo se necesita `Ninja.exe`. El sistema está configurado para tomarlo del mismo proyecto en la carpeta _other/ninja.exe_, pero es configurable desde los presets de cmake.
-=======
-## Ninja
+Por defecto sólo se necesita `Ninja.exe`. El sistema está configurado para tomarlo del mismo proyecto en la carpeta _other/ninja.exe_, pero esta ruta es configurable desde los presets de cmake.
+Las configuraciones de _MinGW Ninja_ y _Clang Ninja_ son más rápidas y están diseñadas para ser _multi-config_, es decir, con una sola configuración se puede generar el build de _Debug_ y _Release_.
 
-Por defecto sólo se necesita `Ninja.exe`. El sistema está configurado para tomarlo del mismo proyecto en la carpeta _other/ninja.exe_, pero es configurable desde los presets de cmake.
-
-### TL;DR
->>>>>>> d296d7dc282b44a6b68ccad763ab41996a811868
-
-- Copia y pega este script en un cmd (con permisos de administrador) para descargar las herramientas de compilación mingw por msys [WIP, pendiente de revisar]:
-  
-  ```bash
-  winget install msys2.msys2
-  C:\msys64\msys2.exe -msys -c "pacman -Syu"
-  C:\msys64\msys2.exe -msys -c "pacman -S mingw-w64-x86_64-toolchain"
-  C:\msys64\msys2.exe -msys -c "pacman -S mingw-w64-clang-x86_64-toolchain"
-  ```
+# Extensiones Visual Studio Code
+- Cmake
+- [ ] TODO
 
 # Generación de proyectos
 
