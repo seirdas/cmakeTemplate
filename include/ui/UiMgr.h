@@ -2,13 +2,14 @@
 
 #include <iostream>
 #include <string>
-#include <imgui.h>
 #include <unordered_map>
-#include <GL/gl.h>
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
-struct GLFWwindow;
+// Para evitar añadir el include, declarar las estructuras indicando que existen
 
+struct GLFWwindow;
+struct ImGuiStyle;
+struct ImGuiIO;
 
 /**
   * @class UiMgr
@@ -147,29 +148,29 @@ private:
 // Temas --------------------------------------------------------------------------------
     
     /**
-    * @brief Comfy style by Giuseppe from ImThemes
+    * @brief Dark - Comfy style by Giuseppe from ImThemes
     */
     void Style_Confy();
 
     /**
-    * @brief Future Dark style by rewrking from ImThemes
+    * @brief Dark - Future Dark style by rewrking from ImThemes
     */
     void Style_FutureDark();
 
     /**
-    * @brief Moonlight style by rewrking from ImThemes
+    * @brief Dark - Moonlight style by rewrking from ImThemes
     */
     void Style_Moonlight();
     
     /**
-    * @brief Rounded Visual Studio style by RedNicStone from ImThemes
+    * @brief Dark - Rounded Visual Studio style by RedNicStone from ImThemes
     */
     void Style_VisualStudio();
     
     /**
-     * @brief Microsoft style by usernameiwantedwasalreadytaken from ImThemes
+     * @brief Light - Microsoft style by usernameiwantedwasalreadytaken from ImThemes
      */
-    void Style_Microfost();
+    void Style_Microfrost();
     
     
     

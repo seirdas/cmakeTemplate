@@ -18,7 +18,7 @@
   *     Inicialización y enlace del socket a una IP/puerto locales.
   *     Recepción asíncrona de datos y almacenamiento en una cola protegida.
   *     Operaciones thread-safe para obtener paquetes (bloqueante), descartar
-  * duplicados y controlar el ciclo de vida del receptor.
+  *     duplicados y controlar el ciclo de vida del receptor.
   * Diseño y comportamiento:
   *     Requiere un único io_context (normalmente gestionado por NetMgr) para
   * funcionar correctamente.
@@ -153,7 +153,7 @@ private:
      * @brief Devuelve el número de elementos en la cola.
      * @return Número de elementos de la cola.
      */
-    unsigned short getQueueSize() const;
+    size_t getQueueSize() const;
 
     /**
      * @brief Limpia la cola.
@@ -172,7 +172,7 @@ private:
 
     // Configuración y estado del receptor UDP
     std::string             name_;              // Nombre dado al socket para identificarlo
-    asio::ip::udp::socket   socket_;            // Socket UDP para recibir datos
+    asio::basic_datagram_socket<asio::ip::udp, asio::io_context::executor_type>   socket_;            // Socket UDP para recibir datos
     asio::ip::udp::endpoint remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
     std::vector<char>       recv_buffer_;       // Buffer para almacenar los datos recibidos
     unsigned int            rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)

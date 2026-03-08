@@ -8,9 +8,12 @@ cmake_minimum_required(VERSION 3.10)
 
 # Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
 if (MSVC)
-  message(STATUS "Force using SDK 10.0 for Visual Studio")
-  set(CMAKE_SYSTEM_VERSION 10.0 CACHE STRING "Windows SDK version" FORCE)
+  message(STATUS "Force using latest SDK for Visual Studio")
+  set(CMAKE_SYSTEM_VERSION ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION} CACHE STRING "Windows SDK version" FORCE)
   set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "10.0")
+
+  # Flag para mejorar la compatibilidad de headers antiguos
+  target_compile_options(${PROJECT_NAME} PRIVATE /volatile:iso /Zc:__cplusplus)
 
   message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
@@ -149,8 +152,6 @@ if (WIN32)
     _SCL_SECURE_NO_WARNINGS   # Desactivar advertencias de seguridad en STL
     NOMINMAX                  # Evitar definición de macros min y max
     WIN32_LEAN_AND_MEAN       # Excluir APIs innecesarias de Windows.h
-    CINTERFACE 
-    COBJMACROS
   )
 
   if (MINGW)

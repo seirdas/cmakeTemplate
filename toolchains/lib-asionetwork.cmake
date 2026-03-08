@@ -35,6 +35,7 @@ target_include_directories(asio_lib INTERFACE "${asio_network_SOURCE_DIR}/asio/i
 target_compile_definitions(asio_lib INTERFACE 
   ASIO_STANDALONE
   ASIO_DISABLE_SMALL_BLOCK_RECYCLING
+  ASIO_NO_TS_EXECUTORS
 )
 
 # Vincular con las librerías de sockets de Windows

@@ -7,7 +7,7 @@
 // General ------------------------------------------------------------------------------
 
 UdpReceiver::UdpReceiver(std::string name, asio::io_context& io)
-    : name_(name), socket_(io), rcv_packet_size_(0), ignore_dupe_(true)
+    : name_(name), socket_(io.get_executor()), rcv_packet_size_(0), ignore_dupe_(true)
 {
     
 }
@@ -248,7 +248,7 @@ bool UdpReceiver::isQueueFull() const{
     return (queue_.size()>=MAX_QUEUE_ELEMENTS);
 }
 
-unsigned short UdpReceiver::getQueueSize() const{
+size_t UdpReceiver::getQueueSize() const{
     std::lock_guard<std::mutex> lock(mutex_);
     return queue_.size();;
 }
