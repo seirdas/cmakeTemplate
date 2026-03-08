@@ -30,9 +30,6 @@
             "description": "Plantilla oculta para heredar las opciones comunes de mingw64",
             "binaryDir": "${sourceDir}/_build/${presetName}",
             "toolchainFile": "${sourceDir}/toolchains/mingw-mingw64.cmake",
-            "cacheVariables": {
-                "MINGW_PATH":"$env{MINGW_PATH}"
-            },
             "environment": {
                 "MINGW_PATH": "C:/msys64/mingw64"
             },
@@ -76,9 +73,6 @@
             "description": "Plantilla oculta para heredar las opciones comunes de mingw64",
             "binaryDir": "${sourceDir}/_build/${presetName}",
             "toolchainFile": "${sourceDir}/toolchains/mingw-clang64.cmake",
-            "cacheVariables": {
-                "CLANG_PATH":"$env{CLANG_PATH}"
-            },
             "environment": {
                 "CLANG_PATH": "C:/msys64/clang64"
             },
@@ -122,7 +116,7 @@
         {
             "name": "mingw64",
             "environment": {
-                "PATH": "C:/msys64/mingw64/bin;C:/Users/Sergio/Desktop/cmavi/other;$penv{PATH}"
+                "PATH": "$env{MINGW_PATH};$penv{PATH}"
             },
             "cleanFirst": false,
             "jobs": 4,
@@ -168,7 +162,7 @@
             "configurePreset": "clang64",
             "jobs": 4,
             "environment": {
-                "PATH": "$env{CLANG_PATH}/bin;$env{NINJA_PATH}/bin;$penv{PATH}"
+                "PATH": "$env{CLANG_PATH}/bin;$penv{PATH}"
             },
             "description": "Plantilla oculta para heredar configuraciones comunes",
             "hidden": true
