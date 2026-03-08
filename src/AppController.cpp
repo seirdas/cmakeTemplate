@@ -44,6 +44,11 @@ bool AppController::init() {
     // Inicialización de sockets
     net_.addReceiver("Host", 8080);
     net_.addReceiver("Other", 12345, "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("Other2", 12345, "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("Other", 12225, "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("jose", 1345, "127.0.0.1", sizeof(unsigned long long));
+
+    net_.printReceivers();
 
     // Inicialización de audio
     if (!snd_.init())
@@ -88,10 +93,11 @@ void AppController::TWorker() {
         switch (mode_){
             case AppMode::ONLINE:
                 // Esperar a que net le de algo para procesar
-                data = net_.getDataFromSocket("Host");
+                data = net_.getDataFromSocket(net_.getSocketIndex("Host"));
             break;
             case AppMode::OFFLINE:
                 // Esperar a que la UI le de algo para procesar
+                // #TODO
             break;
             default:
                 // No debería llegar aquí nunca

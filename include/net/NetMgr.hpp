@@ -4,7 +4,10 @@
 #include <string>               // std::string
 #include <vector>               // Vectores
 #include <thread>               // Hilos
-#include "UdpReceiver.hpp"      // Clase de sockets
+#include <memory>               // unique_ptr
+
+// Para no mezclar includes, declaración implícita
+class UdpReceiver;
 
 /**
   * @brief Gestiona varios sockets a partir de un único contexto de operaciones asíncronas (io_context)
@@ -45,12 +48,17 @@ public:
      * @note explicit es para recibir literalmente un size_t en thread_count.
      * @param thread_count Número de threads máximo permitido por el sistema
      */
-    explicit NetMgr(std::size_t thread_count = std::thread::hardware_concurrency());
+    explicit NetMgr(std::size_t const& thread_count = std::thread::hardware_concurrency());
 
     /**
      * @brief Destructor. Detiene todos los sockets.
      */
     ~NetMgr();
+
+    /**
+     * @brief Imprime por cout los sockets creados.
+     */
+    void printReceivers();
 
     /**
      * @brief Añade un socket.
@@ -63,19 +71,24 @@ public:
     );
 
     /**
-     * @brief Detener y desvincular un socket activo por puerto.
-     */
-    bool removeReceiver(short port);
-
-    /**
      * @brief Detener y desvincular un socket activo por nombre.
      */
-    bool removeReceiver(const std::string& name);
+    bool removeReceiver(unsigned int index);
+
+    /**
+     * @brief Obtener el ID/index del socket por puerto.
+     */
+    int getSocketIndex(short port) const;
+
+    /**
+     * @brief Obtener el ID/index del socket por nombre
+     */
+    int getSocketIndex(std::string const& name) const;
 
     /**
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
      */
-    std::vector<char> getDataFromSocket(const std::string& name);
+    std::vector<char> getDataFromSocket(unsigned int index);
 
     /**
      * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
@@ -93,7 +106,7 @@ public:
     /**
      * @brief Devuelve si la red está activa (el contexto i/o está corriendo)
      */
-    inline bool isRunning();
+    bool isRunning() const;
 
 private:
 
@@ -104,7 +117,7 @@ private:
     asio::executor_work_guard<asio::io_context::executor_type> work_guard_; // RAII para mantener vivo el io
 
     // Sockets
-    std::unordered_map<std::string, std::unique_ptr<UdpReceiver>> receivers_;   // Mapa de sockets abiertos.
+    std::vector<std::unique_ptr<UdpReceiver>> receivers_;   // Lista de receptores UDP registrados
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.

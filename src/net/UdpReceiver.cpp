@@ -16,7 +16,7 @@ UdpReceiver::~UdpReceiver() {
     stop();
 }
 
-bool UdpReceiver::init(short local_port, const std::string& local_ip, unsigned int rcv_packet_size) {
+bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, unsigned int rcv_packet_size) {
     
     std::cout << "[UdpReceiver] Creating new socket..." << std::endl;
     std::cout << "[UdpReceiver]     port: "     << local_port       << std::endl;
@@ -85,7 +85,7 @@ short UdpReceiver::port() const {
     }
 }
 
-const std::string& UdpReceiver::name() const {
+std::string const& UdpReceiver::name() const {
     return name_;
 }
 
@@ -208,7 +208,7 @@ void UdpReceiver::handle_received_packet(std::error_code ec, std::size_t bytes_r
 
 std::vector<char> UdpReceiver::getFirstPacket() {
     std::unique_lock<std::mutex> lock(mutex_);
-    // El hilo se duerme aquí hasta que la cola no esté vacía
+    // Se BLOQUEA aquí hasta que la cola no esté vacía
     condition_.wait(lock, 
         [this] { 
             return !queue_.empty() || !socket_.is_open(); 
@@ -266,6 +266,6 @@ bool UdpReceiver::compareLast(std::vector<char> const& data) {
         return false;
 
     // Devuelve si es igual que el anterior
-    return queue_.front() == data;
+    return queue_.back() == data;
 }
 

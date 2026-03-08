@@ -1,9 +1,10 @@
 #include <iostream>             // Entrada/Salida estándar
 #include "net/NetMgr.hpp"
+#include "net/UdpReceiver.hpp"
 
 // General ------------------------------------------------------------------------------
 
-NetMgr::NetMgr(std::size_t thread_count)
+NetMgr::NetMgr(std::size_t const& thread_count)
     : work_guard_(asio::make_work_guard(io_context_)),
         thread_count_(thread_count == 0 ? 1 : thread_count)
 {
@@ -14,6 +15,16 @@ NetMgr::~NetMgr() {
     stop();
 }
 
+void NetMgr::printReceivers() {
+
+    std::cout << "\n--- SOCKETS ACTIVOS ---" << std::endl;
+    for (unsigned int i = 0; i<receivers_.size(); i++) {
+        std::cout << "[" << i << "] Socket '" << receivers_[i]->name() << "'    | port:" << receivers_[i]->port() << std::endl;
+    }
+    std::cout << std::endl;
+
+}
+
 bool NetMgr::addReceiver(
     std::string         name,
     short               local_port, 
@@ -22,12 +33,12 @@ bool NetMgr::addReceiver(
 ) 
 {
     // Evitar duplicados por nombre y puerto
-    for (const auto& [n, sock] : receivers_) {
-        if (n == name) {
+    for (const auto& rcv : receivers_) {
+        if (rcv->name() == name) {
             std::cerr << "[NetMgr]  Socket already exists with name " << name << std::endl;
             return false;
         }
-        if (sock->port() == local_port) {
+        if (rcv->port() == local_port) {
             std::cerr << "[NetMgr]  Socket already exists with port " << local_port << std::endl;
             return false;
         }
@@ -46,64 +57,57 @@ bool NetMgr::addReceiver(
     }
 
     // Insertar en el vector
-    receivers_.emplace(name, std::move(receiver));
+    receivers_.push_back(std::move(receiver));
     std::cout << "[NetMgr]  Socket added on port " << local_port << "\n";
 
     return true;
 }
 
-bool NetMgr::removeReceiver(short port) {
+bool NetMgr::removeReceiver(unsigned int index) {
 
-    for (auto it = receivers_.begin(); it != receivers_.end(); ++it)
-        if (it->second->port() == port) {
-            it->second->stop();
-            std::cout << "[NetMgr] Deleting socket '"
-                    << it->second->name()
-                    << "' with port "
-                    << it->second->port()
-                    << std::endl; 
-            receivers_.erase(it);
-            std::cout << "[NetMgr] Deleted socket" << std::endl;
-            return true;
-        }
-
-    /*else*/ 
-    std::cerr << "[NetMgr]  ERROR Socket with port '" << port << "' not found." << std::endl;
-    return false;
-}
-
-bool NetMgr::removeReceiver(const std::string& name) {
-
-    auto it = receivers_.find(name);
-
-    if (it == receivers_.end()) {
-        std::cerr << "[NetMgr] ERROR Socket with name '" 
-                  << name << "' not found." << std::endl;
-        return false;
+    if (index > receivers_.size()) {
+        std::cerr << "[NetMgr]  Selected index " << index;
+        std::cerr << " out of bounds (" << receivers_.size() <<")" << std::endl;
     }
-
-    it->second->stop();
+    
+    UdpReceiver* rcv = receivers_[index].get();
     std::cout << "[NetMgr] Deleting socket '"
-              << it->second->name()
+              << rcv->name()
               << "' with port "
-              << it->second->port()
-              << std::endl; 
-    receivers_.erase(it);
-    std::cout << "[NetMgr] Deleted socket" << std::endl;
+              << rcv->port()
+              << std::endl;
 
+              
+    // Detener socket
+    rcv->stop();
+
+    // Borrar el elemento del vector usando iterator
+    receivers_.erase(receivers_.begin() + index);
+
+    std::cout << "[NetMgr] Deleted socket" << std::endl;
     return true;
 }
 
-std::vector<char> NetMgr::getDataFromSocket(const std::string& name) {
-    auto it = receivers_.find(name);
+int NetMgr::getSocketIndex(short port) const {
+    for (unsigned int i = 0; i < receivers_.size(); i++)
+        if (receivers_[i]->port() == port) return i;
+    /*else*/ return -1;
+}
 
-    if (it == receivers_.end()) {
-        std::cerr << "[NetMgr] ERROR Socket with name '" 
-                  << name << "' not found." << std::endl;
-        return {};
+int NetMgr::getSocketIndex(std::string const& name) const {
+    for (unsigned int i = 0; i < receivers_.size(); i++)
+        if (receivers_[i]->name() == name) return i;
+    /*else*/ return -1;
+}
+
+
+std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
+
+    if (index > receivers_.size()) {
+        std::cerr << "[NetMgr]  Selected index out of limits. " << std::endl;
     }
 
-    return it->second->getFirstPacket();            // <-- BLOQUEANTE 
+    return receivers_[index]->getFirstPacket();   // <-- BLOQUEANTE 
 }
 
 void NetMgr::start() {
@@ -137,8 +141,8 @@ void NetMgr::stop() {
     io_context_.stop();
 
     // Borrar la cola de datos de los receptores
-    for (auto const& it : receivers_){
-        it.second->clearCache();
+    for (auto const& rcv : receivers_){
+        rcv->clearCache();
     }
 
     // Esperar a que terminen las tareas los receptores
@@ -151,7 +155,7 @@ void NetMgr::stop() {
     std::cout << "[NetMgr]  All threads stopped." << std::endl;
 }
 
-bool NetMgr::isRunning() {
+bool NetMgr::isRunning() const {
     // Es considerado activo si el contexto no está detenido y hay hilos trabajando
     return !io_context_.stopped() && !threads_.empty();
 }

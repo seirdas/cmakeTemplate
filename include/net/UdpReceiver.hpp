@@ -2,7 +2,6 @@
 
 #include <asio.hpp>             // asio external lib
 #include <thread>               // Hilos
-#include <atomic>               // Variables atómicas
 #include <queue>                // Colas
 #include <mutex>                // Mutex (Cerrojos) para concurrencia
 #include <condition_variable>   // Variable condicional para concurrencia
@@ -11,7 +10,7 @@
 
 /**
   * @class UdpReceiver
-  * @brief Receptor UDP asíncrono con cola de paquetes y ejecución en hilo separado.
+  * @brief Receptor UDP asíncrono ejecutado por el io_context de NetMgr.
   * @details UdpReceiver gestiona la recepción de paquetes UDP usando un
   * asio::io_context proporcionado externamente. 
   * Proporciona:
@@ -66,7 +65,7 @@ public:
      * @param ipLocal Dirección IP local a la que se desea enlazar el socket. Si es vacía, se enlaza a todas las interfaces disponibles.
      * @param rcv_packet_size Tamaño máximo de los paquetes UDP que se esperan recibir. Elimina el paquete si es diferente a este tamaño. Si es 0, se aceptan paquetes de cualquier tamaño.
      */
-    bool init(short local_port, const std::string& local_ip = "", unsigned int rcv_packet_size = 0);
+    bool init(unsigned short local_port, const std::string& local_ip = "", unsigned int rcv_packet_size = 0);
 
     /**
      * @brief Si está en ejecución, detiene la recepción de datos UDP, cierra el socket y finaliza el hilo de trabajo.
@@ -83,7 +82,7 @@ public:
      * @brief Devuelve el nombre dado al socket
      * @return Nombre del socket
      */
-    const std::string& name() const;
+    std::string const& name() const;
 
     /**
      * @brief Devuelve si el receptor UDP está en ejecución
@@ -176,8 +175,6 @@ private:
     asio::ip::udp::endpoint remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
     std::vector<char>       recv_buffer_;       // Buffer para almacenar los datos recibidos
     unsigned int            rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
-    std::thread             worker_thread_;     // Hilo para ejecutar el io_context y procesar eventos asíncronos
-
     // Cola de datos recibidos
     std::queue<std::vector<char>> queue_;       // Cola de datos recibidos
     mutable std::mutex            mutex_;       // Mutex para proteger el acceso a la cola
