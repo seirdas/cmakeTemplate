@@ -1,18 +1,3 @@
-# TODO
-
-- [ ] README Documentar compatibilidades con Visual Studio, vscode y vscodium
-- [ ] README: NO AÑADIR ARCHIVOS/CLASES (.cpp, .h) DESDE VISUAL STUDIO DIRECTAMENTE
-- [ ] README: Documentar compilación en IDE Visual Studio.
-- [ ] README: Documentar Clang.
-- [ ] README: Documentar ruta de Ninja en presets
-- [ ] README: Documentar depuración Clang LLDB en vscode con la extensión CodeLLDB.
-- [x] ~~Compilación Ninja Multi-config~~
-- [x] ~~Compilación Clang `pacman -S mingw-w64-clang-x86_64-toolchain`~~
-- [x] ~~En Mingw al cambiar el main.cpp no funciona bien la recompilación.~~
-- [x] ~~El nombre de proyecto lo toma directamente del nombre de la carpeta~~
-
----
-
 # Arquitectura de proyecto
 
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares).  Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
@@ -136,8 +121,14 @@ pacman -Rs mingw-w64-clang-x86_64-toolchain   # Desinstalar Clang
 
 Por defecto sólo se necesita `Ninja.exe`. El sistema está configurado para tomarlo del mismo proyecto en la carpeta _other/ninja.exe_, pero esta ruta es configurable desde los presets de cmake.
 Las configuraciones de _MinGW Ninja_ y _Clang Ninja_ son más rápidas y están diseñadas para ser _multi-config_, es decir, con una sola configuración se puede generar el build de _Debug_ y _Release_.
+Se puede personalizar la ruta de Ninja de MinGW y Clang en los presets:
+  ```bash
+  "environment": {
+      "NINJA_PATH":"${sourceDir}/other"
+  },
+  ```
 
-# Extensiones Visual Studio Code
+## Extensiones Visual Studio Code
 - Cmake
 - [ ] TODO
 
@@ -172,7 +163,16 @@ cmake .. --preset mingw64 # Generar archivos Makefile para MinGW-w64 de MSYS
 
 - [ ] TODO
 
-
-
 > Los comandos de la extensión CMake Tools están [aquí](https://github.com/microsoft/vscode-cmake-tools/blob/main/docs/cmake-settings.md)  
 > Desinstalar ucrt:  pacman -Rs mingw-w64-ucrt-x86_64-toolchain  
+
+> # TODO
+> - [ ] README Documentar compatibilidades con Visual Studio, vscode y vscodium
+> - [ ] README: NO AÑADIR ARCHIVOS/CLASES (.cpp, .h) DESDE VISUAL STUDIO DIRECTAMENTE
+> - [ ] README: Documentar compilación en IDE Visual Studio.
+> - [ ] README: Documentar depuración Clang LLDB en vscode con la extensión CodeLLDB.
+> - [ ] Compilación Ninja Multi-Config MingW
+> - [x] ~~Compilación Ninja Multi-config Clang~~
+> - [x] ~~Compilación Clang `pacman -S mingw-w64-clang-x86_64-toolchain`~~
+> - [x] ~~En Mingw al cambiar el main.cpp no funciona bien la recompilación.~~
+> - [x] ~~El nombre de proyecto lo toma directamente del nombre de la carpeta~~
