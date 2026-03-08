@@ -7,7 +7,7 @@
 // General ------------------------------------------------------------------------------
 
 UdpReceiver::UdpReceiver(std::string name, asio::io_context& io)
-    : name_(name), socket_(io.get_executor()), rcv_packet_size_(0), ignore_dupe_(true)
+    : name_(name), socket_(io), rcv_packet_size_(0), ignore_dupe_(true)
 {
     
 }
