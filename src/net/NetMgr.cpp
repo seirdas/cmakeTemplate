@@ -128,6 +128,9 @@ void NetMgr::start() {
 }
 
 void NetMgr::stop() {
+
+    if (!isRunning()) return;
+
     std::cout << "[NetMgr]  Stopping network manager..." << std::endl;
 
     work_guard_.reset();   // permite que run() termine

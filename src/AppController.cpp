@@ -12,6 +12,14 @@ AppController::~AppController() {
 
     // Notifica el estado de cerrado (para threads, etc.)
     isRunning_ = false;
+
+    // Esperar a que terminen los hilos
+    std::cout << "[AppController] Closing running threads..." << std::endl;
+    if (worker_.joinable())
+        worker_.join();
+
+
+    /* TODO ESTO ES OPCIONAL PORQUE FORMA PARTE DE LOS DESTRUCTORES DE LAS CLASES */
     
     // Cerrar sockets
     std::cout << "[AppController] Closing sockets and network I/O..." << std::endl;
@@ -24,11 +32,6 @@ AppController::~AppController() {
     // Cerrar ventana UI
     std::cout << "[AppController] Closing UI..." << std::endl;
     ui_.cerrar();
-
-    // Esperar a que terminen los hilos
-    std::cout << "[AppController] Closing running threads..." << std::endl;
-    if (worker_.joinable())
-            worker_.join();
 
     std::cout << "[AppController] Exiting..." << std::endl;
 }

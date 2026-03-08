@@ -120,7 +120,6 @@ void UiMgr::run() {
 	while (isRunning())
 		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
 	
-	std::cout << "[UiMgr]	Closing window..." << std::endl;
 	cerrar();
 }
 
@@ -132,6 +131,8 @@ void UiMgr::cerrar() {
 	// No intentar cerrar de nuevo (excepción)
 	if(cerrado_) 
 		return;
+
+	std::cout << "[UiMgr]	Closing UI..." << std::endl;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -145,7 +146,8 @@ void UiMgr::cerrar() {
 
 	// Liberar recursos de imágenes cargadas
 	unloadImages();
-	
+
+	std::cout << "[UiMgr]	UI closed." << std::endl;
 	cerrado_ = true;
 }
 

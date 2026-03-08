@@ -93,7 +93,7 @@ public:
     /**
      * @brief Devuelve si la red está activa (el contexto i/o está corriendo)
      */
-    bool isRunning();
+    inline bool isRunning();
 
 private:
 
@@ -103,8 +103,10 @@ private:
     asio::io_context    io_context_;        // UN ÚNICO contexto de operaciones asíncronas para todo.
     asio::executor_work_guard<asio::io_context::executor_type> work_guard_; // RAII para mantener vivo el io
 
-    // Sockets e hilos de trabajo
-    std::unordered_map<std::string, std::unique_ptr<UdpReceiver>> receivers_;     // Mapa de sockets abiertos.
-    std::vector<std::thread>                                threads_;       // Hilos procesando operaciones asíncronas.
-    std::size_t                                             thread_count_;  // Numero máximo de hilos gestionando operaciones asíncronas.
+    // Sockets
+    std::unordered_map<std::string, std::unique_ptr<UdpReceiver>> receivers_;   // Mapa de sockets abiertos.
+
+    // Hilos de trabajo
+    std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.
+    std::size_t                 thread_count_;      // Numero máximo de hilos gestionando operaciones asíncronas.
 };
