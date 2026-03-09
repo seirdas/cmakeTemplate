@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>               // Maneja cadenas de texto
+#include <vector>
 
 /**
   * @brief Interfaz de intercomunicación entre miembros de la aplicación. 
@@ -45,5 +46,12 @@ public:
      * @returns true = online, false = offline
      */
     virtual bool getMode() const noexcept = 0;
+
+    // Audio
+
+    /**
+     * @brief Devuelve la lista con los dispositivos de entrada disponibles.
+     */
+    virtual std::vector<std::string> getAvailableInputDevices() noexcept = 0;
 
 };

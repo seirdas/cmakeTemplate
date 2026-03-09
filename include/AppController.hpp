@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <string>               // String
 #include <thread>               // Hilos
 #include <fstream>              // Gestiona archivos
 
@@ -86,6 +85,11 @@ public:
      * @returns true = online, false = offline
      */
     bool getMode() const noexcept override;
+
+    /**
+     * @brief Devuelve la lista con los dispositivos de entrada disponibles.
+     */
+    std::vector<std::string> getAvailableInputDevices() noexcept override;
 
     // Añadir aquí métodos de IAppControl...
 

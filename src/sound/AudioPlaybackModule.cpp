@@ -1,0 +1,238 @@
+#include "sound/AudioPlaybackModule.hpp"
+#include <iostream>
+
+AudioPlaybackModule::AudioPlaybackModule(
+        ma_context* ctx,
+        const ma_device_id& deviceID,
+        const std::string& deviceName)
+    :
+    context_(ctx),
+    device_id_(deviceID),
+    device_name_(deviceName)
+{
+}
+
+AudioPlaybackModule::~AudioPlaybackModule()
+{
+    stop();
+}
+
+bool AudioPlaybackModule::start()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (running_)
+        return true;
+
+    ma_engine_config config = ma_engine_config_init();
+
+    config.pContext = context_;
+    config.pPlaybackDeviceID = &device_id_;
+
+    if (ma_engine_init(&config, &engine_) != MA_SUCCESS)
+    {
+        std::cerr << "[APM] engine init failed\n";
+        return false;
+    }
+
+    running_ = true;
+    return true;
+}
+
+void AudioPlaybackModule::stop()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (!running_)
+        return;
+
+    for (auto& [id, s] : sounds_)
+        ma_sound_uninit(&s->sound);
+
+    sounds_.clear();
+
+    for (auto& [path, snd] : cache_)
+    {
+        ma_sound_uninit(snd);
+        delete snd;
+    }
+
+    cache_.clear();
+
+    ma_engine_uninit(&engine_);
+
+    running_ = false;
+}
+
+bool AudioPlaybackModule::preload(const std::string& filepath)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (!running_)
+        return false;
+
+    if (cache_.count(filepath))
+        return true;
+
+    auto* snd = new ma_sound;
+
+    if (ma_sound_init_from_file(
+            &engine_,
+            filepath.c_str(),
+            MA_SOUND_FLAG_DECODE,
+            nullptr,
+            nullptr,
+            snd) != MA_SUCCESS)
+    {
+        delete snd;
+        return false;
+    }
+
+    cache_[filepath] = snd;
+
+    return true;
+}
+
+SoundID AudioPlaybackModule::play(const std::string& filepath,
+                                  float volume,
+                                  float pitch,
+                                  LoopMode loop)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    cleanupFinished();
+
+    if (!running_)
+        return 0;
+
+    auto inst = std::make_unique<SoundInstance>();
+
+    ma_result res;
+
+    if (cache_.count(filepath))
+    {
+        res = ma_sound_init_copy(
+            &engine_,
+            cache_[filepath],
+            0,
+            nullptr,
+            &inst->sound);
+    }
+    else
+    {
+        res = ma_sound_init_from_file(
+            &engine_,
+            filepath.c_str(),
+            0,
+            nullptr,
+            nullptr,
+            &inst->sound);
+    }
+
+    if (res != MA_SUCCESS)
+        return 0;
+
+    ma_sound_set_volume(&inst->sound, volume);
+    ma_sound_set_pitch(&inst->sound, pitch);
+
+    if (loop == LoopMode::LOOP)
+        ma_sound_set_looping(&inst->sound, MA_TRUE);
+
+    inst->loopMode = loop;
+
+    SoundID id = idCounter_++;
+
+    ma_sound_set_end_callback(&inst->sound, endCallback, this);
+
+    ma_sound_start(&inst->sound);
+
+    sounds_[id] = std::move(inst);
+
+    return id;
+}
+
+void AudioPlaybackModule::stopSound(SoundID id)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto it = sounds_.find(id);
+    if (it == sounds_.end())
+        return;
+
+    auto& s = it->second;
+
+    if (s->loopMode == LoopMode::NONSTOP)
+        ma_sound_set_looping(&s->sound, MA_FALSE);
+    else
+        ma_sound_stop(&s->sound);
+}
+
+void AudioPlaybackModule::setVolume(SoundID id, float volume)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto it = sounds_.find(id);
+    if (it == sounds_.end())
+        return;
+
+    ma_sound_set_volume(&it->second->sound, volume);
+}
+
+void AudioPlaybackModule::setPitch(SoundID id, float pitch)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto it = sounds_.find(id);
+    if (it == sounds_.end())
+        return;
+
+    ma_sound_set_pitch(&it->second->sound, pitch);
+}
+
+bool AudioPlaybackModule::isPlaying(SoundID id)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    auto it = sounds_.find(id);
+    if (it == sounds_.end())
+        return false;
+
+    return ma_sound_is_playing(&it->second->sound);
+}
+
+void AudioPlaybackModule::cleanupFinished()
+{
+    for (auto it = sounds_.begin(); it != sounds_.end(); )
+    {
+        if (it->second->finished)
+        {
+            ma_sound_uninit(&it->second->sound);
+            it = sounds_.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+void AudioPlaybackModule::endCallback(void* userData, ma_sound* sound)
+{
+    auto* self = reinterpret_cast<AudioPlaybackModule*>(userData);
+
+    std::lock_guard<std::mutex> lock(self->mutex_);
+
+    for (auto& [id, s] : self->sounds_)
+    {
+        if (&s->sound == sound)
+        {
+            s->finished = true;
+            break;
+        }
+    }
+}
+
+const std::string& AudioPlaybackModule::deviceName() const
+{
+    return device_name_;
+}

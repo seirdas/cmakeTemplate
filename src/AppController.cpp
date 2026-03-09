@@ -72,6 +72,9 @@ int AppController::run() {
 
     // Sonido
     snd_.listInputDevices();
+
+    snd_.playbackTest();
+
     snd_.listOutputDevices();
 
     // Ventana UI
@@ -155,3 +158,7 @@ bool AppController::getMode() const noexcept {
     std::cerr << "[AppController]   ERROR Undefined AppMode in consumer thread" << std::endl;
     return true;
 };
+
+std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
+    return snd_.getAvailableInputDevices();
+}

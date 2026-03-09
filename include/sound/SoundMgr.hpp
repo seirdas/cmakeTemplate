@@ -1,11 +1,15 @@
-
 #pragma once
 
 #include <miniaudio.h>
 #include <atomic>
 #include <string>
 #include <vector>
-#include "sound/AudioInputModule.hpp"
+#include <memory>                       // unique_ptr
+
+// Evita los includes:
+
+class AudioInputModule;
+class AudioPlaybackModule;
 
 /**
   * @class SoundMgr
@@ -41,8 +45,23 @@ public:
 
     bool listInputDevices();
 
+    std::vector<std::string> getAvailableInputDevices();
+
     bool listOutputDevices();
 
+// Capture Input ------------------------------------------------------------------------
+
+    bool addCaptureDevice(std::string const& name, unsigned short index);
+
+// Playbacks ----------------------------------------------------------------------------
+
+    bool addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
+
+    bool removePlaybackDevice(unsigned short index);
+
+    unsigned short getPlaybackDevice(std::string const& deviceName);
+
+    bool playbackTest();
 
 private:
 
@@ -50,10 +69,9 @@ private:
 
     // Motor de audio
     ma_context snd_context_;                        // Contexto de audio
-    std::atomic<bool> engine_initialized_;          // Flag para saber si el motor de audio está inicializado.
+    std::atomic<bool> ctx_initialized_;             // Flag para saber si el motor de audio está inicializado.
 
     // Modulos de audio 
     std::vector<std::unique_ptr<AudioInputModule>>      inputs_;        // Módulos de entrada
-    //#TODO
-    // std::vector<std::unique_ptr<AudioPlaybackModule>>   playbacks_;     // Módulos Playback
+    std::vector<std::unique_ptr<AudioPlaybackModule>>   playbacks_;     // Módulos Playback
 };
