@@ -89,9 +89,8 @@ bool UiMgr::init() {
     io_->IniFilename = NULL;  // No usar archivo .ini de imgui
     io_->Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io_->Fonts->GetGlyphRangesDefault());
 
-    // Configuración de estilo
-	StyleColorsDark();
-	Style_Confy();
+    // Configuración de estilo por defecto
+	Style_Microfrost();
 
     // Propiedades de ventana de windows
     #ifdef _WIN32
@@ -101,10 +100,6 @@ bool UiMgr::init() {
         // Cargar el icono de la ventana utilizando WinAPI
         HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
         SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-
-        // Cambiar color de la barra de titulo (2)
-        BOOL useDarkMode = TRUE;
-        DwmSetWindowAttribute(hwnd, 20, &useDarkMode, sizeof(useDarkMode));
     #endif
 
 	// Carga de imágenes
@@ -259,8 +254,6 @@ void UiMgr::ventanaPrincipal() {
 	static float heightRightTop = 0.20f; // 20% para F3
 	float totalHeight = GetContentRegionAvail().y;
 	float sizeX__Izq = GetContentRegionAvail().x * 0.2f;
-	float boxSize= (GetContentRegionAvail().y+GetContentRegionAvail().x)/2 * 0.4f;
-
 	// COLUMNA IZQUIERDA
 	BeginGroup();
 	{
@@ -269,23 +262,32 @@ void UiMgr::ventanaPrincipal() {
 		Text("F1 (70%% inicial)");
 
 		// Botón de modo
-		std::string txt_mode = (ctrl_->getMode()) ? "ONLINE" : "OFFLINE";
-		if (Button(txt_mode.c_str())){
-			ctrl_->setMode(!ctrl_->getMode());
+		if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
+			ctrl_->setOnlineMode(!ctrl_->isOnlineMode());
 		}
 
-		// Botón para modo oscuro
-		if (Button("darkmode window")) {
-			BOOL useDarkMode = TRUE;
-			DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
-			std::cout << "[UiMgr]	Dark mode set" << std::endl;
-		}
-		// Botón para modo claro
-		if (Button("lightmode window")) {
-			BOOL useDarkMode = FALSE;
-			DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
-			std::cout << "[UiMgr]	Light mode set" << std::endl;
-		}
+		// Test de temas
+
+		if (Button("darkmode window")) 
+			titleBarDarkMode(true);
+		
+		if (Button("lightmode window"))
+			titleBarDarkMode(false);
+
+		if (Button("Theme: Confy"))
+			Style_Confy();
+
+		if (Button("Theme: FutureDark"))
+			Style_FutureDark();
+
+		if (Button("Theme: Moonlight"))
+			Style_Moonlight();
+
+		if (Button("Theme: Visual Studio"))
+			Style_VisualStudio();
+
+		if (Button("Theme: Microfrost"))
+			Style_Microfrost();
 		
 
 		EndChild();
@@ -294,52 +296,190 @@ void UiMgr::ventanaPrincipal() {
 
 	SameLine(); // Pegamos la siguiente columna
 
-	// COLUMNA DERECHA
-	BeginGroup();
-	{
-		// Panel F3 (Arriba Derecha)
+	//  Layout principal (columna derecha)
+	BeginGroup(); {
+		// ---------- Panel F3 (arriba derecha) ----------
 		BeginChild("##F3", ImVec2(0, totalHeight * heightRightTop), true);
 		Text("F3 (20%% inicial)");
-		Image(images_["imageres/cat.png"].tex, ImVec2(200,100));
+		Image(images_["imageres/cat.png"].tex, ImVec2(200, 100));
 		EndChild();
 
-		// Splitter Horizontal Derecho
+		// ---------- Splitter horizontal derecho ----------
 		Button("##h_splitter_r", ImVec2(-FLT_MIN, 4.0f));
 		if (IsItemActive())
 			heightRightTop += GetIO().MouseDelta.y / totalHeight;
 
-		// Panel F4 (Abajo Derecha)
-		BeginChild("##F4", ImVec2(0, 0), false);
+		// ---------- Panel F4 (abajo derecha) ----------
+		BeginChild("##F4", ImVec2(0, 0), false); {
 
-			BeginChild("##Module",ImVec2(boxSize,boxSize*0.5f), true);
-				Text("Module");
+			//  Cada AudioPlaybackModule (APM) → un bloque colapsable
+			if (CollapsingHeader("ADF (running)", false))	{
 
-				if ( ImageButton("##BTN_play", images_["imageres/play.png"].tex, ImVec2(20,20)) ) {
-					std::cout << "Button pressed" << std::endl;
+				ImGuiChildFlags child_flags = ImGuiChildFlags_AlwaysAutoResize |
+											ImGuiChildFlags_AutoResizeY |
+											ImGuiChildFlags_Borders;
+
+				// ------------------------------------------------
+				//  Bucle ficticio: aquí iterarías sobre los tonos
+				// ------------------------------------------------
+				// for (int i = 0; i < apmCount; ++i) { … }
+				// -----------------------------------------------------------------
+				//  Ejemplo con 3 tonos (Tone1, Tone3, Tone4) – sustituye por tu bucle
+				// -----------------------------------------------------------------
+
+				// ---------- Tono 1 ----------
+				if (BeginChild("Tone1Child", ImVec2(0, 0), child_flags))
+				{
+					Text("Tone1");
+
+					float duration_seconds = 3600.0f; // ← obtener con SoundMgr::getDuration()
+
+					//  Slider de posición + tiempo formateado
+					int total = static_cast<int>(sl_position);
+					int h = total / 3600;
+					int m = (total % 3600) / 60;
+					int s = total % 60;
+					char buf[16];
+					if (h > 0)
+						sprintf(buf, "%d:%02d:%02d", h, m, s);
+					else
+						sprintf(buf, "%02d:%02d", m, s);
+
+					BeginDisabled(ctrl_->isOnlineMode());
+					{
+						// --- barra de reproducción compacta ---
+						PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 1));
+						PushStyleVar(ImGuiStyleVar_GrabMinSize, 12.0f);
+						PushStyleVar(ImGuiStyleVar_GrabRounding, 24.0f);
+						PushItemWidth(GetContentRegionAvail().x * 0.8f);
+
+						SliderFloat("##Position", &sl_position, 0.0f, duration_seconds, "");
+
+						PopItemWidth();
+						PopStyleVar(3);
+
+						SameLine();
+						TextUnformatted(buf);
+
+						// --- botones de control ---
+						if (ImageButton("##btn_play", images_["imageres/play.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button play pressed\n";
+						SameLine();
+						if (ImageButton("##btn_pause", images_["imageres/pause.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button pause pressed\n";
+						SameLine();
+						if (ImageButton("##btn_stop", images_["imageres/stop.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button stop pressed\n";
+						SameLine();
+						if (ImageButton("##btn_repeat", images_["imageres/repeat.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button repeat pressed\n";
+
+						// --- volumen y pitch ---
+						SameLine();
+						PushItemWidth(GetContentRegionAvail().x * 0.3f);
+						SliderInt("Volume", &sl_volume, 0, 100, "%d");
+						PopItemWidth();
+						SameLine();
+						PushItemWidth(GetContentRegionAvail().x * 0.3f);
+						SliderFloat("Pitch", &sl_pitch, -2.0f, 2.0f, "x%.2f");
+						PopItemWidth();
+					}
+					EndDisabled();
+
+					EndChild();
 				}
-				SameLine();
-				if ( ImageButton("##BTN_pause", images_["imageres/pause.png"].tex, ImVec2(20,20)) ) {
-					std::cout << "Button pressed" << std::endl;
+				
+				// ---------- Tono 2 ----------
+				if (BeginChild("Tone2Child", ImVec2(0, 0), child_flags))
+				{
+					Text("Tone2");
+
+					float duration_seconds = 3600.0f; // ← obtener con SoundMgr::getDuration()
+
+					//  Slider de posición + tiempo formateado
+					int total = static_cast<int>(sl_position);
+					int h = total / 3600;
+					int m = (total % 3600) / 60;
+					int s = total % 60;
+					char buf[16];
+					if (h > 0)
+						sprintf(buf, "%d:%02d:%02d", h, m, s);
+					else
+						sprintf(buf, "%02d:%02d", m, s);
+
+					BeginDisabled(ctrl_->isOnlineMode());
+					{
+						// --- barra de reproducción compacta ---
+						PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 1));
+						PushStyleVar(ImGuiStyleVar_GrabMinSize, 12.0f);
+						PushStyleVar(ImGuiStyleVar_GrabRounding, 24.0f);
+						PushItemWidth(GetContentRegionAvail().x * 0.8f);
+
+						SliderFloat("##Position", &sl_position, 0.0f, duration_seconds, "");
+
+						PopItemWidth();
+						PopStyleVar(3);
+
+						SameLine();
+						TextUnformatted(buf);
+
+						// --- botones de control ---
+						if (ImageButton("##btn_play", images_["imageres/play.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button play pressed\n";
+						SameLine();
+						if (ImageButton("##btn_pause", images_["imageres/pause.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button pause pressed\n";
+						SameLine();
+						if (ImageButton("##btn_stop", images_["imageres/stop.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button stop pressed\n";
+						SameLine();
+						if (ImageButton("##btn_repeat", images_["imageres/repeat.png"].tex, ImVec2(20, 20)))
+							std::cout << "Button repeat pressed\n";
+
+						// --- volumen y pitch ---
+						SameLine();
+						PushItemWidth(GetContentRegionAvail().x * 0.3f);
+						SliderInt("Volume", &sl_volume, 0, 100, "%d");
+						PopItemWidth();
+						SameLine();
+						PushItemWidth(GetContentRegionAvail().x * 0.3f);
+						SliderFloat("Pitch", &sl_pitch, -2.0f, 2.0f, "x%.2f");
+						PopItemWidth();
+					}
+					EndDisabled();
+
+					EndChild();
 				}
-				SameLine();
-				if ( ImageButton("##BTN_stop", images_["imageres/stop.png"].tex, ImVec2(20,20)) ) {
-					std::cout << "Button pressed" << std::endl;
+
+				// ---------- Tono 3 ----------
+				if (BeginChild("Tone3Child", ImVec2(0, 0), child_flags))
+				{
+					Text("Tone3");
+					Text("#TODO");
+					EndChild();
 				}
-				SliderInt("Volume",&sl_volume,0,100,"%d");
-				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
-			EndChild();
 
-			SameLine();
+				// ---------- Tono 4 ----------
+				if (BeginChild("Tone4Child", ImVec2(0, 0), child_flags))
+				{
+					Text("Tone4");
+					Text("#TODO");
+					EndChild();
+				}
+			}
 
-			BeginChild("##Module2",ImVec2(boxSize,boxSize*.5f), true);
-				Text("Module");
-				SliderInt("Volume",&sl_volume,0,100,"%d");
-				SliderFloat("Pitch",&sl_pitch,-2,2,"x%.2f");
-			EndChild();
-
-		EndChild();
+			// ----------------------------------------------------
+			//  Otros bloques colapsables
+			// ----------------------------------------------------
+			if (CollapsingHeader("ADF2", false)) { Text("#TODO"); }
+			if (CollapsingHeader("NAV", false))  { Text("#TODO"); }
+			if (CollapsingHeader("TACAN", false)) { Text("#TODO"); }
+			if (CollapsingHeader("LOL", false)) { Text("#TODO"); }
+		}
+		EndChild();   // ##F4
 	}
-	EndGroup();
+	EndGroup();       // grupo principal
+
 }
 
 void UiMgr::loadImages() {
@@ -350,6 +490,7 @@ void UiMgr::loadImages() {
 	addTextureFromFile("imageres/play.png");
 	addTextureFromFile("imageres/stop.png");
 	addTextureFromFile("imageres/pause.png");
+	addTextureFromFile("imageres/repeat.png");
 
 }
 
@@ -361,7 +502,7 @@ void UiMgr::unloadImages() {
 	// Descargar todas las imágenes guardadas
 	for (auto & img : images_) {
         if (img.second.tex != 0) {
-            std::cout << "[UiMgr] Deleting texture: " << img.first << std::endl;
+            std::cout << "[UiMgr] Unloading cached texture: " << img.first << std::endl;
             
             // Convertimos el uintptr_t de vuelta a GLuint para OpenGL
             glTex = (GLuint)img.second.tex;
@@ -441,12 +582,18 @@ void UiMgr::updateDensity(int delta) {
 
 // Temas --------------------------------------------------------------------------------
 
+void UiMgr::titleBarDarkMode(bool useDarkMode) {
+	#ifdef _WIN32
+		BOOL useDarkMode_ = useDarkMode ? TRUE : FALSE;
+		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode_, sizeof(useDarkMode_));
+		std::cout << "[UiMgr] " << (useDarkMode ? "Dark" : "Light") << " window title set" << std::endl;
+	#endif
+}
+
 void UiMgr::Style_Confy() {
 	
-	#ifdef _WIN32
-		BOOL useDarkMode = TRUE;
-		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
-	#endif
+	StyleColorsDark();
+	titleBarDarkMode(true);
 
 	style_->Alpha                       = 1.0000f;
 	style_->DisabledAlpha               = 0.1000f;
@@ -536,10 +683,8 @@ void UiMgr::Style_Confy() {
 
 void UiMgr::Style_FutureDark() {
 	
-	#ifdef _WIN32
-		BOOL useDarkMode = TRUE;
-		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
-	#endif
+	StyleColorsDark();
+	titleBarDarkMode(true);
 
 	style_->Alpha                       = 1.0000f;
 	style_->DisabledAlpha               = 1.0000f;
@@ -629,10 +774,8 @@ void UiMgr::Style_FutureDark() {
 
 void UiMgr::Style_Moonlight() {
 	
-	#ifdef _WIN32
-		BOOL useDarkMode = TRUE;
-		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
-	#endif
+	StyleColorsDark();
+	titleBarDarkMode(true);
 
 	style_->Alpha                       = 1.0000f;
 	style_->DisabledAlpha               = 1.0000f;
@@ -722,10 +865,8 @@ void UiMgr::Style_Moonlight() {
 
 void UiMgr::Style_VisualStudio() {
 	
-	#ifdef _WIN32
-		BOOL useDarkMode = TRUE;
-		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
-	#endif
+	StyleColorsDark();
+	titleBarDarkMode(true);
 
 	style_->Alpha                           = 1.0000f;
 	style_->DisabledAlpha                   = 0.6000f;
@@ -815,10 +956,8 @@ void UiMgr::Style_VisualStudio() {
 
 void UiMgr::Style_Microfrost() {
 	
-	#ifdef _WIN32
-		BOOL useDarkMode = TRUE;
-		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode, sizeof(useDarkMode));
-	#endif
+	StyleColorsLight();
+	titleBarDarkMode(false);
 
 	style_->Alpha                       = 1.0f;
 	style_->DisabledAlpha               = 0.6f;

@@ -39,13 +39,13 @@ public:
      * @brief Establece el modo de la aplicación.
      * @param newMode true = online, false = offline
      */
-    virtual void setMode(bool newMode) noexcept = 0;
+    virtual void setOnlineMode(bool newMode) noexcept = 0;
 
     /**
      * @brief Obtiene el estado Online/Offline
      * @returns true = online, false = offline
      */
-    virtual bool getMode() const noexcept = 0;
+    virtual bool isOnlineMode() const noexcept = 0;
 
     // Audio
 

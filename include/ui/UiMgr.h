@@ -146,6 +146,13 @@ private:
     void updateDensity(int delta);
 
 // Temas --------------------------------------------------------------------------------
+
+    /**
+     * @brief Cambia la barra de título entre modo claro/oscuro
+     * @param useDarkMode true modo oscuro, false modo claro.
+     * @note Solo para Windows
+     */
+    void titleBarDarkMode(bool useDarkMode);
     
     /**
     * @brief Dark - Comfy style by Giuseppe from ImThemes
@@ -211,4 +218,6 @@ private:
     // Elementos (1) ____________________________
     int      sl_volume = 2;
     float    sl_pitch = 0;
+    float    sl_position = 0;
+    unsigned int childToneCounter  =0;
 };

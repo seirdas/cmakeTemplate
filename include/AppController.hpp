@@ -78,13 +78,13 @@ public:
      * @brief Establece el modo online/offline
      * @param line true = online, false = offline
      */
-    void setMode(bool newMode) noexcept override;
+    void setOnlineMode(bool newMode) noexcept override;
 
     /**
      * @brief Obtiene el estado Online/Offline
      * @returns true = online, false = offline
      */
-    bool getMode() const noexcept override;
+    bool isOnlineMode() const noexcept override;
 
     /**
      * @brief Devuelve la lista con los dispositivos de entrada disponibles.

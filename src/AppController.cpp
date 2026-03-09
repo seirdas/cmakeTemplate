@@ -128,7 +128,7 @@ std::string AppController::getVersion() const noexcept {
     return version_; 
 }
 
-void AppController::setMode(bool b_modo) noexcept { 
+void AppController::setOnlineMode(bool b_modo) noexcept { 
 
     AppMode nuevoModo = (b_modo) ? AppMode::ONLINE : AppMode::OFFLINE;
     if (mode_ == nuevoModo) return;
@@ -149,13 +149,13 @@ void AppController::setMode(bool b_modo) noexcept {
     }
 };
 
-bool AppController::getMode() const noexcept {
+bool AppController::isOnlineMode() const noexcept {
     switch (mode_){
         case AppMode::ONLINE:   return true;
         case AppMode::OFFLINE:  return false;
     }
     // No debería llegar aquí nunca
-    std::cerr << "[AppController]   ERROR Undefined AppMode in consumer thread" << std::endl;
+    std::cerr << "[AppController]   ERROR Undefined AppMode." << std::endl;
     return true;
 };
 
