@@ -43,23 +43,29 @@ public:
     */
     bool stop();
 
-    bool listInputDevices();
+    /**
+     * @brief Actualiza la información de los dispositivos Playback/Capture
+     */
+    bool updateDevices();
 
-    std::vector<std::string> getAvailableInputDevices();
-
-    bool listOutputDevices();
 
 // Capture Input ------------------------------------------------------------------------
+
+    std::vector<std::string> getAvailableInputs() const;
+
+    void listAvailableInputs() const;
 
     bool addCaptureDevice(std::string const& name, unsigned short index);
 
 // Playbacks ----------------------------------------------------------------------------
 
+    std::vector<std::string> getAvailablePlaybacks() const;
+
+    void listAvailablePlaybacks() const;
+
     bool addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
 
     bool removePlaybackDevice(unsigned short index);
-
-    unsigned short getPlaybackDevice(std::string const& deviceName);
 
     bool playbackTest();
 
@@ -70,6 +76,11 @@ private:
     // Motor de audio
     ma_context snd_context_;                        // Contexto de audio
     std::atomic<bool> ctx_initialized_;             // Flag para saber si el motor de audio está inicializado.
+
+    ma_device_info* pPlaybackDevInfos_   = nullptr;     // Información de dispositivos Playback
+    ma_uint32       PlaybackDevCount_    = 0;           // Número de playbacks disponibles
+    ma_device_info* pCaptureDeviceInfos_ = nullptr;     // Información de dispositivos de captura (Input)
+    ma_uint32       captureDeviceCount_  = 0;           // Número de inputs disponibles
 
     // Modulos de audio 
     std::vector<std::unique_ptr<AudioInputModule>>      inputs_;        // Módulos de entrada

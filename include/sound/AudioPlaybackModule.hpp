@@ -27,10 +27,7 @@ class AudioPlaybackModule
 {
 public:
 
-    AudioPlaybackModule(ma_context* ctx,
-                        const ma_device_id& deviceID,
-                        const std::string& deviceName);
-
+    AudioPlaybackModule(ma_context* ctx, ma_device_info const& device_info);
     ~AudioPlaybackModule();
 
     bool start();
@@ -50,9 +47,12 @@ public:
 
     bool isPlaying(SoundID id);
 
-    const std::string& deviceName() const;
+    std::string& deviceName() const;
+
 
 private:
+
+    const ma_device_id& getDeviceID();
 
     static void endCallback(void* userData, ma_sound* sound);
 
@@ -61,8 +61,7 @@ private:
 private:
 
     ma_context* context_;
-    ma_device_id device_id_;
-    std::string device_name_;
+    ma_device_info device_info_;
 
     ma_engine engine_;
 
@@ -72,6 +71,5 @@ private:
     std::mutex mutex_;
 
     std::atomic<SoundID> idCounter_{1};
-
     bool running_ = false;
 };

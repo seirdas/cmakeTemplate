@@ -1,15 +1,11 @@
 #include "sound/AudioPlaybackModule.hpp"
 #include <iostream>
 
-AudioPlaybackModule::AudioPlaybackModule(
-        ma_context* ctx,
-        const ma_device_id& deviceID,
-        const std::string& deviceName)
+AudioPlaybackModule::AudioPlaybackModule(ma_context* ctx, ma_device_info const& device_info)
     :
-    context_(ctx),
-    device_id_(deviceID),
-    device_name_(deviceName)
+    context_(ctx), device_info_(device_info)
 {
+
 }
 
 AudioPlaybackModule::~AudioPlaybackModule()
@@ -27,11 +23,10 @@ bool AudioPlaybackModule::start()
     ma_engine_config config = ma_engine_config_init();
 
     config.pContext = context_;
-    config.pPlaybackDeviceID = &device_id_;
+    config.pPlaybackDeviceID = &device_info_.id; 
 
-    if (ma_engine_init(&config, &engine_) != MA_SUCCESS)
-    {
-        std::cerr << "[APM] engine init failed\n";
+    if (ma_engine_init(&config, &engine_) != MA_SUCCESS) {
+        std::cerr << "[APM] ERROR Engine init failed\n";
         return false;
     }
 
@@ -46,21 +41,20 @@ void AudioPlaybackModule::stop()
     if (!running_)
         return;
 
-    for (auto& [id, s] : sounds_)
-        ma_sound_uninit(&s->sound);
-
+    // Limpiar instancias activas
+    for (auto& [id, inst] : sounds_) {
+        ma_sound_uninit(&inst->sound);
+    }
     sounds_.clear();
 
-    for (auto& [path, snd] : cache_)
-    {
+    // Limpiar cache
+    for (auto& [path, snd] : cache_) {
         ma_sound_uninit(snd);
         delete snd;
     }
-
     cache_.clear();
 
     ma_engine_uninit(&engine_);
-
     running_ = false;
 }
 
@@ -143,7 +137,6 @@ SoundID AudioPlaybackModule::play(const std::string& filepath,
     SoundID id = idCounter_++;
 
     ma_sound_set_end_callback(&inst->sound, endCallback, this);
-
     ma_sound_start(&inst->sound);
 
     sounds_[id] = std::move(inst);
@@ -200,39 +193,38 @@ bool AudioPlaybackModule::isPlaying(SoundID id)
     return ma_sound_is_playing(&it->second->sound);
 }
 
-void AudioPlaybackModule::cleanupFinished()
+
+std::string& AudioPlaybackModule::deviceName() const
 {
-    for (auto it = sounds_.begin(); it != sounds_.end(); )
-    {
-        if (it->second->finished)
-        {
-            ma_sound_uninit(&it->second->sound);
-            it = sounds_.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
+    // ESTO PUEDE ESTAR MAL ¿?
+    return std::string(device_info_.name);
+}
+
+const ma_device_id& AudioPlaybackModule::getDeviceID() {
+    return device_info_.id;
 }
 
 void AudioPlaybackModule::endCallback(void* userData, ma_sound* sound)
 {
     auto* self = reinterpret_cast<AudioPlaybackModule*>(userData);
-
     std::lock_guard<std::mutex> lock(self->mutex_);
 
     for (auto& [id, s] : self->sounds_)
-    {
-        if (&s->sound == sound)
-        {
+        if (&s->sound == sound) {
             s->finished = true;
             break;
         }
-    }
 }
 
-const std::string& AudioPlaybackModule::deviceName() const
+
+void AudioPlaybackModule::cleanupFinished()
 {
-    return device_name_;
+    for (auto it = sounds_.begin(); it != sounds_.end(); ) {
+        if (it->second->finished)
+        {
+            ma_sound_uninit(&it->second->sound);
+            it = sounds_.erase(it);
+        }
+        else ++it;
+    }
 }

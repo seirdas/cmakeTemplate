@@ -25,10 +25,14 @@ class IAppControl {
 
 public:
 
+// General ------------------------------------------------------------------------------
+
     /**
      * @brief Destructor virtual para asegurar la correcta destrucción de objetos derivados.
      */
     virtual ~IAppControl() = default;
+
+// Aplicación ---------------------------------------------------------------------------
 
     /**
      * @brief Obtiene la versión de la aplicación.
@@ -47,11 +51,20 @@ public:
      */
     virtual bool isOnlineMode() const noexcept = 0;
 
-    // Audio
+// Sockets ------------------------------------------------------------------------------
+
+    
+    virtual bool addReceiver() const noexcept = 0;
+
+    virtual bool removeReceiver() const noexcept = 0;
+
+// Audio --------------------------------------------------------------------------------
 
     /**
      * @brief Devuelve la lista con los dispositivos de entrada disponibles.
      */
     virtual std::vector<std::string> getAvailableInputDevices() noexcept = 0;
+
+    virtual std::vector<std::string> getAvailablePlaybackDevices() noexcept = 0;
 
 };

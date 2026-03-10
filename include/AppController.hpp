@@ -67,6 +67,8 @@ public:
 
 // IAppControl methods ------------------------------------------------------------------
 
+    // Aplicación -----------------------------------------------------------------------
+
     /**
      * @brief Implementación del método de IAppControl para devolver la versión de la aplicación.
      * @return La versión de la aplicación como una cadena de texto.
@@ -76,7 +78,7 @@ public:
 
     /**
      * @brief Establece el modo online/offline
-     * @param line true = online, false = offline
+     * @param newMode true = online, false = offline
      */
     void setOnlineMode(bool newMode) noexcept override;
 
@@ -86,11 +88,22 @@ public:
      */
     bool isOnlineMode() const noexcept override;
 
+    // Sockets --------------------------------------------------------------------------
+
+    bool addReceiver() const noexcept override;
+
+    bool removeReceiver() const noexcept override;
+
+    // Audio ----------------------------------------------------------------------------
+
     /**
      * @brief Devuelve la lista con los dispositivos de entrada disponibles.
      */
     std::vector<std::string> getAvailableInputDevices() noexcept override;
 
+    std::vector<std::string> getAvailablePlaybackDevices() noexcept override;
+    
+    
     // Añadir aquí métodos de IAppControl...
 
 private:

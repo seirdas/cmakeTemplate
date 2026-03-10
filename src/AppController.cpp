@@ -71,11 +71,7 @@ int AppController::run() {
     //worker_ = std::thread(&AppController::TWorker, this);
 
     // Sonido
-    snd_.listInputDevices();
-
     snd_.playbackTest();
-
-    snd_.listOutputDevices();
 
     // Ventana UI
     ui_.run();      // <-- Este método bloquea hasta que la ventana se cierre
@@ -123,42 +119,62 @@ void AppController::TWorker() {
 
 
 // IAppControl methods ------------------------------------------------------------
+    
+    // Aplicación -----------------------------------------------------------------------
 
-std::string AppController::getVersion() const noexcept { 
-    return version_; 
-}
-
-void AppController::setOnlineMode(bool b_modo) noexcept { 
-
-    AppMode nuevoModo = (b_modo) ? AppMode::ONLINE : AppMode::OFFLINE;
-    if (mode_ == nuevoModo) return;
-    mode_ = nuevoModo;
-
-    switch (mode_){
-        case AppMode::ONLINE:
-            std::cout << "[AppController]   Switching to ONLINE..." << std::endl;
-            net_.start(); 
-        break;
-        case AppMode::OFFLINE:
-            std::cout << "[AppController]   Switching to OFFLINE..." << std::endl;
-            net_.stop(); // Esto cierra sockets y libera el getFirstPacket() bloqueado
-        break;
-        default:
-            // No debería llegar aquí nunca
-            std::cerr << "[AppController]   ERROR Unknown state mode" << std::endl;
+    std::string AppController::getVersion() const noexcept { 
+        return version_; 
     }
-};
 
-bool AppController::isOnlineMode() const noexcept {
-    switch (mode_){
-        case AppMode::ONLINE:   return true;
-        case AppMode::OFFLINE:  return false;
+    void AppController::setOnlineMode(bool b_modo) noexcept { 
+
+        AppMode nuevoModo = (b_modo) ? AppMode::ONLINE : AppMode::OFFLINE;
+        if (mode_ == nuevoModo) return;
+        mode_ = nuevoModo;
+
+        switch (mode_){
+            case AppMode::ONLINE:
+                std::cout << "[AppController]   Switching to ONLINE..." << std::endl;
+                net_.start(); 
+            break;
+            case AppMode::OFFLINE:
+                std::cout << "[AppController]   Switching to OFFLINE..." << std::endl;
+                net_.stop(); // Esto cierra sockets y libera el getFirstPacket() bloqueado
+            break;
+            default:
+                // No debería llegar aquí nunca
+                std::cerr << "[AppController]   ERROR Unknown state mode" << std::endl;
+        }
+    };
+
+    bool AppController::isOnlineMode() const noexcept {
+        switch (mode_){
+            case AppMode::ONLINE:   return true;
+            case AppMode::OFFLINE:  return false;
+        }
+        // No debería llegar aquí nunca
+        std::cerr << "[AppController]   ERROR Undefined AppMode." << std::endl;
+        return true;
+    };
+
+    
+    // Audio ----------------------------------------------------------------------------
+
+    std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
+        return snd_.getAvailableInputs();
     }
-    // No debería llegar aquí nunca
-    std::cerr << "[AppController]   ERROR Undefined AppMode." << std::endl;
-    return true;
-};
 
-std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
-    return snd_.getAvailableInputDevices();
-}
+    std::vector<std::string> AppController::getAvailablePlaybackDevices() noexcept {
+        return snd_.getAvailablePlaybacks();
+    }
+
+    
+    // Sockets --------------------------------------------------------------------------
+    
+    bool AppController::addReceiver() const noexcept {
+        return true;
+    }
+
+    bool AppController::removeReceiver() const noexcept {
+        return true;
+    }
