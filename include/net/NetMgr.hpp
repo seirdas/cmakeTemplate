@@ -71,7 +71,8 @@ public:
     );
 
     /**
-     * @brief Detener y desvincular un socket activo por nombre.
+     * @brief Detener y desvincular un socket activo por index.
+     * @param index Índice de socket (en el orden en el que se crearon)
      */
     bool removeReceiver(unsigned int index);
 
@@ -117,7 +118,7 @@ private:
     asio::executor_work_guard<asio::io_context::executor_type> work_guard_; // RAII para mantener vivo el io
 
     // Sockets
-    std::vector<std::unique_ptr<UdpReceiver>> receivers_;   // Lista de receptores UDP registrados
+    std::vector<std::shared_ptr<UdpReceiver>> receivers_;   // Lista de receptores UDP registrados
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.

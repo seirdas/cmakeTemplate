@@ -143,20 +143,24 @@ bool UdpReceiver::openSocket(short local_port, const std::string& local_ip){
 }
 
 void UdpReceiver::start_receive() {
-    
-    // Cuando llegue UN paquete, se ejecutará la lambda (handle_received_packet).
-    socket_.async_receive_from(
-        asio::buffer(recv_buffer_), remote_endpoint_,
-        [this](std::error_code ec, std::size_t bytes_recvd) {
-            // Esto se ejecuta cada vez que llega un paquete.
-            handle_received_packet(ec, bytes_recvd);
+    if (!socket_.is_open()) return;
 
-            // Si sigue en ejecución, volver a activar el callback
-            if (socket_.is_open())
-                start_receive();
+    // Capturamos 'self' (un shared_ptr a este objeto)
+    auto self(shared_from_this()); 
+
+    socket_.async_receive_from(
+        asio::buffer(recv_buffer_), 
+        remote_endpoint_,
+        [this, self](std::error_code ec, std::size_t bytes_recvd) {
+            // 'self' mantiene vivo al objeto aquí dentro
+            if (!ec) {
+                handle_received_packet(ec, bytes_recvd);
+                start_receive(); // Re-registramos
+            } else if (ec == asio::error::operation_aborted) {
+                std::cout << "[UdpReceiver] Operación cancelada de forma segura." << std::endl;
+            }
         }
     );
-
 }
 
 void UdpReceiver::handle_received_packet(std::error_code ec, std::size_t bytes_recvd) {

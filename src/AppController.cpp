@@ -48,6 +48,8 @@ bool AppController::init() {
     net_.addReceiver("Other", 12225, "127.0.0.1", sizeof(unsigned long long));
     net_.addReceiver("jose", 1345, "127.0.0.1", sizeof(unsigned long long));
 
+    net_.removeReceiver(net_.getSocketIndex("Host"));
+
     net_.printReceivers();
 
     // Inicialización de audio

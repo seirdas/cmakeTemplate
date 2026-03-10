@@ -40,7 +40,7 @@
   * @see NetMgr, asio::io_context
   * @date March 2, 2026 
   */
-class UdpReceiver {
+class UdpReceiver : public std::enable_shared_from_this<UdpReceiver> {
 
 public:
 
@@ -120,6 +120,7 @@ private:
 
     /**
      * @brief Registra el callback de recepción de datos.
+     * @note Usa las características de shared_from_this
      */
     void start_receive();
 

@@ -45,7 +45,7 @@ bool NetMgr::addReceiver(
     }
 
     // Crear receiver (aún no registrado)
-    std::unique_ptr<UdpReceiver> receiver = std::make_unique<UdpReceiver>(name, io_context_);
+    std::shared_ptr<UdpReceiver> receiver = std::make_shared<UdpReceiver>(name, io_context_);
 
     // Intentar inicializar
     std::cout << "[NetMgr]  Opening new socket..." << std::endl;
@@ -57,7 +57,7 @@ bool NetMgr::addReceiver(
     }
 
     // Insertar en el vector
-    receivers_.push_back(std::move(receiver));
+    receivers_.push_back(receiver);
     std::cout << "[NetMgr]  Socket added on port " << local_port << "\n";
 
     return true;
@@ -68,9 +68,12 @@ bool NetMgr::removeReceiver(unsigned int index) {
     if (index > receivers_.size()) {
         std::cerr << "[NetMgr]  Selected index " << index;
         std::cerr << " out of bounds (" << receivers_.size() <<")" << std::endl;
+        return false;
     }
+
+    // Copiamos el shared_ptr para mantenerlo vivo durante esta función
+    std::shared_ptr<UdpReceiver> rcv = receivers_[index];
     
-    UdpReceiver* rcv = receivers_[index].get();
     std::cout << "[NetMgr] Deleting socket '"
               << rcv->name()
               << "' with port "
