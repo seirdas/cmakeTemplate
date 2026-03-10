@@ -49,8 +49,7 @@ void AudioPlaybackModule::stop()
 
     // Limpiar cache
     for (auto& [path, snd] : cache_) {
-        ma_sound_uninit(snd);
-        delete snd;
+        ma_sound_uninit(snd.get());
     }
     cache_.clear();
 
@@ -68,7 +67,7 @@ bool AudioPlaybackModule::preload(const std::string& filepath)
     if (cache_.count(filepath))
         return true;
 
-    auto* snd = new ma_sound;
+    auto snd = std::make_unique<ma_sound>();
 
     if (ma_sound_init_from_file(
             &engine_,
@@ -76,13 +75,12 @@ bool AudioPlaybackModule::preload(const std::string& filepath)
             MA_SOUND_FLAG_DECODE,
             nullptr,
             nullptr,
-            snd) != MA_SUCCESS)
+            snd.get()) != MA_SUCCESS)
     {
-        delete snd;
         return false;
     }
 
-    cache_[filepath] = snd;
+    cache_[filepath] = std::move(snd);
 
     return true;
 }
@@ -107,7 +105,7 @@ SoundID AudioPlaybackModule::play(const std::string& filepath,
     {
         res = ma_sound_init_copy(
             &engine_,
-            cache_[filepath],
+            cache_[filepath].get(),
             0,
             nullptr,
             &inst->sound);
@@ -194,13 +192,11 @@ bool AudioPlaybackModule::isPlaying(SoundID id)
 }
 
 
-std::string& AudioPlaybackModule::deviceName() const
-{
-    // ESTO PUEDE ESTAR MAL ¿?
-    return std::string(device_info_.name);
+std::string AudioPlaybackModule::deviceName() const {
+    return device_info_.name;
 }
 
-const ma_device_id& AudioPlaybackModule::getDeviceID() {
+const ma_device_id AudioPlaybackModule::getDeviceID() const {
     return device_info_.id;
 }
 
@@ -210,15 +206,19 @@ void AudioPlaybackModule::endCallback(void* userData, ma_sound* sound)
     std::lock_guard<std::mutex> lock(self->mutex_);
 
     for (auto& [id, s] : self->sounds_)
-        if (&s->sound == sound) {
-            s->finished = true;
+    {
+        if (&s->sound == sound)
+        {
+            s->finished.store(true, std::memory_order_relaxed);
             break;
         }
+    }
 }
 
 
 void AudioPlaybackModule::cleanupFinished()
 {
+    // PRECONDITION: mutex_ already locked
     for (auto it = sounds_.begin(); it != sounds_.end(); ) {
         if (it->second->finished)
         {

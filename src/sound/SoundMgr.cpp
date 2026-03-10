@@ -159,6 +159,7 @@ bool SoundMgr::removePlaybackDevice(unsigned short index) {
     if (index >= playbacks_.size()) {
         std::cerr << "[SoundMgr]  Selected index " << index;
         std::cerr << " out of bounds (" << playbacks_.size() <<")" << std::endl;
+        return false;
     }
     
     AudioPlaybackModule* apm = playbacks_[index].get();
@@ -186,20 +187,13 @@ bool SoundMgr::playbackTest() {
     std::vector<std::string> list = getAvailablePlaybacks();
     if (list.empty())
         return false;
-    addPlaybackDevice(list[0], "audio");
+    addPlaybackDevice(list[0], "audio");        // <-- Aquí se hace también start()
 
     // puntero al APM que acabamos de meter
     if (playbacks_.empty()) 
         return false;
     AudioPlaybackModule* ultimoAPM = playbacks_.back().get();
     std::cout << "[SoundMgr] Testing device: " << ultimoAPM->deviceName() << std::endl;
-
-    // Probar a inicializar el APM
-    if (!ultimoAPM->start())
-    {
-        std::cerr << "[SoundMgr] Failed to start playback module." << std::endl;
-        return false;
-    }
 
     /* precarga opcional */
     ultimoAPM->preload("audio/DefaultDance.mp3");

@@ -20,7 +20,7 @@ struct SoundInstance
 {
     ma_sound sound;
     LoopMode loopMode = LoopMode::NONE;
-    bool finished = false;
+    std::atomic<bool> finished{false};
 };
 
 class AudioPlaybackModule
@@ -47,12 +47,12 @@ public:
 
     bool isPlaying(SoundID id);
 
-    std::string& deviceName() const;
+    std::string deviceName() const;
 
 
 private:
 
-    const ma_device_id& getDeviceID();
+    const ma_device_id getDeviceID() const;
 
     static void endCallback(void* userData, ma_sound* sound);
 
@@ -66,7 +66,7 @@ private:
     ma_engine engine_;
 
     std::unordered_map<SoundID, std::unique_ptr<SoundInstance>> sounds_;
-    std::unordered_map<std::string, ma_sound*> cache_;
+    std::unordered_map<std::string, std::unique_ptr<ma_sound>> cache_;
 
     std::mutex mutex_;
 
