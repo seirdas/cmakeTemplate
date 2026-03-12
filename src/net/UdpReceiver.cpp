@@ -9,7 +9,7 @@
 UdpReceiver::UdpReceiver(std::string name, asio::io_context& io)
     : name_(name), socket_(io), rcv_packet_size_(0), ignore_dupe_(true)
 {
-    
+	
 }
 
 UdpReceiver::~UdpReceiver() {
@@ -56,6 +56,7 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
         return false;
     }
 
+    std::cout << "[UdpReceiver] Socket initialized successfully." << std::endl;
     return true;
 }
 
@@ -93,8 +94,7 @@ bool UdpReceiver::isRunning() const {
     return socket_.is_open();
 }
 
-
-bool UdpReceiver::openSocket(short local_port, const std::string& local_ip){
+bool UdpReceiver::openSocket(short local_port, const std::string& local_ip) {
 
     // Variable para almacenar errores de asio
     asio::error_code ec;
@@ -145,37 +145,36 @@ bool UdpReceiver::openSocket(short local_port, const std::string& local_ip){
 void UdpReceiver::start_receive() {
     if (!socket_.is_open()) return;
 
-    // Capturamos 'self' (un shared_ptr a este objeto)
-    auto self(shared_from_this()); 
+    // CAPTURA DE SEGURIDAD: Mantiene el objeto vivo mientras la operación de red esté pendiente
+    auto self = shared_from_this();
 
     socket_.async_receive_from(
-        asio::buffer(recv_buffer_), 
+        asio::buffer(recv_buffer_),
         remote_endpoint_,
         [this, self](std::error_code ec, std::size_t bytes_recvd) {
-            // 'self' mantiene vivo al objeto aquí dentro
             if (!ec) {
-                handle_received_packet(ec, bytes_recvd);
-                start_receive(); // Re-registramos
-            } else if (ec == asio::error::operation_aborted) {
-                std::cout << "[UdpReceiver] Operación cancelada de forma segura." << std::endl;
+                // Si todo va bien, procesamos y seguimos recibiendo
+                handle_received_packet(bytes_recvd);
+                start_receive();
+            }
+            else if (ec == asio::error::operation_aborted) {
+                // Caso esperado al cerrar el socket o borrar el receptor
+                std::cout << "[UdpReceiver] Socket " << name_ << " stopped successfuly." << std::endl;
+            }
+            else {
+                // Otros errores (ej. puerto inaccesible): informamos y reintentamos 
+                // para no dejar el socket "muerto" por un error puntual.
+                std::cerr << "[UdpReceiver] "<< name << " ERROR Recepction error: " << ec.message() << std::endl;
+                if (socket_.is_open()) {
+                    start_receive();
+                }
             }
         }
     );
 }
 
-void UdpReceiver::handle_received_packet(std::error_code ec, std::size_t bytes_recvd) {
-    // Si el programa se está cerrando o fue cancelado, salimos
-    if (ec == asio::error::operation_aborted){
-        std::cout << "[UdpReceiver] Receive operation aborted, stopping receiver." << std::endl;
-        return;
-    }
-
-    // Si hubo un error en la recepción, lo reportamos y salimos
-    if (ec) {
-        std::cerr << "[UdpReceiver] ERROR Receive error: " << ec.message() << std::endl;
-        return;
-    }
-
+void UdpReceiver::handle_received_packet(std::size_t bytes_recvd) {
+    
     // Si se ha recibido un paquete vacío, lo reportamos pero seguimos esperando
     if(bytes_recvd == 0) {
         std::cerr << "[UdpReceiver] WARN Received empty packet from " << remote_endpoint_ << std::endl;
@@ -254,7 +253,7 @@ bool UdpReceiver::isQueueFull() const{
 
 size_t UdpReceiver::getQueueSize() const{
     std::lock_guard<std::mutex> lock(mutex_);
-    return queue_.size();;
+    return queue_.size();
 }
 
 void UdpReceiver::clearQueue(){
@@ -272,4 +271,3 @@ bool UdpReceiver::compareLast(std::vector<char> const& data) {
     // Devuelve si es igual que el anterior
     return queue_.back() == data;
 }
-

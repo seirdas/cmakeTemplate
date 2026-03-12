@@ -64,6 +64,8 @@ bool NetMgr::addReceiver(
 }
 
 bool NetMgr::removeReceiver(unsigned int index) {
+    // 1. Lock del mutex si lo has añadido (muy recomendado)
+    std::lock_guard<std::mutex> lock(mtx_receivers_);
 
     if (index > receivers_.size()) {
         std::cerr << "[NetMgr]  Selected index " << index;
@@ -71,7 +73,7 @@ bool NetMgr::removeReceiver(unsigned int index) {
         return false;
     }
 
-    // Copiamos el shared_ptr para mantenerlo vivo durante esta función
+    // 2. Extraemos el shared_ptr. Esto incrementa el contador de referencias temporalmente.
     std::shared_ptr<UdpReceiver> rcv = receivers_[index];
     
     std::cout << "[NetMgr] Deleting socket '"
@@ -79,15 +81,16 @@ bool NetMgr::removeReceiver(unsigned int index) {
               << "' with port "
               << rcv->port()
               << std::endl;
-
-              
-    // Detener socket
-    rcv->stop();
-
-    // Borrar el elemento del vector usando iterator
+    // 3. Borramos del vector. 
+    // Si era un unique_ptr, aquí el objeto moría y Asio petaba.
+    // Al ser shared_ptr, el objeto SIGUE VIVO porque 'rcv' y 'self' (en el lambda) lo sujetan.
     receivers_.erase(receivers_.begin() + index);
 
-    std::cout << "[NetMgr] Deleted socket" << std::endl;
+    // 4. Paramos el socket. 
+    // Esto fuerza a que el lambda de async_receive_from se ejecute con error 'operation_aborted'.
+    rcv->stop();
+
+    std::cout << "[NetMgr] Socket liberado del registro." << std::endl;
     return true;
 }
 
@@ -106,8 +109,9 @@ int NetMgr::getSocketIndex(std::string const& name) const {
 
 std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
 
-    if (index > receivers_.size()) {
-        std::cerr << "[NetMgr]  Selected index out of limits. " << std::endl;
+    if (index >= receivers_.size()) {
+        std::cerr << "[NetMgr]  ERROR Selected index out of limits. " << std::endl;
+        return {};
     }
 
     return receivers_[index]->getFirstPacket();   // <-- BLOQUEANTE 
@@ -140,15 +144,17 @@ void NetMgr::stop() {
 
     std::cout << "[NetMgr]  Stopping network manager..." << std::endl;
 
-    work_guard_.reset();   // permite que run() termine
-    io_context_.stop();
-
-    // Borrar la cola de datos de los receptores
-    for (auto const& rcv : receivers_){
+    // Parar la recepción de los sockets y limpiar
+    for (auto& rcv : receivers_) {
+        rcv->stop();
         rcv->clearCache();
     }
 
-    // Esperar a que terminen las tareas los receptores
+    // Parar el io_context
+    work_guard_.reset();   // permite que run() termine
+    io_context_.stop();
+
+    // Esperar a que terminen las tareas los receptores IO
     for (auto& t : threads_) {
         if (t.joinable())
             t.join();

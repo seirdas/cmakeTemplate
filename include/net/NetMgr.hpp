@@ -119,6 +119,7 @@ private:
 
     // Sockets
     std::vector<std::shared_ptr<UdpReceiver>> receivers_;   // Lista de receptores UDP registrados
+    std::mutex mtx_receivers_;
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.

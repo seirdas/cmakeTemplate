@@ -6,6 +6,7 @@
 #include <mutex>                // Mutex (Cerrojos) para concurrencia
 #include <condition_variable>   // Variable condicional para concurrencia
 #include <vector>               // Vectores
+#include <memory>
 
 
 /**
@@ -127,7 +128,7 @@ private:
     /**
      * @brief Guarda el paquete recibido en una cola de datos bajo unas condiciones.
      */
-    void handle_received_packet(std::error_code ec, std::size_t bytes_recvd);
+    void handle_received_packet(std::size_t bytes_recvd);
 
 
     // Gestión de la cola de datos recibidos ------------------------------------------------------------
