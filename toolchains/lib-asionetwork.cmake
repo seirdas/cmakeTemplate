@@ -15,7 +15,6 @@ if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.github")
       CACHE PATH "" FORCE)
 endif()
 
-# Declarar dependencia externa
 FetchContent_Declare(
     asio_network
     GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
@@ -24,30 +23,36 @@ FetchContent_Declare(
     SOURCE_DIR     "${EXTERNAL_LIB_PATH}/asio_src"
     EXCLUDE_FROM_ALL TRUE
 )
-# Hacerla disponible
 FetchContent_MakeAvailable(asio_network)
 
-# Crear una librería estática de red + Vincular con Winsock2 en Windows
-add_library(asio_lib INTERFACE)
-target_include_directories(asio_lib INTERFACE "${asio_network_SOURCE_DIR}/asio/include")  # Incluir headers de Asio
+# Crear una librería estática de red
+add_library(asio_lib STATIC "${asio_network_SOURCE_DIR}/asio/src/asio.cpp")
 
-# Definir ASIO_STANDALONE para usar Asio sin Boost
-target_compile_definitions(asio_lib INTERFACE 
-  ASIO_STANDALONE
+target_include_directories(asio_lib PUBLIC "${asio_network_SOURCE_DIR}/asio/include")
+
+# Macros de compilación
+target_compile_definitions(asio_lib PUBLIC 
+  ASIO_STANDALONE                     # Asio sin Boost
   ASIO_DISABLE_SMALL_BLOCK_RECYCLING
   ASIO_NO_TS_EXECUTORS
+  ASIO_SEPARATE_COMPILATION
+
+  _WIN32_WINNT=0x0601       # Windows 7 o superior
+  WINVER=0x0601             # Windows 7 o superior
+  NTDDI_VERSION=0x06010000  # Windows 7 o superior
 )
 
 # Vincular con las librerías de sockets de Windows
-target_link_libraries(asio_lib INTERFACE
+target_link_libraries(asio_lib PUBLIC
   $<$<PLATFORM_ID:Windows>:
     ws2_32      # Winsock2 - API de sockets de Windows
     mswsock     # Microsoft Winsock Extensions
     wsock32     # Winsock - API de sockets antigua (a veces requerida)
+    bcrypt      # 
   >    
 )
 
-target_compile_options(asio_lib INTERFACE
+target_compile_options(asio_lib PUBLIC
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
       -Wno-shadow
       -Wno-unused-parameter

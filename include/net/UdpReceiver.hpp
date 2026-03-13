@@ -6,8 +6,6 @@
 #include <mutex>                // Mutex (Cerrojos) para concurrencia
 #include <condition_variable>   // Variable condicional para concurrencia
 #include <vector>               // Vectores
-#include <memory>
-
 
 /**
   * @class UdpReceiver
@@ -39,7 +37,6 @@
   *     El destructor detiene la recepción y cierra el socket para garantizar una
   * limpieza correcta.
   * @see NetMgr, asio::io_context
-  * @date March 2, 2026 
   */
 class UdpReceiver : public std::enable_shared_from_this<UdpReceiver> {
 
@@ -170,17 +167,22 @@ private:
 
 
     /************ Variables ********************************************************/
+    using CStrand = asio::strand<asio::io_context::executor_type>;
+    using CSocket = asio::basic_datagram_socket<asio::ip::udp, asio::io_context::executor_type>;
+
 
     // Configuración y estado del receptor UDP
-    std::string             name_;              // Nombre dado al socket para identificarlo
-    asio::basic_datagram_socket<asio::ip::udp, asio::io_context::executor_type>   socket_;            // Socket UDP para recibir datos
-    asio::ip::udp::endpoint remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
-    std::vector<char>       recv_buffer_;       // Buffer para almacenar los datos recibidos
-    unsigned int            rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
+    std::string                     name_;              // Nombre dado al socket para identificarlo
+    CStrand                         strand_;            // Protección del buffer asíncrono de recepción
+    CSocket                         socket_;            // Socket asio
+    asio::ip::udp::endpoint         remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
+    std::vector<char>               recv_buffer_;       // Buffer para almacenar los datos recibidos
+    unsigned int                    rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
+    
     // Cola de datos recibidos
-    std::queue<std::vector<char>> queue_;       // Cola de datos recibidos
-    mutable std::mutex            mutex_;       // Mutex para proteger el acceso a la cola
-    std::condition_variable       condition_;   // Condición para notificar al main que hay datos nuevos
-    const std::size_t             MAX_QUEUE_ELEMENTS = 20;  // Número máximo de elementos en la cola
-    bool                          ignore_dupe_; // Flag para eliminar el paquete si es el mismo que el anterior
+    std::queue<std::vector<char>>   queue_;                     // Cola de datos recibidos
+    mutable std::mutex              mutex_;                     // Mutex para proteger el acceso a la cola
+    std::condition_variable         condition_;                 // Condición para notificar al main que hay datos nuevos
+    const std::size_t               MAX_QUEUE_ELEMENTS = 20;    // Número máximo de elementos en la cola
+    bool                            ignore_dupe_;               // Flag para eliminar duplicados
 };

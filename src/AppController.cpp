@@ -41,24 +41,26 @@ bool AppController::init() {
     // Flag indicando la ejecución
     isRunning_ = true;
 
+    
+    // Iniciar sockets
+    net_.start();
+
+    // Inicialización de audio
+    if (!snd_.init())        return false;
+
+    // Inicialización de ventana UI
+    if (!ui_.init())         return false;
+
     // Inicialización de sockets
     net_.addReceiver("Host", 8080);
-    net_.addReceiver("Other", 12345, "127.0.0.1", sizeof(unsigned long long));
-    net_.addReceiver("Other2", 12345, "127.0.0.1", sizeof(unsigned long long));
-    net_.addReceiver("Other", 12225, "127.0.0.1", sizeof(unsigned long long));
-    net_.addReceiver("jose", 1345, "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("Other", 12345,    "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("Other2", 12345,   "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("Other", 12225,    "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("jose", 1345,      "127.0.0.1", sizeof(unsigned long long));
 
     net_.removeReceiver(net_.getSocketIndex("Host"));
 
     net_.printReceivers();
-
-    // Inicialización de audio
-    if (!snd_.init())
-        return false;
-
-    // Inicialización de ventana UI
-    if (!ui_.init()) 
-        return false;
 
     /*else*/
     return true;
@@ -66,14 +68,12 @@ bool AppController::init() {
 
 int AppController::run() {
 
-    // Iniciar sockets
-    net_.start();
 
     // Gestor de paquetes (#TODO)
     //worker_ = std::thread(&AppController::TWorker, this);
 
     // Sonido
-    snd_.playbackTest();
+    //snd_.playbackTest();
 
     // Ventana UI
     ui_.run();      // <-- Este método bloquea hasta que la ventana se cierre
@@ -109,9 +109,7 @@ void AppController::TWorker() {
 
         // Procesar el paquete (simulado)
         std::cout << "[AppController]   Procesando paquete de datos..." << std::endl;
-
         std::cout << "Size of data" << data.size() << std::endl;
-
         std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
     }
 
