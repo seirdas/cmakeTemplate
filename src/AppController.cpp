@@ -143,7 +143,7 @@ void AppController::TWorker() {
             break;
             default:
                 // No debería llegar aquí nunca
-                std::cerr << "[AppController]   ERROR Unknown state mode" << std::endl;
+                std::cerr << "[AppController]   ERROR Unknown AppMode." << std::endl;
         }
     };
 

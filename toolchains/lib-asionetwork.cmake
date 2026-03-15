@@ -28,6 +28,7 @@ FetchContent_MakeAvailable(asio_network)
 # Crear una librería estática de red
 add_library(asio_lib STATIC "${asio_network_SOURCE_DIR}/asio/src/asio.cpp")
 
+# Incluir rutas de encabezado
 target_include_directories(asio_lib PUBLIC "${asio_network_SOURCE_DIR}/asio/include")
 
 # Macros de compilación
@@ -52,6 +53,7 @@ target_link_libraries(asio_lib PUBLIC
   >    
 )
 
+# Omitir warnings de la propia librería
 target_compile_options(asio_lib PUBLIC
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
       -Wno-shadow
