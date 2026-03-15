@@ -1,4 +1,4 @@
-# toolchains/lib-kokoro-data.cmake
+# toolchains/tts-assets.cmake
 
 set(TTS_DATA_DIR "${EXTERNAL_LIB_PATH}/tts-assets")
 
@@ -73,20 +73,11 @@ endif()
 # Define la función para copiar archivos y directorios 
 # SE USA EN EL POST-BUILD
 function(copy_tts_assets)
-    if (WIN32)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${ONNX_INSTALL_DIR}/lib/onnxruntime.dll"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMENT "Copiando ONNX Runtime DLL desde ${ONNX_INSTALL_DIR}..."
-        )
-    endif()
-
     # Copiar la carpeta de assets de Kokoro al directorio del ejecutable
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${TTS_DATA_DIR}/"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/tts-assets"
-        COMMENT "Copiando assets de Kokoro..."
+        COMMENT "Copying TTS assets..."
     )
 endfunction()

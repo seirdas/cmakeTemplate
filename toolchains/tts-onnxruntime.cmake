@@ -42,3 +42,16 @@ target_include_directories(onnxruntime_lib INTERFACE "${ONNX_INSTALL_DIR}/includ
 
 # Link de la librería (.lib / .so)
 target_link_libraries(onnxruntime_lib INTERFACE "${ONNX_INSTALL_DIR}/lib/${ONNX_LIB}")
+
+# Define la función para copiar archivos y directorios 
+# SE USA EN EL POST-BUILD
+function(copy_onnx_runtime)
+    if (WIN32)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${ONNX_INSTALL_DIR}/lib/onnxruntime.dll"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMENT "Copying ONNX Runtime DLL desde ${ONNX_INSTALL_DIR}..."
+        )
+    endif()
+endfunction()

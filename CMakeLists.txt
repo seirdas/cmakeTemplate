@@ -273,8 +273,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 # Copiar librerías dinámicas de TTS
 if(USE_TTS)
-  message(STATUS "\n--- Copying TTS dependencies...")
   copy_tts_assets()
+  copy_onnx_runtime()
 endif()
 
 # ===============================
@@ -283,12 +283,11 @@ endif()
 
 # Copia todo el contenido de la carpeta 'dependencies' a la carpeta del binario
 set(DEPS_DIR "dependencies")
-
-message(STATUS "\n--- Copying files in ${DEPS_DIR} folder...")
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   "${CMAKE_CURRENT_SOURCE_DIR}/${DEPS_DIR}/"
   "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+  COMMENT "Copying files in ${DEPS_DIR} folder..."
 )
 
 # Configurar carpetas de salida del ejecutable y librerías
