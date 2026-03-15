@@ -1031,9 +1031,9 @@ void UiMgr::Style_Microfrost() {
 	style_->Colors[ImGuiCol_PlotLinesHovered]       = ImVec4(1.0000f, 0.4275f, 0.3490f, 1.0000f);
 	style_->Colors[ImGuiCol_PlotHistogram]          = ImVec4(0.8980f, 0.6980f, 0.0000f, 1.0000f);
 	style_->Colors[ImGuiCol_PlotHistogramHovered]   = ImVec4(1.0000f, 0.6000f, 0.0000f, 1.0000f);
-	style_->Colors[ImGuiCol_TableHeaderBg]          = ImVec4(0.1882f, 0.1882f, 0.2000f, 1.0000f);
-	style_->Colors[ImGuiCol_TableBorderStrong]      = ImVec4(0.3098f, 0.3098f, 0.3490f, 1.0000f);
-	style_->Colors[ImGuiCol_TableBorderLight]       = ImVec4(0.2275f, 0.2275f, 0.2471f, 1.0000f);
+	style_->Colors[ImGuiCol_TableHeaderBg]          = ImVec4(0.8882f, 0.8882f, 0.8882f, 1.0000f);	// modificado
+	style_->Colors[ImGuiCol_TableBorderStrong]      = ImVec4(0.0980f, 0.0980f, 0.0980f, 1.0000f);	// modificado
+	style_->Colors[ImGuiCol_TableBorderLight]       = ImVec4(0.8275f, 0.8275f, 0.8471f, 1.0000f);	// modificado
 	style_->Colors[ImGuiCol_TableRowBg]             = ImVec4(0.0000f, 0.0000f, 0.0000f, 0.0000f);
 	style_->Colors[ImGuiCol_TableRowBgAlt]          = ImVec4(1.0000f, 1.0000f, 1.0000f, 0.0600f);
 	style_->Colors[ImGuiCol_TextSelectedBg]         = ImVec4(0.2588f, 0.5882f, 0.9765f, 0.3500f);
