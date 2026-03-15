@@ -219,5 +219,4 @@ private:
     int      sl_volume = 2;
     float    sl_pitch = 0;
     float    sl_position = 0;
-    unsigned int childToneCounter  =0;
 };
