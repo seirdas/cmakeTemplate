@@ -92,15 +92,16 @@ if(USE_STB)
   include(lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
 endif()
-    
-    # Librerías no probadas aún:
-    
-# Libreria Piper TTS (REVISAR LICENCIAS)
-option(USE_PIPER "Compilar con soporte para PIPER" OFF)          # Activar/desactivar librería
-if(USE_PIPER)
-include(lib-piperTTS)                                           # Ejecuta el archivo toolchains/lib-piperTTS.cmake
-add_definitions(-DUSE_PIPER=1)                                  # Definición para usar en el código C++
+
+# Librería TTS
+option(USE_TTS "Compilar con soporte para TTS" ON)
+if(USE_TTS)
+    include(tts-onnxruntime)    # Motor de Inferencia ONNX
+    include(tts-assets)         # Datos del Modelo Kokoro
 endif()
+
+    
+# ----------- Librerías no probadas aún:
     
 # Librería daisySP
 option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
@@ -155,26 +156,24 @@ if (WIN32)
   )
 
   if (MINGW)
-
     target_link_options(${PROJECT_NAME} PRIVATE 
       $<$<CONFIG:Release>:-mwindows>
     )
+  endif()
 
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Código de instrumentación ASan para desbordamientos de memoria
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-      target_compile_options(${PROJECT_NAME} PRIVATE
-          $<$<CONFIG:Debug>:
-            # -fsanitize=address      # NECESITA LA DLL libclang_rt.asan_dynamic-x86_64.dll
-            -fno-omit-frame-pointer
-          >
-      )
-      target_link_options(${PROJECT_NAME} PRIVATE
-          $<$<CONFIG:Debug>:
-            # -fsanitize=address      # NECESITA LA DLL libclang_rt.asan_dynamic-x86_64.dll
-          >
-      )
-    endif()
-
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Debug>:
+          # -fsanitize=address      # NECESITA LA DLL libclang_rt.asan_dynamic-x86_64.dll
+          -fno-omit-frame-pointer
+        >
+    )
+    target_link_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Debug>:
+          # -fsanitize=address      # NECESITA LA DLL libclang_rt.asan_dynamic-x86_64.dll
+        >
+    )
   endif()
 
 endif()
@@ -263,23 +262,19 @@ endif()
 
 # Se enlazan automáticamente si están activas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-  $<$<BOOL:${USE_ASIO}>:asio_lib>                   # Librería creada con Asio + Winsock2 (Windows) 
-  $<$<BOOL:${USE_IMGUI}>:imgui_lib>                 # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
-  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>         # Librería creada con Miniaudio + winmm (Windows)
-  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>             # Librería creada con DaisySP (DSP)
-  $<$<BOOL:${USE_PIPER}>:piper_lib>                 # Librería creada con Piper (TTS)
-  $<$<BOOL:${USE_STB}>:stb_lib>                     # Librería creada con STB
+  $<$<BOOL:${USE_ASIO}>:asio_lib>              # Librería creada con Asio + Winsock2 (Windows) 
+  $<$<BOOL:${USE_IMGUI}>:imgui_lib>            # Librería creada con ImGui + GLFW + OpenGL
+  $<$<BOOL:${USE_JSON}>:nlohmann_json>         # Librería creada con nlohmann/json
+  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>    # Librería creada con Miniaudio + winmm (Windows)
+  $<$<BOOL:${USE_STB}>:stb_lib>                # Librería creada con STB
+  $<$<BOOL:${USE_TTS}>:onnxruntime_lib>        # Librería creada con motor TTS (ONNX)
+  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>        # Librería creada con DaisySP (DSP)
 )
 
-# Para Piper TTS se necesita la dll del onnx runtime
-if ($<BOOL:${USE_PIPER}>)
-  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different
-      "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
-      $<TARGET_FILE_DIR:${PROJECT_NAME}>
-      COMMENT "Copiando ONNX TTS Runtime DLL al directorio de salida..."
-  )
+# Copiar librerías dinámicas de TTS
+if(USE_TTS)
+  message(STATUS "\n--- Copying TTS dependencies...")
+  copy_tts_assets()
 endif()
 
 # ===============================
@@ -287,9 +282,12 @@ endif()
 # ===============================
 
 # Copia todo el contenido de la carpeta 'dependencies' a la carpeta del binario
+set(DEPS_DIR "dependencies")
+
+message(STATUS "\n--- Copying files in ${DEPS_DIR} folder...")
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
-  "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/"
+  "${CMAKE_CURRENT_SOURCE_DIR}/${DEPS_DIR}/"
   "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )
 
