@@ -7,7 +7,7 @@
       "command": "cmake",
       "args": [
         "--build",
-        "${workspaceFolder}\\_build\\${command:cmake.activeConfigurePresetName}",
+        "${workspaceFolder}/_build/${command:cmake.activeConfigurePresetName}",
         "--config",
         "${command:cmake.buildType}",
         "--parallel",

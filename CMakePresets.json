@@ -110,107 +110,64 @@
                 "CMAKE_BUILD_TYPE":"Debug"
             },
             "hidden": false
+        },
+        {
+            "name": "linux-base-make",
+            "description": "Base para Linux usando Unix Makefiles",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/_build/${presetName}",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "linux-gcc-debug",
+            "displayName": "🐧 Linux GCC Debug",
+            "description": "Compilación Linux con GCC/G++ en Debug.",
+            "inherits": "linux-base-make",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "linux-gcc-release",
+            "displayName": "🐧 Linux GCC Release",
+            "description": "Compilación Linux con GCC/G++ en Release.",
+            "inherits": "linux-base-make",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "linux-clang-debug",
+            "displayName": "🤖 Linux Clang Debug",
+            "description": "Compilación Linux con Clang en Debug.",
+            "inherits": "linux-base-make",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "linux-clang-release",
+            "displayName": "🤖 Linux Clang Release",
+            "description": "Compilación Linux con Clang en Release.",
+            "inherits": "linux-base-make",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
         }
+        
     ],
     "buildPresets": [
-        {
-            "name": "mingw64",
-            "environment": {
-                "PATH": "$env{MINGW_PATH};$penv{PATH}"
-            },
-            "cleanFirst": false,
-            "jobs": 4,
-            "description": "Plantilla oculta para heredar configuraciones comunes",
-            "hidden": true
-        },
-        {
-            "name": "mingw64-release",
-            "targets": [ "all" ],
-            "displayName": "🔶 Mingw64 (Release)",
-            "configurePreset": "mingw64-release",
-            "inherits": "mingw64",
-            "configuration": "Release",
-            "hidden":false
-        },
-        {
-            "name": "mingw64-debug",
-            "targets": [ "all" ],
-            "displayName": "🔶 Mingw64 (Debug)",
-            "configurePreset": "mingw64-debug",
-            "inherits": "mingw64",
-            "configuration": "Debug",
-            "hidden": false
-        },
-        {
-            "name": "mingw64-ninja-release",
-            "displayName": "🚀 Mingw64 Release (x64)",
-            "description": "Build en Release para Mingw64 (x64).",
-            "configurePreset": "mingw64-ninja",
-            "configuration": "Release",
-            "hidden": false
-        },
-        {
-            "name": "mingw64-ninja-debug",
-            "displayName": "🐞 Mingw64 Debug (x64)",
-            "description": "Build en Debug para Mingw64 (x64).",
-            "configurePreset": "mingw64-ninja",
-            "configuration": "Debug",
-            "hidden": false
-        },
-        {
-            "name": "clang64",
-            "configurePreset": "clang64",
-            "jobs": 4,
-            "environment": {
-                "PATH": "$env{CLANG_PATH}/bin;$penv{PATH}"
-            },
-            "description": "Plantilla oculta para heredar configuraciones comunes",
-            "hidden": true
-        },
-        {
-            "name": "clang64-release",
-            "targets": [ "all" ],
-            "displayName": "🔷 Clang64 (Release)",
-            "configurePreset": "clang64-release",
-            "inherits": "clang64",
-            "configuration": "Release",
-            "hidden": false
-        },
-        {
-            "name": "clang64-debug",
-            "targets": [ "all" ],
-            "displayName": "🔷 Clang64 (Debug)",
-            "configurePreset": "clang64-debug",
-            "inherits": "clang64",
-            "configuration": "Debug",
-            "hidden": false
-        },
-        {
-            "name": "clang64-ninja-release",
-            "displayName": "🚀 Clang Release (x64)",
-            "description": "Build en Release para Clang (x64).",
-            "configurePreset": "clang64-ninja",
-            "configuration": "Release",
-            "hidden": false
-        },
-        {
-            "name": "clang64-ninja-debug",
-            "displayName": "🐞 Clang Debug (x64)",
-            "description": "Build en Debug para Clang (x64).",
-            "configurePreset": "clang64-ninja",
-            "configuration": "Debug",
-            "hidden": false
-        },
-        {
-            "name": "clang64-ninja-relwithdebinfo",
-            "displayName": "🔍 Clang RelWithDebInfo (x64)",
-            "description": "Build en RelWithDebInfo para Clang (x64).",
-            "configurePreset": "clang64-ninja",
-            "configuration": "RelWithDebInfo",
-            "hidden": false
-        },
-
-
         {
             "name": "vs2019-release",
             "displayName": "🚀 VS2019 Release (x64)",
@@ -296,6 +253,128 @@
             "description": "Build en MinSizeRel para Visual Studio 2026 (x64).",
             "configurePreset": "vs2026",
             "configuration": "MinSizeRel"
+        },
+
+        {
+            "name": "mingw64",
+            "environment": {
+                "PATH": "$env{MINGW_PATH};$penv{PATH}"
+            },
+            "cleanFirst": false,
+            "jobs": 4,
+            "description": "Plantilla oculta para heredar configuraciones comunes",
+            "hidden": true
+        },
+        {
+            "name": "mingw64-release",
+            "targets": [ "all" ],
+            "displayName": "🔶 Mingw64 (Release)",
+            "configurePreset": "mingw64-release",
+            "inherits": "mingw64",
+            "configuration": "Release",
+            "hidden":false
+        },
+        {
+            "name": "mingw64-debug",
+            "targets": [ "all" ],
+            "displayName": "🔶 Mingw64 (Debug)",
+            "configurePreset": "mingw64-debug",
+            "inherits": "mingw64",
+            "configuration": "Debug",
+            "hidden": false
+        },
+        {
+            "name": "mingw64-ninja-release",
+            "displayName": "🚀 Mingw64 Release (x64)",
+            "description": "Build en Release para Mingw64 (x64).",
+            "configurePreset": "mingw64-ninja",
+            "configuration": "Release",
+            "hidden": false
+        },
+        {
+            "name": "mingw64-ninja-debug",
+            "displayName": "🐞 Mingw64 Debug (x64)",
+            "description": "Build en Debug para Mingw64 (x64).",
+            "configurePreset": "mingw64-ninja",
+            "configuration": "Debug",
+            "hidden": false
+        },
+
+        {
+            "name": "clang64",
+            "configurePreset": "clang64",
+            "jobs": 4,
+            "environment": {
+                "PATH": "$env{CLANG_PATH}/bin;$penv{PATH}"
+            },
+            "description": "Plantilla oculta para heredar configuraciones comunes",
+            "hidden": true
+        },
+        {
+            "name": "clang64-release",
+            "targets": [ "all" ],
+            "displayName": "🔷 Clang64 (Release)",
+            "configurePreset": "clang64-release",
+            "inherits": "clang64",
+            "configuration": "Release",
+            "hidden": false
+        },
+        {
+            "name": "clang64-debug",
+            "targets": [ "all" ],
+            "displayName": "🔷 Clang64 (Debug)",
+            "configurePreset": "clang64-debug",
+            "inherits": "clang64",
+            "configuration": "Debug",
+            "hidden": false
+        },
+        {
+            "name": "clang64-ninja-release",
+            "displayName": "🚀 Clang Release (x64)",
+            "description": "Build en Release para Clang (x64).",
+            "configurePreset": "clang64-ninja",
+            "configuration": "Release",
+            "hidden": false
+        },
+        {
+            "name": "clang64-ninja-debug",
+            "displayName": "🐞 Clang Debug (x64)",
+            "description": "Build en Debug para Clang (x64).",
+            "configurePreset": "clang64-ninja",
+            "configuration": "Debug",
+            "hidden": false
+        },
+        {
+            "name": "clang64-ninja-relwithdebinfo",
+            "displayName": "🔍 Clang RelWithDebInfo (x64)",
+            "description": "Build en RelWithDebInfo para Clang (x64).",
+            "configurePreset": "clang64-ninja",
+            "configuration": "RelWithDebInfo",
+            "hidden": false
+        },
+        {
+            "name": "linux-gcc-debug",
+            "displayName": "🐧 GCC Debug Build",
+            "configurePreset": "linux-gcc-debug",
+            "jobs": 4
+        },
+        {
+            "name": "linux-gcc-release",
+            "displayName": "🐧 GCC Release Build",
+            "configurePreset": "linux-gcc-release",
+            "jobs": 4
+        },
+        {
+            "name": "linux-clang-debug",
+            "displayName": "🤖 Clang Debug Build",
+            "configurePreset": "linux-clang-debug",
+            "jobs": 4
+        },
+        {
+            "name": "linux-clang-release",
+            "displayName": "🤖 Clang Release Build",
+            "configurePreset": "linux-clang-release",
+            "jobs": 4
         }
     ]
 }
