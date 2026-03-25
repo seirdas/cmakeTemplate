@@ -66,6 +66,12 @@ public:
     bool init(unsigned short local_port, const std::string& local_ip = "", unsigned int rcv_packet_size = 0);
 
     /**
+     * @brief Registra el callback de recepción de datos.
+     * @note Usa las características de shared_from_this
+     */
+    void start();
+
+    /**
      * @brief Si está en ejecución, detiene la recepción de datos UDP, cierra el socket y finaliza el hilo de trabajo.
      */
     void stop();
@@ -87,6 +93,13 @@ public:
      * @return true si el receptor UDP está en ejecución, false en caso contrario.
      */
     bool isRunning() const;
+
+    /**
+     * @brief Devuelve si el socket está abierto
+     * @return true si el socket está abierto, false en caso contrario.
+     */
+    bool isOpen() const;
+
 
     // Gestión de la cola de datos recibidos ------------------------------------------------------------
 
@@ -115,12 +128,6 @@ private:
      * @returns true si se ha creado el socket correctamente, false en caso contrario.
      */
     bool openSocket(short local_port, const std::string& local_ip);
-
-    /**
-     * @brief Registra el callback de recepción de datos.
-     * @note Usa las características de shared_from_this
-     */
-    void start_receive();
 
     /**
      * @brief Guarda el paquete recibido en una cola de datos bajo unas condiciones.
@@ -170,7 +177,6 @@ private:
     using CStrand = asio::strand<asio::io_context::executor_type>;
     using CSocket = asio::basic_datagram_socket<asio::ip::udp, asio::io_context::executor_type>;
 
-
     // Configuración y estado del receptor UDP
     std::string                     name_;              // Nombre dado al socket para identificarlo
     CStrand                         strand_;            // Protección del buffer asíncrono de recepción
@@ -178,7 +184,9 @@ private:
     asio::ip::udp::endpoint         remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
     std::vector<char>               recv_buffer_;       // Buffer para almacenar los datos recibidos
     unsigned int                    rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
-    
+    bool                            initialized_;       // Socket inicializado
+    bool                            running_;           // Socket corriendo
+
     // Cola de datos recibidos
     std::queue<std::vector<char>>   queue_;                     // Cola de datos recibidos
     mutable std::mutex              mutex_;                     // Mutex para proteger el acceso a la cola

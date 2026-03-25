@@ -127,7 +127,7 @@ void NetMgr::start() {
 
     // Iniciar (de nuevo si aplica) los sockets
     for (auto& rcv : receivers_) {
-        asio::post(io_context_, [rcv]{ /*TODO*/ });
+        asio::post(io_context_, [rcv]{ rcv->start(); });
         rcv->clearCache();
     }
 
