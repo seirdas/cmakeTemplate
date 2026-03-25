@@ -67,28 +67,22 @@ bool NetMgr::removeReceiver(unsigned int index) {
     // 1. Lock del mutex si lo has añadido (muy recomendado)
     std::lock_guard<std::mutex> lock(mtx_receivers_);
 
-    if (index > receivers_.size()) {
+    if (index >= receivers_.size()) {
         std::cerr << "[NetMgr]  Selected index " << index;
         std::cerr << " out of bounds (" << receivers_.size() <<")" << std::endl;
         return false;
     }
 
-    // 2. Extraemos el shared_ptr. Esto incrementa el contador de referencias temporalmente.
-    std::shared_ptr<UdpReceiver> rcv = receivers_[index];
-    
     std::cout << "[NetMgr] Deleting socket '"
-              << rcv->name()
+              << receivers_[index]->name()
               << "' with port "
-              << rcv->port()
+              << receivers_[index]->port()
               << std::endl;
-    // 3. Borramos del vector. 
-    // Si era un unique_ptr, aquí el objeto moría y Asio petaba.
-    // Al ser shared_ptr, el objeto SIGUE VIVO porque 'rcv' y 'self' (en el lambda) lo sujetan.
-    receivers_.erase(receivers_.begin() + index);
-
-    // 4. Paramos el socket. 
+              
     // Esto fuerza a que el lambda de async_receive_from se ejecute con error 'operation_aborted'.
-    rcv->stop();
+    receivers_[index]->stop(); 
+
+    receivers_.erase(receivers_.begin() + index);
 
     std::cout << "[NetMgr] Socket liberado del registro." << std::endl;
     return true;
@@ -131,11 +125,19 @@ void NetMgr::start() {
         io_context_.restart();
     }
 
+    // Iniciar (de nuevo si aplica) los sockets
+    for (auto& rcv : receivers_) {
+        asio::post(io_context_, [rcv]{ /*TODO*/ });
+        rcv->clearCache();
+    }
+
     for (std::size_t i = 0; i < thread_count_; ++i) {
         threads_.emplace_back([this]() {
             io_context_.run();
         });
     }
+
+    running_ = true;
 }
 
 void NetMgr::stop() {
@@ -146,7 +148,7 @@ void NetMgr::stop() {
 
     // Parar la recepción de los sockets y limpiar
     for (auto& rcv : receivers_) {
-        rcv->stop();
+        asio::post(io_context_, [rcv]{ rcv->stop(); });
         rcv->clearCache();
     }
 
@@ -161,10 +163,11 @@ void NetMgr::stop() {
     }
 
     threads_.clear();
+
+    running_ = false;
     std::cout << "[NetMgr]  All threads stopped." << std::endl;
 }
 
 bool NetMgr::isRunning() const {
-    // Es considerado activo si el contexto no está detenido y hay hilos trabajando
-    return !io_context_.stopped() && !threads_.empty();
+    return running_;
 }

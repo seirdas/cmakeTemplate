@@ -116,6 +116,7 @@ private:
     // Contexto de operaciones asíncronas
     asio::io_context    io_context_;        // UN ÚNICO contexto de operaciones asíncronas para todo.
     asio::executor_work_guard<asio::io_context::executor_type> work_guard_; // RAII para mantener vivo el io
+    std::atomic<bool> running_{false};      // Variable de estado
 
     // Sockets
     std::vector<std::shared_ptr<UdpReceiver>> receivers_;   // Lista de receptores UDP registrados
