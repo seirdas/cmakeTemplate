@@ -587,6 +587,8 @@ void UiMgr::titleBarDarkMode(bool useDarkMode) {
 		BOOL useDarkMode_ = useDarkMode ? TRUE : FALSE;
 		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode_, sizeof(useDarkMode_));
 		std::cout << "[UiMgr] " << (useDarkMode ? "Dark" : "Light") << " window title set" << std::endl;
+	#else
+		std::cerr << "[UiMgr]	Change titleBarMode only compatible with Windows OS" << std::endl;
 	#endif
 }
 
