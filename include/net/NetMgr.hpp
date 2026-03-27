@@ -34,8 +34,6 @@ class UdpReceiver;
   * @note Los receptores se almacenan en receivers_ usando unique_ptr para gestión RAII.
   * @note El constructor es explicit para evitar conversiones implícitas en thread_count.
   * @see UdpReceiver
-  * @author
-  * @date March 2, 2026 
   */
 class NetMgr {
 
@@ -113,14 +111,17 @@ private:
 
     /************ Variables ********************************************************/
 
+    using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
+    using RcvVector = std::vector<std::shared_ptr<UdpReceiver>>;
+
     // Contexto de operaciones asíncronas
-    asio::io_context    io_context_;        // UN ÚNICO contexto de operaciones asíncronas para todo.
-    asio::executor_work_guard<asio::io_context::executor_type> work_guard_; // RAII para mantener vivo el io
-    std::atomic<bool> running_{false};      // Variable de estado
+    asio::io_context    io_context_;    // UN ÚNICO contexto de operaciones asíncronas para todo.
+    WorkGuard           work_guard_;    // RAII para mantener vivo el io
+    std::atomic<bool>   running_;       // Flag para saber si la red (io_context) está en funcionamiento
 
     // Sockets
-    std::vector<std::shared_ptr<UdpReceiver>> receivers_;   // Lista de receptores UDP registrados
-    std::mutex mtx_receivers_;
+    RcvVector           receivers_;     // Lista de receptores UDP registrados
+    std::mutex          mtx_receivers_; // Mutex para gestion del vector de sockets
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.

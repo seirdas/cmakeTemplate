@@ -45,24 +45,53 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
         std::cerr << "[UdpReceiver] Packet size exceeds maximum UDP packet size." << std::endl;
         return false;
     }
+
+    
+    // Variable para almacenar errores de asio
+    asio::error_code ec;
     
     // Redimensionar el buffer de recepción al tamaño esperado de los paquetes
     this->rcv_packet_size_ = rcv_packet_size;
     recv_buffer_.resize(rcv_packet_size_ > 0 ? rcv_packet_size_ : MAX_UDP_PACKET_SIZE);
 
+    // generar local_endpoint (Ip_local + puerto_local)
+    if (!createLocalEndpoint(local_port, local_ip)) {
+        std::cerr << "[UdpReceiver] ERROR Failed to create endpoint." << std::endl;
+        return false;
+    }
+
     // Abrir (bind) el socket
-    if (openSocket(local_port, local_ip) && socket_.is_open())
-        std::cout << "[UdpReceiver] Registering callback function..." << std::endl;
-    else {
+    if (!openSocket() && socket_.is_open()) {
         std::cerr << "[UdpReceiver] ERROR Socket is not open after bind." << std::endl;
-        asio::error_code ec;
         socket_.close(ec);
         if (ec) std::cerr << "[UdpReceiver] ERROR closing socket after failure: " << ec.message() << std::endl;
         return false;
     }
 
-    std::cout << "[UdpReceiver] Socket initialized successfully." << std::endl;
+    std::cout << "[UdpReceiver] Socket initialized successfully" << std::endl;
     initialized_ = true;
+    return true;
+}
+
+bool UdpReceiver::createLocalEndpoint(unsigned short local_port, const std::string& local_ip) {
+
+    // Variable para almacenar errores de asio
+    asio::error_code ec;
+
+    // Si la ip local es vacía, se enlaza a todas las interfaces
+    if (local_ip.empty()) {
+        local_endpoint_ = asio::ip::udp::endpoint(asio::ip::udp::v4(), local_port);
+    }
+    // Si se especifica una IP local, se enlaza a esa IP
+    else {
+        // Convertir la cadena a asio::ip::address
+        asio::ip::address localIP = asio::ip::make_address(local_ip, ec);
+        if (ec) {
+            std::cerr << "[UdpReceiver] ERROR Invalid IP: " << local_ip << " - " << ec.message() << std::endl;
+            return false;
+        } 
+        local_endpoint_ = asio::ip::udp::endpoint(localIP, local_port);
+    }
     return true;
 }
 
@@ -82,7 +111,6 @@ void UdpReceiver::stop() {
     // Perparar por si hay reinicio
     clearQueue();
     
-    std::cout << "[UdpReceiver] Socket" << name_ << ":" << port() << "closed." << std::endl;
     running_ = false;
 }
 
@@ -104,32 +132,13 @@ bool UdpReceiver::isOpen() const {
 }
 
 
-
-bool UdpReceiver::openSocket(short local_port, const std::string& local_ip) {
+bool UdpReceiver::openSocket() {
 
     // Variable para almacenar errores de asio
     asio::error_code ec;
 
-    // Configuración del endpoint: IP/puerto
-    asio::ip::udp::endpoint endpoint;
-    
-    // Si la ip local es vacía, se enlaza a todas las interfaces
-    if (local_ip.empty()) {
-        endpoint = asio::ip::udp::endpoint(asio::ip::udp::v4(), local_port);
-    }
-    // Si se especifica una IP local, se enlaza a esa IP
-    else {
-        // Convertir la cadena a asio::ip::address
-        asio::ip::address localIP = asio::ip::make_address(local_ip, ec);
-        if (ec) {
-            std::cerr << "[UdpReceiver] ERROR Invalid IP: " << local_ip << " - " << ec.message() << std::endl;
-            return false;
-        } 
-        endpoint = asio::ip::udp::endpoint(localIP, local_port);
-    }
-
     // Abrir el socket 
-    socket_.open(endpoint.protocol(), ec);
+    socket_.open(local_endpoint_.protocol(), ec);
     if (ec) {
         std::cerr << "[UdpReceiver] ERROR Failed opening socket: " << ec.message() << std::endl;
         return false;
@@ -143,9 +152,14 @@ bool UdpReceiver::openSocket(short local_port, const std::string& local_ip) {
     }
 
     // Enlazar el socket al endpoint local
-    socket_.bind(endpoint, ec);
+    socket_.bind(local_endpoint_, ec);
     if (ec) {
-        std::cerr << "[UdpReceiver] ERROR Failed binding socket: " << ec.message() << std::endl;
+        if (ec == asio::error::access_denied) 
+            std::cerr << "[UdpReceiver] ERROR Access denied. Check firewall rules and try again." << std::endl;
+        else if (ec == asio::error::address_in_use) 
+            std::cerr << "[UdpReceiver] ERROR Port " << local_endpoint_.port() << " already in use." << std::endl;
+        else
+            std::cerr << "[UdpReceiver] ERROR unhandled error: " << ec.message() << std::endl;
         return false;
     }
 
@@ -155,41 +169,53 @@ bool UdpReceiver::openSocket(short local_port, const std::string& local_ip) {
 
 void UdpReceiver::start() {
     if (running_)           return;
-    
-    if (!socket_.is_open()) {
-        std::cerr << "[UdpReceiver] ERROR socket not opened" << std::endl;
+    if (!socket_.is_open() && !openSocket()) {
+        std::cerr << "[UdpReceiver] ERROR Cannot open socket" << name_ << ":"<< local_endpoint_.port() << std::endl;
         return;
     }
     if (!initialized_) {
-        std::cerr << "[UdpReceiver] ERROR socket not initialized." << std::endl;
+        std::cerr << "[UdpReceiver] ERROR socket " << name_ << ":" << local_endpoint_.port() <<" not initialized." << std::endl;
         return;
     }
 
-    auto self(shared_from_this());  // Mantiene el objeto vivo si se destruye antes
+    start_receive();
+
+    std::cout << "[UdpReceiver] Socket " << name_ << ":" << local_endpoint_.port() <<" started successfully" << std::endl;
+    running_ = true;
+}
+
+void UdpReceiver::start_receive() {
+    std::shared_ptr<UdpReceiver> self(shared_from_this());  // Mantiene el objeto vivo si se destruye antes
 
     socket_.async_receive_from(
         asio::buffer(recv_buffer_),
         remote_endpoint_,
         asio::bind_executor(strand_, [this, self](std::error_code ec, std::size_t bytes_recvd) {
-            if (!ec) {
+
+            if (!running_) return;
+
+            // Gestionar los errores si hay
+            if (ec) {
+                if (ec == asio::error::operation_aborted) {
+                    // Caso esperado al cerrar el socket o borrar el receptor
+                    std::cout << "[UdpReceiver] Socket " << name_ << " stopped successfully." << std::endl;
+                    return;
+                } else {
+                    // Continúa recibiendo a pesar del error (si !abortar)
+                    std::cerr << "[UdpReceiver] "<< name_ << " ERROR Reception error: " << ec.message() << std::endl;
+                    if (socket_.is_open())
+                        start_receive();
+                }
+            }
+
+            else {
                 // Pasamos a procesar el paquete
                 handle_received_packet(bytes_recvd);
                 // Pedimos el siguiente paquete SÓLO cuando terminamos con este
-                start();
-            } else if (ec == asio::error::operation_aborted) {
-                // Caso esperado al cerrar el socket o borrar el receptor
-                std::cout << "[UdpReceiver] Socket " << name_ << " stopped successfuly." << std::endl;
-            } else {
-                // Continúa recibiendo a pesar del error (si !abortar)
-                std::cerr << "[UdpReceiver] "<< name_ << " ERROR Recepction error: " << ec.message() << std::endl;
-                if (socket_.is_open()) {
-                    start();
-                }
+                this->start_receive();
             }
         })
     );
-
-    running_ = true;
 }
 
 void UdpReceiver::handle_received_packet(std::size_t bytes_recvd) {
@@ -251,6 +277,10 @@ void UdpReceiver::discardOnDupe(bool enable){
 
 void UdpReceiver::clearCache() {
     clearQueue();
+}
+
+bool UdpReceiver::hasData() {
+	return !isQueueEmpty();
 }
 
 

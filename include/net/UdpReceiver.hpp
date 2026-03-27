@@ -119,15 +119,44 @@ public:
      */
     void clearCache();
 
+	/**
+	 * @brief Devuelve si el socket tiene datos en su "buffer"
+	 */
+    bool hasData();
+
+    /**
+     * @brief Obtiene una referencia al strand que coordina las operaciones del receptor.
+     * * El strand garantiza que todos los handlers (lectura, inicio, parada) se ejecuten
+     * de forma secuencial, incluso si el io_context dispone de un pool de múltiples hilos.
+     * * @note Utilice esta referencia para postear tareas externas que deban interactuar 
+     * de forma segura con el socket o los buffers internos (ej. @ref stop o @ref start).
+     * * @warning No capture esta referencia en lambdas que puedan sobrevivir al objeto UdpReceiver;
+     * asegúrese siempre de que la vida del objeto está garantizada (ej. mediante shared_from_this).
+     * * @return Referencia al asio::strand asociado a este receptor.
+     */
+    asio::strand<asio::io_context::executor_type>& getStrand() { return strand_; }
+
+
 private:
     
     // Socket ------------------------------------------------------------
 
     /**
-     * @brief Inicialización y linkado (bind) del socket según IP y puerto
+     * @brief Crear endpoint local con IP+puerto en variable miembro local_endpoint
+     * @return true si se ha creado correctamente, false en caso contrario
+     */
+    bool createLocalEndpoint(unsigned short local_port, const std::string& local_ip);
+
+    /**
+     * @brief Inicialización y linkado (bind) del socket según endpoint local miembro
      * @returns true si se ha creado el socket correctamente, false en caso contrario.
      */
-    bool openSocket(short local_port, const std::string& local_ip);
+    bool openSocket();
+
+    /**
+     * @brief Callback cuando recibe un paquete de datos
+     */
+    void start_receive();
 
     /**
      * @brief Guarda el paquete recibido en una cola de datos bajo unas condiciones.
@@ -181,6 +210,7 @@ private:
     std::string                     name_;              // Nombre dado al socket para identificarlo
     CStrand                         strand_;            // Protección del buffer asíncrono de recepción
     CSocket                         socket_;            // Socket asio
+    asio::ip::udp::endpoint         local_endpoint_;    // Endpoint local (ip+puerto local)
     asio::ip::udp::endpoint         remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
     std::vector<char>               recv_buffer_;       // Buffer para almacenar los datos recibidos
     unsigned int                    rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
