@@ -41,7 +41,6 @@ bool AppController::init() {
     // Flag indicando la ejecución
     isRunning_ = true;
 
-    
     // Iniciar sockets
     net_.start();
 
@@ -51,29 +50,24 @@ bool AppController::init() {
     // Inicialización de ventana UI
     if (!ui_.init())         return false;
 
-    // Inicialización de sockets
-    net_.addReceiver("Host", 8080);
-    net_.addReceiver("Other", 12345,    "127.0.0.1", sizeof(unsigned long long));
-    net_.addReceiver("Other2", 12345,   "127.0.0.1", sizeof(unsigned long long));
-    net_.addReceiver("Other", 12225,    "127.0.0.1", sizeof(unsigned long long));
-    net_.addReceiver("jose", 1345,      "127.0.0.1", sizeof(unsigned long long));
-
+    // Inicialización de sockets (prueba)
+    net_.addReceiver("Host",    8080);
+    net_.addReceiver("Other",   12345,  "127.0.0.1", sizeof(unsigned long long));
+    net_.addReceiver("Other2",  12345,  "127.0.0.1", 8765);
+    net_.addReceiver("Other",   12225,  "127.0.0.1");
+    net_.addReceiver("TTS",     1345,   "127.0.0.1", 5076);
     net_.removeReceiver(net_.getSocketIndex("Host"));
 
     net_.printReceivers();
+    
+    // Gestor de paquetes (#TODO)
+    //worker_ = std::thread(&AppController::TWorker, this);
 
     /*else*/
     return true;
 }
 
 int AppController::run() {
-
-
-    // Gestor de paquetes (#TODO)
-    //worker_ = std::thread(&AppController::TWorker, this);
-
-    // Sonido
-    //snd_.playbackTest();
 
     // Ventana UI
     ui_.run();      // <-- Este método bloquea hasta que la ventana se cierre
@@ -143,7 +137,7 @@ void AppController::TWorker() {
             break;
             default:
                 // No debería llegar aquí nunca
-                std::cerr << "[AppController]   ERROR Unknown AppMode." << std::endl;
+                std::cerr << "[AppController]   ERROR Unknown state mode" << std::endl;
         }
     };
 
@@ -172,9 +166,11 @@ void AppController::TWorker() {
     // Sockets --------------------------------------------------------------------------
     
     bool AppController::addReceiver() const noexcept {
+        // TODO
         return true;
     }
 
     bool AppController::removeReceiver() const noexcept {
+        // TODO
         return true;
     }
