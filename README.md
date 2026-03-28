@@ -5,9 +5,7 @@ Este proyecto es una plantilla base diseñada para agilizar el inicio de proyect
 
 - **.vscode**: Archivos de configuración para Visual Studio Code (o similares).  Permiten configurar y compilar los proyectos con distintas herramientas de compilación.
   * **settings.json**: Ajustes específicos del proyecto para el entorno Visual Studio Code (y *forks*).
-  
   * **tasks.json**: Equivale a las opciones de *build* que se ejecutarán, al pulsar el icono de *build* o el shortcut `Ctrl+Shift+B`.
-  
   * **launch.json**: Ejecuta el programa. Las configuraciones aparecen en el panel lateral izquierdo por defecto, que también aparece con el shortcut `Ctrl+Shift+D`. 
     Desde ahí, se puede configurar el depurador a lanzar, con el botón de símbolo de *Play* o `F5`. Dentro del *launch* hay un `preLaunchTask`, que es un task que se ejecutará antes de lanzar el programa.
 - **_build**: Se genera automáticamente al configurar el proyecto con un preset específico (puede borrarse si hay fallos).
@@ -40,11 +38,15 @@ Se necesita descargar e instalar **cmake**. Se puede hacer:
   ```
 
 ## Build Tools de Visual Studio (MSVC)
+Se pueden descargar las herramientas de compilación MSVC de Visual Studio a partir de los siguientes enlaces/comandos:
 
-La forma más sencilla de instalar las herramientas de compilación de Visual Studio es instalar el IDE de Visual Studio. La versión instalada corresponderá con las herramientas de compilación corresponderá con la versión instalada (VS2019, VS2022, VS2026...). Sin embargo, los compiladores MSVC de 2019 y 2022 se pueden descargar independientemente del IDE de Visual Studio:
+| Herramienta           | Enlace web                                       | Comando cmd                                              |
+| --------------------  | ------------------------------------------------ | -------------------------------------------------------- |
+| Build Tools v16 2019  | https://aka.ms/vs/16/release/vs_BuildTools.exe   | `winget install Microsoft.VisualStudio.2019.BuildTools`  |
+| Build Tools v17 2022  | https://aka.ms/vs/17/release/vs_BuildTools.exe   | `winget install Microsoft.VisualStudio.2022.BuildTools`  |
+| Build Tools v16 2019  | https://aka.ms/vs/stable/vs_BuildTools.exe       | `winget install Microsoft.VisualStudio.BuildTools`       |
 
-- [Build Tools v16 2019](https://aka.ms/vs/16/release/vs_BuildTools.exe) 
-- [Build Tools v17 2022](https://aka.ms/vs/16/release/vs_BuildTools.exe) 
+También se descargarán las herramientas de compilación de Visual Studio al instalar el IDE de Visual Studio. La versión instalada corresponderá con las herramientas de compilación corresponderá con la versión instalada (VS2019, VS2022, VS2026...). 
 
 En este caso, principalmente habría que seleccionar **Desarrollo de aplicaciones de escritorio en C++** en las cargas de trabajo de Visual Studio Installer.
 
