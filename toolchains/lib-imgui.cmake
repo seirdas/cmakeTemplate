@@ -7,6 +7,11 @@
 
 include(FetchContent)
 
+# Para Linux necesita mínimo X11
+if(LINUX)
+    find_package(X11 REQUIRED)
+endif()
+
 # GLFW (Ventanas) ___________________________
 message(STATUS "Fetching GLFW library...")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # No construir ejemplos
@@ -101,19 +106,31 @@ add_library(imgui_lib STATIC
 
 target_link_libraries(imgui_lib PUBLIC 
   glfw                # GLFW
-  OpenGL::GL          # OpenGL  
+  OpenGL::GL          # OpenGL 
+
   $<$<PLATFORM_ID:Windows>:
     user32    # Ventanas y controles básicos de Windows
     gdi32     # Gráficos básicos de Windows
     shell32   # Funciones de shell de Windows
     imm32     # Soporte de IME (Input Method Editor) para entrada de texto avanzada
-  > 
+  >
+  $<$<PLATFORM_ID:Linux>:
+    X11           # Librería base de X11
+    ${X11_LIBRARIES}
+    Xcursor       # Gestión de cursores
+    Xinerama      # Soporte multimonitor
+    Xrandr        # Resolución de pantalla
+    Xi            # Input avanzado
+    dl            # Cargador dinámico (necesario para drivers)
+    pthread       # Hilos del sistema
+  >
 )
 
 target_include_directories(imgui_lib PUBLIC 
   ${IMGUI_DIR}            # imgui 
   ${IMGUI_DIR}/backends   # imgui backends
   ${IMPLOT_DIR}           # implot
+  $<$<PLATFORM_ID:Linux>:${X11_INCLUDE_DIR}> # Librerías X11 (Linux)
 ) 
 
 # target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
@@ -122,4 +139,14 @@ target_compile_definitions(imgui_lib PUBLIC
     $<$<PLATFORM_ID:Windows>:
       GLFW_EXPOSE_NATIVE_WIN32  # Exponer funciones nativas de Windows en GLFW
     >
+    $<$<PLATFORM_ID:Linux>:
+      GLFW_EXPOSE_NATIVE_X11      # Permite a ImGui usar funciones de X11
+      GLFW_EXPOSE_NATIVE_WAYLAND  # Permite a ImGui usar funciones de Wayland
+    >
 )
+
+if(LINUX)
+    # Forzamos la inclusión de Xatom.h para que XA_ATOM esté definido
+    # sin tener que tocar el código fuente de ImGui manualmente.
+    target_compile_options(imgui_lib PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-include X11/Xatom.h>)
+endif()

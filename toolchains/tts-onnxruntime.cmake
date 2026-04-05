@@ -6,14 +6,16 @@ include(FetchContent)
 
 message(STATUS "Configuring onnx runtime...")
 
-set(ONNX_INSTALL_DIR "${EXTERNAL_LIB_PATH}/onnxruntime_src")
+
 set(ONXX_VERSION "1.24.3")
 
 # Configurar URLs según plataforma
 if(WIN32)
+    set(ONNX_INSTALL_DIR "${EXTERNAL_LIB_PATH}/onnxruntime_win_src")
     set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONXX_VERSION}/onnxruntime-win-x64-${ONXX_VERSION}.zip")
     set(ONNX_LIB "onnxruntime.lib")
 else()
+    set(ONNX_INSTALL_DIR "${EXTERNAL_LIB_PATH}/onnxruntime_linux_src")
     set(ONNX_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONXX_VERSION}/onnxruntime-linux-x64-${ONXX_VERSION}.tgz")
     set(ONNX_LIB "libonnxruntime.so")
 endif()

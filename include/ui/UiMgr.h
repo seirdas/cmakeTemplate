@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstdint>              // uintptr_t
 #include <unordered_map>
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
