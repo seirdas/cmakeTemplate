@@ -23,7 +23,12 @@
       "cwd": "${workspaceFolder}",
       "externalConsole": false,
       "MIMode": "gdb",
-      "miDebuggerPath": "${config:mingw.binPath}/gdb.exe",
+      "windows": {
+        "miDebuggerPath": "${config:mingw.binPath}/gdb.exe"
+      },
+      "linux": {
+          "miDebuggerPath": "/usr/bin/gdb"
+      },
       "setupCommands": [
         {
           "description": "Enable pretty-printing for gdb",
@@ -38,9 +43,9 @@
       ]
     },
 
-     // Configuración para depuración con Clang (usando LLDB y la extensión CodeLLDB)
+     // Configuración para depuración con LLDB (extensión CodeLLDB)
     {
-      "name": "🟤 LLDB (CodeLLDB extension)",
+      "name": "🟤 LLDB (CodeLLDB)",
       "type": "lldb",
       "request": "launch",
       "program": "${command:cmake.getLaunchTargetPath}",

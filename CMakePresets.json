@@ -38,7 +38,7 @@
         {
             "name": "mingw64-ninja",
             "displayName": "🟠 Ninja MinGW-x64",
-            "description": "Genera Makefiles de MinGW-w64. Necesita tener instalado Ninja.",
+            "description": "Compilación Ninja Multi-Config MinGW-w64 (Necesita Ninja)",
             "generator": "Ninja Multi-Config",
             "inherits": "mingw64",
             "environment": {
@@ -82,7 +82,7 @@
             "name": "clang64-ninja",
             "displayName": "🔵 Clang-x64 Ninja",
             "generator": "Ninja Multi-Config",
-            "description": "Genera Makefiles para Clang. Necesita tener instalado Ninja.",
+            "description": "Compilación Ninja Multi-Config Clang (Necesita Ninja)",
             "inherits": "clang64",
             "environment": {
                 "NINJA_PATH":"${sourceDir}/other"
@@ -112,11 +112,10 @@
             "hidden": false
         },
         {
-            "name": "linux-base-make",
-            "description": "Base para Linux usando Unix Makefiles",
+            "name": "linux-base",
+            "description": "Base para Linux",
             "hidden": true,
             "binaryDir": "${sourceDir}/_build/${presetName}",
-            "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
@@ -125,7 +124,8 @@
             "name": "linux-gcc-debug",
             "displayName": "🐧 Linux GCC Debug",
             "description": "Compilación Linux con GCC/G++ en Debug.",
-            "inherits": "linux-base-make",
+            "inherits": "linux-base",
+            "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "gcc",
@@ -136,9 +136,21 @@
             "name": "linux-gcc-release",
             "displayName": "🐧 Linux GCC Release",
             "description": "Compilación Linux con GCC/G++ en Release.",
-            "inherits": "linux-base-make",
+            "inherits": "linux-base",
+            "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "linux-gcc-ninja",
+            "displayName": "🐧 Linux GCC Ninja",
+            "description": "Compilación Linux Ninja Multi-config GCC/G++.",
+            "inherits": "linux-base",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
                 "CMAKE_CXX_COMPILER": "g++"
             }
@@ -147,7 +159,7 @@
             "name": "linux-clang-debug",
             "displayName": "🤖 Linux Clang Debug",
             "description": "Compilación Linux con Clang en Debug.",
-            "inherits": "linux-base-make",
+            "inherits": "linux-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "clang",
@@ -158,9 +170,21 @@
             "name": "linux-clang-release",
             "displayName": "🤖 Linux Clang Release",
             "description": "Compilación Linux con Clang en Release.",
-            "inherits": "linux-base-make",
+            "inherits": "linux-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+
+        {
+            "name": "linux-clang-ninja",
+            "displayName": "🤖 Linux Clang Ninja",
+            "description": "Compilación Linux Ninja Multi-Config clang.",
+            "inherits": "linux-base",
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++"
             }
@@ -354,15 +378,40 @@
         },
         {
             "name": "linux-gcc-debug",
-            "displayName": "🐧 GCC Debug Build",
+            "displayName": "🐧 Linux GCC Debug",
             "configurePreset": "linux-gcc-debug",
             "jobs": 4
         },
         {
             "name": "linux-gcc-release",
-            "displayName": "🐧 GCC Release Build",
+            "displayName": "🐧 Linux GCC Release",
             "configurePreset": "linux-gcc-release",
             "jobs": 4
+        },
+
+        {
+            "name": "linux-gcc-ninja-release",
+            "displayName": "🚀 Linux Ninja GCC Release",
+            "description": "Build Release GCC para Linux",
+            "configurePreset": "linux-gcc-ninja",
+            "configuration": "Release",
+            "hidden": false
+        },
+        {
+            "name": "linux-gcc-ninja-debug",
+            "displayName": "🐞 Linux Ninja GCC Debug",
+            "description": "Build Debug GCC para Linux",
+            "configurePreset": "linux-gcc-ninja",
+            "configuration": "Debug",
+            "hidden": false
+        },
+        {
+            "name": "linux-gcc-ninja-relwithdebinfo",
+            "displayName": "🔍 Linux Ninja GCC RelWithDebInfo",
+            "description": "Build Debug GCC para Linux",
+            "configurePreset": "linux-gcc-ninja",
+            "configuration": "RelWithDebInfo",
+            "hidden": false
         },
         {
             "name": "linux-clang-debug",
@@ -375,6 +424,30 @@
             "displayName": "🤖 Clang Release Build",
             "configurePreset": "linux-clang-release",
             "jobs": 4
+        },
+        {
+            "name": "linux-clang-ninja-release",
+            "displayName": "🚀 Linux Ninja Clang Release",
+            "description": "Build Release Clang para Linux",
+            "configurePreset": "linux-clang-ninja",
+            "configuration": "Release",
+            "hidden": false
+        },
+        {
+            "name": "linux-clang-ninja-debug",
+            "displayName": "🐞 Linux Ninja clang Debug",
+            "description": "Build Debug Clang para Linux",
+            "configurePreset": "linux-clang-ninja",
+            "configuration": "Debug",
+            "hidden": false
+        },
+        {
+            "name": "linux-clang-ninja-relwithdebinfo",
+            "displayName": "🔍 Linux Ninja clang RelWithDebInfo",
+            "description": "Build Debug Clang para Linux",
+            "configurePreset": "linux-clang-ninja",
+            "configuration": "RelWithDebInfo",
+            "hidden": false
         }
     ]
 }
