@@ -12,9 +12,13 @@ AppController::~AppController() {
 
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
-    online_cv_.notify_all();
 
-    // Esperar a que terminen los hilos
+    // Cerrar sockets
+    std::cout << "[AppController] Closing sockets and network I/O..." << std::endl;
+    net_.stop();
+
+    // Cerrar el worker esperando el paquete online
+    online_cv_.notify_all();
     std::cout << "[AppController] Closing running threads..." << std::endl;
     if (worker_.joinable())
         worker_.join();
@@ -22,10 +26,6 @@ AppController::~AppController() {
 
     /* TODO ESTO ES OPCIONAL PORQUE FORMA PARTE DE LOS DESTRUCTORES DE LAS CLASES */
     
-    // Cerrar sockets
-    std::cout << "[AppController] Closing sockets and network I/O..." << std::endl;
-    net_.stop();
-
     // Cerrar módulo de sonido
     std::cout << "[AppController] Closing sound module..." << std::endl;
     snd_.stop();
@@ -65,7 +65,7 @@ bool AppController::init() {
     net_.addReceiver("Other2",  12345,  "127.0.0.1", 8765);
     net_.addReceiver("Other",   12225,  "127.0.0.1");
     net_.addReceiver("TTS",     1345,   "127.0.0.1", 5076);
-    net_.removeReceiver(net_.getSocketIndex("Host"));
+    net_.removeReceiver(net_.getSocketIndex("TTS"));
 
     net_.printReceivers();
     
@@ -101,7 +101,14 @@ void AppController::TWorker() {
         lock.unlock();  // Libera el lock de aquí en adelante
 
         // Pide datos al socket para procesar
-        data = net_.getDataFromSocket(net_.getSocketIndex("Host"));
+        int index = net_.getSocketIndex("Host");
+
+        if (index == -1) {
+            std::cerr << "[TWorker] ERROR 'Host' Socket undefined" << std::endl;
+            return; // <- TODO reiniciar o hacer algo para recuperarse de esto si pasa
+        }
+
+        data = net_.getDataFromSocket(index);
 
         if (data.empty()) {
             std::cerr << "[TWorker] Empty data received" << std::endl;
@@ -128,7 +135,7 @@ void AppController::TWorker() {
 
     void AppController::setOnlineMode(bool b_modo) noexcept { 
 
-        std::lock_guard<std::mutex> lock(online_mtx_);
+        std::unique_lock<std::mutex> lock(online_mtx_);
         AppMode nuevoModo = (b_modo) ? AppMode::ONLINE : AppMode::OFFLINE;
         if (mode_ == nuevoModo) return;
         mode_ = nuevoModo;
