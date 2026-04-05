@@ -58,8 +58,8 @@ public:
 // Hilos --------------------------------------------------------------------------------
 
     /**
-     * @brief Hilo gestor de paquetes 
-     * @note En ONLINE toma paquetes del socket, en OFFLINE los toma de la UI
+     * @brief Hilo gestor de paquetes online
+     * @note Solo se ejecuta cuando la aplicación está en online, de lo contrario se queda parado.
      */
     void TWorker();
 
@@ -114,8 +114,11 @@ private:
     UiMgr       ui_;                                // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                               // Gestor de audio
 
-    std::thread worker_;                            // gestor de paquetes
-    std::atomic<bool> isRunning_;                   // flag para parar hilos
+    std::thread             worker_;                // gestor de paquetes
+    std::condition_variable online_cv_;
+    std::mutex              online_mtx_;
+
+    std::atomic<bool>       running_;             // flag de aplicación corriendo (para hilos)
 
     enum class AppMode      { ONLINE, OFFLINE };
     std::atomic<AppMode>    mode_{AppMode::ONLINE};             // Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)

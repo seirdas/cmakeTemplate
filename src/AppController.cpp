@@ -4,14 +4,15 @@
 
 // General ------------------------------------------------------------------------------
 
-AppController::AppController() : ui_(this), isRunning_(false) {
+AppController::AppController() : ui_(this), running_(false) {
 
 }
 
 AppController::~AppController() {
 
     // Notifica el estado de cerrado (para threads, etc.)
-    isRunning_ = false;
+    running_ = false;
+    online_cv_.notify_all();
 
     // Esperar a que terminen los hilos
     std::cout << "[AppController] Closing running threads..." << std::endl;
@@ -39,18 +40,26 @@ AppController::~AppController() {
 bool AppController::init() {
 
     // Flag indicando la ejecución
-    isRunning_ = true;
+    running_ = true;
 
     // Iniciar sockets
     net_.start();
 
     // Inicialización de audio
-    if (!snd_.init())        return false;
+    if (!snd_.init()) return false;
+    
+    // TODO: esta comprobación la deberia hacer soundmgr
+    std::vector<std::string> devices = snd_.getAvailablePlaybacks();
+    if (!devices.empty()) {
+        snd_.addPlaybackDevice(devices[0], "audio"); 
+    } else {
+        std::cerr << "[AppController] WARN No se encontraron altavoces en el PC." << std::endl;
+    }
 
     // Inicialización de ventana UI
     if (!ui_.init())         return false;
 
-    // Inicialización de sockets (prueba)
+    // Inicialización de sockets
     net_.addReceiver("Host",    8080);
     net_.addReceiver("Other",   12345,  "127.0.0.1", sizeof(unsigned long long));
     net_.addReceiver("Other2",  12345,  "127.0.0.1", 8765);
@@ -60,18 +69,15 @@ bool AppController::init() {
 
     net_.printReceivers();
     
-    // Gestor de paquetes (#TODO)
-    //worker_ = std::thread(&AppController::TWorker, this);
+    // Hilo consumidor de paquetes Host
+    worker_ = std::thread(&AppController::TWorker, this);
 
     /*else*/
     return true;
 }
 
 int AppController::run() {
-
-    // Ventana UI
-    ui_.run();      // <-- Este método bloquea hasta que la ventana se cierre
-
+    ui_.run(); // Bloquea hasta cerrar
     return 0;
 }
 
@@ -79,36 +85,36 @@ int AppController::run() {
 // Hilos --------------------------------------------------------------------------------
 
 void AppController::TWorker() {
-
-    std::cout << "[AppController]   Initializating consumer thread..." << std::endl;
-
+    std::cout << "[TWorker]   Initializating consumer thread..." << std::endl;
     std::vector<char> data;
 
-    while (isRunning_) {
-        switch (mode_){
-            case AppMode::ONLINE:
-                // Esperar a que net le de algo para procesar
-                data = net_.getDataFromSocket(net_.getSocketIndex("Host"));
-            break;
-            case AppMode::OFFLINE:
-                // Esperar a que la UI le de algo para procesar
-                // #TODO
-            break;
-            default:
-                // No debería llegar aquí nunca
-                std::cerr << "[AppController]   ERROR Undefined AppMode in consumer thread" << std::endl;
+    while (running_) {
+
+        std::unique_lock<std::mutex> lock(online_mtx_);
+
+        online_cv_.wait(lock, [this] {
+            return !running_ || mode_ == AppMode::ONLINE;
+        });
+
+        if (!running_) break;
+
+        lock.unlock();  // Libera el lock de aquí en adelante
+
+        // Pide datos al socket para procesar
+        data = net_.getDataFromSocket(net_.getSocketIndex("Host"));
+
+        if (data.empty()) {
+            std::cerr << "[TWorker] Empty data received" << std::endl;
+            continue;
         }
 
-        if (!isRunning_) break;
-
         // Procesar el paquete (simulado)
-        std::cout << "[AppController]   Procesando paquete de datos..." << std::endl;
+        std::cout << "[TWorker]   Procesando paquete de datos..." << std::endl;
         std::cout << "Size of data" << data.size() << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
     }
 
-    std::cout << "[AppController]   Consumer thread stopped." << std::endl;
-
+    std::cout << "[TWorker]   Consumer thread stopped." << std::endl;
 }
 
 
@@ -122,14 +128,17 @@ void AppController::TWorker() {
 
     void AppController::setOnlineMode(bool b_modo) noexcept { 
 
+        std::lock_guard<std::mutex> lock(online_mtx_);
         AppMode nuevoModo = (b_modo) ? AppMode::ONLINE : AppMode::OFFLINE;
         if (mode_ == nuevoModo) return;
         mode_ = nuevoModo;
+        lock.unlock();
 
         switch (mode_){
             case AppMode::ONLINE:
                 std::cout << "[AppController]   Switching to ONLINE..." << std::endl;
                 net_.start(); 
+                online_cv_.notify_all();
             break;
             case AppMode::OFFLINE:
                 std::cout << "[AppController]   Switching to OFFLINE..." << std::endl;
