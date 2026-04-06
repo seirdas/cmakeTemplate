@@ -7,14 +7,29 @@ if(NOT EXISTS "${TTS_DATA_DIR}")
     file(MAKE_DIRECTORY "${TTS_DATA_DIR}")
 endif()
 
-
 # -------------------------------
-# Kokoro TTS ONNX Model asset
+# Kokoro TTS ONNX Models (solo se usa uno)
 # -------------------------------
 set(KOKORO_MODEL_FILE "${TTS_DATA_DIR}/kokoro-v1.0.onnx")
 set(MODEL_URL "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx")
 if(NOT EXISTS "${KOKORO_MODEL_FILE}")
     message(STATUS "Descargando: kokoro-v1.0.onnx: (310MB): optimized f32 version from taylorchu/kokoro-onnx...")
+    file(MAKE_DIRECTORY "${TTS_DATA_DIR}")
+    file(DOWNLOAD "${MODEL_URL}" "${KOKORO_MODEL_FILE}" SHOW_PROGRESS)
+endif()
+
+set(KOKORO_MODEL_FILE "${TTS_DATA_DIR}/kokoro-v1.0.fp16.onnx")
+set(MODEL_URL "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.fp16.onnx")
+if(NOT EXISTS "${KOKORO_MODEL_FILE}")
+    message(STATUS "Descargando: kokoro-v1.0.fp16.onnx: (169MB): optimized f16 version from taylorchu/kokoro-onnx...")
+    file(MAKE_DIRECTORY "${TTS_DATA_DIR}")
+    file(DOWNLOAD "${MODEL_URL}" "${KOKORO_MODEL_FILE}" SHOW_PROGRESS)
+endif()
+
+set(KOKORO_MODEL_FILE "${TTS_DATA_DIR}/kokoro-v1.0.int8.onnx")
+set(MODEL_URL "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx")
+if(NOT EXISTS "${KOKORO_MODEL_FILE}")
+    message(STATUS "Descargando: kokoro-v1.0.int8.onnx: (88MB): optimized int8 version from taylorchu/kokoro-onnx...")
     file(MAKE_DIRECTORY "${TTS_DATA_DIR}")
     file(DOWNLOAD "${MODEL_URL}" "${KOKORO_MODEL_FILE}" SHOW_PROGRESS)
 endif()
