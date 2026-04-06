@@ -45,6 +45,17 @@ target_include_directories(onnxruntime_lib INTERFACE "${ONNX_INSTALL_DIR}/includ
 # Link de la librería (.lib / .so)
 target_link_libraries(onnxruntime_lib INTERFACE "${ONNX_INSTALL_DIR}/lib/${ONNX_LIB}")
 
+# Omitir warnings de la propia librería
+target_compile_options(onnxruntime_lib INTERFACE
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
+      -Wno-shadow
+      -Wno-unused-parameter
+      -Wno-sign-compare
+      -Wno-unused-variable
+      -Wunused-but-set-variable
+    >
+)
+
 # Define la función para copiar archivos y directorios 
 # SE USA EN EL POST-BUILD
 function(copy_onnx_runtime)
