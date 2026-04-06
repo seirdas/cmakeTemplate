@@ -221,3 +221,22 @@ private:
     float    sl_pitch = 0;
     float    sl_position = 0;
 };
+
+/**** imgui knobs
+*  ## Variants
+*  ImGuiKnobVariant_Tick
+*  ImGuiKnobVariant_Dot
+*  ImGuiKnobVariant_Wiper
+*  ImGuiKnobVariant_WiperOnly
+*  ImGuiKnobVariant_WiperDot
+*  ImGuiKnobVariant_Stepped
+*  ImGuiKnobVariant_Space
+*  ## Flags
+*  ImGuiKnobFlags_NoTitle:         Hide the top title.
+*  ImGuiKnobFlags_NoInput:         Hide the bottom drag input.
+*  ImGuiKnobFlags_ValueTooltip:    Show a tooltip with the current value on hover.
+*  ImGuiKnobFlags_DragHorizontal:  Use horizontal dragging only.
+*  ImGuiKnobFlags_DragVertical:    Use vertical dragging only.
+*  ImGuiKnobFlags_AlwaysClamp:     Clamp input values that the user types into the input field.
+*  ImGuiKnobFlags_Logarithmic:     Use logarithmic scale for the knob.
+*/

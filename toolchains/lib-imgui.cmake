@@ -100,11 +100,40 @@ file(GLOB IMPLOT_SOURCES
   "${IMPLOT_DIR}/*.cpp"
 )
 
+# IMGUI-KNOBS (Controles circulares) ___________________________
+message(STATUS "Fetching ImGui-Knobs library...")
+
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_knobs_src/.github")
+  message(STATUS "Using local ImGui-Knobs source")
+  set(FETCHCONTENT_SOURCE_DIR_IMGUI_KNOBS
+      "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
+      CACHE PATH "" FORCE)
+endif()
+
+FetchContent_Declare(
+  imgui_knobs
+  GIT_REPOSITORY https://github.com/altschuler/imgui-knobs.git
+  GIT_TAG main  # o la versión que necesites
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
+  GIT_SHALLOW    TRUE
+  EXCLUDE_FROM_ALL TRUE
+)
+
+FetchContent_MakeAvailable(imgui_knobs)
+FetchContent_GetProperties(imgui_knobs SOURCE_DIR IMGUI_KNOBS_DIR)
+
+# imgui-knobs suele ser un header (.h) y un source (.cpp)
+file(GLOB IMGUI_KNOBS_SOURCES
+  "${IMGUI_KNOBS_DIR}/imgui-knobs.cpp"
+)
+
 # Crear librería estática con ImGui + Implot + GLFW ____________________________
 
 add_library(imgui_lib STATIC 
   ${IMGUI_SOURCES}
   ${IMPLOT_SOURCES}
+  ${IMGUI_KNOBS_SOURCES}
 )
 
 target_link_libraries(imgui_lib PUBLIC 
@@ -133,10 +162,9 @@ target_include_directories(imgui_lib PUBLIC
   ${IMGUI_DIR}            # imgui 
   ${IMGUI_DIR}/backends   # imgui backends
   ${IMPLOT_DIR}           # implot
+  ${IMGUI_KNOBS_DIR}      # imgui knobs
   $<$<PLATFORM_ID:Linux>:${X11_INCLUDE_DIR}> # Librerías X11 (Linux)
 ) 
-
-# target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
 
 target_compile_definitions(imgui_lib PUBLIC
     $<$<PLATFORM_ID:Windows>:
@@ -146,10 +174,11 @@ target_compile_definitions(imgui_lib PUBLIC
       GLFW_EXPOSE_NATIVE_X11      # Permite a ImGui usar funciones de X11
       GLFW_EXPOSE_NATIVE_WAYLAND  # Permite a ImGui usar funciones de Wayland
     >
+
+    # IMGUI_IMPL_OPENGL_LOADER_GLAD  # Usar GLAD como cargador de OpenGL
 )
 
 if(LINUX)
     # Forzamos la inclusión de Xatom.h para que XA_ATOM esté definido
-    # sin tener que tocar el código fuente de ImGui manualmente.
     target_compile_options(imgui_lib PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-include X11/Xatom.h>)
 endif()

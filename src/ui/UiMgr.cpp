@@ -8,6 +8,7 @@
 
 #include "ui/UiMgr.h"			// Clase de gestión de UI
 #include <stb_image.h>          // Implementación para soporte de imágenes.
+#include "imgui-knobs.h"		// Soporte de knobs
 #include <iostream>
 
 // GLFW / OpenGL
@@ -288,7 +289,6 @@ void UiMgr::ventanaPrincipal() {
 
 		if (Button("Theme: Microfrost"))
 			Style_Microfrost();
-		
 
 		EndChild();
 	}
@@ -301,7 +301,78 @@ void UiMgr::ventanaPrincipal() {
 		// ---------- Panel F3 (arriba derecha) ----------
 		BeginChild("##F3", ImVec2(0, totalHeight * heightRightTop), true);
 		Text("F3 (20%% inicial)");
+		// Test imagen
 		Image(images_["imageres/cat.png"].tex, ImVec2(200, 100));
+
+		// Test knobs
+		static float val1 = 0;
+		if (ImGuiKnobs::Knob("Gain", &val1, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobVariant_Tick)) {
+			// value was changed
+		}
+
+		ImGui::SameLine();
+
+		static float val2 = 0;
+		if (ImGuiKnobs::Knob("Mix", &val2, -1.0f, 1.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped)) {
+			// value was changed
+		}
+
+		// Double click to reset
+		if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
+			val2 = 0;
+		}
+
+
+		ImGui::SameLine();
+
+		static float val3 = 0;
+
+		// Custom colors
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(255.f, 0, 0, 0.7f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(255.f, 0, 0, 1));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 255.f, 0, 1));
+		// Push/PopStyleColor() for each colors used (namely ImGuiCol_ButtonActive and ImGuiCol_ButtonHovered for primary and ImGuiCol_Framebg for Track)
+		if (ImGuiKnobs::Knob("Pitch", &val3, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_WiperOnly)) {
+			// value was changed
+		}
+
+		ImGui::PopStyleColor(3);
+
+
+		ImGui::SameLine();
+
+		// Custom min/max angle
+		static float val4 = 0;
+		if (ImGuiKnobs::Knob("Dry", &val4, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped, 0, 0, 10, 1.570796f, 3.141592f)) {
+			// value was changed
+		}
+
+		ImGui::SameLine();
+
+		// Int value
+		static int val5 = 1;
+		if (ImGuiKnobs::KnobInt("Wet", &val5, 1, 10, 0.1f, "%i", ImGuiKnobVariant_Stepped, 0, 0, 10)) {
+			// value was changed
+		}
+
+		ImGui::SameLine();
+
+		// Vertical drag only
+		static float val6 = 1;
+		if (ImGuiKnobs::Knob("Vertical", &val6, 0.f, 10.f, 0.1f, "%.1f", ImGuiKnobVariant_Space, 0, ImGuiKnobFlags_DragVertical)) {
+			// value was changed
+		}
+
+		ImGui::SameLine();
+
+		static float val7 = 500.0f;
+		if (ImGuiKnobs::Knob("Logarithmic", &val7, 20, 20000, 20.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_Logarithmic | ImGuiKnobFlags_AlwaysClamp)) {
+			// value was changed
+		}
+
+
+
+
 		EndChild();
 
 		// ---------- Splitter horizontal derecho ----------
@@ -587,8 +658,6 @@ void UiMgr::titleBarDarkMode(bool useDarkMode) {
 		BOOL useDarkMode_ = useDarkMode ? TRUE : FALSE;
 		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode_, sizeof(useDarkMode_));
 		std::cout << "[UiMgr] " << (useDarkMode ? "Dark" : "Light") << " window title set" << std::endl;
-	#else
-		std::cerr << "[UiMgr]	Change titleBarMode only compatible with Windows OS" << std::endl;
 	#endif
 }
 
