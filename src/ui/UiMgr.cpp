@@ -9,6 +9,7 @@
 #include "ui/UiMgr.h"			// Clase de gestión de UI
 #include <stb_image.h>          // Implementación para soporte de imágenes.
 #include "imgui-knobs.h"		// Soporte de knobs
+#include "imspinner.h"			// Soporte de spinners de carga
 #include <iostream>
 
 // GLFW / OpenGL
@@ -252,7 +253,7 @@ void UiMgr::crearMainMenuBar() {
 void UiMgr::ventanaPrincipal() {
 	/* CUIDADO: Estas variables se están creando en cada frame (a 60fps). Es más conveniente guardarlas instanciadas en la clase.*/ 
 	// Variables estáticas para guardar las alturas (proporciones iniciales)
-	static float heightRightTop = 0.20f; // 20% para F3
+	static float heightRightTop = 0.5f; 
 	float totalHeight = GetContentRegionAvail().y;
 	float sizeX__Izq = GetContentRegionAvail().x * 0.2f;
 	// COLUMNA IZQUIERDA
@@ -300,9 +301,21 @@ void UiMgr::ventanaPrincipal() {
 	BeginGroup(); {
 		// ---------- Panel F3 (arriba derecha) ----------
 		BeginChild("##F3", ImVec2(0, totalHeight * heightRightTop), true);
-		Text("F3 (20%% inicial)");
+		Text("Demo panel");
 		// Test imagen
 		Image(images_["imageres/cat.png"].tex, ImVec2(200, 100));
+
+		// Test spinners
+		SameLine();
+		ImSpinner::SpinnerFadeDots(		  "dots",	 16, 2, ImColor(.5f,.5f,.5f));		SameLine(0.0, -1.0);
+		ImSpinner::SpinnerRainbowMix(     "Rmix",    16, 2, ImColor(1.0f,1.0f,1.0f),4);	SameLine(0.0, -1.0);
+		ImSpinner::SpinnerAng8(           "Ang",     16, 2);							SameLine(0.0, -1.0);
+		ImSpinner::SpinnerPulsar(         "Pulsar",  16, 2);							SameLine(0.0, -1.0);
+		ImSpinner::SpinnerClock(          "Clock",   16, 2);							SameLine(0.0, -1.0);
+		ImSpinner::SpinnerAtom(           "atom",    16, 2);							SameLine(0.0, -1.0);
+		ImSpinner::SpinnerSwingDots(      "wheel",   16, 6);							SameLine(0.0, -1.0);
+		ImSpinner::SpinnerDotsToBar(      "tobar",   16, 2, ImColor(1.0f,1.0f,1.0f),4);	SameLine(0.0, -1.0);
+		ImSpinner::SpinnerBarChartRainbow("rainbow", 16, 4, ImColor(1.0f,1.0f,1.0f),4);
 
 		// Test knobs
 		static float val1 = 0;
@@ -310,7 +323,7 @@ void UiMgr::ventanaPrincipal() {
 			// value was changed
 		}
 
-		ImGui::SameLine();
+		SameLine();
 
 		static float val2 = 0;
 		if (ImGuiKnobs::Knob("Mix", &val2, -1.0f, 1.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped)) {

@@ -104,7 +104,7 @@ file(GLOB IMPLOT_SOURCES
 message(STATUS "Fetching ImGui-Knobs library...")
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_knobs_src/.github")
+if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_knobs_src/README.md")
   message(STATUS "Using local ImGui-Knobs source")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI_KNOBS
       "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
@@ -128,7 +128,30 @@ file(GLOB IMGUI_KNOBS_SOURCES
   "${IMGUI_KNOBS_DIR}/imgui-knobs.cpp"
 )
 
-# Crear librería estática con ImGui + Implot + GLFW ____________________________
+# IMSPINNER (Indicadores de carga) ___________________________
+message(STATUS "Fetching ImSpinner library...")
+
+# Usa la librería ya descargada en external/ si existe
+if (EXISTS "${EXTERNAL_LIB_PATH}/imspinner_src/.github")
+  message(STATUS "Using local ImSpinner source")
+  set(FETCHCONTENT_SOURCE_DIR_IMSPINNER
+      "${EXTERNAL_LIB_PATH}/imspinner_src"
+      CACHE PATH "" FORCE)
+endif()
+
+FetchContent_Declare(
+  imspinner
+  GIT_REPOSITORY https://github.com/dalerank/imspinner.git
+  GIT_TAG master
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imspinner_src"
+  GIT_SHALLOW    TRUE
+  EXCLUDE_FROM_ALL TRUE
+)
+
+FetchContent_MakeAvailable(imspinner)
+FetchContent_GetProperties(imspinner SOURCE_DIR IMSPINNER_DIR)
+
+# Crear librería estática con GLFW + ImGui + dependencias _________________
 
 add_library(imgui_lib STATIC 
   ${IMGUI_SOURCES}
@@ -163,6 +186,7 @@ target_include_directories(imgui_lib PUBLIC
   ${IMGUI_DIR}/backends   # imgui backends
   ${IMPLOT_DIR}           # implot
   ${IMGUI_KNOBS_DIR}      # imgui knobs
+  ${IMSPINNER_DIR}        # imgui spinners
   $<$<PLATFORM_ID:Linux>:${X11_INCLUDE_DIR}> # Librerías X11 (Linux)
 ) 
 
@@ -182,3 +206,14 @@ if(LINUX)
     # Forzamos la inclusión de Xatom.h para que XA_ATOM esté definido
     target_compile_options(imgui_lib PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-include X11/Xatom.h>)
 endif()
+
+# Omitir warnings de la propia librería
+target_compile_options(asio_lib PUBLIC
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
+      -Wno-shadow
+      -Wno-unused-parameter
+      -Wno-sign-compare
+      -Wno-unused-variable
+      -Wunused-but-set-variable
+    >
+)

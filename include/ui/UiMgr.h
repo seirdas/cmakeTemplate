@@ -240,3 +240,41 @@ private:
 *  ImGuiKnobFlags_AlwaysClamp:     Clamp input values that the user types into the input field.
 *  ImGuiKnobFlags_Logarithmic:     Use logarithmic scale for the knob.
 */
+
+/**** imgui spinners
+* Ejemplo
+* ImSpinner::SpinnerDots(
+*     "NombreUnico",     // ID para ImGui
+*     15.0f,            // Radio
+*     4.0f,             // Grosor de los puntos/línea
+*     ImColor(1.0f, 1.0f, 1.0f, 1.0f), // Color
+*     0.6f              // Velocidad
+* );
+* 1. Spinners de Puntos (Dots)
+*   SpinnerDots: Puntos moviéndose en círculo.
+*   SpinnerBounceDots: Puntos que rebotan verticalmente.
+*   SpinnerFadeDots: Puntos que aparecen y desaparecen.
+*   SpinnerScaleDots: Puntos que cambian de tamaño.
+*   SpinnerMovingDots: Puntos que se desplazan linealmente.
+*   SpinnerPulsar: Un punto central con ondas expansivas.
+* 2. Spinners de Arco y Anillo (Arcs / Ring)
+*   SpinnerArc: Un arco simple rotando.
+*   SpinnerArcFade: Un arco que cambia su opacidad.
+*   SpinnerArcRotation: Arcos concéntricos rotando a diferentes velocidades.
+*   SpinnerDoubleArc: Dos arcos enfrentados.
+*   SpinnerFilledArc: Un arco con grosor variable.
+*   SpinnerRing: Un anillo completo que se llena y vacía.
+* 3. Spinners de Figuras Geométricas
+*   SpinnerSquare: Un cuadrado que rota y se deforma.
+*   SpinnerTriangle: Un triángulo rotatorio.
+*   SpinnerDoubleTriangle: Dos triángulos entrelazados.
+*   SpinnerAng: Arcos con ángulos específicos.
+*   SpinnerTwinAng: Dos arcos angulares simétricos.
+* 4. Spinners Especiales y Complejos
+*   SpinnerClock: Un reloj con manecillas moviéndose rápido.
+*   SpinnerDNA: Una hélice de ADN rotando en 2D.
+*   SpinnerSolar: Bolas rotando alrededor de un centro (estilo planetario).
+*   SpinnerLoading68: Un spinner estilo retro.
+*   SpinnerLoading78: Una variante circular con efectos de estela.
+*   SpinnerGooey: Efecto de gotas líquidas fusionándose.
+*/
