@@ -3,9 +3,7 @@
 # -------------------------------
 
 include(FetchContent)
-
-message(STATUS "Configuring onnx runtime...")
-
+message(STATUS "Fetching onnx runtime...")
 
 set(ONXX_VERSION "1.24.3")
 
@@ -23,11 +21,11 @@ endif()
 # Usa la fuente local si ya existe
 if (EXISTS "${ONNX_INSTALL_DIR}/lib/${ONNX_LIB}")
     message(STATUS "Using local onnxruntime_src source from ${EXTERNAL_LIB_PATH}/onnxruntime_src")
-    set(FETCHCONTENT_SOURCE_DIR_BABYLON
+    set(FETCHCONTENT_SOURCE_DIR_ONNXRUNTIME
         "${EXTERNAL_LIB_PATH}/onnxruntime_src" CACHE PATH "" FORCE
     )
 else()
-    message(STATUS "ONNX Runtime no encontrado en ${ONNX_INSTALL_DIR}. Descargando...")
+    message(STATUS "ONNX Runtime not found in ${ONNX_INSTALL_DIR}. Downloading...")
     FetchContent_Declare(
         onnx_binaries
         URL ${ONNX_URL}
