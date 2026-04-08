@@ -17,12 +17,17 @@ int main(int argc, char** argv) {
     memset(&config, 0, sizeof(config));
 
     std::cout << "assigning voice model..." << std::endl;
-    config.model.kitten.model = "./voices/kitten-nano-en-v0_2-fp16/model.fp16.onnx";
-    config.model.kitten.voices = "./voices/kitten-nano-en-v0_2-fp16/voices.bin";
-    config.model.kitten.tokens = "./voices/kitten-nano-en-v0_2-fp16/tokens.txt";
-    config.model.kitten.data_dir = "./voices/kitten-nano-en-v0_2-fp16/espeak-ng-data";
+    config.model.vits.model    = "./voices/vits-piper-en_US-danny-low/en_US-danny-low.onnx";
+    config.model.vits.tokens   = "./voices/vits-piper-en_US-danny-low/tokens.txt";
+    config.model.vits.data_dir = "./voices/vits-piper-en_US-danny-low/espeak-ng-data";
 
-    config.model.num_threads = 4;
+    // Parámetros opcionales pero MUY recomendados para VITS (ajustan la naturalidad)
+    config.model.vits.noise_scale   = 0.667f; // Controla la expresividad/varianza
+    config.model.vits.noise_scale_w = 0.8f;   // Varianza en la duración de los fonemas
+    config.model.vits.length_scale  = 1.0f;   // 1.0 = normal, >1.0 más lento, <1.0 más rápido
+
+    config.model.num_threads = 8;
+    config.model.debug = 0;         // 1 para logs en consola
     std::cout << "Initializating offline tts" << std::endl;
     const SherpaOnnxOfflineTts *tts = SherpaOnnxCreateOfflineTts(&config);
 

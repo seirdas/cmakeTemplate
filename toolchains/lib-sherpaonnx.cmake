@@ -14,7 +14,7 @@ if(WIN32)
     set(URL_RELWITHDEBINFO "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-RelWithDebInfo.tar.bz2")
 else()
     set(SHERPA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/sherpa_linux_src")
-    # TODO
+    set(URL_LINUX "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-linux-x64-gpu.tar.bz2")
 endif()
 
 # Función de descarga
@@ -40,31 +40,50 @@ function(download_sherpa CONFIG URL_STR)
     FetchContent_MakeAvailable(sherpa_pkg_${CONFIG_LOWER})
 endfunction()
 
-download_sherpa(Debug          ${URL_DEBUG})
-download_sherpa(Release        ${URL_RELEASE})
-download_sherpa(MinSizeRel     ${URL_MINSIZEREL})
-download_sherpa(RelWithDebInfo ${URL_RELWITHDEBINFO})
+if (WIN32)
+    download_sherpa(Debug          ${URL_DEBUG})
+    download_sherpa(Release        ${URL_RELEASE})
+    download_sherpa(MinSizeRel     ${URL_MINSIZEREL})
+    download_sherpa(RelWithDebInfo ${URL_RELWITHDEBINFO})
+else()
+    download_sherpa(linux          ${URL_LINUX})
+endif()
 
 # Crear la librería de interfaz
 add_library(sherpa_lib INTERFACE)
 
-# Headers: Usamos la de Release como referencia (son iguales en todas)
-target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/release/include")
-
 # Link de la librería (.lib / .so) por configuración
-foreach(CFG Debug Release Minsizerel Relwithdebinfo)
-    string(TOLOWER ${CFG} L_CONFIG)
-    set(LIB_PATH "${SHERPA_INSTALL_DIR}/${L_CONFIG}/lib")
+if(WIN32)
+    # Headers, todas son iguales (por ejemplo release)
+    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/release/include")
     
+    # Librerías
+    foreach(CFG Debug Release Minsizerel Relwithdebinfo)
+        string(TOLOWER ${CFG} L_CONFIG)
+        set(LIB_PATH "${SHERPA_INSTALL_DIR}/${L_CONFIG}/lib")
+        
+        target_link_libraries(sherpa_lib INTERFACE 
+            "$<$<CONFIG:${CFG}>:${LIB_PATH}/sherpa-onnx-c-api.lib>"
+        )
+    endforeach()
+
     target_link_libraries(sherpa_lib INTERFACE 
-        "$<$<CONFIG:${CFG}>:${LIB_PATH}/sherpa-onnx-c-api.lib>"
+        ws2_32      # Winsock2 - API de sockets de Windows (prob. no necesario)
+        winmm       # Bibliotecas de Multimedia de Windows
     )
 
-    # TODO LINUX
-endforeach()
+elseif(UNIX)
+    # Headers
+    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/linux/include")
 
-if(WIN32)
-    target_link_libraries(sherpa_lib INTERFACE ws2_32 winmm)
+    # Librerías
+    set(LIB_PATH "${SHERPA_INSTALL_DIR}/linux/lib")
+    target_link_libraries(sherpa_lib INTERFACE 
+        "${LIB_PATH}/libsherpa-onnx-c-api.so"
+        "${LIB_PATH}/libonnxruntime.so"
+        pthread
+        dl
+    )
 endif()
 
 # Omitir warnings de la propia librería
@@ -80,12 +99,34 @@ target_compile_options(sherpa_lib INTERFACE
 
 # función para el cmakelists, para copiar las dlls al lado del exe
 function(copy_sherpa_assets)
-    # A) Copiar DLLs necesarias
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SHERPA_INSTALL_DIR}/$<LOWER_CASE:$<CONFIG>>/lib/sherpa-onnx-c-api.dll"
-        "${SHERPA_INSTALL_DIR}/$<LOWER_CASE:$<CONFIG>>/lib/onnxruntime.dll"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-        COMMENT "Copying Sherpa and ONNX Runtime DLLs ($<CONFIG>)..."
-    )
+    # Copiar DLLs necesarias
+
+    if(WIN32)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SHERPA_INSTALL_DIR}/$<LOWER_CASE:$<CONFIG>>/lib/sherpa-onnx-c-api.dll"
+            "${SHERPA_INSTALL_DIR}/$<LOWER_CASE:$<CONFIG>>/lib/onnxruntime.dll"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMENT "Copying Sherpa and ONNX Runtime DLLs ($<CONFIG>)..."
+        )
+    elseif(UNIX)
+        set(LIB_DIR "${SHERPA_INSTALL_DIR}/linux/lib")
+        
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${LIB_DIR}/libsherpa-onnx-c-api.so"
+            "${LIB_DIR}/libonnxruntime.so"
+            "${LIB_DIR}/libonnxruntime_providers_shared.so"
+            "${LIB_DIR}/libonnxruntime_providers_cuda.so"
+            "${LIB_DIR}/libonnxruntime_providers_tensorrt.so"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMENT "Copying Sherpa and ONNX Runtime Shared Libs (GPU support)..."
+        )
+    endif()
+
+    # IMPORTANTE para Linux: Configurar RPATH para que el ejecutable encuentre las .so al lado del binario
+    if (UNIX)
+        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+        set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+    endif()
 endfunction()
