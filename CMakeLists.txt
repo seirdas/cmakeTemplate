@@ -96,8 +96,7 @@ endif()
 # Librería TTS
 option(USE_TTS "Compilar con soporte para TTS" ON)
 if(USE_TTS)
-    include(tts-onnxruntime)    # Motor de Inferencia ONNX
-    include(tts-assets)         # Datos del Modelo Kokoro
+    include(lib-sherpaonnx)    # Motor de Inferencia ONNX
 endif()
 
     
@@ -264,17 +263,16 @@ endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE 
   $<$<BOOL:${USE_ASIO}>:asio_lib>              # Librería creada con Asio + Winsock2 (Windows) 
   $<$<BOOL:${USE_IMGUI}>:imgui_lib>            # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JSON}>:nlohmann_json>         # Librería creada con nlohmann/json
+  $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>    # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_STB}>:stb_lib>                # Librería creada con STB
-  $<$<BOOL:${USE_TTS}>:onnxruntime_lib>        # Librería creada con motor TTS (ONNX)
+  $<$<BOOL:${USE_TTS}>:sherpa_lib>             # Librería creada con motor TTS (Sherpa)
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>        # Librería creada con DaisySP (DSP)
 )
 
 # Copiar librerías dinámicas de TTS
 if(USE_TTS)
-  copy_tts_assets()
-  copy_onnx_runtime()
+  copy_sherpa_assets()
 endif()
 
 # ===============================

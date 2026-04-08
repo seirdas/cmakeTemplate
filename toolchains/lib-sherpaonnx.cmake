@@ -34,6 +34,8 @@ function(download_sherpa CONFIG URL_STR)
         sherpa_pkg_${CONFIG_LOWER}
         URL ${URL_STR}
         SOURCE_DIR "${DEST_DIR}"
+        GIT_SHALLOW    TRUE        # habilita --depth 1
+        EXCLUDE_FROM_ALL TRUE
     )
     FetchContent_MakeAvailable(sherpa_pkg_${CONFIG_LOWER})
 endfunction()
@@ -50,13 +52,12 @@ add_library(sherpa_lib INTERFACE)
 target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/release/include")
 
 # Link de la librería (.lib / .so) por configuración
-foreach(CONFIG Debug Release Minsizerel Relwithdebinfo)
-    string(TOLOWER ${CONFIG} L_CONFIG)
+foreach(CFG Debug Release Minsizerel Relwithdebinfo)
+    string(TOLOWER ${CFG} L_CONFIG)
     set(LIB_PATH "${SHERPA_INSTALL_DIR}/${L_CONFIG}/lib")
     
     target_link_libraries(sherpa_lib INTERFACE 
-        $<$<CONFIG:${L_CONFIG}>:"${LIB_PATH}/sherpa-onnx-c-api.lib">
-        $<$<CONFIG:${L_CONFIG}>:"${LIB_PATH}/onnxruntime.lib">
+        "$<$<CONFIG:${CFG}>:${LIB_PATH}/sherpa-onnx-c-api.lib>"
     )
 
     # TODO LINUX
@@ -77,12 +78,8 @@ target_compile_options(sherpa_lib INTERFACE
     >
 )
 
-
+# función para el cmakelists, para copiar las dlls al lado del exe
 function(copy_sherpa_assets)
-    # Detectar la configuración actual (Debug, Release, etc.)
-    set(CURRENT_CONFIG_DIR "$<CONFIG>")
-    string(TOLOWER "${CURRENT_CONFIG_DIR}" L_CONFIG)
-
     # A) Copiar DLLs necesarias
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
