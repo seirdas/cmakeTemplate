@@ -44,6 +44,9 @@
             "environment": {
                 "NINJA_PATH":"${sourceDir}/other"
             },
+            "cacheVariables": {
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo;MinSizeRel"
+            },
             "hidden": false
         },
         {
@@ -86,6 +89,9 @@
             "inherits": "clang64",
             "environment": {
                 "NINJA_PATH":"${sourceDir}/other"
+            },
+            "cacheVariables": {
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo;MinSizeRel"
             },
             "hidden": false
         },
@@ -152,7 +158,8 @@
             "generator": "Ninja Multi-Config",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++"
+                "CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo;MinSizeRel"
             }
         },
         {
@@ -186,7 +193,8 @@
             "generator": "Ninja Multi-Config",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
-                "CMAKE_CXX_COMPILER": "clang++"
+                "CMAKE_CXX_COMPILER": "clang++",
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo;MinSizeRel"
             }
         }
         
@@ -323,7 +331,22 @@
             "configuration": "Debug",
             "hidden": false
         },
-
+        {
+            "name": "mingw64-ninja-relwithdebinfo",
+            "displayName": "🔍 Mingw64 RelWithDebInfo (x64)",
+            "description": "Build en RelWithDebInfo para Mingw64 (x64).",
+            "configurePreset": "mingw64-ninja",
+            "configuration": "RelWithDebInfo",
+            "hidden": false
+        },
+        {
+            "name": "mingw64-ninja-minsizerel",
+            "displayName": "📦 Mingw64 MinSizeRel (x64)",
+            "description": "Build en MinSizeRel para Mingw64 (x64).",
+            "configurePreset": "mingw64-ninja",
+            "configuration": "MinSizerel",
+            "hidden": false
+        },
         {
             "name": "clang64",
             "configurePreset": "clang64",
@@ -377,6 +400,14 @@
             "hidden": false
         },
         {
+            "name": "clang64-ninja-minsizerel",
+            "displayName": "📦 Clang MinSizeRel (x64)",
+            "description": "Build en MinSizeRel para Clang (x64).",
+            "configurePreset": "clang64-ninja",
+            "configuration": "MinSizeRel",
+            "hidden": false
+        },
+        {
             "name": "linux-gcc-debug",
             "displayName": "🐧 Linux GCC Debug",
             "configurePreset": "linux-gcc-debug",
@@ -414,6 +445,14 @@
             "hidden": false
         },
         {
+            "name": "linux-gcc-ninja-minsizerel",
+            "displayName": "📦 Linux Ninja GCC MinSizeRel",
+            "description": "Build Debug GCC para Linux",
+            "configurePreset": "linux-gcc-ninja",
+            "configuration": "MinSizeRel",
+            "hidden": false
+        },
+        {
             "name": "linux-clang-debug",
             "displayName": "🤖 Clang Debug Build",
             "configurePreset": "linux-clang-debug",
@@ -447,6 +486,14 @@
             "description": "Build Debug Clang para Linux",
             "configurePreset": "linux-clang-ninja",
             "configuration": "RelWithDebInfo",
+            "hidden": false
+        },
+        {
+            "name": "linux-clang-ninja-minsizerel",
+            "displayName": "📦 Linux Ninja clang minsizerel",
+            "description": "Build Debug Clang para Linux",
+            "configurePreset": "linux-clang-ninja",
+            "configuration": "MinSizeRel",
             "hidden": false
         }
     ]
