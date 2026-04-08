@@ -48,7 +48,7 @@ Se pueden descargar las herramientas de compilación MSVC de Visual Studio a par
 
 También se descargarán las herramientas de compilación de Visual Studio al instalar el IDE de Visual Studio. La versión instalada corresponderá con las herramientas de compilación corresponderá con la versión instalada (VS2019, VS2022, VS2026...). 
 
-En este caso, principalmente habría que seleccionar **Desarrollo de aplicaciones de escritorio en C++** en las cargas de trabajo de Visual Studio Installer.
+Después, hay que seleccionar **Desarrollo de aplicaciones de escritorio en C++** en las cargas de trabajo de Visual Studio Installer. Es suficiente con las herramientas que aparecerán seleccionadas por defecto.
 
 ## MinGW & Clang
 
