@@ -33,16 +33,20 @@ add_library(miniaudio_lib STATIC
 )
 target_include_directories(miniaudio_lib PUBLIC ${miniaudio_SOURCE_DIR})
 target_link_libraries(miniaudio_lib PUBLIC
-  $<$<PLATFORM_ID:Windows>:
-    winmm
-  >  
-  $<$<PLATFORM_ID:Linux>:
-    pthread
-    dl
-    m 
-    asound
+  $<$<PLATFORM_ID:Windows>:               # Windows
+    winmm                                 # Bibliotecas de Multimedia de Windows
   >
-  $<$<PLATFORM_ID:APPLE>:
-    "-framework CoreFoundation" "-framework CoreAudio" "-framework AudioUnit"
+
+  $<$<PLATFORM_ID:Linux>:                 # Linux
+    pthread                               # Hilos POSIX
+    dl                                    # Carga dinámica de bibliotecas
+    m                                     # Matemáticas (libm)
+    asound                                # ALSA (Audio Sound)
+  >
+
+  $<$<PLATFORM_ID:APPLE>:                 # macOS/iOS
+    "-framework CoreFoundation"           # Marco de fundamentos de Apple
+    "-framework CoreAudio"                # Marco de audio de bajo nivel
+    "-framework AudioUnit"                # Marco de unidades de audio
   >
 )

@@ -6,7 +6,7 @@
 
 #include <json.hpp>             // Manipula archivos .json
 
-#include "ui/UiMgr.h"          // Clase de gestión de ventana UI
+#include "ui/UiMgr.h"           // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
