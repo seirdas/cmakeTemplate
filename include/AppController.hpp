@@ -9,6 +9,7 @@
 #include "ui/UiMgr.h"           // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
+#include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 #define VERSION 0.8
@@ -113,6 +114,7 @@ private:
     NetMgr      net_;                               // Gestor de sockets de red
     UiMgr       ui_;                                // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                               // Gestor de audio
+    TTSMgr      tts_;                               // Gestor módulo TTS
 
     std::thread             worker_;                // gestor de paquetes
     std::condition_variable online_cv_;

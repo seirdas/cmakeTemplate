@@ -18,7 +18,7 @@ else()
 endif()
 
 # Función de descarga
-function(download_sherpa CONFIG URL_STR)
+function(download_sherpa CONFIG URL)
     string(TOLOWER ${CONFIG} CONFIG_LOWER)
     string(TOUPPER ${CONFIG} CONFIG_UPPER)
     set(DEST_DIR "${SHERPA_INSTALL_DIR}/${CONFIG_LOWER}")
@@ -32,7 +32,7 @@ function(download_sherpa CONFIG URL_STR)
 
     FetchContent_Declare(
         sherpa_pkg_${CONFIG_LOWER}
-        URL ${URL_STR}
+        URL ${URL}
         SOURCE_DIR "${DEST_DIR}"
         GIT_SHALLOW    TRUE        # habilita --depth 1
         EXCLUDE_FROM_ALL TRUE
@@ -97,10 +97,61 @@ target_compile_options(sherpa_lib INTERFACE
     >
 )
 
-# función para el cmakelists, para copiar las dlls al lado del exe
+# =================================
+#   Assets Sherpa (voices)
+# =================================
+
+function(download_voice NAME URL)
+    set(DEST_DIR "${CMAKE_SOURCE_DIR}/_external/tts-assets/voices/${NAME}")
+    message(STATUS "Fetching TTS Model: ${NAME}...")
+    FetchContent_Declare(
+        ${NAME}
+        URL "${URL}"
+        SOURCE_DIR "${DEST_DIR}"
+    )
+    FetchContent_MakeAvailable(${NAME})
+endfunction()
+
+# Añadir aquí las descarga de voces para Sherpa:
+download_voice(
+    vits-piper-en_US-amy-low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
+)
+download_voice(
+    vits-piper-en_GB-alan-low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-low.tar.bz2
+)
+download_voice(
+    vits-piper-en_GB-southern_english_female-low 
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
+)
+download_voice(
+    vits-piper-en_US-danny-low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-danny-low.tar.bz2
+)
+download_voice(
+    vits-piper-en_US-kathleen-low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kathleen-low.tar.bz2
+)
+download_voice(
+    vits-piper-en_US-lessac-low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-low.tar.bz2
+)
+download_voice(
+    vvits-piper-en_US-ryan-low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low.tar.bz2
+)
+
+
+
+
+# =================================
+#   Funciones
+# =================================
+
+# función para el cmakelists, para copiar las dlls y assets en la ruta del exe
 function(copy_sherpa_assets)
     # Copiar DLLs necesarias
-
     if(WIN32)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -124,9 +175,19 @@ function(copy_sherpa_assets)
         )
     endif()
 
-    # IMPORTANTE para Linux: Configurar RPATH para que el ejecutable encuentre las .so al lado del binario
-    if (UNIX)
+    # Linux: Configurar RPATH para que el ejecutable encuentre las .so al lado del binario
+    if (UNIX AND NOT SHERPA_RPATH_CONFIGURED)
         set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
         set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+        set(SHERPA_RPATH_CONFIGURED ON CACHE INTERNAL "RPATH has been set for Sherpa")
     endif()
+
+    # Copiar assets de voces
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${EXTERNAL_LIB_PATH}/tts-assets"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        COMMENT "Copying TTS voice assets..."
+    )
+
 endfunction()

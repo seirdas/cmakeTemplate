@@ -96,7 +96,8 @@ endif()
 # Librería TTS
 option(USE_TTS "Compilar con soporte para TTS" ON)
 if(USE_TTS)
-    include(lib-sherpaonnx)    # Motor de Inferencia ONNX
+  include(lib-sherpaonnx)    # Motor de Inferencia ONNX
+  add_definitions(-DUSE_TTS=1) 
 endif()
 
     
@@ -263,7 +264,7 @@ endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE 
   $<$<BOOL:${USE_ASIO}>:asio_lib>              # Librería creada con Asio + Winsock2 (Windows) 
   $<$<BOOL:${USE_IMGUI}>:imgui_lib>            # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JSON}>:nlohmann_json>              # Librería creada con nlohmann/json
+  $<$<BOOL:${USE_JSON}>:nlohmann_json>         # Librería creada con nlohmann/json
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>    # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_STB}>:stb_lib>                # Librería creada con STB
   $<$<BOOL:${USE_TTS}>:sherpa_lib>             # Librería creada con motor TTS (Sherpa)
