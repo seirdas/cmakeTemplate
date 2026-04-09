@@ -47,6 +47,9 @@ bool AppController::init() {
 
     // Inicialización de audio
     if (!snd_.init()) return false;
+
+    // Inicialización de TTS
+    if (!tts_.init()) return false;
     
     // TODO: esta comprobación la deberia hacer soundmgr
     std::vector<std::string> devices = snd_.getAvailablePlaybacks();
@@ -77,6 +80,11 @@ bool AppController::init() {
 }
 
 int AppController::run() {
+
+    // prueba TTS
+    std::string text = "bottle of water.";
+    tts_.generate(text, "./ttstest");
+
     ui_.run(); // Bloquea hasta cerrar
     return 0;
 }
