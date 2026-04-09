@@ -200,7 +200,7 @@ private:
 
     GLFWwindow*     window_         = nullptr;                          // Puntero a la ventana GLFW
     IAppControl*    ctrl_           = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
-    bool            cerrado_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces
+    bool            running_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
     // Imágenes _________________________________
 

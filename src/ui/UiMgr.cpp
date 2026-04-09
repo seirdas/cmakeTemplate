@@ -109,6 +109,9 @@ bool UiMgr::init() {
 
     ImGui_ImplGlfw_InitForOpenGL(window_, true);
     ImGui_ImplOpenGL3_Init("#version 130");     // Versión de OpenGL
+
+	// marcar que está inicializado
+	running_ = true;
     return true;
 }
 
@@ -126,7 +129,7 @@ bool UiMgr::isRunning() const {
 
 void UiMgr::cerrar() {
 	// No intentar cerrar de nuevo (excepción)
-	if(cerrado_) 
+	if(!running_) 
 		return;
 
 	std::cout << "[UiMgr]	Closing UI..." << std::endl;
@@ -145,7 +148,7 @@ void UiMgr::cerrar() {
 	unloadImages();
 
 	std::cout << "[UiMgr]	UI closed." << std::endl;
-	cerrado_ = true;
+	running_ = false;
 }
 
 
