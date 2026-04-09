@@ -147,8 +147,9 @@ FetchContent_Declare(
   GIT_SHALLOW    TRUE
   EXCLUDE_FROM_ALL TRUE
 )
-
 FetchContent_MakeAvailable(imspinner)
+
+# Obtener rutas para añadirlo a la librería imgui
 FetchContent_GetProperties(imspinner SOURCE_DIR IMSPINNER_DIR)
 
 # Crear librería estática con GLFW + ImGui + dependencias _________________
@@ -207,13 +208,24 @@ if(LINUX)
     target_compile_options(imgui_lib PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-include X11/Xatom.h>)
 endif()
 
-# Omitir warnings de la propia librería
-target_compile_options(asio_lib PUBLIC
+# Omitir warnings de la librería
+target_compile_options(imgui_lib PUBLIC
+    $<$<CXX_COMPILER_ID:MSVC>:
+        /W0            # Nivel de advertencia 0 (silencio total)
+        /wd4244        # double a float
+        /wd4305        # truncamiento de constantes
+        /wd4267        # size_t a int
+        /external:W0   # (CMake 3.22+) Silencia cabeceras externas
+    >
+    
+    # --- Configuración para GCC / Clang / MinGW ---
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
-      -Wno-shadow
-      -Wno-unused-parameter
-      -Wno-sign-compare
-      -Wno-unused-variable
-      -Wunused-but-set-variable
+        -w             # Suprime todos los warnings
+        -Wno-conversion
+        -Wno-sign-compare
+        -Wno-unused-parameter
+        -Wno-unused-variable
+        -Wno-unused-but-set-variable
+        -Wno-shadow
     >
 )
