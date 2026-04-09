@@ -138,7 +138,7 @@ download_voice(
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-low.tar.bz2
 )
 download_voice(
-    vvits-piper-en_US-ryan-low
+    vits-piper-en_US-ryan-low
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low.tar.bz2
 )
 
