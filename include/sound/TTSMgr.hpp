@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread>               // num_threads_
 #include <unordered_map>
+#include <vector>
 
 /**
  * @brief Clase TTS para generar audios usando la librería Sherpa TTS
@@ -29,6 +30,8 @@ public:
 
     /**
      * @brief Inicializa el módulo TTS cargando los modelos de voz.
+     * @details Carga todos los modelos compatibles de ./VOICES_PATH
+     * @note La macro VOICES_PATH se obtiene del toolchain para evitar duplicados
      * @return true si la inicialización fue exitosa, false en caso de error.
      */
     bool init();
@@ -51,13 +54,17 @@ public:
      * @return El porcentaje de inicialización (0 a 100).
      */
     short getInitPercent() const;
+    
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos disponibles
+     */
+    std::vector<std::string> getAvailableVoiceModels() const;
 
 private:
     using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
 
-    TTSModelsMap        tts_models_;        // TTS configurado con una voz
+    TTSModelsMap        tts_models_;        // Mapa de modelos TTS cargados
     int32_t             num_threads_;       // Número de hilos con los que se generarán los audios
     short               init_percent_;      // Porcentaje de inicialización (100 = full init)
-    
-    std::string const   models_path_    = "./tts-voices/";  // Ruta de carpetas donde residen los modelos
+    std::string const   models_path_;       // Ruta de carpetas donde residen los modelos
 };

@@ -101,14 +101,27 @@ target_compile_options(sherpa_lib INTERFACE
 #   Assets Sherpa (voices)
 # =================================
 
+# Directorio de assets tts
+set(ASSETS_CMAKE_FOLDER "tts-assets")
+
+# Directorio de modelos de voz
+set(VOICES_DIR tts-voices)
+
+# Directorio de descarga para cmake
+set(DOWNLOAD_TTS_ASSETS_DIR ${EXTERNAL_LIB_PATH}/${ASSETS_CMAKE_FOLDER}/${VOICES_DIR})
+
+# Ruta como define para usar en código (ver en la función de abajo)
+file(TO_CMAKE_PATH "${VOICES_DIR}" DEFINE_VOICE_DEST_DIR)
+
+# Función para descargar las voces
 function(download_voice NAME URL)
-    set(DEST_DIR "${CMAKE_SOURCE_DIR}/_external/tts-assets/tts-voices/${NAME}")
-    if(NOT EXISTS ${DEST_DIR})
+    set(MODEL_DIR "${DOWNLOAD_TTS_ASSETS_DIR}/${NAME}")
+    if(NOT EXISTS ${MODEL_DIR})
         message(STATUS "Fetching TTS Model: ${NAME}...")
         FetchContent_Declare(
             ${NAME}
             URL "${URL}"
-            SOURCE_DIR "${DEST_DIR}"
+            SOURCE_DIR "${MODEL_DIR}"
         )
         FetchContent_MakeAvailable(${NAME})
     else()
@@ -145,6 +158,10 @@ download_voice(
     vits-piper-en_US-ryan-low
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low.tar.bz2
 )
+download_voice(
+    vits-piper-en_US-glados-high
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-glados-high.tar.bz2
+)
 
 
 
@@ -154,7 +171,8 @@ download_voice(
 # =================================
 
 # función para el cmakelists, para copiar las dlls y assets en la ruta del exe
-function(copy_sherpa_assets)
+function(configure_sherpa_assets)
+
     # Copiar DLLs necesarias
     if(WIN32)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -179,13 +197,6 @@ function(copy_sherpa_assets)
         )
     endif()
 
-    # Linux: Configurar RPATH para que el ejecutable encuentre las .so al lado del binario
-    if (UNIX AND NOT SHERPA_RPATH_CONFIGURED)
-        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-        set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-        set(SHERPA_RPATH_CONFIGURED ON CACHE INTERNAL "RPATH has been set for Sherpa")
-    endif()
-
     # Copiar assets de voces
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -193,5 +204,17 @@ function(copy_sherpa_assets)
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
         COMMENT "Copying TTS voice assets..."
     )
+
+    # Los siguientes target_properties hay que hacerlos cuando el proyecto esté creado:
+
+    # Linux: Configurar RPATH para que el ejecutable encuentre las .so al lado del binario
+    if (UNIX AND NOT SHERPA_RPATH_CONFIGURED)
+        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+        set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+        set(SHERPA_RPATH_CONFIGURED ON CACHE INTERNAL "RPATH has been set for Sherpa")
+    endif()
+
+    # Translado la ruta de las voces como #define de código c++
+    target_compile_definitions(${PROJECT_NAME} PRIVATE VOICES_PATH="${DEFINE_VOICE_DEST_DIR}")
 
 endfunction()
