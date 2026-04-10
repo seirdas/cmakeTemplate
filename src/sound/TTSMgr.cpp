@@ -33,7 +33,7 @@ bool TTSMgr::init(){
         config.model.vits.length_scale  = 1.0f;   // 1.0 = normal, >1.0 más lento, <1.0 más rápido
         config.model.num_threads = num_threads_;
         config.model.debug = 0;         // 1 para logs en consola
-        std::cout << "[TTSMgr]  Initializating voice model " << voicename << " ("<< init_percent_ <<"%%)" << std::endl;
+        std::cout << "[TTSMgr]  Initializating voice model " << voicename << " ("<< init_percent_ <<"%)" << std::endl;
         
         const SherpaOnnxOfflineTts* tts_model = SherpaOnnxCreateOfflineTts(&config);
 
@@ -90,8 +90,11 @@ bool TTSMgr::init(){
 
 void TTSMgr::cerrar() {
     // Destruye los modelos creados
-    for (auto& [name,model] : tts_models_)
+    for (auto& [name,model] : tts_models_) {
+        std::cout << "[TTSMgr]  Unloading model " << name << std::endl;
         SherpaOnnxDestroyOfflineTts(model);
+    }
+    tts_models_.clear();
 }
 
 bool TTSMgr::generate(std::string text, std::string wavname){
