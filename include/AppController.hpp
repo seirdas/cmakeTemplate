@@ -116,9 +116,9 @@ private:
     SoundMgr    snd_;                           // Gestor de audio
     TTSMgr      tts_;                           // Gestor módulo TTS
 
-    bool        net_initialized_;               // Indica si tts está inicializado
-    bool        gui_initialized_;               // Indica si tts está inicializado
-    bool        snd_initialized_;               // Indica si tts está inicializado
+    bool        net_initialized_;               // Indica si net está inicializado
+    bool        gui_initialized_;               // Indica si gui está inicializado
+    bool        snd_initialized_;               // Indica si snd está inicializado
     bool        tts_initialized_;               // Indica si tts está inicializado
 
     // Gestión de hilos
