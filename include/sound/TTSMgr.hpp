@@ -1,7 +1,8 @@
 #pragma once
 
-
 #include "sherpa-onnx/c-api/c-api.h"
+#include <iostream>
+#include <thread>               // num_threads_
 
 /**
  * @brief Clase TTS para generar audios usando la librería Sherpa TTS
@@ -57,5 +58,5 @@ private:
     int32_t             num_threads_;       // Número de hilos con los que se generarán los audios
     short               init_percent_;      // Porcentaje de inicialización (100 = full init)
     
-    std::string const   models_path_    = "./voices/";  // Ruta de carpetas donde residen los modelos
+    std::string const   models_path_    = "./tts-voices/";  // Ruta de carpetas donde residen los modelos
 };

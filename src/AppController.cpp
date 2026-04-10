@@ -52,7 +52,6 @@ bool AppController::init() {
     // Hilo consumidor de paquetes Host
     worker_ = std::thread(&AppController::TWorker, this);
 
-    /*else*/
     return true;
 }
 

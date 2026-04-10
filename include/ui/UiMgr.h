@@ -23,16 +23,12 @@ struct ImGuiIO;
   *      Crear una instancia (opcionalmente pasando un IAppControl).
   *      Llamar init() para inicializar GLFW/OpenGL/ImGui y crear la ventana.
   *      Llamar run() para ejecutar el bucle principal (bloqueante hasta el cierre).
-  *      Comprobar isRunning() para decidir acciones desde fuera.
   *      Llamar cerrar() para liberar recursos manualmente.
-  *  Características y notas:
   * @note El destructor virtual garantiza la limpieza correcta en clases derivadas.
   * @note Los métodos privados initCuadro() y endCuadro() encapsulan el inicio y fin de
   *  cada frame de ImGui.
   * @note BuclePrincipal() puede ser sobreescrito para modificar los elementos de la UI.
-  * @note Proporciona varias funciones de estilo (Style_Confy, Style_FutureDark, etc.)
-  *  para configurar la apariencia de ImGui.
-  * @note Evita cerrar recursos múltiples mediante la bandera cerrado_.
+  * @note Proporciona varias funciones de estilo para configurar la apariencia de ImGui.
   * @see IAppControl
   * @date March 2, 2026 
   */
@@ -81,6 +77,7 @@ public:
      * @brief Cierra la ventana y libera los recursos asociados.
      */
     void cerrar();
+
 
 private:
     // Bucle principal ____________________________________
@@ -141,10 +138,11 @@ private:
     void addTextureFromFile(std::string filename);
     
     /**
-     * @brief Actualiza el tamaño de la fuente mostrada.
+     * @brief Actualiza el tamaño de los elementos de la ui incluyendo fuentes.
      * @param delta diferencia de tamaño (+1, +2, -1, -2...) 
      */
     void updateDensity(int delta);
+
 
 // Temas --------------------------------------------------------------------------------
 
@@ -182,27 +180,26 @@ private:
     
     
     
-    /************ Variables ********************************************************/
+/************ Variables ********************************************************/
     
     // Propiedades de la ventana ________________
-    ImGuiStyle*     style_          = nullptr;                          // Modificar ajustes de estilo
-    ImGuiIO*        io_             = nullptr;                          // Manejar entrada/salida
-    bool            captureKeys_    = false;                            // Modo Debug de detección de teclas
+    ImGuiStyle*     style_          = nullptr;                  // Modificar ajustes de estilo
+    ImGuiIO*        io_             = nullptr;                  // Manejar entrada/salida
+    bool            captureKeys_    = false;                    // Modo Debug para detección de teclas en consola
 
-    std::string     AppName_        = "Demo";                           // Nombre de la aplicación/ventana
-    unsigned int    sizeX_          = 1280;                             // Tamaño horizontal (x) de la ventana
-    unsigned int    sizeY_          = 720;                              // Tamaño vertical (y) de la ventana
-    
-    std::string     customFont_     = "Archivo-Medium.ttf";             // Fuente personalizada
-    unsigned int    fontSize_       = 16;                               // Tamaño de fuente predeterminado
-    unsigned int const MAX_FONT_SIZE_ = 30;
-    unsigned int const MIN_FONT_SIZE_ = 14;
+    std::string     AppName_        = "Demo";                   // Nombre de la aplicación/ventana
+    unsigned int    sizeX_          = 1280;                     // Tamaño horizontal (x) de la ventana
+    unsigned int    sizeY_          = 720;                      // Tamaño vertical (y) de la ventana
 
-    GLFWwindow*     window_         = nullptr;                          // Puntero a la ventana GLFW
-    IAppControl*    ctrl_           = nullptr;                          // Puntero al controlador de la aplicación para comunicación entre miembros
-    bool            running_        = false;                            // Indica si la ventana se ha cerrado para evitar cerrar varias veces
+    unsigned int    fontSize_         = 16;                     // Tamaño de fuente predeterminado
+    unsigned int const MAX_FONT_SIZE_ = 30;                     // Tamaño de fuente máximo permitido
+    unsigned int const MIN_FONT_SIZE_ = 14;                     // Tamaño de fuente mínimo permitido
+
+    GLFWwindow*     window_         = nullptr;                  // Puntero a la ventana GLFW
+    IAppControl*    ctrl_           = nullptr;                  // Puntero al controlador de la aplicación para comunicación entre miembros
+    bool            running_        = false;                    // Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
-    // Imágenes _________________________________
+// Imágenes _________________________________
 
     struct imageData {      // Datos de imagen
         const char* name={};// Nombre de la imagen (para ID)
@@ -211,12 +208,12 @@ private:
         int y = 0;          // resolución height (alto)
     };
     // Cargar las imágenes en la función loadImages
-    std::unordered_map<std::string, imageData> images_;       // Mapa de imágenes cargadas
+    std::unordered_map<std::string, imageData> images_;         // Mapa de imágenes cargadas
 
-    // Variables (MenuBar) ______________________
-    float           MainMenuBar_Height_       = 0.0f;                   // Almacena el alto de la barra de menú para ajustar la ventana principal
+// Variables (MenuBar) ______________________
+    float           MainMenuBar_Height_       = 0.0f;           // Almacena el alto de la barra de menú para ajustar la ventana principal
     
-    // Elementos (1) ____________________________
+// Elementos (1) ____________________________
     int      sl_volume = 2;
     float    sl_pitch = 0;
     float    sl_position = 0;

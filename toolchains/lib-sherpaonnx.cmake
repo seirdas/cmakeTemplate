@@ -3,7 +3,7 @@ message(STATUS "Fetching sherpa onnx tts...")
 
 cmake_policy(SET CMP0135 NEW) 
 
-set(SHERPA_VERSION "1.12.30")
+set(SHERPA_VERSION "1.12.34")
 
 # Configurar URLs según plataforma
 if(WIN32)
@@ -102,7 +102,7 @@ target_compile_options(sherpa_lib INTERFACE
 # =================================
 
 function(download_voice NAME URL)
-    set(DEST_DIR "${CMAKE_SOURCE_DIR}/_external/tts-assets/voices/${NAME}")
+    set(DEST_DIR "${CMAKE_SOURCE_DIR}/_external/tts-assets/tts-voices/${NAME}")
     message(STATUS "Fetching TTS Model: ${NAME}...")
     FetchContent_Declare(
         ${NAME}

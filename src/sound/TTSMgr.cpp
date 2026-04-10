@@ -1,6 +1,5 @@
 #include "sound/TTSMgr.hpp"
-#include <iostream>
-#include <thread>               // num threads (para generación audios de voces)
+
 #include <unordered_map>
 #ifdef _WIN32
     #include <windows.h>

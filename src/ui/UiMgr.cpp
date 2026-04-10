@@ -31,6 +31,7 @@
     #include <dwmapi.h>
 #endif
 #include "resources.h"  // icono
+#include "ttf_archive-medium.h"
 
 // Se puede evitar poner "ImGui::" para simplificar
 using namespace ImGui;
@@ -87,9 +88,12 @@ bool UiMgr::init() {
 	style_ = &GetStyle();
     io_ = &GetIO();
 	
-    // Cargar fuente personalizada
-    io_->IniFilename = NULL;  // No usar archivo .ini de imgui
-    io_->Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io_->Fonts->GetGlyphRangesDefault());
+	// No usar archivo .ini de imgui
+    io_->IniFilename = NULL;  
+
+    // Cargar fuente predeterminada (desde resources, el .h)
+    //io_->Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io_->Fonts->GetGlyphRangesDefault());
+	io_->Fonts->AddFontFromMemoryTTF((void*)archivo_medium_ttf, (int)archivo_medium_ttf_len, fontSize_);
 
     // Configuración de estilo por defecto
 	Style_Microfrost();
