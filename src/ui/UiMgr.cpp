@@ -74,7 +74,7 @@ bool UiMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        std::cerr << "[UiMgr]	EEROR glfwCreateWindow error." << std::endl;
+        std::cerr << "[UiMgr]	ERROR glfwCreateWindow error." << std::endl;
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -283,7 +283,7 @@ void UiMgr::ventanaPrincipal() {
 		// Mostrar carga de TTS
 		TTS_percent = ctrl_->getTTSInitPercent();
 		if (TTS_percent < 100) {
-			ImSpinner::SpinnerFadeDots(		  "dots",	 16, 2, ImColor(.5f,.5f,.5f));
+			ImSpinner::SpinnerPulsar("Pulsar",  6, 2, ImColor(.5f,.5f,.5f));
 			SameLine();
 			TTS_text = "Loading TTS voice models: " + std::to_string(TTS_percent) + "%%...";
 		} else {
