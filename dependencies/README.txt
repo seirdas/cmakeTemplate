@@ -1,1 +1,1 @@
-Colocar aquí los archivos que necesitan ir en la misma ruta que el .exe
+place here files that executable will need in the same path
