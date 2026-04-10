@@ -132,17 +132,6 @@ void AppController::TWorker() {
     };
 
     
-    // Audio ----------------------------------------------------------------------------
-
-    std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
-        return snd_.getAvailableInputs();
-    }
-
-    std::vector<std::string> AppController::getAvailablePlaybackDevices() noexcept {
-        return snd_.getAvailablePlaybacks();
-    }
-
-    
     // Sockets --------------------------------------------------------------------------
     
     bool AppController::addReceiver() const noexcept {
@@ -153,4 +142,22 @@ void AppController::TWorker() {
     bool AppController::removeReceiver() const noexcept {
         // TODO
         return true;
+    }
+
+
+    // Audio ----------------------------------------------------------------------------
+
+    std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
+        return snd_.getAvailableInputs();
+    }
+
+    std::vector<std::string> AppController::getAvailablePlaybackDevices() noexcept {
+        return snd_.getAvailablePlaybacks();
+    }
+
+
+    // TTS ----------------------------------------------------------------------------
+
+    short AppController::getTTSInitPercent() const noexcept {
+        return tts_.getInitPercent();
     }

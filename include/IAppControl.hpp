@@ -51,12 +51,21 @@ public:
      */
     virtual bool isOnlineMode() const noexcept = 0;
 
+
 // Sockets ------------------------------------------------------------------------------
 
-    
+    /**
+     * @brief Agrega un nuevo receptor de datos de red.
+     * @return true si el receptor se agregó correctamente, false en caso de error.
+     */
     virtual bool addReceiver() const noexcept = 0;
 
+    /**
+     * @brief Elimina un receptor de datos de red.
+     * @return true si el receptor se eliminó correctamente, false en caso de error.
+     */
     virtual bool removeReceiver() const noexcept = 0;
+
 
 // Audio --------------------------------------------------------------------------------
 
@@ -64,7 +73,17 @@ public:
      * @brief Devuelve la lista con los dispositivos de entrada disponibles.
      */
     virtual std::vector<std::string> getAvailableInputDevices() noexcept = 0;
-
+    
+    /**
+     * @brief Devuelve la lista con los dispositivos de reproducción disponibles.
+     */
     virtual std::vector<std::string> getAvailablePlaybackDevices() noexcept = 0;
+
+// TTS --------------------------------------------------------------------------------
+
+    /**
+     * @brief Devuelve el porcentaje de inicialización del módulo TTS
+     */
+    virtual short getTTSInitPercent() const noexcept = 0;
 
 };

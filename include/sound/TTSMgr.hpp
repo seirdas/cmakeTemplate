@@ -49,7 +49,7 @@ public:
      * @brief Obtiene el porcentaje de inicialización del módulo TTS.
      * @return El porcentaje de inicialización (0 a 100).
      */
-    short getInitPercent();
+    short getInitPercent() const;
 
 private:
     using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;

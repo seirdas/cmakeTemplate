@@ -6,7 +6,8 @@
 #endif
 
 TTSMgr::TTSMgr(std::size_t const& num_threads_) :
-    num_threads_(num_threads_ == 0 ? 1 : num_threads_)
+    num_threads_(num_threads_ == 0 ? 1 : num_threads_),
+    init_percent_(0)
 {};
 
 TTSMgr::~TTSMgr(){
@@ -14,12 +15,11 @@ TTSMgr::~TTSMgr(){
 };
 
 bool TTSMgr::init(){
+
+    // Función de carga de modelo de voz
     auto load_vits_model = [this](std::string voicename){
-        std::cout << "[TTSMgr]  Creating Sherpa config..." << std::endl;
         SherpaOnnxOfflineTtsConfig config;
         memset(&config, 0, sizeof(config));
-
-        std::cout << "[TTSMgr]  Configuring model..." << std::endl;
 
         // Genera la configuración a partir de los nombres habituales de los archivos
         std::string onnx    = (models_path_+"/vits-piper-"+voicename+"/"+voicename+".onnx");
@@ -33,7 +33,7 @@ bool TTSMgr::init(){
         config.model.vits.length_scale  = 1.0f;   // 1.0 = normal, >1.0 más lento, <1.0 más rápido
         config.model.num_threads = num_threads_;
         config.model.debug = 0;         // 1 para logs en consola
-        std::cout << "[TTSMgr]  Initializating voice " << voicename << std::endl;
+        std::cout << "[TTSMgr]  Initializating voice model " << voicename << " ("<< init_percent_ <<"%%)" << std::endl;
         
         const SherpaOnnxOfflineTts* tts_model = SherpaOnnxCreateOfflineTts(&config);
 
@@ -53,22 +53,38 @@ bool TTSMgr::init(){
         return true;
     };
 
+    // El init percent debería estar en función del número de voces, de momento se pone a mano
+
     if(!load_vits_model("en_GB-alan-low")) 
         return false;
+    init_percent_=(int) (1.0/7.0*100);
+    
     if(!load_vits_model("en_GB-southern_english_female-low")) 
         return false;
+    init_percent_=(int) (2.0/7.0*100);
+    
     if(!load_vits_model("en_US-amy-low")) 
         return false;
+    init_percent_=(int) (3.0/7.0*100);
+    
     if(!load_vits_model("en_US-danny-low")) 
         return false;
+    init_percent_=(int) (4.0/7.0*100);
+
     if(!load_vits_model("en_US-kathleen-low")) 
         return false;
+    init_percent_=(int) (5.0/7.0*100);
+
     if(!load_vits_model("en_US-lessac-low")) 
         return false;
+    init_percent_=(int) (6.0/7.0*100);
+
     if(!load_vits_model("en_US-ryan-low")) 
         return false;
+    init_percent_=(int) (7.0/7.0*100);
 
-    /*else*/
+
+    std::cout << "[TTSMgr]  TTS models loaded." << std::endl;
     return true;
 }
 
@@ -108,6 +124,6 @@ bool TTSMgr::generate(std::string text, std::string wavname){
     return true;
 };
 
-short TTSMgr::getInitPercent() {
+short TTSMgr::getInitPercent() const {
     return init_percent_;
 }

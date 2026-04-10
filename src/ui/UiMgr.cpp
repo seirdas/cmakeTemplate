@@ -92,8 +92,15 @@ bool UiMgr::init() {
     io_->IniFilename = NULL;  
 
     // Cargar fuente predeterminada (desde resources, el .h)
-    //io_->Fonts->AddFontFromFileTTF(customFont_.c_str(), (float)fontSize_, NULL, io_->Fonts->GetGlyphRangesDefault());
-	io_->Fonts->AddFontFromMemoryTTF((void*)archivo_medium_ttf, (int)archivo_medium_ttf_len, fontSize_);
+	ImFontConfig font_cfg;
+	font_cfg.FontDataOwnedByAtlas = false; // no liberar memoria de fuente al salir (crash)
+	io_->Fonts->AddFontFromMemoryTTF(
+		(void*)archivo_medium_ttf, 
+		(int)archivo_medium_ttf_len, 
+		fontSize_, 
+		&font_cfg, 
+		io_->Fonts->GetGlyphRangesDefault()
+	);
 
     // Configuración de estilo por defecto
 	Style_Microfrost();
@@ -262,13 +269,27 @@ void UiMgr::ventanaPrincipal() {
 	// Variables estáticas para guardar las alturas (proporciones iniciales)
 	static float heightRightTop = 0.5f; 
 	float totalHeight = GetContentRegionAvail().y;
-	float sizeX__Izq = GetContentRegionAvail().x * 0.2f;
+	float sizeX__Izq = GetContentRegionAvail().x * 0.3f;
+
+	short TTS_percent;
+	std::string TTS_text;
+	
 	// COLUMNA IZQUIERDA
 	BeginGroup();
 	{
 		// Panel F1 (Arriba Izquierda)
 		BeginChild("##F1", ImVec2(sizeX__Izq, totalHeight), true);
-		Text("F1 (70%% inicial)");
+
+		// Mostrar carga de TTS
+		TTS_percent = ctrl_->getTTSInitPercent();
+		if (TTS_percent < 100) {
+			ImSpinner::SpinnerFadeDots(		  "dots",	 16, 2, ImColor(.5f,.5f,.5f));
+			SameLine();
+			TTS_text = "Loading TTS voice models: " + std::to_string(TTS_percent) + "%%...";
+		} else {
+			TTS_text = "TTS voice models loaded.";
+		}
+		Text(TTS_text.c_str());
 
 		// Botón de modo
 		if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){

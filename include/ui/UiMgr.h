@@ -191,7 +191,7 @@ private:
     unsigned int    sizeX_          = 1280;                     // Tamaño horizontal (x) de la ventana
     unsigned int    sizeY_          = 720;                      // Tamaño vertical (y) de la ventana
 
-    unsigned int    fontSize_         = 16;                     // Tamaño de fuente predeterminado
+    float           fontSize_         = 16.0f;                  // Tamaño de fuente predeterminado
     unsigned int const MAX_FONT_SIZE_ = 30;                     // Tamaño de fuente máximo permitido
     unsigned int const MIN_FONT_SIZE_ = 14;                     // Tamaño de fuente mínimo permitido
 
