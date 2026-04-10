@@ -103,13 +103,17 @@ target_compile_options(sherpa_lib INTERFACE
 
 function(download_voice NAME URL)
     set(DEST_DIR "${CMAKE_SOURCE_DIR}/_external/tts-assets/tts-voices/${NAME}")
-    message(STATUS "Fetching TTS Model: ${NAME}...")
-    FetchContent_Declare(
-        ${NAME}
-        URL "${URL}"
-        SOURCE_DIR "${DEST_DIR}"
-    )
-    FetchContent_MakeAvailable(${NAME})
+    if(NOT EXISTS ${DEST_DIR})
+        message(STATUS "Fetching TTS Model: ${NAME}...")
+        FetchContent_Declare(
+            ${NAME}
+            URL "${URL}"
+            SOURCE_DIR "${DEST_DIR}"
+        )
+        FetchContent_MakeAvailable(${NAME})
+    else()
+        message(STATUS "Using local TTS Model: ${NAME}...")
+    endif()
 endfunction()
 
 # Añadir aquí las descarga de voces para Sherpa:
