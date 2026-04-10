@@ -3,6 +3,7 @@
 #include "sherpa-onnx/c-api/c-api.h"
 #include <iostream>
 #include <thread>               // num_threads_
+#include <unordered_map>
 
 /**
  * @brief Clase TTS para generar audios usando la librería Sherpa TTS
