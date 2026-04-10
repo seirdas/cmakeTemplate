@@ -22,27 +22,17 @@ AppController::~AppController() {
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
 
-    // Cerrar sockets (importante para cerrar los hilos consumidores de paquetes)
-    std::cout << "[AppController] Closing sockets and network I/O..." << std::endl;
+    // Cerrar socket y worker esperando paquetes de red
     net_.stop();
-
-    // Cerrar el worker esperando el paquete online
     online_cv_.notify_all();
     std::cout << "[AppController] Closing running threads..." << std::endl;
     if (worker_.joinable())
         worker_.join();
 
-    /* TODO ESTO ES OPCIONAL PORQUE FORMA PARTE DE LOS DESTRUCTORES DE LAS CLASES */
-    
-    // Cerrar módulo de sonido
-    std::cout << "[AppController] Closing sound module..." << std::endl;
+    // Cerrar módulos (opcional)
     snd_.stop();
-    
-    // Cerrar ventana UI
-    std::cout << "[AppController] Closing UI..." << std::endl;
     gui_.cerrar();
-
-    std::cout << "[AppController] Exiting..." << std::endl;
+    tts_.cerrar();
 }
 
 bool AppController::init() {
