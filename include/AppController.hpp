@@ -65,7 +65,6 @@ public:
     void TWorker();
 
 
-
 // IAppControl methods ------------------------------------------------------------------
 
     // Aplicación -----------------------------------------------------------------------
@@ -111,19 +110,24 @@ private:
 
     /************ Variables ********************************************************/
 
-    NetMgr      net_;                               // Gestor de sockets de red
-    UiMgr       ui_;                                // Gestor de ventanas para la interfaz gráfica
-    SoundMgr    snd_;                               // Gestor de audio
-    TTSMgr      tts_;                               // Gestor módulo TTS
+    // Módulos
+    NetMgr      net_;                           // Gestor de sockets de red
+    UiMgr       gui_;                           // Gestor de ventanas para la interfaz gráfica
+    SoundMgr    snd_;                           // Gestor de audio
+    TTSMgr      tts_;                           // Gestor módulo TTS
 
-    std::thread             worker_;                // gestor de paquetes
-    std::condition_variable online_cv_;
-    std::mutex              online_mtx_;
+    bool        net_initialized_;               // Indica si tts está inicializado
+    bool        gui_initialized_;               // Indica si tts está inicializado
+    bool        snd_initialized_;               // Indica si tts está inicializado
+    bool        tts_initialized_;               // Indica si tts está inicializado
 
-    std::atomic<bool>       running_;             // flag de aplicación corriendo (para hilos)
+    // Gestión de hilos
+    std::thread             worker_;            // gestor de paquetes
+    std::mutex              online_mtx_;        // Mutex para dejar en espera al hilo
+    std::condition_variable online_cv_;         // Reacciona al cambio de estado para el hilo consumidor
 
-    enum class AppMode      { ONLINE, OFFLINE };
-    std::atomic<AppMode>    mode_{AppMode::ONLINE};             // Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
-    
-    std::string             version_    = std::to_string(VERSION); // Versión de la aplicación
+    // Estado de aplicación
+    std::atomic<bool>       running_;           // flag de aplicación corriendo (para hilos)
+    std::atomic<bool>       online_mode_;       // Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
+    std::string             version_;           // Versión de la aplicación
 };

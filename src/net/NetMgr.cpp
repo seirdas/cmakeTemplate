@@ -141,11 +141,11 @@ std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
     return receivers_[index]->getFirstPacket();   // <-- BLOQUEANTE 
 }
 
-void NetMgr::start() {
+bool NetMgr::start() {
     // Evitar lanzar hilos si ya están corriendo
-    if (isRunning()) {
+    if (running_) {
         std::cout << "[NetMgr]  Already running" << std::endl;
-        return;
+        return true;
     }
 
     // Iniciar (de nuevo si aplica) los sockets
@@ -157,11 +157,12 @@ void NetMgr::start() {
 
     std::cout << "[NetMgr]  Sockets running" << std::endl;
     running_ = true;
+    return true;
 }
 
 void NetMgr::stop() {
 
-    if (!isRunning()) return;
+    if (!running_) return;
 
     std::cout << "[NetMgr]  Stopping sockets..." << std::endl;
 

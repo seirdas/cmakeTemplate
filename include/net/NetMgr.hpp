@@ -94,8 +94,9 @@ public:
      * @details Toma por defecto el número máximo permitido por el sistema.
      * Esto no significa que no se puedan hacer más hilos, porque se quedan "idle" 
      * esperando datos en los sockets.
+     * @returns true cuando termina
      */
-    void start();
+    bool start();
 
     /**
      * @brief Detiene todos los sockets.

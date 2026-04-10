@@ -4,7 +4,16 @@
 
 // General ------------------------------------------------------------------------------
 
-AppController::AppController() : ui_(this), running_(false) {
+AppController::AppController() : 
+    gui_(this), 
+    net_initialized_(false),
+    gui_initialized_(false),
+    snd_initialized_(false),
+    tts_initialized_(false),
+    running_(false),
+    online_mode_(true),
+    version_(std::to_string(VERSION))
+{
 
 }
 
@@ -13,7 +22,7 @@ AppController::~AppController() {
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
 
-    // Cerrar sockets
+    // Cerrar sockets (importante para cerrar los hilos consumidores de paquetes)
     std::cout << "[AppController] Closing sockets and network I/O..." << std::endl;
     net_.stop();
 
@@ -23,7 +32,6 @@ AppController::~AppController() {
     if (worker_.joinable())
         worker_.join();
 
-
     /* TODO ESTO ES OPCIONAL PORQUE FORMA PARTE DE LOS DESTRUCTORES DE LAS CLASES */
     
     // Cerrar módulo de sonido
@@ -32,45 +40,24 @@ AppController::~AppController() {
     
     // Cerrar ventana UI
     std::cout << "[AppController] Closing UI..." << std::endl;
-    ui_.cerrar();
+    gui_.cerrar();
 
     std::cout << "[AppController] Exiting..." << std::endl;
 }
 
 bool AppController::init() {
 
-    // Flag indicando la ejecución
-    running_ = true;
+    // Iniciar módulos
+    net_initialized_ = net_.start();
+    snd_initialized_ = snd_.init();
+    gui_initialized_ = gui_.init();
 
-    // Iniciar sockets
-    net_.start();
-
-    // Inicialización de audio
-    if (!snd_.init()) return false;
-
-    // Inicialización de TTS
-    if (!tts_.init()) return false;
-    
-    // TODO: esta comprobación la deberia hacer soundmgr
-    std::vector<std::string> devices = snd_.getAvailablePlaybacks();
-    if (!devices.empty()) {
-        snd_.addPlaybackDevice(devices[0], "audio"); 
-    } else {
-        std::cerr << "[AppController] WARN No se encontraron altavoces en el PC." << std::endl;
-    }
-
-    // Inicialización de ventana UI
-    if (!ui_.init())         return false;
-
-    // Inicialización de sockets
-    net_.addReceiver("Host",    8080);
-    net_.addReceiver("Other",   12345,  "127.0.0.1", sizeof(unsigned long long));
-    net_.addReceiver("Other2",  12345,  "127.0.0.1", 8765);
-    net_.addReceiver("Other",   12225,  "127.0.0.1");
-    net_.addReceiver("TTS",     1345,   "127.0.0.1", 5076);
-    net_.removeReceiver(net_.getSocketIndex("TTS"));
-
-    net_.printReceivers();
+    // Inicialización de TTS (en hilo para no bloquear)
+    std::thread tLoadTTS([this]() {
+            tts_initialized_ = tts_.init();
+        }
+    );
+    tLoadTTS.detach();  // No necesitamos "esperar" a que termine
     
     // Hilo consumidor de paquetes Host
     worker_ = std::thread(&AppController::TWorker, this);
@@ -80,18 +67,13 @@ bool AppController::init() {
 }
 
 int AppController::run() {
-
-    // prueba TTS
-    std::string text = "bottle of water.";
-    tts_.generate(text, "./ttstest");
-
-    ui_.run(); // Bloquea hasta cerrar
+    running_ = true;
+    gui_.run(); // Bloquea hasta cerrar
     return 0;
 }
 
 
 // Hilos --------------------------------------------------------------------------------
-
 void AppController::TWorker() {
     std::cout << "[TWorker]   Initializating consumer thread..." << std::endl;
     std::vector<char> data;
@@ -101,7 +83,7 @@ void AppController::TWorker() {
         std::unique_lock<std::mutex> lock(online_mtx_);
 
         online_cv_.wait(lock, [this] {
-            return !running_ || mode_ == AppMode::ONLINE;
+            return !running_ || online_mode_;
         });
 
         if (!running_) break;
@@ -141,38 +123,23 @@ void AppController::TWorker() {
         return version_; 
     }
 
-    void AppController::setOnlineMode(bool b_modo) noexcept { 
+    void AppController::setOnlineMode(bool nuevo_online_mode) noexcept { 
 
         std::unique_lock<std::mutex> lock(online_mtx_);
-        AppMode nuevoModo = (b_modo) ? AppMode::ONLINE : AppMode::OFFLINE;
-        if (mode_ == nuevoModo) return;
-        mode_ = nuevoModo;
+        if(online_mode_==nuevo_online_mode) return;
+        online_mode_=nuevo_online_mode;
         lock.unlock();
 
-        switch (mode_){
-            case AppMode::ONLINE:
-                std::cout << "[AppController]   Switching to ONLINE..." << std::endl;
-                net_.start(); 
-                online_cv_.notify_all();
-            break;
-            case AppMode::OFFLINE:
-                std::cout << "[AppController]   Switching to OFFLINE..." << std::endl;
-                net_.stop(); // Esto cierra sockets y libera el getFirstPacket() bloqueado
-            break;
-            default:
-                // No debería llegar aquí nunca
-                std::cerr << "[AppController]   ERROR Unknown state mode" << std::endl;
+        if(online_mode_) {
+            net_.start();
+            online_cv_.notify_all();
         }
+        else
+            net_.stop();
     };
 
     bool AppController::isOnlineMode() const noexcept {
-        switch (mode_){
-            case AppMode::ONLINE:   return true;
-            case AppMode::OFFLINE:  return false;
-        }
-        // No debería llegar aquí nunca
-        std::cerr << "[AppController]   ERROR Undefined AppMode." << std::endl;
-        return true;
+        return online_mode_;
     };
 
     
