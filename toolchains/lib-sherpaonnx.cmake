@@ -123,7 +123,7 @@ download_voice(
 )
 download_voice(
     vits-piper-en_GB-southern_english_female-low 
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-low.tar.bz2
 )
 download_voice(
     vits-piper-en_US-danny-low
