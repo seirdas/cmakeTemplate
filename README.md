@@ -44,8 +44,7 @@ Se pueden descargar las herramientas de compilación MSVC de Visual Studio a par
 | --------------------  | ------------------------------------------------ | -------------------------------------------------------- |
 | Build Tools v16 2019  | https://aka.ms/vs/16/release/vs_BuildTools.exe   | `winget install Microsoft.VisualStudio.2019.BuildTools`  |
 | Build Tools v17 2022  | https://aka.ms/vs/17/release/vs_BuildTools.exe   | `winget install Microsoft.VisualStudio.2022.BuildTools`  |
-| Build Tools v18
- 2026  | https://aka.ms/vs/stable/vs_BuildTools.exe       | `winget install Microsoft.VisualStudio.BuildTools`       |
+| Build Tools v18 2026  | https://aka.ms/vs/stable/vs_BuildTools.exe       | `winget install Microsoft.VisualStudio.BuildTools`       |
 
 También se descargarán las herramientas de compilación de Visual Studio al instalar el IDE de Visual Studio. La versión instalada corresponderá con las herramientas de compilación corresponderá con la versión instalada (VS2019, VS2022, VS2026...). 
 
