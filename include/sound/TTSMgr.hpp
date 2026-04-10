@@ -117,12 +117,16 @@ public:
         return true;
     };
 
+    short getInitPercent() {
+        return init_percent_;
+    }
+
 private:
     using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
 
     TTSModelsMap        tts_models_;        // TTS configurado con una voz
     int32_t             num_threads_;       // Número de hilos con los que se generarán los audios
-    short               init_percent;       // Porcentaje de inicialización (100 = full init)
+    short               init_percent_;       // Porcentaje de inicialización (100 = full init)
     
     std::string const   models_path_    = "./voices/";  // Ruta de carpetas donde residen los modelos
 };
