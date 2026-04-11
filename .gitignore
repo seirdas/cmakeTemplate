@@ -39,3 +39,5 @@ doxygen*
 dependencies/voices*
 executable/*/voices*
 *so
+executable/*/tts-voices/*
+executable/*/*.dll
