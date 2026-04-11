@@ -429,6 +429,72 @@ void UiMgr::ventanaPrincipal() {
 		if (ImGuiKnobs::Knob("Logarithmic", &val7, 20, 20000, 20.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_Logarithmic | ImGuiKnobFlags_AlwaysClamp)) {
 			// value was changed
 		}
+		
+		// Tabla angled headers
+		const char* column_names[] = { "Track", "Volume", "Pan", "Pitch", "Reverb", "Echo", "Dry/Wet" };
+		const int columns_count = 7;
+		const int rows_count = 6;
+		
+		// Almacenamiento para los valores de los Knobs (Fila * Columna)
+		static float knob_values[rows_count][columns_count] = { 0.0f };
+
+		// Flags de la tabla: Scroll, Bordes y Resizable
+		ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | 
+									ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders | 
+									ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable;
+
+		// Configuración global del ángulo de los headers (puedes moverlo a tu init)
+		ImGui::GetStyle().TableAngledHeadersAngle = 35.0f; 
+
+		// Definimos un tamaño para la tabla (0 en ancho = ocupar disponible)
+		if (ImGui::BeginTable("KnobTable", columns_count, table_flags, ImVec2(0, 400))) 
+		{
+			// 1. CONFIGURACIÓN DE COLUMNAS
+			// Primera columna fija para el nombre
+			ImGui::TableSetupColumn(column_names[0], ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed, 100.0f);
+			
+			// Resto de columnas con el flag de AngledHeader y un ancho mínimo para el Knob
+			for (int n = 1; n < columns_count; n++) {
+				ImGui::TableSetupColumn(column_names[n], ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed, 60.0f);
+			}
+
+			// 2. RENDERIZADO DE HEADERS
+			ImGui::TableAngledHeadersRow(); // Dibuja las etiquetas inclinadas
+			ImGui::TableHeadersRow();       // Dibuja la base de los headers (necesario para menús contextuales)
+
+			// 3. RENDERIZADO DE FILAS
+			for (int row = 0; row < rows_count; row++) 
+			{
+				ImGui::PushID(row);
+				ImGui::TableNextRow(ImGuiTableRowFlags_None, 70.0f); // Altura de fila fija para el Knob
+
+				// Columna 0: Texto
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Audio Track %d", row);
+
+				// Columnas de Knobs
+				for (int col = 1; col < columns_count; col++) 
+				{
+					if (ImGui::TableSetColumnIndex(col)) 
+					{
+						ImGui::PushID(col);
+						
+						// Centrar el Knob en la celda
+						float width = ImGui::GetColumnWidth();
+						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (width - 45.0f) * 0.5f);
+						
+						// Render de imgui-knobs
+						ImGuiKnobs::Knob("##knob", &knob_values[row][col], 0.0f, 1.0f, 0.01f, "%.2f", 
+										ImGuiKnobVariant_Tick, 45.0f, ImGuiKnobFlags_NoInput);
+						
+						ImGui::PopID();
+					}
+				}
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
+		}
 
 
 
