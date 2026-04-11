@@ -131,16 +131,16 @@ endfunction()
 
 # Añadir aquí las descarga de voces para Sherpa:
 download_voice(
-    vits-piper-en_US-amy-low
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
-)
-download_voice(
     vits-piper-en_GB-alan-low
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-low.tar.bz2
 )
 download_voice(
     vits-piper-en_GB-southern_english_female-low 
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-low.tar.bz2
+    )
+download_voice(
+    vits-piper-en_US-amy-low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
 )
 download_voice(
     vits-piper-en_US-danny-low
@@ -158,11 +158,6 @@ download_voice(
     vits-piper-en_US-ryan-low
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low.tar.bz2
 )
-download_voice(
-    vits-piper-en_US-glados-high
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-glados-high.tar.bz2
-)
-
 
 
 
