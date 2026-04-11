@@ -22,6 +22,8 @@ TTSMgr::TTSMgr(std::size_t const& num_threads_) :
     concurrent_init_(false),
     init_percent_(0),
     models_path_(VOICES_PATH),
+    num_available_models_(0),
+    num_loaded_models_(0),
     active_tasks_(0)
 {};
 
@@ -49,14 +51,13 @@ bool TTSMgr::init() {
     }
 
     // Variable para no realizar la función cada vez que se use
-    size_t num_available_models = available_models.size();
+    num_available_models_ = available_models.size();
 
-    // Mutex para proteger tts_models_ e init_percent_
+    // Mutex para proteger loaded_models_ e init_percent_
     std::mutex tts_init_mutex;
 
     // Función lambda de carga de modelo
-    auto load_vits_model = [this, num_available_models, &tts_init_mutex](std::filesystem::path modelDir) {
-        
+    auto load_vits_model = [this, &tts_init_mutex](std::filesystem::path modelDir) {
         // No inicializar si se está cerrando
         if (!running_) return;
 
@@ -110,13 +111,14 @@ bool TTSMgr::init() {
             #endif
             return;
         }
-        
+
         // Agregarlo a la lista de modelos disponibles del TTSMgr
         std::lock_guard<std::mutex> lock(tts_init_mutex);    // protege mapa y init_percent_
-        tts_models_[st_modelname] = tts_model;
+        loaded_models_[st_modelname] = tts_model;
 
         // Actualizar el porcentaje de inicialización
-        init_percent_ = static_cast<int>(100.0 * tts_models_.size() / num_available_models);
+        num_loaded_models_ = loaded_models_.size();
+        init_percent_ = static_cast<int>(100.0 * getLoadedNumModels() / getAvailableNumModels());
     };
 
     // Inicialización concurrente (experimental)
@@ -140,15 +142,16 @@ bool TTSMgr::init() {
             load_vits_model(modelDir);
     }
 
-    std::cout << "[TTSMgr]  " << tts_models_.size() << "/" << num_available_models;
+    std::cout << "[TTSMgr]  " << num_loaded_models_ << "/" << num_available_models_;
     std::cout << " TTS models loaded." << std::endl;
 
     // Actualizar el porcentaje de inicialización (de nuevo, opcional)
-    init_percent_ = static_cast<int>(100.0 * tts_models_.size() / num_available_models);
-    return !tts_models_.empty();;
+    init_percent_ = static_cast<int>(100.0 * num_loaded_models_ / num_available_models_);
+    return !loaded_models_.empty();;
 }
 
 void TTSMgr::cerrar() {
+    if (!running_) return;
     running_ = false;
 
     // Esperar a que terminen las operaciones que se estaban ejecutando
@@ -159,11 +162,11 @@ void TTSMgr::cerrar() {
     });
 
     // Destruye los modelos creados
-    for (auto& [name,model] : tts_models_) {
+    for (auto& [name,model] : loaded_models_) {
         std::cout << "[TTSMgr]  Unloading model " << name << std::endl;
         SherpaOnnxDestroyOfflineTts(model);
     }
-    tts_models_.clear();
+    loaded_models_.clear();
 }
 
 bool TTSMgr::generate(std::string text, std::string wavname){
@@ -173,7 +176,7 @@ bool TTSMgr::generate(std::string text, std::string wavname){
 
     std::cout << "[TTSMgr]  Generating audio" << std::endl;
     active_tasks_++;
-    const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerate(tts_models_["en_US-glados-high"], text.c_str(), sid, 1.0);
+    const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerate(loaded_models_["en_US-glados-high"], text.c_str(), sid, 1.0);
     active_tasks_--;
     exit_cv_.notify_all();
 
@@ -208,9 +211,17 @@ short TTSMgr::getInitPercent() const {
     return init_percent_;
 }
 
-std::vector<std::string> TTSMgr::getAvailableVoiceModels() const {
+std::vector<std::string> TTSMgr::getLoadedVoiceModels() const {
     std::vector<std::string> models;
-    for(const auto& [name, model] : tts_models_)
+    for(const auto& [name, model] : loaded_models_)
         models.push_back(name);
     return models;
 }
+
+short TTSMgr::getAvailableNumModels() const {
+    return num_available_models_;
+}
+
+short TTSMgr::getLoadedNumModels() const {
+    return num_loaded_models_;
+};

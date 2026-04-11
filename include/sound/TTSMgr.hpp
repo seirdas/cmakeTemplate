@@ -57,21 +57,33 @@ public:
     short getInitPercent() const;
     
     /**
-     * @brief Obtiene una lista con los nombres de los modelos disponibles
+     * @brief Obtiene una lista con los nombres de los modelos cargados
      */
-    std::vector<std::string> getAvailableVoiceModels() const;
+    std::vector<std::string> getLoadedVoiceModels() const;
+
+    /**
+     * @brief Obtiene el número de modelos disponibles
+     */
+    short getAvailableNumModels() const;
+
+    /**
+     * @brief Obtiene el número de modelos cargados
+     */
+    short getLoadedNumModels() const;
 
 private:
     using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
 
-    TTSModelsMap            tts_models_;        // Mapa de modelos TTS cargados
-    int32_t                 num_threads_;       // Número de hilos con los que se generarán los audios
-    bool                    concurrent_init_;   // Activa/desactiva la inicialización concurrente (experimental)
-    short                   init_percent_;      // Porcentaje de inicialización (100 = full init)
-    std::string const       models_path_;       // Ruta de carpetas donde residen los modelos
-    
+    TTSModelsMap            loaded_models_;         // Mapa de modelos TTS cargados
+    int32_t                 num_threads_;           // Número de hilos con los que se generarán los audios
+    bool                    concurrent_init_;       // Activa/desactiva la inicialización concurrente (experimental)
+    short                   init_percent_;          // Porcentaje de inicialización (100 = full init)
+    std::string const       models_path_;           // Ruta de carpetas donde residen los modelos
+    short                   num_available_models_;  // Número de modelos disponibles
+    short                   num_loaded_models_;     // Número de modelos disponibles
+
     std::atomic<short>      active_tasks_;      // Indica si hay algo en ejecución
-    std::atomic<bool>       running_;
+    std::atomic<bool>       running_;           // Indica si no se ha comandado destruir la clase
     std::mutex              exit_mtx_;          // Evita destruir TTSMgr si hay algo ejecutándose
     std::condition_variable exit_cv_;           // Notifica cuándo paran las tareas
 };

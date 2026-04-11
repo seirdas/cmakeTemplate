@@ -122,6 +122,16 @@ public:
      * @brief Devuelve el porcentaje de inicialización del módulo TTS
      */
     short getTTSInitPercent() const noexcept override;
+
+    /**
+     * @brief Obtiene el número de modelos TTS disponibles
+     */
+    short getAvailableNumTTSModels() const noexcept override;
+
+    /**
+     * @brief Obtiene el número de modelos TTS cargados
+     */
+    short getLoadedNumTTSModels() const noexcept override;
     
     // Añadir aquí métodos de IAppControl...
 

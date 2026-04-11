@@ -86,4 +86,14 @@ public:
      */
     virtual short getTTSInitPercent() const noexcept = 0;
 
+    /**
+     * @brief Obtiene el número de modelos TTS disponibles
+     */
+    virtual short getAvailableNumTTSModels() const noexcept = 0;
+
+    /**
+     * @brief Obtiene el número de modelos TTS cargados
+     */
+    virtual short getLoadedNumTTSModels() const noexcept = 0;
+
 };
