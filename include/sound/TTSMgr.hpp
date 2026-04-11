@@ -5,6 +5,7 @@
 #include <thread>               // num_threads_
 #include <unordered_map>
 #include <vector>
+#include <condition_variable>
 
 /**
  * @brief Clase TTS para generar audios usando la librería Sherpa TTS
@@ -29,7 +30,7 @@ public:
     ~TTSMgr();
 
     /**
-     * @brief Inicializa el módulo TTS cargando los modelos de voz.
+     * @brief Inicializa los módulos TTS cargando los modelos de voz.
      * @details Carga todos los modelos compatibles de ./VOICES_PATH
      * @note La macro VOICES_PATH se obtiene del toolchain para evitar duplicados
      * @return true si la inicialización fue exitosa, false en caso de error.
@@ -63,8 +64,14 @@ public:
 private:
     using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
 
-    TTSModelsMap        tts_models_;        // Mapa de modelos TTS cargados
-    int32_t             num_threads_;       // Número de hilos con los que se generarán los audios
-    short               init_percent_;      // Porcentaje de inicialización (100 = full init)
-    std::string const   models_path_;       // Ruta de carpetas donde residen los modelos
+    TTSModelsMap            tts_models_;        // Mapa de modelos TTS cargados
+    int32_t                 num_threads_;       // Número de hilos con los que se generarán los audios
+    bool                    concurrent_init_;   // Activa/desactiva la inicialización concurrente (experimental)
+    short                   init_percent_;      // Porcentaje de inicialización (100 = full init)
+    std::string const       models_path_;       // Ruta de carpetas donde residen los modelos
+    
+    std::atomic<short>      active_tasks_;      // Indica si hay algo en ejecución
+    std::atomic<bool>       running_;
+    std::mutex              exit_mtx_;          // Evita destruir TTSMgr si hay algo ejecutándose
+    std::condition_variable exit_cv_;           // Notifica cuándo paran las tareas
 };
