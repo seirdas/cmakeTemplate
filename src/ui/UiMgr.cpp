@@ -303,11 +303,12 @@ void UiMgr::ventanaPrincipal() {
 		if (TTS_percent < 100) {
 			ImSpinner::SpinnerPulsar("Pulsar",  6, 2, ImColor(.5f,.5f,.5f));
 			SameLine();
-			TTS_text = "Loading TTS voice models: " + std::to_string(TTS_percent) + "%%...";
-		} else {
-			TTS_text = "TTS voice models loaded.";
-		}
+			TTS_text = "Loading TTS voice models: ";
+			TTS_text += std::to_string(ctrl_->getLoadedNumTTSModels()) + "/" + std::to_string(ctrl_->getAvailableNumTTSModels());
+		} else TTS_text = "TTS voice models loaded.";
+		
 		Text(TTS_text.c_str());
+		ImGui::ProgressBar(TTS_percent/100.0f, ImVec2(0.0f, 0.0f));
 
 		// Botón de modo
 		if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
