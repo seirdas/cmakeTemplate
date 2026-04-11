@@ -182,7 +182,7 @@ target_link_libraries(imgui_lib PUBLIC
   >
 )
 
-target_include_directories(imgui_lib PUBLIC 
+target_include_directories(imgui_lib SYSTEM PUBLIC 
   ${IMGUI_DIR}            # imgui 
   ${IMGUI_DIR}/backends   # imgui backends
   ${IMPLOT_DIR}           # implot
@@ -205,11 +205,13 @@ target_compile_definitions(imgui_lib PUBLIC
 
 if(LINUX)
     # Forzamos la inclusión de Xatom.h para que XA_ATOM esté definido
-    target_compile_options(imgui_lib PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-include X11/Xatom.h>)
+    target_compile_options(imgui_lib PRIVATE 
+      $<$<COMPILE_LANGUAGE:CXX>:-include X11/Xatom.h>
+    )
 endif()
 
 # Omitir warnings de la librería
-target_compile_options(imgui_lib PUBLIC
+target_compile_options(imgui_lib PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:
         /W0            # Nivel de advertencia 0 (silencio total)
         /wd4244        # double a float

@@ -49,12 +49,12 @@ target_link_libraries(asio_lib PUBLIC
     ws2_32      # Winsock2 - API de sockets de Windows
     mswsock     # Microsoft Winsock Extensions
     wsock32     # Winsock - API de sockets antigua (a veces requerida)
-    bcrypt      # 
+    bcrypt      # Biblioteca de criptografía de Windows (BCrypt* API);
   >    
 )
 
 # Omitir warnings de la propia librería
-target_compile_options(asio_lib PUBLIC
+target_compile_options(asio_lib PRIVATE
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
       -Wno-shadow
       -Wno-unused-parameter
