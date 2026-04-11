@@ -1,4 +1,5 @@
 #include "sound/TTSMgr.hpp"
+#include <iostream>
 #include <filesystem>
 #include <vector>
 #include <cstring>
@@ -167,6 +168,12 @@ void TTSMgr::cerrar() {
         SherpaOnnxDestroyOfflineTts(model);
     }
     loaded_models_.clear();
+    init_percent_ = static_cast<int>(100.0 * num_loaded_models_ / num_available_models_);
+}
+
+void TTSMgr::reload() {
+    cerrar();
+    init();
 }
 
 bool TTSMgr::generate(std::string text, std::string wavname){
@@ -225,3 +232,7 @@ short TTSMgr::getAvailableNumModels() const {
 short TTSMgr::getLoadedNumModels() const {
     return num_loaded_models_;
 };
+
+bool TTSMgr::isWorking() const {
+    return active_tasks_>0;
+}

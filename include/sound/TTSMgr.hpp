@@ -1,7 +1,6 @@
 #pragma once
 
 #include "sherpa-onnx/c-api/c-api.h"
-#include <iostream>
 #include <thread>               // num_threads_
 #include <unordered_map>
 #include <vector>
@@ -43,6 +42,11 @@ public:
     void cerrar();
 
     /**
+     * @brief recarga los modelos de voz (cierra, borra y vuelve a inicializar)
+     */
+    void reload();
+
+    /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
      * @param text El texto a convertir en audio.
      * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión .wav).
@@ -70,6 +74,11 @@ public:
      * @brief Obtiene el número de modelos cargados
      */
     short getLoadedNumModels() const;
+
+    /**
+     * @brief Devuelve si el módulo tiene algún proceso activo.
+     */
+    bool isWorking() const;
 
 private:
     using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
