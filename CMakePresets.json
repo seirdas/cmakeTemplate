@@ -474,7 +474,7 @@
         },
         {
             "name": "linux-clang-ninja-debug",
-            "displayName": "🐞 Linux Ninja clang Debug",
+            "displayName": "🐞 Linux Ninja Clang Debug",
             "description": "Build Debug Clang para Linux",
             "configurePreset": "linux-clang-ninja",
             "configuration": "Debug",
@@ -482,7 +482,7 @@
         },
         {
             "name": "linux-clang-ninja-relwithdebinfo",
-            "displayName": "🔍 Linux Ninja clang RelWithDebInfo",
+            "displayName": "🔍 Linux Ninja Clang RelWithDebInfo",
             "description": "Build Debug Clang para Linux",
             "configurePreset": "linux-clang-ninja",
             "configuration": "RelWithDebInfo",
@@ -490,7 +490,7 @@
         },
         {
             "name": "linux-clang-ninja-minsizerel",
-            "displayName": "📦 Linux Ninja clang minsizerel",
+            "displayName": "📦 Linux Ninja Clang MinSizeRel",
             "description": "Build Debug Clang para Linux",
             "configurePreset": "linux-clang-ninja",
             "configuration": "MinSizeRel",
