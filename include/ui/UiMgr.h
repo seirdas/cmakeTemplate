@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <string>
 #include <cstdint>              // uintptr_t
 #include <unordered_map>
@@ -121,8 +120,8 @@ private:
     void loadImages();
 
     /**
-     * @brief Libera los recursos de las imágenes cargadas.
-     * @note Se hace al cerrar la aplicación
+     * @brief Libera los recursos de las imágenes cargadas de forma dinámica.
+     * @note No hace falta actualizar esta función al añadir nuevas imágenes
      */
     void unloadImages();
     
@@ -131,8 +130,6 @@ private:
      * @note Soporte para png.
      * @example USO: images_["filename.png"].tex
      * @param filename Ruta del archivo de imagen que se va a cargar.
-     * @param outWidth Salida del ancho de la textura cargada.
-     * @param outHeight Salida de la altura de la textura cargada.
      * @return intptr_t El identificador de la textura cargada.
      */
     void addTextureFromFile(std::string filename);
@@ -154,23 +151,23 @@ private:
     void titleBarDarkMode(bool useDarkMode);
     
     /**
-    * @brief Dark - Comfy style by Giuseppe from ImThemes
-    */
+     * @brief Dark - Comfy style by Giuseppe from ImThemes
+     */
     void Style_Confy();
 
     /**
-    * @brief Dark - Future Dark style by rewrking from ImThemes
-    */
+     * @brief Dark - Future Dark style by rewrking from ImThemes
+     */
     void Style_FutureDark();
 
     /**
-    * @brief Dark - Moonlight style by rewrking from ImThemes
-    */
+     * @brief Dark - Moonlight style by rewrking from ImThemes
+     */
     void Style_Moonlight();
     
     /**
-    * @brief Dark - Rounded Visual Studio style by RedNicStone from ImThemes
-    */
+     * @brief Dark - Rounded Visual Studio style by RedNicStone from ImThemes
+     */
     void Style_VisualStudio();
     
     /**
@@ -236,6 +233,8 @@ private:
 *  ImGuiKnobFlags_DragVertical:    Use vertical dragging only.
 *  ImGuiKnobFlags_AlwaysClamp:     Clamp input values that the user types into the input field.
 *  ImGuiKnobFlags_Logarithmic:     Use logarithmic scale for the knob.
+*  ## Custom colors
+*  Push/PopStyleColor() for each colors used (namely ImGuiCol_ButtonActive and ImGuiCol_ButtonHovered for primary and ImGuiCol_Framebg for Track)
 */
 
 /**** imgui spinners
