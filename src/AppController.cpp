@@ -1,6 +1,7 @@
 #include "AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
 #include <miniaudio.h>
+#include <iostream>
 
 // General ------------------------------------------------------------------------------
 
@@ -160,4 +161,12 @@ void AppController::TWorker() {
 
     short AppController::getTTSInitPercent() const noexcept {
         return tts_.getInitPercent();
+    }
+
+    short AppController::getAvailableNumTTSModels() const noexcept {
+        return tts_.getAvailableNumModels();
+    }
+
+    short AppController::getLoadedNumTTSModels() const noexcept {
+        return tts_.getLoadedNumModels();
     }
