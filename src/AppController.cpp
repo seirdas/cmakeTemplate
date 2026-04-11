@@ -1,6 +1,7 @@
 #include "AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
 #include <miniaudio.h>
+#include <iostream>
 
 // General ------------------------------------------------------------------------------
 
@@ -45,6 +46,9 @@ bool AppController::init() {
     // Inicialización de TTS (en hilo para no bloquear)
     std::thread tLoadTTS([this]() {
             tts_initialized_ = tts_.init();
+
+            // test
+            tts_.generate("Wind 240° at 12 kt, gusts 20 kt (variable to 210° 8 kt). Visibility 10 SM. Sky 1 SM BKN020, 4 SM OVC040, light fog at 300ft on runway 28. Temperature +23 °C, dew‑point +12 °C. QNH 1015 hPa (29.97 inHg).", "linuxtes");
         }
     );
     tLoadTTS.detach();  // No necesitamos "esperar" a que termine
@@ -160,4 +164,12 @@ void AppController::TWorker() {
 
     short AppController::getTTSInitPercent() const noexcept {
         return tts_.getInitPercent();
+    }
+
+    short AppController::getAvailableNumTTSModels() const noexcept {
+        return tts_.getAvailableNumModels();
+    }
+
+    short AppController::getLoadedNumTTSModels() const noexcept {
+        return tts_.getLoadedNumModels();
     }
