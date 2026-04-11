@@ -29,6 +29,9 @@
 #ifdef _WIN32
     #include <windows.h>
     #include <dwmapi.h>
+#else
+	#include <filesystem>
+	namespace fs = std::filesystem;
 #endif
 #include "resources.h"  // icono
 #include "ttf_archive-medium.h"
@@ -113,7 +116,22 @@ bool UiMgr::init() {
         // Cargar el icono de la ventana utilizando WinAPI
         HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
         SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-    #endif
+	#else // Alternativa Linux. Necesita el icon.png en imageres
+		int width, height, channels;
+		fs::path rutaIcono = fs::absolute("imageres") / "icon.png";
+		unsigned char* pixels = stbi_load(rutaIcono.string().c_str(), &width, &height, &channels, 4);
+		if (pixels) {
+			GLFWimage icon_image;
+			icon_image.width = width;
+			icon_image.height = height;
+			icon_image.pixels = pixels;
+			glfwSetWindowIcon(window_, 1, &icon_image);
+			stbi_image_free(pixels);
+			std::cout << "[UiMgr]   Linux window icon loaded from file." << std::endl;
+		} else {
+			std::cerr << "[UiMgr]   WARN: Could not load icon.png for Linux window." << std::endl;
+		}
+	#endif
 
 	// Carga de imágenes
 	loadImages();
