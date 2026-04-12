@@ -304,7 +304,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Configurar carpetas de salida del ejecutable y librerías
 set_target_properties(${PROJECT_NAME} PROPERTIES 
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<BOOL:${UNIX}>,Linux,Win>-$<CONFIG>" # Carpeta de salida del ejecutable
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<BOOL:${UNIX}>,Linux,Win>-$<CONFIG>" # Carpeta de salida de librerías estáticas
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<BOOL:${UNIX}>,Linux,Win>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
