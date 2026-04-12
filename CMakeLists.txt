@@ -116,10 +116,17 @@ endif()
 # ===============================
 
 # Herramienta de compilación Ninja
-option(USE_NINJA "Implementar Ninja" ON)      # Activar/desactivar herramienta
+option(USE_NINJA "Utilizar Ninja" ON)      # Activar/desactivar herramienta
 if(USE_NINJA)
 include(utils-ninja)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
 add_definitions(-DUSE_NINJA=1)                # Definición para activar herramienta
+endif()
+
+# Documentación doxygen
+option(USE_DOXYGEN "Utilizar Doxygen" ON)      # Activar/desactivar herramienta
+if(USE_DOXYGEN)
+include(utils-doxygen)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
+add_definitions(-DUSE_DOXYGEN=1)                # Definición para activar herramienta
 endif()
 
 
@@ -308,3 +315,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
+
+if (USE_DOXYGEN)
+  set(DOXYGEN_EXE "${DOXYGEN_EXECUTABLE}")
+  add_custom_command(
+      TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${DOXYGEN_EXE} "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      COMMENT "Generando documentación con Doxygen..."
+      VERBATIM
+  )
+endif()
