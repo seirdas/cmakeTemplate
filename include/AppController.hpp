@@ -4,7 +4,7 @@
 #include <thread>               // Hilos
 #include <fstream>              // Gestiona archivos
 
-#include <json.hpp>             // Manipula archivos .json
+#include <nlohmann/json.hpp>    // Manipula archivos .json
 
 #include "ui/UiMgr.h"           // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
