@@ -50,10 +50,10 @@ public:
     /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
      * @param text El texto a convertir en audio.
-     * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión .wav).
+     * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión wav).
      * @return true si la generación fue exitosa, false en caso de error.
      */
-    bool generate(std::string text, std::string wavname);
+    bool generate(std::string const& text, std::string const& wavname);
 
     /**
      * @brief Obtiene el porcentaje de inicialización del módulo TTS.
@@ -71,7 +71,6 @@ public:
      */
     std::vector<std::string> getLoadedModels() const;
 
-
     /**
      * @brief Obtiene el número de modelos disponibles
      */
@@ -81,6 +80,17 @@ public:
      * @brief Obtiene el número de modelos cargados
      */
     short getLoadedNumModels() const;
+
+    /**
+     * @brief Obtiene la frecuencia de muestreo del modelo de voz
+     */
+    int getSampleRate(std::string const& modelName) const;
+
+    /**
+     * @brief Obtiene el número de speakers (hablantes) del modelo de voz
+     */
+    int getNumSpeakers(std::string const& modelName) const;
+
 
     /**
      * @brief Devuelve si el módulo tiene algún proceso activo.
