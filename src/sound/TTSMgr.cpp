@@ -74,14 +74,14 @@ void TTSMgr::cerrar() {
 
     // Esperar a que terminen las operaciones que se estaban ejecutando
     std::unique_lock<std::mutex> lock(exit_mtx_);
-    std::cout << "[TTSMgr]  Waiting for unfinished jobs... " << std::endl;
+    SYS_INFO("TTSMgr","Waiting for unfinished jobs... ");
     exit_cv_.wait(lock, [this] {
         return active_tasks_ == 0;
     });
 
     // Destruye los modelos creados
     for (auto& [name,model] : loaded_models_) {
-        std::cout << "[TTSMgr]  Unloading model " << name << std::endl;
+        SYS_INFO("TTSMgr","Unloading model " + name);
         SherpaOnnxDestroyOfflineTts(model);
     }
     loaded_models_.clear();
@@ -99,7 +99,7 @@ bool TTSMgr::generate(std::string text, std::string wavname){
     int sid = 0; // speaker id (voces dentro del modelo, puede tener más de una, ver en su json)
 
     // Prueba a generar el audio con el primer modelo cargado (TODO implementar demás modelos)
-    std::cout << "[TTSMgr]  Generating audio" << std::endl;
+    SYS_INFO("TTSMgr","Generating audio...");
     active_tasks_++;
     const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerate(loaded_models_[getLoadedModels()[0]], text.c_str(), sid, 1.0);
     active_tasks_--;
@@ -117,17 +117,17 @@ bool TTSMgr::generate(std::string text, std::string wavname){
         return false;
     }
 
-    std::cout << "[TTSMgr]  Writing to file..." << std::endl;
+    SYS_INFO("TTSMgr","Writing to file...");
     active_tasks_++;
     SherpaOnnxWriteWave(audio->samples, audio->n, audio->sample_rate, (wavname+".wav").c_str());
     active_tasks_--;
     exit_cv_.notify_all();
 
     // You need to free the pointers to avoid memory leak in your app
-    std::cout << "[TTSMgr]  Freeing memory" << std::endl;
+    SYS_INFO("TTSMgr","Freeing memory...");
     SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
 
-    std::cout << "[TTSMgr]  Audio generated: " << wavname << ".wav" << std::endl; 
+    SYS_INFO("TTSMgr","Audio generated: " + wavname + ".wav"); 
     
     return true;
 };
@@ -214,7 +214,7 @@ bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
     config.model.vits.length_scale  = 1.0f;     // 1.0 = normal, >1.0 más lento, <1.0 más rápido
 
     // Inicializa el modelo con la configuración (tarda un poco)
-    std::cout << "[TTSMgr]  Initializating voice model " << st_modelname << std::endl;
+    SYS_INFO("TTSMgr","Initializating voice model " + st_modelname);
     active_tasks_++;
     const SherpaOnnxOfflineTts* tts_model = SherpaOnnxCreateOfflineTts(&config);
     active_tasks_--;

@@ -2,6 +2,7 @@
 #include <chrono>               // Controla tiempos de espera
 #include <miniaudio.h>
 #include <iostream>
+#include "system/sys.hpp"
 
 // General ------------------------------------------------------------------------------
 
@@ -27,7 +28,7 @@ AppController::~AppController() {
     // Cerrar socket y worker esperando paquetes de red
     net_.stop();
     online_cv_.notify_all();
-    std::cout << "[AppController] Closing running threads..." << std::endl;
+    SYS_INFO("AppController","Closing running threads...");
     if (worker_.joinable())
         worker_.join();
 
@@ -58,10 +59,6 @@ bool AppController::init() {
 }
 
 int AppController::run() {
-
-    // TEST log
-    log_.write("System initialized.", "AppController");
-
     running_ = true;
     gui_.run(); // Bloquea hasta cerrar
     return 0;
@@ -70,7 +67,7 @@ int AppController::run() {
 
 // Hilos --------------------------------------------------------------------------------
 void AppController::TWorker() {
-    std::cout << "[TWorker]   Initializating consumer thread..." << std::endl;
+    SYS_INFO("TWorker","Initializating consumer thread...");
     std::vector<char> data;
 
     while (running_) {
@@ -89,14 +86,14 @@ void AppController::TWorker() {
         int index = net_.getSocketIndex("Host");
 
         if (index == -1) {
-            std::cerr << "[TWorker] ERROR 'Host' Socket undefined" << std::endl;
+            SYS_WARN("TWorker", "'Host' Socket undefined");
             return; // <- TODO reiniciar o hacer algo para recuperarse de esto si pasa
         }
 
         data = net_.getDataFromSocket(index);
 
         if (data.empty()) {
-            std::cerr << "[TWorker] Empty data received" << std::endl;
+            SYS_WARN("TWorker","Empty data received");
             continue;
         }
 
@@ -106,7 +103,7 @@ void AppController::TWorker() {
         std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
     }
 
-    std::cout << "[TWorker]   Consumer thread stopped." << std::endl;
+    SYS_INFO("TWorker", "Consumer thread stopped.");
 }
 
 
