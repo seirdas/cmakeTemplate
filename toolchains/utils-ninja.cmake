@@ -3,7 +3,7 @@ include(FetchContent)
 cmake_policy(SET CMP0135 NEW) 
 
 # Versión de ninja
-set(NINJA_VERSION "1.13.2")
+set(NINJA_TAG "v1.13.2")
 set(NINJA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/utils-ninja")
 
 if(WIN32)
@@ -14,7 +14,7 @@ elseif(UNIX)
     set(NINJA_EXE_EXT "")
 endif()
 
-set(NINJA_URL "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-${NINJA_OS_SUFFIX}.zip")
+set(NINJA_URL "https://github.com/ninja-build/ninja/releases/download/${NINJA_TAG}/ninja-${NINJA_OS_SUFFIX}.zip")
 
 # Comprobar si ya existe para no descargar
 if (EXISTS "${NINJA_INSTALL_DIR}/ninja${NINJA_EXE_EXT}")
@@ -30,3 +30,12 @@ FetchContent_Declare(
     SOURCE_DIR "${NINJA_INSTALL_DIR}"
 )
 FetchContent_MakeAvailable(util_ninja)
+
+# Asegurar permisos de ejecución en linux
+if(UNIX)
+    message(STATUS "Setting execution permissions for Ninja...")
+    execute_process(COMMAND chmod +x "${NINJA_INSTALL_DIR}/ninja")
+endif()
+
+# Agregar al entorno
+set(ENV{PATH} "${NINJA_INSTALL_DIR}:$ENV{PATH}")
