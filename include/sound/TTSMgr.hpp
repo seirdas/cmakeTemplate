@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <condition_variable>
+#include <filesystem>
 
 /**
  * @brief Clase TTS para generar audios usando la librería Sherpa TTS
@@ -59,11 +60,17 @@ public:
      * @return El porcentaje de inicialización (0 a 100).
      */
     short getInitPercent() const;
-    
+  
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos disponibles
+     */
+    std::vector<std::string> getAvailableModels();
+      
     /**
      * @brief Obtiene una lista con los nombres de los modelos cargados
      */
-    std::vector<std::string> getLoadedVoiceModels() const;
+    std::vector<std::string> getLoadedModels() const;
+
 
     /**
      * @brief Obtiene el número de modelos disponibles
@@ -81,6 +88,14 @@ public:
     bool isWorking() const;
 
 private:
+
+    /**
+     * @brief Carga un modelo vits TTS 
+     */
+    bool load_vits_model(std::filesystem::path modelDir);
+
+    /************ Variables ********************************************************/
+
     using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
 
     TTSModelsMap            loaded_models_;         // Mapa de modelos TTS cargados
@@ -90,6 +105,7 @@ private:
     std::string const       models_path_;           // Ruta de carpetas donde residen los modelos
     short                   num_available_models_;  // Número de modelos disponibles
     short                   num_loaded_models_;     // Número de modelos disponibles
+    std::mutex              models_mutex_;          // Mutex para proteger el mapa de modelos y init_percent
 
     std::atomic<short>      active_tasks_;      // Indica si hay algo en ejecución
     std::atomic<bool>       running_;           // Indica si no se ha comandado destruir la clase
