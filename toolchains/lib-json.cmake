@@ -3,6 +3,7 @@
 # -------------------------------
 
 include(FetchContent)
+cmake_policy(SET CMP0135 NEW) 
 
 # Version de json
 set(JSON_VERSION "v3.12.0")
