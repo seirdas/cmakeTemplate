@@ -20,20 +20,26 @@ Sys::~Sys() {
 }
 
 
-void Sys::error(std::string const& msg, std::string const& whereIsFrom) {
-    log_.write("[ERROR]  "+msg);
-    std::cerr << "[ERROR] " << msg << std::endl;
+void Sys::error(std::string const& module, std::string const& msg) {
+    std::string prefix = "[ERROR]   ";
+
+    log_.write(prefix+"["+module+"] "+msg);
+    std::cerr << prefix << "[" << module << "]  " <<" "<< msg << std::endl;
     showPopup(msg, "ERROR");            // <- !! Bloqueante
 }
 
-void Sys::warning(std::string const& msg, std::string const& whereIsFrom) {
-    log_.write("[WARN]  "+msg);
-    std::cerr << "[WARN] " << msg << std::endl;
+void Sys::warning(std::string const& module, std::string const& msg) {
+    std::string prefix = "[WARN]   ";
+
+    log_.write(prefix+"["+module+"] "+msg);
+    std::cerr << prefix << "[" << module << "]  " <<" "<< msg << std::endl;
 }
 
-void Sys::info(std::string const& msg, std::string const& whereIsFrom) {
-    log_.write("[INFO]  "+msg);
-    std::cout << "[INFO] " << msg << std::endl;
+void Sys::info(std::string const& module, std::string const& msg) {
+    std::string prefix = "[INFO]   ";
+
+    log_.write(prefix+"["+module+"] "+msg);
+    std::cout << prefix << "[" << module << "]  " <<" "<< msg << std::endl;
 }
 
 

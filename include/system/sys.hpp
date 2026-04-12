@@ -3,18 +3,18 @@
 #include <string>
 #include "system/LogMgr.hpp"
 
-#define SYS_ERROR(msg, module) Sys::instance().error(msg, module)
-#define SYS_WARN(msg, module)  Sys::instance().warning(msg, module)
-#define SYS_INFO(msg, module)  Sys::instance().info(msg, module)
+#define SYS_ERROR(module, msg) Sys::instance().error(module, msg)
+#define SYS_WARN(module, msg)  Sys::instance().warning(module, msg)
+#define SYS_INFO(module, msg)  Sys::instance().info(module, msg)
 
 // singleton
 class Sys {
 public:
     static Sys& instance();
 
-    void error(std::string const& msg, std::string const& whereIsFrom);
-    void warning(std::string const& msg, std::string const& whereIsFrom);
-    void info(std::string const& msg, std::string const& whereIsFrom);
+    void error(std::string const& module, std::string const& msg);
+    void warning(std::string const& module, std::string const& msg);
+    void info(std::string const& module, std::string const& msg);
 
 private:
     Sys(); // constructor privado
