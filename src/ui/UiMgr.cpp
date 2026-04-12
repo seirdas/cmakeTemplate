@@ -4,6 +4,10 @@
 //	- Buscar en imgui.h -> ImGuiWindowFlags_
 //  - Añadir en una variable: ImGuiWindowFlags window_flags = *********************;
 //	- Añadir a la ventana (en Begin("", nullptr, window_flags); )
+//
+//	DEMO DE ELEMENTOS Y CÓDIGO:
+// 		https://pthom.github.io/imgui_explorer/
+//		https://traineq.org/imgui_bundle_explorer/
 // ---------------------------------------------------------------------------------
 
 #include "ui/UiMgr.h"			// Clase de gestión de UI
@@ -283,20 +287,19 @@ void UiMgr::crearMainMenuBar() {
 }
 
 void UiMgr::ventanaPrincipal() {
-	/* CUIDADO: Estas variables se están creando en cada frame (a 60fps). Es más conveniente guardarlas instanciadas en la clase.*/ 
-	// Variables estáticas para guardar las alturas (proporciones iniciales)
+	// Variables estáticas (solo se crean una vez) para guardar datos
 	static float heightRightTop = 0.5f; 
 	float totalHeight = GetContentRegionAvail().y;
 	float sizeX__Izq = GetContentRegionAvail().x * 0.3f;
-
-	short TTS_percent;
-	std::string TTS_text;
+	static std::string TTS_text;
+	
+	static short TTS_percent;
 	
 	// COLUMNA IZQUIERDA
 	BeginGroup();
 	{
 		// Panel F1 (Arriba Izquierda)
-		BeginChild("##F1", ImVec2(sizeX__Izq, totalHeight), true);
+		BeginChild("##F1", ImVec2(sizeX__Izq, GetContentRegionAvail().y), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_FrameStyle);
 
 		// Mostrar carga de TTS
 		TTS_percent = ctrl_->getTTSInitPercent();
@@ -307,36 +310,54 @@ void UiMgr::ventanaPrincipal() {
 			TTS_text += std::to_string(ctrl_->getLoadedNumTTSModels()) + "/" + std::to_string(ctrl_->getAvailableNumTTSModels());
 		} else TTS_text = "TTS voice models loaded.";
 		
-		Text(TTS_text.c_str());
-		ImGui::ProgressBar(TTS_percent/100.0f, ImVec2(0.0f, 0.0f));
+		Text("%s", TTS_text.c_str());
+		ProgressBar(TTS_percent/100.0f, ImVec2(0.0f, 0.0f));
 
 		// Botón de modo
 		if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
 			ctrl_->setOnlineMode(!ctrl_->isOnlineMode());
 		}
 
-		// Test de temas
+		// Test de temas (Combobox from imgui demo)
 
-		if (Button("darkmode window")) 
-			titleBarDarkMode(true);
-		
-		if (Button("lightmode window"))
-			titleBarDarkMode(false);
+		Text("Tema:"); SameLine();
+		static const char* theme_items[] = { 
+			"Confy", 
+			"FutureDark", 
+			"Moonlight",
+			"VisualStudio",
+			"Microfost"
+		};
+        static int item_selected_idx;
+        if (BeginCombo("##cbth", theme_items[item_selected_idx]))
+        {
+            // Recorremos todas las opciones
+			for (int n = 0; n < static_cast<int>(std::size(theme_items)); ++n) {
+				const bool is_selected = (item_selected_idx == n);
 
-		if (Button("Theme: Confy"))
-			Style_Confy();
+				// **SELECTABLE**: se ejecuta *una sola vez* cuando el usuario
+				// hace click (o pulsa Enter) sobre la opción.
+				if (Selectable(theme_items[n], is_selected)) {
+					// ----> CAMBIO DE SELECCIÓN <----
+					item_selected_idx = n;                     // actualizar índice
 
-		if (Button("Theme: FutureDark"))
-			Style_FutureDark();
+					// ----> ACCIÓN A EJECUTAR ----
+					// Por ejemplo:
+					switch(n){
+						case 0: Style_Confy(); 			break;
+						case 1: Style_FutureDark(); 	break;
+						case 2: Style_Moonlight(); 		break;
+						case 3: Style_VisualStudio(); 	break;
+						case 4: Style_Microfrost(); 	break;
+					}
+				}
 
-		if (Button("Theme: Moonlight"))
-			Style_Moonlight();
-
-		if (Button("Theme: Visual Studio"))
-			Style_VisualStudio();
-
-		if (Button("Theme: Microfrost"))
-			Style_Microfrost();
+				// Mantener el foco visual en el elemento activo
+				if (is_selected)
+					SetItemDefaultFocus();
+			}
+            EndCombo();
+        }
 
 		EndChild();
 	}
@@ -344,336 +365,126 @@ void UiMgr::ventanaPrincipal() {
 
 	SameLine(); // Pegamos la siguiente columna
 
+	
 	//  Layout principal (columna derecha)
-	BeginGroup(); {
-		// ---------- Panel F3 (arriba derecha) ----------
-		BeginChild("##F3", ImVec2(0, totalHeight * heightRightTop), true);
-		Text("Demo panel");
-		// Test imagen
-		Image(images_["imageres/cat.png"].tex, ImVec2(200, 100));
+	BeginGroup(); 
+	{
+		static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+		if (BeginTabBar("MyTabBar", tab_bar_flags)) {
 
-		// Test spinners
-		SameLine();
-		ImSpinner::SpinnerFadeDots(		  "dots",	 16, 2, ImColor(.5f,.5f,.5f));		SameLine(0.0, -1.0);
-		ImSpinner::SpinnerRainbowMix(     "Rmix",    16, 2, ImColor(1.0f,1.0f,1.0f),4);	SameLine(0.0, -1.0);
-		ImSpinner::SpinnerAng8(           "Ang",     16, 2);							SameLine(0.0, -1.0);
-		ImSpinner::SpinnerPulsar(         "Pulsar",  16, 2);							SameLine(0.0, -1.0);
-		ImSpinner::SpinnerClock(          "Clock",   16, 2);							SameLine(0.0, -1.0);
-		ImSpinner::SpinnerAtom(           "atom",    16, 2);							SameLine(0.0, -1.0);
-		ImSpinner::SpinnerSwingDots(      "wheel",   16, 6);							SameLine(0.0, -1.0);
-		ImSpinner::SpinnerDotsToBar(      "tobar",   16, 2, ImColor(1.0f,1.0f,1.0f),4);	SameLine(0.0, -1.0);
-		ImSpinner::SpinnerBarChartRainbow("rainbow", 16, 4, ImColor(1.0f,1.0f,1.0f),4);
+			if (BeginTabItem("Demo1")) {
+				// Test imagen
+				Image(images_["imageres/cat.png"].tex, ImVec2(200, 100));
+	
+				// Test spinners
+				SameLine();
+				ImSpinner::SpinnerAng8(           "Ang",     16, 2);	SameLine(0.0, -1.0);
+				ImSpinner::SpinnerPulsar(         "Pulsar",  16, 2);	SameLine(0.0, -1.0);
+				ImSpinner::SpinnerClock(          "Clock",   16, 2);	SameLine(0.0, -1.0);
+				ImSpinner::SpinnerAtom(           "atom",    16, 2);	SameLine(0.0, -1.0);
+				ImSpinner::SpinnerSwingDots(      "wheel",   16, 6);	SameLine(0.0, -1.0);
+				ImSpinner::SpinnerFadeDots(		  "dots",	 16, 2, ImColor(.5f,.5f,.5f));		
+				SameLine(0.0, -1.0);
+				ImSpinner::SpinnerRainbowMix(     "Rmix",    16, 2, ImColor(1.0f,1.0f,1.0f),4);	
+				SameLine(0.0, -1.0);
+				ImSpinner::SpinnerDotsToBar(      "tobar",   16, 2, ImColor(1.0f,1.0f,1.0f),4);	
+				SameLine(0.0, -1.0);
+				ImSpinner::SpinnerBarChartRainbow("rainbow", 16, 4, ImColor(1.0f,1.0f,1.0f),4);
 
-		// Test knobs
-		static float val1 = 0;
-		if (ImGuiKnobs::Knob("Gain", &val1, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobVariant_Tick)) {
-			// value was changed
-		}
-
-		SameLine();
-
-		static float val2 = 0;
-		if (ImGuiKnobs::Knob("Mix", &val2, -1.0f, 1.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped)) {
-			// value was changed
-		}
-
-		// Double click to reset
-		if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
-			val2 = 0;
-		}
-
-
-		ImGui::SameLine();
-
-		static float val3 = 0;
-
-		// Custom colors
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(255.f, 0, 0, 0.7f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(255.f, 0, 0, 1));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 255.f, 0, 1));
-		// Push/PopStyleColor() for each colors used (namely ImGuiCol_ButtonActive and ImGuiCol_ButtonHovered for primary and ImGuiCol_Framebg for Track)
-		if (ImGuiKnobs::Knob("Pitch", &val3, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_WiperOnly)) {
-			// value was changed
-		}
-
-		ImGui::PopStyleColor(3);
-
-
-		ImGui::SameLine();
-
-		// Custom min/max angle
-		static float val4 = 0;
-		if (ImGuiKnobs::Knob("Dry", &val4, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped, 0, 0, 10, 1.570796f, 3.141592f)) {
-			// value was changed
-		}
-
-		ImGui::SameLine();
-
-		// Int value
-		static int val5 = 1;
-		if (ImGuiKnobs::KnobInt("Wet", &val5, 1, 10, 0.1f, "%i", ImGuiKnobVariant_Stepped, 0, 0, 10)) {
-			// value was changed
-		}
-
-		ImGui::SameLine();
-
-		// Vertical drag only
-		static float val6 = 1;
-		if (ImGuiKnobs::Knob("Vertical", &val6, 0.f, 10.f, 0.1f, "%.1f", ImGuiKnobVariant_Space, 0, ImGuiKnobFlags_DragVertical)) {
-			// value was changed
-		}
-
-		ImGui::SameLine();
-
-		static float val7 = 500.0f;
-		if (ImGuiKnobs::Knob("Logarithmic", &val7, 20, 20000, 20.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_Logarithmic | ImGuiKnobFlags_AlwaysClamp)) {
-			// value was changed
-		}
-		
-		// Tabla angled headers
-		const char* column_names[] = { "Track", "Volume", "Pan", "Pitch", "Reverb", "Echo", "Dry/Wet" };
-		const int columns_count = 7;
-		const int rows_count = 6;
-		
-		// Almacenamiento para los valores de los Knobs (Fila * Columna)
-		static float knob_values[rows_count][columns_count] = { 0.0f };
-
-		// Flags de la tabla: Scroll, Bordes y Resizable
-		ImGuiTableFlags table_flags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX | 
-									ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders | 
-									ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable;
-
-		// Configuración global del ángulo de los headers (puedes moverlo a tu init)
-		ImGui::GetStyle().TableAngledHeadersAngle = 35.0f; 
-
-		// Definimos un tamaño para la tabla (0 en ancho = ocupar disponible)
-		if (ImGui::BeginTable("KnobTable", columns_count, table_flags, ImVec2(0, 400))) 
-		{
-			// 1. CONFIGURACIÓN DE COLUMNAS
-			// Primera columna fija para el nombre
-			ImGui::TableSetupColumn(column_names[0], ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed, 100.0f);
-			
-			// Resto de columnas con el flag de AngledHeader y un ancho mínimo para el Knob
-			for (int n = 1; n < columns_count; n++) {
-				ImGui::TableSetupColumn(column_names[n], ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed, 60.0f);
+				EndTabItem();
 			}
 
-			// 2. RENDERIZADO DE HEADERS
-			ImGui::TableAngledHeadersRow(); // Dibuja las etiquetas inclinadas
-			ImGui::TableHeadersRow();       // Dibuja la base de los headers (necesario para menús contextuales)
+			if (BeginTabItem("knobs")) { 
+				// Valores de ejemplo
+				static float val1 = 0;
+				static float val2 = 0;
+				static float val3 = 0;
+				static float val4 = 0;
+				static int 	 val5 = 1;
+				static float val6 = 1;
+				static float val7 = 500.0f;
 
-			// 3. RENDERIZADO DE FILAS
-			for (int row = 0; row < rows_count; row++) 
-			{
-				ImGui::PushID(row);
-				ImGui::TableNextRow(ImGuiTableRowFlags_None, 70.0f); // Altura de fila fija para el Knob
-
-				// Columna 0: Texto
-				ImGui::TableSetColumnIndex(0);
-				ImGui::AlignTextToFramePadding();
-				ImGui::Text("Audio Track %d", row);
-
-				// Columnas de Knobs
-				for (int col = 1; col < columns_count; col++) 
-				{
-					if (ImGui::TableSetColumnIndex(col)) 
-					{
-						ImGui::PushID(col);
-						
-						// Centrar el Knob en la celda
-						float width = ImGui::GetColumnWidth();
-						ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (width - 45.0f) * 0.5f);
-						
-						// Render de imgui-knobs
-						ImGuiKnobs::Knob("##knob", &knob_values[row][col], 0.0f, 1.0f, 0.01f, "%.2f", 
-										ImGuiKnobVariant_Tick, 45.0f, ImGuiKnobFlags_NoInput);
-						
-						ImGui::PopID();
-					}
-				}
-				ImGui::PopID();
-			}
-			ImGui::EndTable();
-		}
-
-
-
-
-		EndChild();
-
-		// ---------- Splitter horizontal derecho ----------
-		Button("##h_splitter_r", ImVec2(-FLT_MIN, 4.0f));
-		if (IsItemActive())
-			heightRightTop += GetIO().MouseDelta.y / totalHeight;
-
-		// ---------- Panel F4 (abajo derecha) ----------
-		BeginChild("##F4", ImVec2(0, 0), false); {
-
-			//  Cada AudioPlaybackModule (APM) → un bloque colapsable
-			if (CollapsingHeader("ADF (running)", false))	{
-
-				ImGuiChildFlags child_flags = ImGuiChildFlags_AlwaysAutoResize |
-											ImGuiChildFlags_AutoResizeY |
-											ImGuiChildFlags_Borders;
-
-				// ------------------------------------------------
-				//  Bucle ficticio: aquí iterarías sobre los tonos
-				// ------------------------------------------------
-				// for (int i = 0; i < apmCount; ++i) { … }
-				// -----------------------------------------------------------------
-				//  Ejemplo con 3 tonos (Tone1, Tone3, Tone4) – sustituye por tu bucle
-				// -----------------------------------------------------------------
-
-				// ---------- Tono 1 ----------
-				if (BeginChild("Tone1Child", ImVec2(0, 0), child_flags))
-				{
-					Text("Tone1");
-
-					float duration_seconds = 3600.0f; // ← obtener con SoundMgr::getDuration()
-
-					//  Slider de posición + tiempo formateado
-					int total = static_cast<int>(sl_position);
-					int h = total / 3600;
-					int m = (total % 3600) / 60;
-					int s = total % 60;
-					char buf[16];
-					if (h > 0)
-						sprintf(buf, "%d:%02d:%02d", h, m, s);
-					else
-						sprintf(buf, "%02d:%02d", m, s);
-
-					BeginDisabled(ctrl_->isOnlineMode());
-					{
-						// --- barra de reproducción compacta ---
-						PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 1));
-						PushStyleVar(ImGuiStyleVar_GrabMinSize, 12.0f);
-						PushStyleVar(ImGuiStyleVar_GrabRounding, 24.0f);
-						PushItemWidth(GetContentRegionAvail().x * 0.8f);
-
-						SliderFloat("##Position", &sl_position, 0.0f, duration_seconds, "");
-
-						PopItemWidth();
-						PopStyleVar(3);
-
-						SameLine();
-						TextUnformatted(buf);
-
-						// --- botones de control ---
-						if (ImageButton("##btn_play", images_["imageres/play.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button play pressed\n";
-						SameLine();
-						if (ImageButton("##btn_pause", images_["imageres/pause.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button pause pressed\n";
-						SameLine();
-						if (ImageButton("##btn_stop", images_["imageres/stop.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button stop pressed\n";
-						SameLine();
-						if (ImageButton("##btn_repeat", images_["imageres/repeat.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button repeat pressed\n";
-
-						// --- volumen y pitch ---
-						SameLine();
-						PushItemWidth(GetContentRegionAvail().x * 0.3f);
-						SliderInt("Volume", &sl_volume, 0, 100, "%d");
-						PopItemWidth();
-						SameLine();
-						PushItemWidth(GetContentRegionAvail().x * 0.3f);
-						SliderFloat("Pitch", &sl_pitch, -2.0f, 2.0f, "x%.2f");
-						PopItemWidth();
-					}
-					EndDisabled();
-
-					EndChild();
-				}
+				// Test knobs
+				ImGuiKnobs::Knob("Gain", &val1, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobVariant_Tick, 0,ImGuiKnobFlags_ValueTooltip | ImGuiKnobFlags_NoTitle);
+				SameLine();
+				ImGuiKnobs::Knob("Mix", &val2, -1.0f, 1.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped);
+				SameLine();
+				ImGuiKnobs::Knob("Pitch", &val3, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_ValueTooltip | ImGuiKnobFlags_NoTitle | ImGuiKnobFlags_NoInput);
+				SameLine();
+				ImGuiKnobs::Knob("Dry", &val4, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped, 0, 0, 10, 1.570796f, 3.141592f);
+				SameLine();
+				ImGuiKnobs::KnobInt("Wet", &val5, 1, 10, 0.1f, "%i", ImGuiKnobVariant_Stepped, 0, 0, 10);
+				SameLine();
+				ImGuiKnobs::Knob("Vertical", &val6, 0.f, 10.f, 0.1f, "%.1f", ImGuiKnobVariant_Space, 0, ImGuiKnobFlags_DragVertical);
+				SameLine();
+				ImGuiKnobs::Knob("Logarithmic", &val7, 20, 20000, 20.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_Logarithmic | ImGuiKnobFlags_AlwaysClamp);
 				
-				// ---------- Tono 2 ----------
-				if (BeginChild("Tone2Child", ImVec2(0, 0), child_flags))
-				{
-					Text("Tone2");
-
-					float duration_seconds = 3600.0f; // ← obtener con SoundMgr::getDuration()
-
-					//  Slider de posición + tiempo formateado
-					int total = static_cast<int>(sl_position);
-					int h = total / 3600;
-					int m = (total % 3600) / 60;
-					int s = total % 60;
-					char buf[16];
-					if (h > 0)
-						sprintf(buf, "%d:%02d:%02d", h, m, s);
-					else
-						sprintf(buf, "%02d:%02d", m, s);
-
-					BeginDisabled(ctrl_->isOnlineMode());
-					{
-						// --- barra de reproducción compacta ---
-						PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 1));
-						PushStyleVar(ImGuiStyleVar_GrabMinSize, 12.0f);
-						PushStyleVar(ImGuiStyleVar_GrabRounding, 24.0f);
-						PushItemWidth(GetContentRegionAvail().x * 0.8f);
-
-						SliderFloat("##Position", &sl_position, 0.0f, duration_seconds, "");
-
-						PopItemWidth();
-						PopStyleVar(3);
-
-						SameLine();
-						TextUnformatted(buf);
-
-						// --- botones de control ---
-						if (ImageButton("##btn_play", images_["imageres/play.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button play pressed\n";
-						SameLine();
-						if (ImageButton("##btn_pause", images_["imageres/pause.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button pause pressed\n";
-						SameLine();
-						if (ImageButton("##btn_stop", images_["imageres/stop.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button stop pressed\n";
-						SameLine();
-						if (ImageButton("##btn_repeat", images_["imageres/repeat.png"].tex, ImVec2(20, 20)))
-							std::cout << "Button repeat pressed\n";
-
-						// --- volumen y pitch ---
-						SameLine();
-						PushItemWidth(GetContentRegionAvail().x * 0.3f);
-						SliderInt("Volume", &sl_volume, 0, 100, "%d");
-						PopItemWidth();
-						SameLine();
-						PushItemWidth(GetContentRegionAvail().x * 0.3f);
-						SliderFloat("Pitch", &sl_pitch, -2.0f, 2.0f, "x%.2f");
-						PopItemWidth();
-					}
-					EndDisabled();
-
-					EndChild();
+				// Double click to reset
+				if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
+					val1 = 0; val2 = 0; val3 = 0; val4 = 0;	val5 = 0; val6 = 0;	val7 = 0;
 				}
 
-				// ---------- Tono 3 ----------
-				if (BeginChild("Tone3Child", ImVec2(0, 0), child_flags))
-				{
-					Text("Tone3");
-					Text("#TODO");
-					EndChild();
-				}
-
-				// ---------- Tono 4 ----------
-				if (BeginChild("Tone4Child", ImVec2(0, 0), child_flags))
-				{
-					Text("Tone4");
-					Text("#TODO");
-					EndChild();
-				}
+				EndTabItem();
 			}
 
-			// ----------------------------------------------------
-			//  Otros bloques colapsables
-			// ----------------------------------------------------
-			if (CollapsingHeader("ADF2", false)) { Text("#TODO"); }
-			if (CollapsingHeader("NAV", false))  { Text("#TODO"); }
-			if (CollapsingHeader("TACAN", false)) { Text("#TODO"); }
-			if (CollapsingHeader("LOL", false)) { Text("#TODO"); }
+			// TAB 2: COMUNICACIONES (TABLA CON KNOBS)
+			if (BeginTabItem("Communications")) {
+				// Definimos los nombres de las columnas. 
+				const char* col_names[] = { "TX/RX", "Piloto", "Copiloto", "3Hombre", "IOS OnBoard", "IOS Offboard 1", "IOS OffBoard 2" };
+				
+				// Calculamos el número de columnas dinámicamente
+				const int num_col = (int)(sizeof(col_names) / sizeof(col_names[0]));
+				const int num_rows = num_col-1; // Puedes cambiar esto por una constante o variable de tu lógica
+
+				// Matriz de valores para los Knobs: [Filas][Columnas]
+				static float k_vals[num_rows][num_col];
+
+				//style_->TableAngledHeadersAngle = 35.0f;
+
+				if (BeginTable("KnobTable", num_col, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders, ImVec2(0, 0))) {
+					
+					// Primera columna (Nombres de canales)
+					TableSetupColumn(col_names[0], ImGuiTableColumnFlags_WidthFixed, 100.0f);
+					
+					// Resto de columnas (Angled Headers)
+					for (int n = 1; n < num_col; n++) {
+						TableSetupColumn(col_names[n], ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed, 55.0f);
+					}
+
+					TableAngledHeadersRow();
+					TableHeadersRow();
+
+					for (int row = 0; row < num_rows; row++) {
+						PushID(row);
+						TableNextRow(ImGuiTableRowFlags_None, 65.0f);
+						
+						// Columna 0: Etiqueta del canal
+						TableSetColumnIndex(0);
+						AlignTextToFramePadding();
+						Text("%s", col_names[row+1]);
+
+						// Columnas 1 a N: Knobs
+						for (int col = 1; col < num_col; col++) {
+							if (TableSetColumnIndex(col)) {
+								PushID(col);
+								
+								float c_width = GetColumnWidth();
+								// Centramos el knob (40.0f es su diámetro)
+								SetCursorPosX(GetCursorPosX() + (c_width - 40.0f) * 0.5f);								
+								ImGuiKnobs::Knob("##vol", &k_vals[row][col], 0.0f, 100.0f, 1.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 40.0f, ImGuiKnobFlags_ValueTooltip | ImGuiKnobFlags_NoTitle);
+								
+								PopID();
+							}
+						}
+						PopID();
+					}
+					EndTable();
+				}
+				EndTabItem();
+			}
+			EndTabBar();
 		}
-		EndChild();   // ##F4
+
 	}
 	EndGroup();       // grupo principal
 
@@ -876,6 +687,7 @@ void UiMgr::Style_Confy() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
+	std::cout << "[UiMgr]	'Confy' theme applied." << std::endl;
 }
 
 void UiMgr::Style_FutureDark() {
@@ -967,6 +779,7 @@ void UiMgr::Style_FutureDark() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 
+	std::cout << "[UiMgr]	'FutureDark' theme applied." << std::endl;
 }
 
 void UiMgr::Style_Moonlight() {
@@ -1058,6 +871,7 @@ void UiMgr::Style_Moonlight() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 
+	std::cout << "[UiMgr]	'Moonlight' theme applied." << std::endl;
 }
 
 void UiMgr::Style_VisualStudio() {
@@ -1149,6 +963,7 @@ void UiMgr::Style_VisualStudio() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.1451f, 0.1451f, 0.1490f, 1.0000f);
 
+	std::cout << "[UiMgr]	'Visual Studio' theme applied." << std::endl;
 }
 
 void UiMgr::Style_Microfrost() {
@@ -1239,4 +1054,6 @@ void UiMgr::Style_Microfrost() {
 	style_->Colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.0000f, 1.0000f, 1.0000f, 0.7000f);
 	style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
+
+	std::cout << "[UiMgr]	'Microfrost' theme applied." << std::endl;
 }
