@@ -1,6 +1,7 @@
 #include <iostream>             // Entrada/Salida estándar
 #include "net/NetMgr.hpp"
 #include "net/UdpReceiver.hpp"
+#include "system/sys.hpp"
 
 // General ------------------------------------------------------------------------------
 
@@ -11,13 +12,13 @@ NetMgr::NetMgr(std::size_t const& thread_count) :
 {
     // Inicializar el io_context con varios hilos de recepción
     io_context_.restart();
-    std::cout << "[NetMgr]  Starting I/O context with " << thread_count_ << " threads..." << std::endl;
+    SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(thread_count_) + " threads...");
     for (std::size_t i = 0; i < thread_count_; ++i) {
         threads_.emplace_back([this]() {
             io_context_.run();
         });
     }
-    std::cout << "[NetMgr]  Network (io_context) running..." << std::endl;
+    SYS_INFO("NetMgr","Network (io_context) running...");
 }
 
 NetMgr::~NetMgr() {
@@ -66,7 +67,7 @@ bool NetMgr::addReceiver(
     std::shared_ptr<UdpReceiver> receiver = std::make_shared<UdpReceiver>(name, io_context_);
 
     // Intentar inicializar
-    std::cout << "[NetMgr]  Opening new socket..." << std::endl;
+    SYS_INFO("NetMgr","Opening new socket...");
     if (!receiver->init(local_port, local_ip, rcv_packet_size))
     {
         // No hay nada que limpiar, el puntero make_unique se destruye al salir.
@@ -77,7 +78,7 @@ bool NetMgr::addReceiver(
     // Insertar en el vector
     std::lock_guard<std::mutex> lock(mtx_receivers_);
     receivers_.push_back(receiver);
-    std::cout << "[NetMgr]  Socket added on port " << local_port << std::endl;
+    SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );;
 
     // "encender" el socket si estaban los demás corriendo
     if (running_)
@@ -101,11 +102,10 @@ bool NetMgr::removeReceiver(unsigned int index) {
     // Copiamos el shared_ptr para mantenerlo vivo durante esta función
     std::shared_ptr<UdpReceiver> rcv = receivers_[index];
     
-    std::cout << "[NetMgr] Deleting socket '"
-              << rcv->name()
-              << "' with port "
-              << rcv->port()
-              << std::endl;
+    SYS_INFO("NetMgr",
+        "Deleting socket '" + rcv->name()
+        + "' with port " + std::to_string(rcv->port() )
+    );
               
     // Esto fuerza a que el lambda de async_receive_from se ejecute con error 'operation_aborted'.
     asio::post(rcv->getStrand(), [rcv]() {
@@ -115,7 +115,7 @@ bool NetMgr::removeReceiver(unsigned int index) {
     // Borrar el elemento del vector usando iterator
     receivers_.erase(receivers_.begin() + index);
 
-    std::cout << "[NetMgr]  Socket deleted" << std::endl;
+    SYS_INFO("NetMgr","Socket deleted");
     return true;
 }
 
@@ -144,7 +144,7 @@ std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
 bool NetMgr::start() {
     // Evitar lanzar hilos si ya están corriendo
     if (running_) {
-        std::cout << "[NetMgr]  Already running" << std::endl;
+        SYS_WARN("NetMgr","Commanded start() when is already running");
         return true;
     }
 
@@ -155,7 +155,7 @@ bool NetMgr::start() {
         });
     }
 
-    std::cout << "[NetMgr]  Sockets running" << std::endl;
+    SYS_INFO("NetMgr","Sockets running");
     running_ = true;
     return true;
 }
@@ -164,7 +164,7 @@ void NetMgr::stop() {
 
     if (!running_) return;
 
-    std::cout << "[NetMgr]  Stopping sockets..." << std::endl;
+    SYS_INFO("NetMgr","Stopping sockets...");
 
     // Parar la recepción de los sockets
     for (auto& rcv : receivers_) {
@@ -174,7 +174,7 @@ void NetMgr::stop() {
     }
 
     running_ = false;
-    std::cout << "[NetMgr]  All receivers stopped" << std::endl;
+    SYS_INFO("NetMgr","All receivers stopped");
 }
 
 bool NetMgr::isRunning() const {
