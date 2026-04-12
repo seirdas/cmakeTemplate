@@ -20,7 +20,7 @@ public:
 	~LogMgr();
 
 	void enable(bool enable);
-	void write(std::string txt, std::string whereIsFrom = "");
+	void write(std::string txt);
 	void clear();
 
 	std::string getFilePath() { return "#TODO"; }

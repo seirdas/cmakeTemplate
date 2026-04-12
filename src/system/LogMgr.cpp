@@ -37,7 +37,7 @@ void LogMgr::enable(bool sel) {
 		file_.close();
 }
 
-void LogMgr::write(std::string txt, std::string whereIsFrom)
+void LogMgr::write(std::string txt)
 {
 	if (!enabled_) return;
 
@@ -50,7 +50,6 @@ void LogMgr::write(std::string txt, std::string whereIsFrom)
 	file_.open(filepath_, std::ios_base::out | std::ios_base::app);
 
 	std::string out = getTimestamp();
-	if (whereIsFrom!="") out += " [" + whereIsFrom + "]";
 	out += " " + txt;
 
 	if (file_.is_open()) {
