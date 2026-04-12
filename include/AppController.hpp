@@ -2,7 +2,6 @@
 #pragma once
 
 #include <thread>               // Hilos
-#include <fstream>              // Gestiona archivos
 
 #include <nlohmann/json.hpp>    // Manipula archivos .json
 
@@ -10,6 +9,7 @@
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
+#include "system/LogMgr.hpp"    // Clase para gestionar logs
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 #define VERSION 0.8
@@ -144,6 +144,7 @@ private:
     UiMgr       gui_;                           // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                           // Gestor de audio
     TTSMgr      tts_;                           // Gestor módulo TTS
+    LogMgr      log_;
 
     bool        net_initialized_;               // Indica si net está inicializado
     bool        gui_initialized_;               // Indica si gui está inicializado
