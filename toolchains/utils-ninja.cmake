@@ -8,20 +8,20 @@ set(NINJA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/utils-ninja")
 
 if(WIN32)
     set(NINJA_OS_SUFFIX "win")
-    set(NINJA_EXE_EXT ".exe")
+    set(NINJA_BIN "ninja.exe")
 elseif(UNIX)
     set(NINJA_OS_SUFFIX "linux")
-    set(NINJA_EXE_EXT "")
+    set(NINJA_BIN "ninja")
 endif()
 
 set(NINJA_URL "https://github.com/ninja-build/ninja/releases/download/${NINJA_TAG}/ninja-${NINJA_OS_SUFFIX}.zip")
 
 # Comprobar si ya existe para no descargar
-if (EXISTS "${NINJA_INSTALL_DIR}/ninja${NINJA_EXE_EXT}")
+if (EXISTS "${NINJA_INSTALL_DIR}/${NINJA_BIN}")
     message(STATUS "Ninja found locally at: ${NINJA_INSTALL_DIR}")
     set(FETCHCONTENT_SOURCE_DIR_UTIL_NINJA "${NINJA_INSTALL_DIR}" CACHE PATH "" FORCE)
 else()
-    message(STATUS "Ninja not found. Downloading...")
+    message(STATUS "${NINJA_BIN} not found. Downloading...")
 endif()
 
 FetchContent_Declare(
@@ -32,7 +32,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(util_ninja)
 
 # Asegurar permisos de ejecución en linux
-if(UNIX)
+if(UNIX AND EXISTS "${NINJA_INSTALL_DIR}/${NINJA_BIN}")
     message(STATUS "Setting execution permissions for Ninja...")
     execute_process(COMMAND chmod +x "${NINJA_INSTALL_DIR}/ninja")
 endif()
