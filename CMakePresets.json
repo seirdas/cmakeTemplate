@@ -42,7 +42,7 @@
             "generator": "Ninja Multi-Config",
             "inherits": "mingw64",
             "environment": {
-                "NINJA_PATH":"${sourceDir}/other"
+                "NINJA_PATH":"${sourceDir}/_external/utils-ninja/"
             },
             "cacheVariables": {
                 "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo;MinSizeRel"
@@ -88,7 +88,7 @@
             "description": "Compilación Ninja Multi-Config Clang (Necesita Ninja)",
             "inherits": "clang64",
             "environment": {
-                "NINJA_PATH":"${sourceDir}/other"
+                "NINJA_PATH":"${sourceDir}/_external/utils-ninja/"
             },
             "cacheVariables": {
                 "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo;MinSizeRel"

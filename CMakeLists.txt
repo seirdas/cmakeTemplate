@@ -110,6 +110,19 @@ include(lib-daisysp)                                            # Ejecuta el arc
 add_definitions(-DUSE_DAISYSP=1)                                # Definición para usar en el código C++
 endif()
 
+
+# ===============================
+# Utilidades
+# ===============================
+
+# Herramienta de compilación Ninja
+option(USE_NINJA "Implementar Ninja" ON)      # Activar/desactivar herramienta
+if(USE_NINJA)
+include(utils-ninja)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
+add_definitions(-DUSE_NINJA=1)                # Definición para activar herramienta
+endif()
+
+
 # ===============================
 # Crear el ejecutable
 # ===============================
