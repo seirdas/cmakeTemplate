@@ -4,23 +4,45 @@
 #include <vector>
 
 /**
-  * @brief Interfaz de intercomunicación entre miembros de la aplicación. 
-  *  La clase de la aplicación debe extenderse desde esta interfaz.
-  * @details Permite a los miembros de la aplicación comunicarse entre sí sin acoplarse directamente, 
-  *  facilitando la modularidad y el mantenimiento.
-  *  Cada miembro puede implementar esta interfaz para 
-  *  exponer métodos que otros miembros pueden llamar, sin 
-  *  necesidad de conocer la implementación concreta de cada miembro.
-  * @note Los constructores de los miembros deben recibir un puntero 
-  *  a esta interfaz para poder registrarse y comunicarse con otros miembros.
-  * @note Esta clase actúa como plantilla de funciones (interfaz) 
-  *  que pueden llamarse desde los miembros, y deberían estar definidas como 
-  *  "override" en la clase principal AppController que extiende esta interfaz.
-  * @example MyClass(IAppControl* controller), con #include "IAppControl.hpp". 
-  *  Instanciarlo con un parámetro MyClass inst(AppController). 
-  *  Sólo leerá los métodos de IAppControl con las funciones definidas en AppController.
-  * @see AppController
-  */
+ * @brief Interfaz de intercomunicación entre los miembros de la aplicación.
+ *
+ * @details
+ * Permite que los componentes de la aplicación se comuniquen sin estar acoplados
+ * directamente, facilitando la modularidad y el mantenimiento. Cada miembro puede
+ * implementar esta interfaz para exponer métodos que otros puedan invocar,
+ * sin necesidad de conocer la implementación concreta de cada uno.
+ *
+ * @note
+ * Los constructores de los miembros deben recibir un puntero a esta interfaz
+ * para poder registrarse y comunicarse con otros miembros.
+ *
+ * @note
+ * Esta clase actúa como plantilla de funciones (interfaz) que pueden llamarse
+ * desde los miembros, y deben sobrescribirse (`override`) en la clase principal
+ * **AppController** que implementa la interfaz.
+ *
+ * @example MyClass.cpp
+ * @include IAppControl.hpp
+ *
+ * ```cpp
+ * // MyClass.hpp
+ * #include "IAppControl.hpp"
+ *
+ * class MyClass {
+ * public:
+ *     explicit MyClass(IAppControl* controller) : m\_controller(controller) {}
+ *
+ * private:
+ *     IAppControl* m\_controller;
+ * };
+ *
+ * // Uso:
+ * AppController appCtrl;          // Clase que implementa IAppControl
+ * MyClass       obj(&appCtrl);    // Se pasa el puntero a la interfaz
+ * ```
+ *
+ * @see AppController
+ */
 class IAppControl {
 
 public:

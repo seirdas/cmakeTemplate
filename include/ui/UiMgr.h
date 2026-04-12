@@ -127,8 +127,8 @@ private:
     
     /**
      * @brief Carga una textura de imagen desde un archivo de imagen.
+     *  Ejemplo: images_["filename.png"].tex
      * @note Soporte para png.
-     * @example USO: images_["filename.png"].tex
      * @param filename Ruta del archivo de imagen que se va a cargar.
      * @return intptr_t El identificador de la textura cargada.
      */
