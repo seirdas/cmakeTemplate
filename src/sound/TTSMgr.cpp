@@ -1,6 +1,5 @@
 #include "sound/TTSMgr.hpp"
 #include "system/sys.hpp"
-#include <iostream>
 #include <vector>
 #include <cstring>
 #include <mutex>
@@ -37,7 +36,6 @@ bool TTSMgr::init() {
 
     if (available_models.empty())
         SYS_WARN("TTSMgr", "Cannot read TTS voice models");
-    else num_available_models_ = available_models.size();
 
     // Inicialización concurrente (experimental)
     if (concurrent_init_) {
@@ -93,27 +91,43 @@ void TTSMgr::reload() {
     init();
 }
 
-bool TTSMgr::generate(std::string text, std::string wavname){
+bool TTSMgr::generate(std::string const& text, std::string const& wavname){
     if (!running_) return false;
 
-    int sid = 0; // speaker id (voces dentro del modelo, puede tener más de una, ver en su json)
+    // Como ejemplo, de momento coge el primero de la lista. hay que añadir los demás como parámetro de la función
+    std::vector<std::string> models_names = getLoadedModels();
+    if (models_names.empty()) {
+        SYS_WARN("TTSMgr","Cannot load any model");
+        return false;
+    }
+
+    std::string st_modelName = models_names[0];
+    if (loaded_models_.find(st_modelName) == loaded_models_.end()) {
+        SYS_ERROR("Model not loaded: " + st_modelName, "TTSMgr");
+        return false;
+    }
+
+    SherpaOnnxGenerationConfig config;
+    std::memset(&config, 0, sizeof(config));
+    config.sid = 0;                 // Speaker ID for multi-speaker models.
+    config.silence_scale = 1.0f;    // Silence scale between sentences
+    config.speed = 1.0f;            // Speech rate. Used only by models that support it
 
     // Prueba a generar el audio con el primer modelo cargado (TODO implementar demás modelos)
     SYS_INFO("TTSMgr","Generating audio...");
     active_tasks_++;
-    const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerate(loaded_models_[getLoadedModels()[0]], text.c_str(), sid, 1.0);
+    const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerateWithConfig(
+        loaded_models_[st_modelName],
+        text.c_str(), 
+        &config, 
+        nullptr,        // Se podría implementar un callback que vaya mostrando el progreso (hay que diferenciar cada modelo)
+        nullptr
+    );
     active_tasks_--;
     exit_cv_.notify_all();
-
+    
     if (!audio) {
-        std::string err = "[TTSMgr]  ERROR Cannot generate audio: " + wavname;
-        std::cerr << err << std::endl;
-        #ifdef _WIN32
-            MessageBoxA(NULL, err.c_str(), "ERROR", MB_ICONERROR | MB_OK);
-        #else
-            std::string comando = "zenity --error --title=\"TTS ERROR\" --text=\"" + err + "\" 2>/dev/null";
-            system(comando.c_str());
-        #endif
+        SYS_WARN("TTSMgr","Cannot generate audio.");
         return false;
     }
 
@@ -140,7 +154,7 @@ std::vector<std::string> TTSMgr::getAvailableModels() {
     std::vector<std::string> available_models;
 
     if (!fs::is_directory(models_path_)) {
-        std::cerr << "[TTSMgr] ERROR: path '" << models_path_ << "' not found." << std::endl;
+        SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
         return {};
     }
 
@@ -149,10 +163,11 @@ std::vector<std::string> TTSMgr::getAvailableModels() {
             available_models.push_back(fs::absolute(entry.path()).string());
 
     if (available_models.empty()) {
-        std::cerr << "[TTSMgr]  Cannot load any voice model.";
-        std::cerr << "Check assets folder " << models_path_ << std::endl;
+        SYS_WARN("TTSMgr","Cannot load any voice model. Check assets folder " + models_path_);
         return {};
     }
+
+    num_available_models_ = available_models.size();
     return available_models;
 }
 
@@ -170,6 +185,21 @@ short TTSMgr::getAvailableNumModels() const {
 short TTSMgr::getLoadedNumModels() const {
     return num_loaded_models_;
 };
+
+int TTSMgr::getSampleRate(std::string const& modelName) const {
+    auto it = loaded_models_.find(modelName);
+    if (it == loaded_models_.end()) return 0;
+    return SherpaOnnxOfflineTtsSampleRate(it->second);
+}
+
+int TTSMgr::getNumSpeakers(std::string const& modelName) const {
+    auto it = loaded_models_.find(modelName);
+    if (it == loaded_models_.end()) {
+        SYS_WARN("TTSMgr", "Cannot find '"+modelName+"' model.");
+        return 0;
+    }
+    return SherpaOnnxOfflineTtsNumSpeakers(it->second);
+}
 
 bool TTSMgr::isWorking() const {
     return active_tasks_>0;
