@@ -91,75 +91,7 @@ void TTSMgr::reload() {
     init();
 }
 
-bool TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname){
-    if (!running_) return false;
-
-    // Inicia el proceso
-    active_tasks_++;
-
-    // Como ejemplo, de momento coge el primero de la lista. hay que añadir los demás como parámetro de la función
-    std::vector<std::string> models_names = getLoadedModels();
-    if (models_names.empty()) {
-        SYS_WARN("TTSMgr","Cannot load any model");
-        return false;
-    }
-
-    if (loaded_models_.find(modelName) == loaded_models_.end()) {
-        SYS_ERROR("Model not found or loaded: " + modelName, "TTSMgr");
-        return false;
-    }
-
-    // Guardar el texto en proceso
-    {
-        std::lock_guard<std::mutex> lock(processing_mtx_);
-        processing_texts_[modelName] = text;
-    }
-
-    // Generar configuración
-    SherpaOnnxGenerationConfig config;
-    std::memset(&config, 0, sizeof(config));
-    config.sid = 0;                 // Speaker ID for multi-speaker models.
-    config.silence_scale = 1.0f;    // Silence scale between sentences
-    config.speed = 1.0f;            // Speech rate. Used only by models that support it
-
-    // Prueba a generar el audio con el modelo cargado
-    SYS_INFO("TTSMgr","Generating audio...");
-    const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerateWithConfig(
-        loaded_models_[modelName],
-        text.c_str(), 
-        &config, 
-        nullptr,        // Se podría implementar un callback que vaya mostrando el progreso (hay que diferenciar cada modelo)
-        nullptr
-    );
-    active_tasks_--;
-    exit_cv_.notify_all();
-    
-    // Comprobar si se ha generado audio
-    if (!audio) {
-        SYS_WARN("TTSMgr","Cannot generate audio.");
-        return false;
-    }
-
-    // Generar archivo de audio
-    SYS_INFO("TTSMgr","Writing to file...");
-    active_tasks_++;
-    SherpaOnnxWriteWave(audio->samples, audio->n, audio->sample_rate, (wavname+".wav").c_str());
-    active_tasks_--;
-    exit_cv_.notify_all();
-
-    // Limpiar el texto del modelo
-    {
-        std::lock_guard<std::mutex> lock(processing_mtx_);
-        processing_texts_.erase(modelName);
-    }
-
-    // Liberar memoria para evitar fugas
-    SYS_INFO("TTSMgr","Freeing memory...");
-    SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
-
-    SYS_INFO("TTSMgr","Audio generated: " + wavname + ".wav"); 
-    return true;
-};
+// Datos generales ----------------------------------------------------------------------
 
 short TTSMgr::getInitPercent() const {
     return init_percent_;
@@ -204,6 +136,83 @@ short TTSMgr::getLoadedNumModels() const {
 bool TTSMgr::isWorking() const {
     return active_tasks_>0;
 }
+
+// Control de modelos -----------------------------------------------------------------
+
+bool TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname){
+    if (!running_) return false;
+
+    if (text == "") {
+        SYS_WARN("TTSMgr", "Generate function called with empty string");
+        return false;
+    }
+
+    // Como ejemplo, de momento coge el primero de la lista. hay que añadir los demás como parámetro de la función
+    std::vector<std::string> models_names = getLoadedModels();
+    if (models_names.empty()) {
+        SYS_WARN("TTSMgr","Cannot load any model");
+        return false;
+    }
+
+    if (loaded_models_.find(modelName) == loaded_models_.end()) {
+        SYS_ERROR("Model not found or loaded: " + modelName, "TTSMgr");
+        return false;
+    }
+
+    // Inicia el proceso
+    SYS_INFO("TTSMgr","Generating audio '" + wavname +".wav'  with model " + modelName + "...");
+    active_tasks_++;
+
+    // Guardar el texto en proceso
+    {
+        std::lock_guard<std::mutex> lock(processing_mtx_);
+        processing_texts_[modelName] = text;
+    }
+
+    // Generar configuración
+    SherpaOnnxGenerationConfig config;
+    std::memset(&config, 0, sizeof(config));
+    config.sid = 0;                 // Speaker ID for multi-speaker models.
+    config.silence_scale = 1.0f;    // Silence scale between sentences
+    config.speed = 1.0f;            // Speech rate. Used only by models that support it
+
+    // Prueba a generar el audio con el modelo cargado
+    const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerateWithConfig(
+        loaded_models_[modelName],
+        text.c_str(), 
+        &config, 
+        nullptr,        // Se podría implementar un callback que vaya mostrando el progreso (hay que diferenciar cada modelo)
+        nullptr
+    );
+    active_tasks_--;
+    exit_cv_.notify_all();
+    
+    // Comprobar si se ha generado audio
+    if (!audio) {
+        SYS_WARN("TTSMgr","Cannot generate audio.");
+        return false;
+    }
+
+    // Generar archivo de audio
+    SYS_INFO("TTSMgr","Writing to file...");
+    active_tasks_++;
+    SherpaOnnxWriteWave(audio->samples, audio->n, audio->sample_rate, (wavname+".wav").c_str());
+    active_tasks_--;
+    exit_cv_.notify_all();
+
+    // Limpiar el texto del modelo
+    {
+        std::lock_guard<std::mutex> lock(processing_mtx_);
+        processing_texts_.erase(modelName);
+    }
+
+    // Liberar memoria para evitar fugas
+    SYS_INFO("TTSMgr","Freeing memory...");
+    SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
+
+    SYS_INFO("TTSMgr","Audio generated: " + wavname + ".wav"); 
+    return true;
+};
 
 int TTSMgr::getSampleRate(std::string const& modelName) const {
     auto it = loaded_models_.find(modelName);

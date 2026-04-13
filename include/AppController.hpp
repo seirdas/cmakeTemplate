@@ -119,9 +119,32 @@ public:
     // TTS ----------------------------------------------------------------------------
 
     /**
+     * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
+     * @param modelName Nombre del modelo que genera el audio
+     * @param text El texto a convertir en audio.
+     * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión wav).
+     * @return true si la generación fue exitosa, false en caso de error.
+     */
+    bool TTSgenerate(
+        std::string const& modelName, 
+        std::string const& text, 
+        std::string const& wavname)
+        noexcept override;
+
+    /**
      * @brief Devuelve el porcentaje de inicialización del módulo TTS
      */
     short getTTSInitPercent() const noexcept override;
+
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos disponibles
+     */
+    std::vector<std::string> getAvailableTTSModels() noexcept override;
+      
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos cargados
+     */
+    std::vector<std::string> getLoadedTTSModels() const noexcept override;
 
     /**
      * @brief Obtiene el número de modelos TTS disponibles

@@ -160,10 +160,26 @@ void AppController::TWorker() {
 
 
     // TTS ----------------------------------------------------------------------------
+    
+    bool AppController::TTSgenerate(
+        std::string const& modelName, 
+        std::string const& text, 
+        std::string const& wavname)
+        noexcept {
+            return tts_.generate(modelName, text, wavname);
+        };
 
     short AppController::getTTSInitPercent() const noexcept {
         return tts_.getInitPercent();
     }
+
+    std::vector<std::string> AppController::getAvailableTTSModels() noexcept {
+        return tts_.getAvailableModels();
+    };
+      
+    std::vector<std::string> AppController::getLoadedTTSModels() const noexcept {
+        return tts_.getLoadedModels();
+    };
 
     short AppController::getAvailableNumTTSModels() const noexcept {
         return tts_.getAvailableNumModels();

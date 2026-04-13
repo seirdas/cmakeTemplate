@@ -11,6 +11,7 @@
 // ---------------------------------------------------------------------------------
 
 #include "ui/UiMgr.h"			// Clase de gestión de UI
+#include <cstring>
 #include <stb_image.h>          // Implementación para soporte de imágenes.
 #include "imgui-knobs.h"		// Soporte de knobs
 #include "imspinner.h"			// Soporte de spinners de carga
@@ -427,7 +428,7 @@ void UiMgr::ventanaPrincipal() {
 				EndTabItem();
 			}
 
-			// TAB 2: COMUNICACIONES (TABLA CON KNOBS)
+			// COMUNICACIONES (TABLA CON KNOBS)
 			if (BeginTabItem("Communications")) {
 				// Definimos los nombres de las columnas. 
 				const char* col_names[] = { "TX/RX", "Piloto", "Copiloto", "3Hombre", "IOS OnBoard", "IOS Offboard 1", "IOS OffBoard 2" };
@@ -480,6 +481,81 @@ void UiMgr::ventanaPrincipal() {
 					}
 					EndTable();
 				}
+				EndTabItem();
+			}
+
+			if (BeginTabItem("TTS")) {
+				// --- CONFIGURACIÓN PREVIA ---
+				std::vector<std::string> st_voice_models = ctrl_->getLoadedTTSModels();
+				static int selected_idx = 0;
+				std::string current_model = (!st_voice_models.empty()) ? st_voice_models[selected_idx] : "";
+				std::string proc_text = ctrl_->getTTSProcessingText(current_model);
+				bool is_busy = !proc_text.empty();
+
+				static char manual_buffer[2048] = ""; 
+
+				// --- LAYOUT ---
+
+				Text("TTS Content:");
+
+				// Definimos un alto para que ambos lados midan lo mismo
+				float content_height = GetTextLineHeight() * 12;
+
+				// COLUMNA IZQUIERDA: InputText
+				// Usamos un Child o simplemente calculamos el ancho para dejar espacio a la derecha
+				float right_panel_width = 250.0f; // Ancho fijo para el panel de controles
+				float input_width = GetContentRegionAvail().x - right_panel_width - GetStyle().ItemSpacing.x;
+
+				BeginGroup(); // Agrupamos el input para que Sameline funcione con el bloque siguiente
+
+					ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_WordWrap;
+					if (ctrl_->isOnlineMode() || is_busy) {
+						flags |= ImGuiInputTextFlags_ReadOnly;
+						PushStyleColor(ImGuiCol_Text, GetStyle().Colors[ImGuiCol_TextDisabled]);
+						InputTextMultiline("##ttstext_v", const_cast<char*>(proc_text.c_str()), proc_text.size(), 
+							ImVec2(input_width, content_height), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap);
+						PopStyleColor();
+					} else {
+						InputTextMultiline("##ttstext_e", manual_buffer, IM_ARRAYSIZE(manual_buffer), 
+							ImVec2(input_width, content_height), flags);
+					}
+				EndGroup();
+
+				SameLine();
+
+				// COLUMNA DERECHA: Combo y Botón
+				BeginChild("ControlsPanel", ImVec2(right_panel_width, content_height), false);
+					
+					Text("Voice Model:");
+
+					// Desactiva visualmente y bloquea interacción
+					bool is_online = ctrl_->isOnlineMode();
+					if (is_online) BeginDisabled(); // Si es online, todo lo que sigue se deshabilita
+
+					SetNextItemWidth(-FLT_MIN); // Que ocupe todo el ancho del child
+					const char* preview_value = (st_voice_models.empty()) ? "No models" : st_voice_models[selected_idx].c_str();
+					if (BeginCombo("##cb_model", preview_value)) {
+						for (int n = 0; n < static_cast<int>(st_voice_models.size()); ++n) {
+							if (Selectable(st_voice_models[n].c_str(), selected_idx == n)) selected_idx = n;
+						}
+						EndCombo();
+					}
+
+					Spacing(); Spacing();
+
+					if (Button("Generate Audio", ImVec2(-FLT_MIN, 40))) { 
+						// Usamos el buffer manual que el usuario ha escrito
+						ctrl_->TTSgenerate(current_model, manual_buffer, current_model);
+					}
+					if (is_online) EndDisabled(); // Cerramos el bloque de deshabilitado
+
+					if (is_busy) 
+						ImSpinner::SpinnerDotsToBar(      "tobar",   16, 2, ImColor(1.0f,1.0f,1.0f),4);
+
+				EndChild();
+
+
+
 				EndTabItem();
 			}
 			EndTabBar();
