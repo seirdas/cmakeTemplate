@@ -53,7 +53,9 @@ public:
      * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión wav).
      * @return true si la generación fue exitosa, false en caso de error.
      */
-    bool generate(std::string const& text, std::string const& wavname);
+    bool generate(std::string const& model, std::string const& text, std::string const& wavname);
+
+// Datos generales ----------------------------------------------------------------------
 
     /**
      * @brief Obtiene el porcentaje de inicialización del módulo TTS.
@@ -82,6 +84,13 @@ public:
     short getLoadedNumModels() const;
 
     /**
+     * @brief Devuelve si el módulo tiene algún proceso activo.
+     */
+    bool isWorking() const;
+
+// Datos de los modelos -----------------------------------------------------------------
+
+    /**
      * @brief Obtiene la frecuencia de muestreo del modelo de voz
      */
     int getSampleRate(std::string const& modelName) const;
@@ -91,11 +100,11 @@ public:
      */
     int getNumSpeakers(std::string const& modelName) const;
 
-
     /**
-     * @brief Devuelve si el módulo tiene algún proceso activo.
+     * @brief Devuelve el texto que está siendo procesado por el modelo
      */
-    bool isWorking() const;
+    std::string getProccesingText(std::string const& modelName) const;
+
 
 private:
 
@@ -106,7 +115,8 @@ private:
 
     /************ Variables ********************************************************/
 
-    using TTSModelsMap = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
+    using TTSModelsMap  = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
+    using TTSTextsMap   = std::unordered_map<std::string, std::string>; // Podría ser un struct con más datos
 
     TTSModelsMap            loaded_models_;         // Mapa de modelos TTS cargados
     int32_t                 num_threads_;           // Número de hilos con los que se generarán los audios
@@ -116,6 +126,9 @@ private:
     short                   num_available_models_;  // Número de modelos disponibles
     short                   num_loaded_models_;     // Número de modelos disponibles
     std::mutex              models_mutex_;          // Mutex para proteger el mapa de modelos y init_percent
+
+    TTSTextsMap             processing_texts_;      // Relaciona modelo - texto que está procesando
+    mutable std::mutex      processing_mtx_;        // Mutex para proteger el acceso al mapa
 
     std::atomic<short>      active_tasks_;      // Indica si hay algo en ejecución
     std::atomic<bool>       running_;           // Indica si no se ha comandado destruir la clase
