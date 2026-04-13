@@ -160,7 +160,18 @@ download_voice(
     vits-piper-en_US-ryan-low
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low.tar.bz2
 )
-
+download_voice(
+    vits-piper-en_US-sam-medium
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-sam-medium.tar.bz2
+)
+download_voice(
+    vits-piper-en_GB-miro-high
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-miro-high.tar.bz2
+)
+download_voice(
+    vits-piper-en_GB-alan-medium
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-medium.tar.bz2
+)
 
 
 # =================================
