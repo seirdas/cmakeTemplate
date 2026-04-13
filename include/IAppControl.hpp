@@ -118,4 +118,9 @@ public:
      */
     virtual short getLoadedNumTTSModels() const noexcept = 0;
 
+    /**
+     * @brief Obtiene el texto procesado por un modelo TTS 
+     */
+    virtual std::string getTTSProcessingText(std::string modelName) const noexcept = 0;
+
 };

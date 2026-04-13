@@ -172,3 +172,9 @@ void AppController::TWorker() {
     short AppController::getLoadedNumTTSModels() const noexcept {
         return tts_.getLoadedNumModels();
     }
+
+    std::string AppController::getTTSProcessingText(std::string modelName) const noexcept {
+        return tts_.getProccesingText(modelName);
+    }
+
+    

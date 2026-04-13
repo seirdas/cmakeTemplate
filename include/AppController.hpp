@@ -132,6 +132,12 @@ public:
      * @brief Obtiene el número de modelos TTS cargados
      */
     short getLoadedNumTTSModels() const noexcept override;
+
+    /**
+     * @brief Obtiene el texto procesado por un modelo TTS 
+     */
+    std::string getTTSProcessingText(std::string modelName) const noexcept override;
+
     
     // Añadir aquí métodos de IAppControl...
 
