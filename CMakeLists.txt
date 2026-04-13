@@ -317,12 +317,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 if (USE_DOXYGEN)
-  set(DOXYGEN_EXE "${DOXYGEN_EXECUTABLE}")
+  message(STATUS ${DOXYGEN_EXECUTABLE})
+  message(STATUS ${DOXYGEN_INSTALL_DIR})
   add_custom_command(
       TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${DOXYGEN_EXE} "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
+      COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
       WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-      COMMENT "Generando documentación con Doxygen..."
+      COMMENT "Generando documentación con ${DOXYGEN_EXECUTABLE}..."
       VERBATIM
   )
 endif()

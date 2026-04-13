@@ -6,14 +6,13 @@ cmake_policy(SET CMP0135 NEW)
 set(DOXYGEN_TAG "Release_1_16_0")
 set(DOXYGEN_VERSION "1.16.0")
 set(DOXYGEN_INSTALL_DIR "${EXTERNAL_LIB_PATH}/utils-doxygen")
-set(DOXYGEN_EXECUTABLE "${DOXYGEN_INSTALL_DIR}/bin/doxygen${DOXYGEN_EXE_EXT}")
 
 if(WIN32)
+    set(DOXYGEN_EXECUTABLE "${DOXYGEN_INSTALL_DIR}/doxygen.exe")
     set(DOXYGEN_ASSET "doxygen-${DOXYGEN_VERSION}.x64.bin.zip")
-    set(DOXYGEN_EXE_EXT ".exe")
 elseif(UNIX)
+    set(DOXYGEN_EXECUTABLE "${DOXYGEN_INSTALL_DIR}/bin/doxygen")
     set(DOXYGEN_ASSET "doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz")
-    set(DOXYGEN_EXE_EXT "")
 endif()
 set(DOXYGEN_URL "https://github.com/doxygen/doxygen/releases/download/${DOXYGEN_TAG}/${DOXYGEN_ASSET}")
 
@@ -40,19 +39,21 @@ endif()
 
 
 # --- Lógica de limpieza ---
-message(STATUS "Cleaning up Doxygen extra folders...")
+if(UNIX)
+    message(STATUS "Cleaning up Doxygen extra folders...")
 
-set(TO_REMOVE
-    "${DOXYGEN_INSTALL_DIR}/examples"
-    "${DOXYGEN_INSTALL_DIR}/html"
-    "${DOXYGEN_INSTALL_DIR}/man"
-    "${DOXYGEN_INSTALL_DIR}/doxygen_manual-${DOXYGEN_VERSION}.pdf"
-    "${DOXYGEN_INSTALL_DIR}/INSTALL"
-    "${DOXYGEN_INSTALL_DIR}/Makefile"
-)
+    set(TO_REMOVE
+        "${DOXYGEN_INSTALL_DIR}/examples"
+        "${DOXYGEN_INSTALL_DIR}/html"
+        "${DOXYGEN_INSTALL_DIR}/man"
+        "${DOXYGEN_INSTALL_DIR}/doxygen_manual-${DOXYGEN_VERSION}.pdf"
+        "${DOXYGEN_INSTALL_DIR}/INSTALL"
+        "${DOXYGEN_INSTALL_DIR}/Makefile"
+    )
 
-foreach(ITEM ${TO_REMOVE})
-    if(EXISTS ${ITEM})
-        file(REMOVE_RECURSE ${ITEM})
-    endif()
-endforeach()
+    foreach(ITEM ${TO_REMOVE})
+        if(EXISTS ${ITEM})
+            file(REMOVE_RECURSE ${ITEM})
+        endif()
+    endforeach()
+endif()
