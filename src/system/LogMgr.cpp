@@ -1,6 +1,6 @@
 #include "system/LogMgr.hpp"
 
-
+#include <sstream>
 #include <filesystem>
 namespace fs = std::filesystem;
 
