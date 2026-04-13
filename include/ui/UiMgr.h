@@ -14,15 +14,7 @@ struct ImGuiIO;
 /**
   * @class UiMgr
   * @brief Gestor de ventana y loop principal usando GLFW, OpenGL e ImGui.
-  *  UiMgr inicializa y gestiona la ventana principal de la aplicación, configura
-  *  ImGui, proporciona el bucle principal de renderizado y utilidades para
-  *  estilos visuales. 
   *  Comunica con el resto de la aplicación mediante la interfaz IAppControl suministrada.
-  *  Uso:
-  *      Crear una instancia (opcionalmente pasando un IAppControl).
-  *      Llamar init() para inicializar GLFW/OpenGL/ImGui y crear la ventana.
-  *      Llamar run() para ejecutar el bucle principal (bloqueante hasta el cierre).
-  *      Llamar cerrar() para liberar recursos manualmente.
   * @note El destructor virtual garantiza la limpieza correcta en clases derivadas.
   * @note Los métodos privados initCuadro() y endCuadro() encapsulan el inicio y fin de
   *  cada frame de ImGui.
