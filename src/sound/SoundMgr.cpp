@@ -7,6 +7,7 @@
 #include <iostream>
 #include <chrono>               // Controla tiempos de espera
 #include <thread>
+#include <system/sys.hpp>
 
 // General ------------------------------------------------------------------------------
 
@@ -22,7 +23,7 @@ bool SoundMgr::init() {
 
     // No hacer nada si ya se ha iniciado
     if (ctx_initialized_) return true;
-    std::cout << "[SoundMgr]    Initializating sound context..." << std::endl;
+    SYS_INFO("SoundMgr", "Initializating sound context...");
 
     ma_result res = ma_context_init(NULL, 0, NULL, &snd_context_);
     ctx_initialized_ = (res == MA_SUCCESS) ? true : false;
@@ -38,7 +39,7 @@ bool SoundMgr::init() {
 bool SoundMgr::stop() {
     // No hacer nada si ya se ha cerrado.
     if (!ctx_initialized_) return true;
-    std::cout << "[SoundMgr]    Closing sound engine and modules..." << std::endl;
+    SYS_INFO("SoundMgr", "Closing sound engine and modules...");
 
     // Limpieza (destruir) los módulos creados
     inputs_.clear();
@@ -48,7 +49,7 @@ bool SoundMgr::stop() {
     ma_context_uninit(&snd_context_);
     ctx_initialized_ = false;
 
-    std::cout << "[SoundMgr]    Sound system stopped successfully." << std::endl;
+    SYS_INFO("SoundMgr", "Sound system stopped successfully.");
     return true;
 }
 
@@ -132,13 +133,13 @@ bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string cons
         std::cerr << "[SoundMgr]    ERROR Failed to found device with name" << deviceName << std::endl;
         return false;
     }
-    std::cout << "[SoundMgr] Using playback device: " << selectedDeviceInfo->name << std::endl;
+    SYS_INFO("SoundMgr", "Using playback device: " + deviceName);
 
     // Crear receiver (aún no registrado) #TODO AÑADIR AudioFilesFolder
     std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(&snd_context_, *selectedDeviceInfo);
 
     // Intentar inicializar
-    std::cout << "[SoundMgr]  Initializing playback..." << std::endl;
+    SYS_INFO("SoundMgr", "Initializing playback...");
     if (!apm->start())
     {
         // No hay nada que limpiar, el puntero make_unique se destruye al salir.
@@ -148,7 +149,7 @@ bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string cons
 
     // Insertar en el vector
     playbacks_.push_back(std::move(apm));
-    std::cout << "[SoundMgr]  Playback loaded. "<< std::endl;
+    SYS_INFO("SoundMgr", "Playback loaded. ");
 
     return true;
 }
@@ -169,7 +170,7 @@ bool SoundMgr::removePlaybackDevice(unsigned short index) {
     // Borrar el elemento del vector usando iterator
     playbacks_.erase(playbacks_.begin() + index);
 
-    std::cout << "[SoundMgr] Deleted Playback." << std::endl;
+    SYS_INFO("SoundMgr", "Deleted Playback.");
     return true;
 }
 
@@ -193,7 +194,7 @@ bool SoundMgr::playbackTest() {
     if (playbacks_.empty()) 
         return false;
     AudioPlaybackModule* ultimoAPM = playbacks_.back().get();
-    std::cout << "[SoundMgr] Testing device: " << ultimoAPM->deviceName() << std::endl;
+    SYS_INFO("SoundMgr", "Testing device: " + ultimoAPM->deviceName());
 
     /* precarga opcional */
     ultimoAPM->preload("audio/DefaultDance.mp3");
@@ -208,7 +209,7 @@ bool SoundMgr::playbackTest() {
 
     SoundID click = ultimoAPM->play("audio/DefaultDance.mp3");
 
-    std::cout << "[SoundMgr] Sleep for 500ms..." << std::endl;
+    SYS_INFO("SoundMgr", "Sleep for 500ms...");
     std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
     
     /* modificar mientras reproduce */

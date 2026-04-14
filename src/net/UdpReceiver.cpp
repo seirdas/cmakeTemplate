@@ -1,6 +1,7 @@
 #include "net/UdpReceiver.hpp"
 #include <iostream>
 #include <atomic>
+#include <system/sys.hpp>
 
 #define MAX_UDP_PACKET_SIZE 65536 // Tamaño máximo de un paquete UDP (64 KB)
 
@@ -25,10 +26,13 @@ UdpReceiver::~UdpReceiver() {
 
 bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, unsigned int rcv_packet_size) {
     
-    std::cout << "[UdpReceiver] Creating new socket..." << std::endl;
-    std::cout << "[UdpReceiver]     port: "     << local_port       << std::endl;
-    std::cout << "[UdpReceiver]     IP: "       << ((local_ip=="") ? "all" : local_ip )       << std::endl;
-    std::cout << "[UdpReceiver]     rcv_size: " << ((rcv_packet_size==0) ? MAX_UDP_PACKET_SIZE : rcv_packet_size ) << std::endl;
+    std::string st_local_ip = ((local_ip=="") ? "all" : local_ip );
+    std::string st_rcv_packet_size = std::to_string((rcv_packet_size==0) ? MAX_UDP_PACKET_SIZE : rcv_packet_size);
+
+    SYS_INFO("UdpReceiver", "Creating new socket...");
+    SYS_INFO("UdpReceiver", "port: " + std::to_string(local_port));
+    SYS_INFO("UdpReceiver", "IP: " + st_local_ip);
+    SYS_INFO("UdpReceiver", "rcv_size: " + st_rcv_packet_size);
 
     // No hacer nada si ya estaba inicializado 
     if (initialized_) 
@@ -68,7 +72,7 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
         return false;
     }
 
-    std::cout << "[UdpReceiver] Socket initialized successfully" << std::endl;
+    SYS_INFO("UdpReceiver", "Socket initialized successfully");
     initialized_ = true;
     return true;
 }
@@ -180,7 +184,7 @@ void UdpReceiver::start() {
 
     start_receive();
 
-    std::cout << "[UdpReceiver] Socket " << name_ << ":" << local_endpoint_.port() <<" started successfully" << std::endl;
+    SYS_INFO("UdpReceiver", "Socket " + name_ + ":" + std::to_string(local_endpoint_.port()) + " started successfully");
     running_ = true;
 }
 
@@ -198,7 +202,7 @@ void UdpReceiver::start_receive() {
             if (ec) {
                 if (ec == asio::error::operation_aborted) {
                     // Caso esperado al cerrar el socket o borrar el receptor
-                    std::cout << "[UdpReceiver] Socket " << name_ << " stopped successfully." << std::endl;
+                    SYS_INFO("UdpReceiver", "Socket " + name_ + " stopped successfully.");
                     return;
                 } else {
                     // Continúa recibiendo a pesar del error (si !abortar)
@@ -243,7 +247,7 @@ void UdpReceiver::handle_received_packet(std::size_t bytes_recvd) {
     
     // Descarta el paquete si es igual que el anterior (si está activada esta opción)
     if(ignore_dupe_ && compareLast(data) ) {
-        std::cout << "[UdpReceiver] Received packet same as last. Ignoring..." << std::endl;
+        SYS_INFO("UdpReceiver", "Received packet same as last. Ignoring...");
         return;
     }
 

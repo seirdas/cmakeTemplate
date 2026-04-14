@@ -1,6 +1,7 @@
 
 #include "sound/AudioInputModule.hpp"
 #include <iostream>
+#include <system/sys.hpp>
 
 // General ------------------------------------------------------------------------------
 
@@ -14,7 +15,7 @@ AudioInputModule::~AudioInputModule() {
 
     // Parar grabaciones activas
     if(isRecording()){
-        std::cout << "[AudioInputModule]    Stopping running recorders..." << std::endl;
+        SYS_INFO("AudioInputModule", "Stopping running recorders...");
         StopRec();
     } 
 };
@@ -27,7 +28,7 @@ bool AudioInputModule::StartRec(std::string const& filename) {
     if (rec_ctx_.recording)
         return false;
 
-    std::cout << "[AudioInputModule]    Start recording to " << filename << ".wav ..." << std::endl;
+    SYS_INFO("AudioInputModule", "Start recording to " + filename + ".wav ...");
 
     rec_ctx_.filename = filename+".wav";
     rec_ctx_.framesWritten.store(0);
@@ -57,9 +58,9 @@ bool AudioInputModule::StopRec() {
     ma_device_stop(&device_);
     ma_device_uninit(&device_);
     ma_encoder_uninit(&rec_ctx_.encoder);
-    std::cout << "[AudioInputModule]    Stopping record..." << std::endl;
-    std::cout << "[AudioInputModule]    Recorded " << rec_ctx_.framesWritten.load() / sampleRate;
-    std::cout << " seconds to " << rec_ctx_.filename << std::endl;
+    SYS_INFO("AudioInputModule", "Stopping record...");
+    SYS_INFO("AudioInputModule", "Recorded " + std::to_string(rec_ctx_.framesWritten.load() / sampleRate));
+    SYS_INFO("AudioInputModule", " seconds to " + rec_ctx_.filename);
     return true;
 }
 
@@ -77,7 +78,7 @@ bool AudioInputModule::initWavEncoder() {
 
     ma_result res = ma_encoder_init_file(rec_ctx_.filename.c_str(), &encoderConfig, &rec_ctx_.encoder);
     if (res != MA_SUCCESS) {
-        std::cout << "[AudioInputModule]    Failed to initialize encoder. Error code: " << res << std::endl;
+        SYS_INFO("AudioInputModule", "Failed to initialize encoder. Error code: " + std::to_string(res));
         return false;
     }
 
@@ -93,14 +94,14 @@ bool AudioInputModule::initRecorder() {
     deviceConfig.dataCallback       = dataCallback;
     deviceConfig.pUserData          = &rec_ctx_;
     
-    std::cout << "[AudioInputModule]    Initializating capture device..." << std::endl;
+    SYS_INFO("AudioInputModule", "Initializating capture device...");
     if (ma_device_init(snd_ctx_, &deviceConfig, &device_) != MA_SUCCESS) {
         std::cerr << "[AudioInputModule] Failed to initialize capture device." << std::endl;
         ma_encoder_uninit(&rec_ctx_.encoder);
         return false;
     }
 
-    std::cout << "[AudioInputModule]    Starting capturing device..." << std::endl;
+    SYS_INFO("AudioInputModule", "Starting capturing device...");
     if (ma_device_start(&device_) != MA_SUCCESS) {
         std::cerr << "[AudioInputModule] Failed to start capture device." << std::endl;
         ma_device_uninit(&device_);

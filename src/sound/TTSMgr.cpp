@@ -14,7 +14,7 @@ namespace fs = std::filesystem;
 
 TTSMgr::TTSMgr(std::size_t const& num_threads_) :
     num_threads_(num_threads_ == 0 ? 1 : num_threads_),
-    concurrent_init_(false),
+    concurrent_init_(true),
     init_percent_(0),
     models_path_(VOICES_PATH),
     num_available_models_(0),

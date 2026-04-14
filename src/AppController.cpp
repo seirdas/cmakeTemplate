@@ -98,8 +98,8 @@ void AppController::TWorker() {
         }
 
         // Procesar el paquete (simulado)
-        std::cout << "[TWorker]   Procesando paquete de datos..." << std::endl;
-        std::cout << "Size of data" << data.size() << std::endl;
+        SYS_INFO("TWorker", "Procesando paquete de datos...");
+        SYS_INFO("TWorker","Size of data " + std::to_string(data.size()));
         std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
     }
 
