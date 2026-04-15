@@ -31,7 +31,7 @@ bool TTSMgr::init() {
     running_ = true;
 
     // obtener la lista de rutas de los modelos de la ruta models_path_
-    auto models_str = getAvailableModels();
+    std::vector<std::string> models_str = getAvailableModels();
     std::vector<std::filesystem::path> available_models(models_str.begin(), models_str.end());
 
     if (available_models.empty())
@@ -63,6 +63,12 @@ bool TTSMgr::init() {
 
     // Actualizar el porcentaje de inicialización (de nuevo, opcional)
     init_percent_ = static_cast<int>(100.0 * num_loaded_models_ / num_available_models_);
+
+    if (num_loaded_models_ != num_available_models_) {
+        SYS_WARN("TTSMgr", "Load finished with " + std::to_string(num_available_models_-num_loaded_models_) + "left.")
+        loadRemaining();
+    }
+
     return !loaded_models_.empty();;
 }
 
@@ -89,6 +95,11 @@ void TTSMgr::cerrar() {
 void TTSMgr::reload() {
     cerrar();
     init();
+}
+
+void TTSMgr::loadRemaining() {
+    // TODO
+    /* la idea es cargar los que falten cuando el init "falle" con los que falle*/
 }
 
 // Datos generales ----------------------------------------------------------------------

@@ -47,6 +47,11 @@ public:
      */
     void reload();
 
+    /**
+     * @brief Intenta cargar los modelos disponibles que no estén cargados
+     */
+    void loadRemaining();
+
 // Datos generales ----------------------------------------------------------------------
 
     /**
