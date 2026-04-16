@@ -8,7 +8,6 @@
 
 AppController::AppController() : 
     gui_(this),
-    log_("log.log"),
     net_initialized_(false),
     gui_initialized_(false),
     snd_initialized_(false),
@@ -40,8 +39,11 @@ AppController::~AppController() {
 
 bool AppController::init() {
 
-    // Iniciar módulos
+    // Iniciar GUI, salir si no se carga bien
     gui_initialized_ = gui_.init();
+    if (!gui_initialized_) return false;
+
+    // Iniciar módulos
     net_initialized_ = net_.start();
     snd_initialized_ = snd_.init();
 
@@ -52,7 +54,7 @@ bool AppController::init() {
     );
     tLoadTTS.detach();  // No necesitamos "esperar" a que termine
     
-    // Hilo consumidor de paquetes Host
+    // Hilo consumidor de paquetes online
     worker_ = std::thread(&AppController::TWorker, this);
 
     return true;
