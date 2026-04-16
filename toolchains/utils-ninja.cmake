@@ -15,21 +15,38 @@ elseif(UNIX)
 endif()
 
 set(NINJA_URL "https://github.com/ninja-build/ninja/releases/download/${NINJA_TAG}/ninja-${NINJA_OS_SUFFIX}.zip")
+set(NINJA_ZIP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ninja_${NINJA_OS_SUFFIX}.zip") # Ruta temporal del zip
 
 # Comprobar si ya existe para no descargar
 if (EXISTS "${NINJA_INSTALL_DIR}/${NINJA_BIN}")
     message(STATUS "Ninja found locally at: ${NINJA_INSTALL_DIR}")
-    set(FETCHCONTENT_SOURCE_DIR_UTIL_NINJA "${NINJA_INSTALL_DIR}" CACHE PATH "" FORCE)
 else()
     message(STATUS "${NINJA_BIN} not found. Downloading...")
-endif()
 
-FetchContent_Declare(
-    util_ninja
-    URL "${NINJA_URL}"
-    SOURCE_DIR "${NINJA_INSTALL_DIR}"
-)
-FetchContent_MakeAvailable(util_ninja)
+    # Crear directorio
+    file(MAKE_DIRECTORY "${NINJA_INSTALL_DIR}") 
+
+    # Descargar el ZIP
+    file(DOWNLOAD "${NINJA_URL}" "${NINJA_ZIP_PATH}"
+        SHOW_PROGRESS
+        STATUS DOWNLOAD_STATUS
+    )
+    # Extraer el archivo
+    message(STATUS "Extracting...")
+    file(ARCHIVE_EXTRACT
+        INPUT "${NINJA_ZIP_PATH}"
+        DESTINATION "${NINJA_INSTALL_DIR}"
+    )
+
+    message(STATUS "NINJA_ZIP_PATH: " ${NINJA_ZIP_PATH})
+    # Borrar el ZIP descargado
+    file(REMOVE "${NINJA_ZIP_PATH}")
+
+    # Permisos de ejecución (Unix)
+    if(UNIX)
+        execute_process(COMMAND chmod +x "${NINJA_INSTALL_DIR}/${NINJA_BIN}")
+    endif()
+endif()
 
 # Asegurar permisos de ejecución en linux
 if(UNIX AND EXISTS "${NINJA_INSTALL_DIR}/${NINJA_BIN}")

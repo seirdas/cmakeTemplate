@@ -58,6 +58,14 @@ set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "")                 # Evitar
 set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establece donde descargar las librerías externas
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
 
+
+# Librería TTS
+option(USE_TTS "Compilar con soporte para TTS" ON)
+if(USE_TTS)
+  include(lib-sherpaonnx)    # Motor de Inferencia ONNX
+  add_definitions(-DUSE_TTS=1) 
+endif()
+
 # Libreria asio network ( incluir ANTES DE windows.h )
 option(USE_ASIO "Compilar con soporte para asio" ON)         # Activar/desactivar librería
 if(USE_ASIO)
@@ -92,14 +100,6 @@ if(USE_STB)
   include(lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
 endif()
-
-# Librería TTS
-option(USE_TTS "Compilar con soporte para TTS" ON)
-if(USE_TTS)
-  include(lib-sherpaonnx)    # Motor de Inferencia ONNX
-  add_definitions(-DUSE_TTS=1) 
-endif()
-
     
 # ----------- Librerías no probadas aún:
     
@@ -112,10 +112,10 @@ endif()
 
 
 # ===============================
-# Utilidades
+# Utilidades 
 # ===============================
 
-# Herramienta de compilación Ninja
+# Herramienta de compilación Ninja (Necesita al menos una configuración correcta previa)
 option(USE_NINJA "Utilizar Ninja" ON)      # Activar/desactivar herramienta
 if(USE_NINJA)
 include(utils-ninja)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
@@ -316,14 +316,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
 
+
+
+# Generar Doxygen
 if (USE_DOXYGEN)
-  message(STATUS ${DOXYGEN_EXECUTABLE})
-  message(STATUS ${DOXYGEN_INSTALL_DIR})
-  add_custom_command(
-      TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
-      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-      COMMENT "Generando documentación con ${DOXYGEN_EXECUTABLE}..."
-      VERBATIM
-  )
+    generate_doxygen()
 endif()
