@@ -132,29 +132,9 @@ public:
         noexcept override;
 
     /**
-     * @brief Devuelve el porcentaje de inicialización del módulo TTS
+     * @brief Obtiene los datos de módulo TTS
      */
-    short getTTSInitPercent() const noexcept override;
-
-    /**
-     * @brief Obtiene una lista con los nombres de los modelos disponibles
-     */
-    std::vector<std::string> getAvailableTTSModels() noexcept override;
-      
-    /**
-     * @brief Obtiene una lista con los nombres de los modelos cargados
-     */
-    std::vector<std::string> getLoadedTTSModels() const noexcept override;
-
-    /**
-     * @brief Obtiene el número de modelos TTS disponibles
-     */
-    short getAvailableNumTTSModels() const noexcept override;
-
-    /**
-     * @brief Obtiene el número de modelos TTS cargados
-     */
-    short getLoadedNumTTSModels() const noexcept override;
+    TTSData getTTSData() noexcept override; 
 
     /**
      * @brief Obtiene el texto procesado por un modelo TTS 

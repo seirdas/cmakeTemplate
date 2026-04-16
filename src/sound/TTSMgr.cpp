@@ -15,7 +15,6 @@ namespace fs = std::filesystem;
 TTSMgr::TTSMgr(std::size_t const& num_threads_) :
     num_threads_(num_threads_ == 0 ? 1 : num_threads_),
     concurrent_init_(true),
-    init_percent_(0),
     models_path_(VOICES_PATH),
     num_available_models_(0),
     num_loaded_models_(0),
@@ -61,9 +60,6 @@ bool TTSMgr::init() {
         std::to_string(num_loaded_models_) + "/" + std::to_string(num_available_models_) + " TTS models loaded."
     );
 
-    // Actualizar el porcentaje de inicialización (de nuevo, opcional)
-    init_percent_ = static_cast<int>(100.0 * num_loaded_models_ / num_available_models_);
-
     if (num_loaded_models_ != num_available_models_) {
         SYS_WARN("TTSMgr", "Load finished with " + std::to_string(num_available_models_-num_loaded_models_) + "left.");
         loadRemaining();
@@ -89,7 +85,6 @@ void TTSMgr::cerrar() {
         SherpaOnnxDestroyOfflineTts(model);
     }
     loaded_models_.clear();
-    init_percent_ = static_cast<int>(100.0 * num_loaded_models_ / num_available_models_);
 }
 
 void TTSMgr::reload() {
@@ -103,10 +98,6 @@ void TTSMgr::loadRemaining() {
 }
 
 // Datos generales ----------------------------------------------------------------------
-
-short TTSMgr::getInitPercent() const {
-    return init_percent_;
-}
 
 std::vector<std::string> TTSMgr::getAvailableModels() {
     std::vector<std::string> available_models;
@@ -302,7 +293,6 @@ bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
 
     // Actualizar el porcentaje de inicialización
     num_loaded_models_ = loaded_models_.size();
-    init_percent_ = static_cast<int>(100.0 * getLoadedNumModels() / getAvailableNumModels());
 
     return true;
 }

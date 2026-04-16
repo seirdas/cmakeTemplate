@@ -4,6 +4,17 @@
 #include <vector>
 
 /**
+ * @brief Datos del módulo TTS
+ */
+struct TTSData {
+    short init_percent;
+    short num_available_models;
+    short num_loaded_models;
+    std::vector<std::string> available_models;
+    std::vector<std::string> loaded_models;
+};
+
+/**
  * @brief Interfaz de intercomunicación entre los miembros de la aplicación.
  *
  * @details
@@ -104,11 +115,6 @@ public:
 // TTS --------------------------------------------------------------------------------
 
     /**
-     * @brief Devuelve el porcentaje de inicialización del módulo TTS
-     */
-    virtual short getTTSInitPercent() const noexcept = 0;
-          
-    /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
      * @param modelName Nombre del modelo que genera el audio
      * @param text El texto a convertir en audio.
@@ -122,24 +128,9 @@ public:
         noexcept = 0;
 
     /**
-     * @brief Obtiene una lista con los nombres de los modelos disponibles
+     * @brief Obtiene los datos de módulo TTS
      */
-    virtual std::vector<std::string> getAvailableTTSModels() noexcept = 0;
-      
-    /**
-     * @brief Obtiene una lista con los nombres de los modelos cargados
-     */
-    virtual std::vector<std::string> getLoadedTTSModels() const noexcept = 0;
-
-    /**
-     * @brief Obtiene el número de modelos TTS disponibles
-     */
-    virtual short getAvailableNumTTSModels() const noexcept = 0;
-
-    /**
-     * @brief Obtiene el número de modelos TTS cargados
-     */
-    virtual short getLoadedNumTTSModels() const noexcept = 0;
+    virtual TTSData getTTSData() noexcept = 0; 
 
     /**
      * @brief Obtiene el texto procesado por un modelo TTS 
