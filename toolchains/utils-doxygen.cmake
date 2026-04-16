@@ -8,7 +8,7 @@ set(DOXYGEN_VERSION "1.16.0")
 set(DOXYGEN_INSTALL_DIR "${EXTERNAL_LIB_PATH}/utils-doxygen")
 
 if(WIN32)
-    set(DOXYGEN_BIN "${DOXYGEN_INSTALL_DIR}/doxygen-${DOXYGEN_VERSION}/doxygen.exe")
+    set(DOXYGEN_BIN "${DOXYGEN_INSTALL_DIR}/doxygen.exe")
     set(DOXYGEN_ZIP "doxygen-${DOXYGEN_VERSION}.x64.bin.zip")
 elseif(UNIX)
     set(DOXYGEN_BIN "${DOXYGEN_INSTALL_DIR}/doxygen-${DOXYGEN_VERSION}/bin/doxygen")

@@ -316,8 +316,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
 
-
-
 # Generar Doxygen
 if (USE_DOXYGEN)
     generate_doxygen()
