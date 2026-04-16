@@ -72,12 +72,15 @@ if(UNIX)
     endforeach()
 endif()
 
+# Solo genera doxygen en release
 function(generate_doxygen)
     add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${DOXYGEN_BIN} "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
+        # Si la configuración es Release, ejecuta Doxygen. Si no, ejecuta un comando que no hace nada.
+        COMMAND $<$<CONFIG:Release>:${DOXYGEN_BIN}> $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile>
+        $<$<NOT:$<CONFIG:Release>>:${CMAKE_COMMAND}> $<$<NOT:$<CONFIG:Release>>:-E> $<$<NOT:$<CONFIG:Release>>:true>
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMENT "Generando documentación con ${DOXYGEN_BIN}..."
+        COMMENT "$<$<CONFIG:Release>:Generando documentación con Doxygen...>"
         VERBATIM
     )
 endfunction()
