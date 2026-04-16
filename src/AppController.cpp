@@ -1,7 +1,6 @@
 #include "AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
 #include <miniaudio.h>
-#include <iostream>
 #include "system/sys.hpp"
 
 // General ------------------------------------------------------------------------------
@@ -171,24 +170,16 @@ void AppController::TWorker() {
             return tts_.generate(modelName, text, wavname);
         };
 
-    short AppController::getTTSInitPercent() const noexcept {
-        return tts_.getInitPercent();
-    }
+    TTSData AppController::getTTSData() noexcept {
+        TTSData data;
 
-    std::vector<std::string> AppController::getAvailableTTSModels() noexcept {
-        return tts_.getAvailableModels();
-    };
-      
-    std::vector<std::string> AppController::getLoadedTTSModels() const noexcept {
-        return tts_.getLoadedModels();
-    };
-
-    short AppController::getAvailableNumTTSModels() const noexcept {
-        return tts_.getAvailableNumModels();
-    }
-
-    short AppController::getLoadedNumTTSModels() const noexcept {
-        return tts_.getLoadedNumModels();
+        data.available_models     = tts_.getAvailableModels();
+        data.loaded_models        = tts_.getLoadedModels();
+        data.num_available_models = tts_.getAvailableNumModels();
+        data.num_loaded_models    = tts_.getLoadedNumModels();
+        data.init_percent         = static_cast<int>(100.0 * data.num_loaded_models / data.num_available_models);
+        
+        return data;
     }
 
     std::string AppController::getTTSProcessingText(std::string modelName) const noexcept {

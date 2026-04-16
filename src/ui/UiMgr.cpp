@@ -291,11 +291,13 @@ void UiMgr::crearMainMenuBar() {
 void UiMgr::ventanaPrincipal() {
 	// Variables estáticas (solo se crean una vez) para guardar datos
 	static float heightRightTop = 0.5f; 
-	float totalHeight = GetContentRegionAvail().y;
-	float sizeX__Izq = GetContentRegionAvail().x * 0.3f;
+	static float totalHeight = GetContentRegionAvail().y;
+	static float sizeX__Izq = GetContentRegionAvail().x * 0.3f;
 	static std::string TTS_text;
 	
-	static short TTS_percent;
+	// Coge datos de módulos
+	static TTSData tts;
+	tts = ctrl_->getTTSData();
 	
 	// COLUMNA IZQUIERDA
 	BeginGroup();
@@ -304,16 +306,15 @@ void UiMgr::ventanaPrincipal() {
 		BeginChild("##F1", ImVec2(sizeX__Izq, GetContentRegionAvail().y), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_FrameStyle);
 
 		// Mostrar carga de TTS
-		TTS_percent = ctrl_->getTTSInitPercent();
-		if (TTS_percent < 100) {
+		if (tts.init_percent < 100) {
 			ImSpinner::SpinnerPulsar("Pulsar",  6, 2, ImColor(.5f,.5f,.5f));
 			SameLine();
 			TTS_text = "Loading TTS voice models: ";
-			TTS_text += std::to_string(ctrl_->getLoadedNumTTSModels()) + "/" + std::to_string(ctrl_->getAvailableNumTTSModels());
+			TTS_text += std::to_string(tts.num_loaded_models) + "/" + std::to_string(tts.num_available_models);
 		} else TTS_text = "TTS voice models loaded.";
 		
 		Text("%s", TTS_text.c_str());
-		ProgressBar(TTS_percent/100.0f, ImVec2(0.0f, 0.0f));
+		ProgressBar(tts.init_percent/100.0f, ImVec2(0.0f, 0.0f));
 
 		// Botón de modo
 		if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
@@ -487,9 +488,8 @@ void UiMgr::ventanaPrincipal() {
 
 			if (BeginTabItem("TTS")) {
 				// --- CONFIGURACIÓN PREVIA ---
-				std::vector<std::string> st_voice_models = ctrl_->getLoadedTTSModels();
 				static int selected_idx = 0;
-				std::string current_model = (!st_voice_models.empty()) ? st_voice_models[selected_idx] : "";
+				std::string current_model = (!tts.loaded_models.empty()) ? tts.loaded_models[selected_idx] : "";
 				std::string proc_text = ctrl_->getTTSProcessingText(current_model);
 				bool is_busy = !proc_text.empty();
 
@@ -504,8 +504,8 @@ void UiMgr::ventanaPrincipal() {
 
 				// COLUMNA IZQUIERDA: InputText
 				// Usamos un Child o simplemente calculamos el ancho para dejar espacio a la derecha
-				float right_panel_width = 250.0f; // Ancho fijo para el panel de controles
-				float input_width = GetContentRegionAvail().x - right_panel_width - GetStyle().ItemSpacing.x;
+				static float right_panel_width = 250.0f; // Ancho fijo para el panel de controles
+				static float input_width = GetContentRegionAvail().x - right_panel_width - GetStyle().ItemSpacing.x;
 
 				BeginGroup(); // Agrupamos el input para que Sameline funcione con el bloque siguiente
 
@@ -534,10 +534,10 @@ void UiMgr::ventanaPrincipal() {
 					if (is_online) BeginDisabled(); // Si es online, todo lo que sigue se deshabilita
 
 					SetNextItemWidth(-FLT_MIN); // Que ocupe todo el ancho del child
-					const char* preview_value = (st_voice_models.empty()) ? "No models" : st_voice_models[selected_idx].c_str();
+					const char* preview_value = (tts.loaded_models.empty()) ? "" : tts.loaded_models[selected_idx].c_str();
 					if (BeginCombo("##cb_model", preview_value)) {
-						for (int n = 0; n < static_cast<int>(st_voice_models.size()); ++n) {
-							if (Selectable(st_voice_models[n].c_str(), selected_idx == n)) selected_idx = n;
+						for (int n = 0; n < static_cast<int>(tts.loaded_models.size()); ++n) {
+							if (Selectable(tts.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
 						}
 						EndCombo();
 					}

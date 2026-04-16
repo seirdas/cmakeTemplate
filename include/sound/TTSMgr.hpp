@@ -127,7 +127,6 @@ private:
     TTSModelsMap            loaded_models_;         // Mapa de modelos TTS cargados
     int32_t                 num_threads_;           // Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       // Activa/desactiva la inicialización concurrente (experimental)
-    short                   init_percent_;          // Porcentaje de inicialización (100 = full init)
     std::string const       models_path_;           // Ruta de carpetas donde residen los modelos
     short                   num_available_models_;  // Número de modelos disponibles
     short                   num_loaded_models_;     // Número de modelos disponibles
