@@ -39,14 +39,16 @@ else()
         INPUT "${DOXYGEN_TEMP_ARCHIVE}"
         DESTINATION "${DOXYGEN_INSTALL_DIR}"
     )
+    endif()
 
     # Borrar el ZIP descargado
-    file(REMOVE "${DOXYGEN_TEMP_ARCHIVE}")
+    if (EXISTS ${DOXYGEN_TEMP_ARCHIVE})
+        file(REMOVE "${DOXYGEN_TEMP_ARCHIVE}")
+    endif()
 
     # Permisos de ejecución (Unix)
     if(UNIX AND EXISTS "${DOXYGEN_BIN}")
         execute_process(COMMAND chmod +x "${DOXYGEN_BIN}")
-    endif()
 endif()
 
 # --- Lógica de limpieza ---
