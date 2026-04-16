@@ -7,7 +7,7 @@ set(SHERPA_VERSION "1.12.34")
 # Configurar URLs según plataforma
 if(WIN32)
     set(SHERPA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/sherpa_win_bin")
-    # Nombres de carpeta (aparentemente es igual que el paquete)
+    # Nombre de carpeta/zip (aparentemente es igual que el paquete)
     set(SHERPA_WIN_BIN_DEBUG            "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Debug" )
     set(SHERPA_WIN_BIN_RELEASE          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Release" )
     set(SHERPA_WIN_BIN_MINSIZEREL       "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-MinSizeRel" )
@@ -20,7 +20,9 @@ if(WIN32)
     set(SHERPA_CHECK_LIB sherpa-onnx-c-api.lib)
 else()
     set(SHERPA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/sherpa_linux_bin")
-    set(URL_LINUX "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/sherpa-onnx-v${SHERPA_VERSION}-linux-x64-gpu.tar.bz2")
+    # Nombre de carpeta/zip y paquete a descargar
+    set(SHERPA_LINUX_BIN "sherpa-onnx-v${SHERPA_VERSION}-linux-x64-gpu" )
+    set(SHERPA_LINUX_URL "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_LINUX_BIN}.tar.bz2")
     set(SHERPA_CHECK_LIB libsherpa-onnx-c-api.so)
 endif()
 
@@ -43,7 +45,7 @@ function(download_sherpa SHERPA_BIN URL)
             RESULT_VARIABLE tar_status
         )
     endif()
-    
+    # Borrar el archivo comprimido
     if (EXISTS ${TEMP_ARCHIVE})
         file(REMOVE "${TEMP_ARCHIVE}")
     endif()
@@ -51,14 +53,11 @@ function(download_sherpa SHERPA_BIN URL)
 endfunction()
 
 if (WIN32)
-    # Aprovechamos y descargamos todas
+    # Aprovechamos y descargamos todas las configuraciones
     download_sherpa(${SHERPA_WIN_BIN_DEBUG}          ${SHERPA_WIN_URL_DEBUG})
     download_sherpa(${SHERPA_WIN_BIN_RELEASE}        ${SHERPA_WIN_URL_RELEASE})
     download_sherpa(${SHERPA_WIN_BIN_MINSIZEREL}     ${SHERPA_WIN_URL_MINSIZEREL})
     download_sherpa(${SHERPA_WIN_BIN_RELWITHDEBINFO} ${SHERPA_WIN_URL_RELWITHDEBINFO})
-
-    # Headers
-    message(STATUS "${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_SELECTED}/include")
 
     # Crear la librería de interfaz
     add_library(sherpa_lib INTERFACE)
@@ -67,7 +66,6 @@ if (WIN32)
     target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_RELEASE}/include")
     
     # Link de librerías (se va a elegir la de la configuración correspondiente)
-    set(CURRENT_LIB_PATH "${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_SELECTED}/lib/${SHERPA_CHECK_LIB}")
     target_link_libraries(sherpa_lib INTERFACE 
         "$<$<CONFIG:Debug>:${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_DEBUG}/lib/${SHERPA_CHECK_LIB}>"
         "$<$<CONFIG:Release>:${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_RELEASE}/lib/${SHERPA_CHECK_LIB}>"
@@ -79,19 +77,19 @@ if (WIN32)
 
 elseif(UNIX)
     # Descarga el binario de Linux
-    download_sherpa(linux          ${URL_LINUX})
+    download_sherpa(${SHERPA_LINUX_BIN}          ${SHERPA_LINUX_URL})
 
     # Crear la librería
     add_library(sherpa_lib INTERFACE)
 
     # Incluir headers
-    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/linux/include")
+    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/${SHERPA_LINUX_BIN}/include")
 
     # Link de librerías 
-    set(LIB_PATH "${SHERPA_INSTALL_DIR}/linux/lib")
+    set(SHERPA_LIB_DIR "${SHERPA_INSTALL_DIR}/${SHERPA_LINUX_BIN}/lib")     
     target_link_libraries(sherpa_lib INTERFACE 
-        "${LIB_PATH}/libsherpa-onnx-c-api.so"
-        "${LIB_PATH}/libonnxruntime.so"
+        "${SHERPA_LIB_DIR}/libsherpa-onnx-c-api.so"
+        "${SHERPA_LIB_DIR}/libonnxruntime.so"
         pthread
         dl
     )
@@ -230,24 +228,22 @@ function(configure_sherpa_assets)
     # Copiar DLLs necesarias
     if(WIN32)
         # Usamos un generador de expresiones anidado para construir el nombre de la carpeta larga
-        set(SHERPA_PATH "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-$<CONFIG>")
+        set(SHERPA_LIB_DIR "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-$<CONFIG>/lib")
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SHERPA_INSTALL_DIR}/${SHERPA_PATH}/lib/sherpa-onnx-c-api.dll"
-            "${SHERPA_INSTALL_DIR}/${SHERPA_PATH}/lib/onnxruntime.dll"
+            "${SHERPA_INSTALL_DIR}/${SHERPA_LIB_DIR}/sherpa-onnx-c-api.dll"
+            "${SHERPA_INSTALL_DIR}/${SHERPA_LIB_DIR}/onnxruntime.dll"
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             COMMENT "Copying Sherpa and ONNX Runtime DLLs ($<CONFIG>)..."
         )
-    elseif(UNIX)
-        set(LIB_DIR "${SHERPA_INSTALL_DIR}/linux/lib")
-        
+    elseif(UNIX)   
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${LIB_DIR}/libsherpa-onnx-c-api.so"
-            "${LIB_DIR}/libonnxruntime.so"
-            "${LIB_DIR}/libonnxruntime_providers_shared.so"
-            "${LIB_DIR}/libonnxruntime_providers_cuda.so"
-            "${LIB_DIR}/libonnxruntime_providers_tensorrt.so"
+            "${SHERPA_LIB_DIR}/libsherpa-onnx-c-api.so"
+            "${SHERPA_LIB_DIR}/libonnxruntime.so"
+            "${SHERPA_LIB_DIR}/libonnxruntime_providers_shared.so"
+            "${SHERPA_LIB_DIR}/libonnxruntime_providers_cuda.so"
+            "${SHERPA_LIB_DIR}/libonnxruntime_providers_tensorrt.so"
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             COMMENT "Copying Sherpa and ONNX Runtime Shared Libs (GPU support)..."
         )
@@ -263,11 +259,11 @@ function(configure_sherpa_assets)
 
     # Los siguientes target_properties hay que hacerlos cuando el proyecto esté creado:
 
-    # Linux: SHERPA_BINurar RPATH para que el ejecutable encuentre las .so al lado del binario
-    if (UNIX AND NOT SHERPA_RPATH_SHERPA_BINURED)
+    # Linux: Configurar RPATH para que el ejecutable encuentre las .so al lado del binario
+    if (UNIX AND NOT SHERPA_RPATH_CONFIGURED)
         set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
         set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-        set(SHERPA_RPATH_SHERPA_BINURED ON CACHE INTERNAL "RPATH has been set for Sherpa")
+        set(SHERPA_RPATH_CONFIGURED ON CACHE INTERNAL "RPATH has been set for Sherpa")
     endif()
 
     # Translado la ruta de las voces como #define de código c++
