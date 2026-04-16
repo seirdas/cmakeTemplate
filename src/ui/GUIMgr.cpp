@@ -10,7 +10,7 @@
 //		https://traineq.org/imgui_bundle_explorer/
 // ---------------------------------------------------------------------------------
 
-#include "ui/UiMgr.h"			// Clase de gestión de UI
+#include "ui/GUIMgr.h"			// Clase de gestión de UI
 #include <cstring>
 #include <stb_image.h>          // Implementación para soporte de imágenes.
 #include "imgui-knobs.h"		// Soporte de knobs
@@ -47,30 +47,37 @@ using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
-UiMgr::UiMgr(IAppControl* controller) : ctrl_(controller) {
+GUiMgr::GUiMgr(IAppControl* controller) : ctrl_(controller) {
 	if (ctrl_==nullptr)
-		std::cerr << "[UiMgr]	Cannot handle any controller." << std::endl;
+		std::cerr << "[GUiMgr]	Cannot handle any controller." << std::endl;
 }
 
-UiMgr::~UiMgr() {
+GUiMgr::~GUiMgr() {
 	cerrar();
 }
 
-void UiMgr::setController(IAppControl* controller){
+void GUiMgr::setController(IAppControl* controller){
 	ctrl_ = controller;
 }
 
-bool UiMgr::init() {
+bool GUiMgr::init() {
 
-	SYS_INFO("UiMgr", "Initializating UI...");
+	SYS_INFO("GUiMgr", "Initializating UI...");
 
+	// Identificación de posibles errores de inicialización
+	glfwSetErrorCallback([](int error, const char* description) {
+		SYS_ERROR("GUIMgr", "GLFW Error (" + std::to_string(error) + "): " + std::string(description));
+	});
+
+	// Check si está vinculado con la App
 	if (ctrl_!=nullptr)
-		SYS_INFO("UiMgr", "Linked with IAppController");
+		SYS_INFO("GUiMgr", "Linked with IAppController");
 	else
-		std::cerr << "[UiMgr]	ERROR No controller linked." << std::endl;
+		SYS_ERROR("GUiMgr","No controller linked.");
 
+	// Inicializar GLFW
     if (!glfwInit()) {
-		std::cerr << "[UiMgr]	ERROR glfwInit error." << std::endl;
+		SYS_ERROR("GUiMgr","glfwInit error.");
 		return false;
 	}
 
@@ -83,7 +90,7 @@ bool UiMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        std::cerr << "[UiMgr]	ERROR glfwCreateWindow error." << std::endl;
+        std::cerr << "[GUiMgr]	ERROR glfwCreateWindow error." << std::endl;
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -133,9 +140,9 @@ bool UiMgr::init() {
 			icon_image.pixels = pixels;
 			glfwSetWindowIcon(window_, 1, &icon_image);
 			stbi_image_free(pixels);
-			SYS_INFO("UiMgr", "Linux window icon loaded from file.");
+			SYS_INFO("GUiMgr", "Linux window icon loaded from file.");
 		} else {
-			std::cerr << "[UiMgr]   WARN: Could not load icon.png for Linux window." << std::endl;
+			std::cerr << "[GUiMgr]   WARN: Could not load icon.png for Linux window." << std::endl;
 		}
 	#endif
 
@@ -150,7 +157,7 @@ bool UiMgr::init() {
     return true;
 }
 
-void UiMgr::run() {
+void GUiMgr::run() {
 
 	while (isRunning())
 		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
@@ -158,16 +165,16 @@ void UiMgr::run() {
 	cerrar();
 }
 
-bool UiMgr::isRunning() const {
+bool GUiMgr::isRunning() const {
     return window_ && !glfwWindowShouldClose(window_);
 }
 
-void UiMgr::cerrar() {
+void GUiMgr::cerrar() {
 	// No intentar cerrar de nuevo (excepción)
 	if(!running_) 
 		return;
 
-	SYS_INFO("UiMgr", "Closing UI...");
+	SYS_INFO("GUiMgr", "Closing UI...");
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -182,12 +189,12 @@ void UiMgr::cerrar() {
 	// Liberar recursos de imágenes cargadas
 	unloadImages();
 
-	SYS_INFO("UiMgr", "UI closed.");
+	SYS_INFO("GUiMgr", "UI closed.");
 	running_ = false;
 }
 
 
-void UiMgr::initCuadro() {
+void GUiMgr::initCuadro() {
     glfwPollEvents();
     
     ImGui_ImplOpenGL3_NewFrame();
@@ -195,7 +202,7 @@ void UiMgr::initCuadro() {
     NewFrame();
 }
 
-void UiMgr::endCuadro() {
+void GUiMgr::endCuadro() {
     // Renderiza
     Render();
     glClear(GL_COLOR_BUFFER_BIT);
@@ -203,7 +210,7 @@ void UiMgr::endCuadro() {
     glfwSwapBuffers(window_);
 }
 
-void UiMgr::captureKeys() {
+void GUiMgr::captureKeys() {
 
 	// Modo debug de detección de teclas
 	if (captureKeys_)
@@ -221,7 +228,7 @@ void UiMgr::captureKeys() {
 
 }
 
-void UiMgr::BuclePrincipal() {
+void GUiMgr::BuclePrincipal() {
     initCuadro();
 	captureKeys();
 
@@ -262,7 +269,7 @@ void UiMgr::BuclePrincipal() {
     endCuadro();
 }
 
-void UiMgr::crearMainMenuBar() {
+void GUiMgr::crearMainMenuBar() {
 	if (BeginMainMenuBar()) {
 		if (BeginMenu("File")) {
 			if (MenuItem("New", "Ctrl+N")) { /* Acción */ }
@@ -288,7 +295,7 @@ void UiMgr::crearMainMenuBar() {
 	MainMenuBar_Height_ = GetFrameHeight();
 }
 
-void UiMgr::ventanaPrincipal() {
+void GUiMgr::ventanaPrincipal() {
 	// Variables estáticas (solo se crean una vez) para guardar datos
 	static float heightRightTop = 0.5f; 
 	static float totalHeight = GetContentRegionAvail().y;
@@ -567,8 +574,8 @@ void UiMgr::ventanaPrincipal() {
 
 }
 
-void UiMgr::loadImages() {
-	SYS_INFO("UiMgr", "Loading images...");
+void GUiMgr::loadImages() {
+	SYS_INFO("GUiMgr", "Loading images...");
 
 	// Añadir aquí las imágenes que se desean cargar
 	addTextureFromFile("imageres/cat.png");
@@ -579,15 +586,15 @@ void UiMgr::loadImages() {
 
 }
 
-void UiMgr::unloadImages() {
-	SYS_INFO("UiMgr", "Unloading images...");
+void GUiMgr::unloadImages() {
+	SYS_INFO("GUiMgr", "Unloading images...");
 
 	GLuint glTex;
 
 	// Descargar todas las imágenes guardadas
 	for (auto & img : images_) {
         if (img.second.tex != 0) {
-            SYS_INFO("UiMgr", "Unloading cached texture: " + img.first);
+            SYS_INFO("GUiMgr", "Unloading cached texture: " + img.first);
             
             // Convertimos el uintptr_t de vuelta a GLuint para OpenGL
             glTex = (GLuint)img.second.tex;
@@ -598,7 +605,7 @@ void UiMgr::unloadImages() {
     }
 }
 
-void UiMgr::addTextureFromFile(std::string filename) {
+void GUiMgr::addTextureFromFile(std::string filename) {
 	imageData img_data;		// Variable temporal para almacenar datos de la imagen cargada
 	int channels;			// Canales de imagen
 
@@ -606,7 +613,7 @@ void UiMgr::addTextureFromFile(std::string filename) {
 	unsigned char* data = stbi_load(filename.c_str(), &img_data.x, &img_data.y, &channels, 4);
 	if (!data)
 	{
-		std::cerr << "[UiMgr]	ERROR loading image: " << filename << std::endl;
+		std::cerr << "[GUiMgr]	ERROR loading image: " << filename << std::endl;
 		return;
 	}
 
@@ -628,20 +635,20 @@ void UiMgr::addTextureFromFile(std::string filename) {
 	images_[filename] = img_data;
 	images_[filename].name = filename.c_str();
 	
-	SYS_INFO("UiMgr", "Loaded image " + filename);
+	SYS_INFO("GUiMgr", "Loaded image " + filename);
     return;
 };
 
-void UiMgr::updateDensity(int delta) {
+void GUiMgr::updateDensity(int delta) {
 
     int new_size = (int)style_->FontSizeBase + delta;
 
     if (new_size > (int)MAX_FONT_SIZE_) {
-        std::cerr << "[UiMgr] WARN font size bigger than max allowed." << std::endl;
+        std::cerr << "[GUiMgr] WARN font size bigger than max allowed." << std::endl;
         return;
     }
     if (new_size < (int)MIN_FONT_SIZE_) {
-        std::cerr << "[UiMgr] WARN font size smaller than min allowed." << std::endl;
+        std::cerr << "[GUiMgr] WARN font size smaller than min allowed." << std::endl;
         return;
     }
 
@@ -662,21 +669,21 @@ void UiMgr::updateDensity(int delta) {
     style_->FrameRounding = style_->FrameRounding * scale;
     style_->GrabRounding = style_->GrabRounding * scale;
 
-    SYS_INFO("UiMgr", "Density adjusted to font size: " + std::to_string(style_->FontSizeBase));
+    SYS_INFO("GUiMgr", "Density adjusted to font size: " + std::to_string(style_->FontSizeBase));
 };
 
 // Temas --------------------------------------------------------------------------------
 
-void UiMgr::titleBarDarkMode(bool useDarkMode) {
+void GUiMgr::titleBarDarkMode(bool useDarkMode) {
 	#ifdef _WIN32
 		std::string st_darkmode=(useDarkMode ? "Dark" : "Light");
 		BOOL useDarkMode_ = useDarkMode ? TRUE : FALSE;
 		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode_, sizeof(useDarkMode_));
-		SYS_INFO("UiMgr",  st_darkmode + " window title set");
+		SYS_INFO("GUiMgr",  st_darkmode + " window title set");
 	#endif
 }
 
-void UiMgr::Style_Confy() {
+void GUiMgr::Style_Confy() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -765,10 +772,10 @@ void UiMgr::Style_Confy() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
-	SYS_INFO("UiMgr", "'Confy' theme applied.");
+	SYS_INFO("GUiMgr", "'Confy' theme applied.");
 }
 
-void UiMgr::Style_FutureDark() {
+void GUiMgr::Style_FutureDark() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -857,10 +864,10 @@ void UiMgr::Style_FutureDark() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 
-	SYS_INFO("UiMgr", "'FutureDark' theme applied.");
+	SYS_INFO("GUiMgr", "'FutureDark' theme applied.");
 }
 
-void UiMgr::Style_Moonlight() {
+void GUiMgr::Style_Moonlight() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -949,10 +956,10 @@ void UiMgr::Style_Moonlight() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 
-	SYS_INFO("UiMgr", "'Moonlight' theme applied.");
+	SYS_INFO("GUiMgr", "'Moonlight' theme applied.");
 }
 
-void UiMgr::Style_VisualStudio() {
+void GUiMgr::Style_VisualStudio() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -1041,10 +1048,10 @@ void UiMgr::Style_VisualStudio() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.1451f, 0.1451f, 0.1490f, 1.0000f);
 
-	SYS_INFO("UiMgr", "'Visual Studio' theme applied.");
+	SYS_INFO("GUiMgr", "'Visual Studio' theme applied.");
 }
 
-void UiMgr::Style_Microfrost() {
+void GUiMgr::Style_Microfrost() {
 	
 	StyleColorsLight();
 	titleBarDarkMode(false);
@@ -1133,5 +1140,5 @@ void UiMgr::Style_Microfrost() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
-	SYS_INFO("UiMgr", "'Microfrost' theme applied.");
+	SYS_INFO("GUiMgr", "'Microfrost' theme applied.");
 }
