@@ -4,6 +4,16 @@ cmake_policy(SET CMP0135 NEW)
 
 set(SHERPA_VERSION "1.12.34")
 
+# - Para Windows ofrecen binarios de todo tipo MENOS la opción
+#     compatible con GPU, así que solo procesa con CPU.
+#     La única opción es con CUDA (solo NVIDIA, necesita 
+#     instalación) o compilar todo el código fuente de 
+#     sherpa para generar la versión compatible con
+#     DirectML GPU (universal).
+# - Para Linux sí hay binario GPU
+# (Pendiente de probar binario GPU Windows:
+#  https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.34/sherpa-onnx-v1.12.34-win-x64-cuda.tar.bz2)
+
 # Configurar URLs según plataforma
 if(WIN32)
     set(SHERPA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/sherpa_win_bin")
