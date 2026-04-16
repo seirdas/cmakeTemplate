@@ -109,26 +109,97 @@ set(ASSETS_CMAKE_FOLDER "tts-assets")
 # Directorio de modelos de voz
 set(VOICES_DIR tts-voices)
 
-# Directorio de descarga para cmake
-set(DOWNLOAD_TTS_ASSETS_DIR ${EXTERNAL_LIB_PATH}/${ASSETS_CMAKE_FOLDER}/${VOICES_DIR})
+set(DOWNLOAD_TTS_ASSETS_DIR "${EXTERNAL_LIB_PATH}/${ASSETS_CMAKE_FOLDER}/${VOICES_DIR}")
+
+# Crear primero
+file(MAKE_DIRECTORY "${DOWNLOAD_TTS_ASSETS_DIR}")
+
+# Luego resolver
+file(REAL_PATH "${DOWNLOAD_TTS_ASSETS_DIR}" DOWNLOAD_TTS_ASSETS_DIR)
+
+# Fix Windows para rutas muy largas (pasar a formato 8.3)
+if(WIN32)
+    # Obtener ruta absoluta normalizada
+    file(REAL_PATH "${DOWNLOAD_TTS_ASSETS_DIR}" ABS_PATH)
+
+    # Obtener 8.3 con comando de Windows
+    execute_process(
+        COMMAND cmd /c for %I in ("${ABS_PATH}") do @echo %~sI
+        OUTPUT_VARIABLE SHORT_PATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    # Limpiar posibles retornos raros
+    string(REPLACE "\r" "" SHORT_PATH "${SHORT_PATH}")
+    string(REPLACE "\n" "" SHORT_PATH "${SHORT_PATH}")
+
+    # Crear path formato 8.3
+    file(TO_CMAKE_PATH "${SHORT_PATH}" DOWNLOAD_TTS_ASSETS_DIR)
+endif()
+
+message(STATUS "DOWNLOAD_TTS_ASSETS_DIR : " ${DOWNLOAD_TTS_ASSETS_DIR})
 
 # Ruta como define para usar en código (ver en la función de abajo)
 file(TO_CMAKE_PATH "${VOICES_DIR}" DEFINE_VOICE_DEST_DIR)
 
 # Función para descargar las voces
 function(download_voice NAME URL)
+    # Destino
     set(MODEL_DIR "${DOWNLOAD_TTS_ASSETS_DIR}/${NAME}")
-    if(NOT EXISTS ${MODEL_DIR})
-        message(STATUS "Fetching TTS Model: ${NAME}...")
-        FetchContent_Declare(
-            ${NAME}
-            URL "${URL}"
-            SOURCE_DIR "${MODEL_DIR}"
-        )
-        FetchContent_MakeAvailable(${NAME})
-    else()
+    file(TO_CMAKE_PATH "${DOWNLOAD_TTS_ASSETS_DIR}/${NAME}" MODEL_DIR)
+    
+    # Archivo temporal descargado
+    get_filename_component(FILENAME "${URL}" NAME)
+    set(ARCHIVE_PATH "${DOWNLOAD_TTS_ASSETS_DIR}/${FILENAME}")
+
+    # Si ya existe el modelo, no hacer nada
+    if(EXISTS "${MODEL_DIR}")
         message(STATUS "Using local TTS Model: ${NAME}...")
+
+        # Borrar archivo comprimido si existe
+        if(EXISTS "${ARCHIVE_PATH}")
+            file(REMOVE "${ARCHIVE_PATH}")
+        endif()
+
+        return()
     endif()
+
+    message(STATUS "Downloading TTS Model: ${NAME}...")
+
+    # Asegurar carpeta base
+    file(MAKE_DIRECTORY "${DOWNLOAD_TTS_ASSETS_DIR}")
+
+    # Descargar archivo
+    file(DOWNLOAD
+        "${URL}"
+        "${ARCHIVE_PATH}"
+        SHOW_PROGRESS
+        STATUS DOWNLOAD_STATUS
+    )
+
+    list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+    if(NOT STATUS_CODE EQUAL 0)
+        message(FATAL_ERROR "Download failed for ${NAME}")
+    endif()
+
+    # Extraer archivo (tar.bz2 compatible)
+    message(STATUS "Extracting ${NAME}...")
+    file(MAKE_DIRECTORY "${MODEL_DIR}")
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E tar xvf "${ARCHIVE_PATH}"
+        WORKING_DIRECTORY "${DOWNLOAD_TTS_ASSETS_DIR}"
+        RESULT_VARIABLE TAR_RESULT
+    )
+    if(NOT TAR_RESULT EQUAL 0)
+        message(FATAL_ERROR "Extraction failed for ${NAME}")
+    endif()
+
+    # Borrar archivo comprimido
+    if(EXISTS "${ARCHIVE_PATH}")
+        file(REMOVE "${ARCHIVE_PATH}")
+    endif()
+
+    message(STATUS "TTS Model ${NAME} extracted in ${ARCHIVE_PATH}")
 endfunction()
 
 # Añadir aquí las descarga de voces para Sherpa:
