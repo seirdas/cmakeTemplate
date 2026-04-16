@@ -25,13 +25,17 @@ bool SoundMgr::init() {
     if (ctx_initialized_) return true;
     SYS_INFO("SoundMgr", "Initializating sound context...");
 
+    // Inicializar sistema de audio
     ma_result res = ma_context_init(NULL, 0, NULL, &snd_context_);
     ctx_initialized_ = (res == MA_SUCCESS) ? true : false;
-
-    if (!updateDevices()){
-        std::cerr << "[SoundMgr]    ERROR Failed to get playback devices." << std::endl;
-        // Mantiene el SoundMgr vivo
+    if (!ctx_initialized_) {
+        SYS_ERROR("SoundMgr","Cannot initialize audio system (ma_context_init).");
+        return false;
     }
+
+    // Obtener dispositivos de captura/playback
+    if (!updateDevices())
+        SYS_WARN("SoundMgr","Failed to get playback devices.");
 
     return ctx_initialized_;
 }
@@ -111,7 +115,7 @@ void SoundMgr::listAvailablePlaybacks() const {
 
 bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) {
     if (!ctx_initialized_) {
-        std::cerr << "[SoundMgr]    ERROR Audio context not initialized." << std::endl;
+        SYS_WARN("SoundMgr","Audio context not initialized.");
         return false;
     }
 
@@ -130,7 +134,7 @@ bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string cons
 
     // Si no ha encontrado nada saltar fallo y return
     if (selectedDeviceInfo == nullptr) {
-        std::cerr << "[SoundMgr]    ERROR Failed to found device with name" << deviceName << std::endl;
+        SYS_WARN("SoundMgr","Failed to found device with name");
         return false;
     }
     SYS_INFO("SoundMgr", "Using playback device: " + deviceName);
@@ -143,7 +147,7 @@ bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string cons
     if (!apm->start())
     {
         // No hay nada que limpiar, el puntero make_unique se destruye al salir.
-        std::cerr << "[SoundMgr]  Failed to initialize playback " << std::endl;
+        SYS_WARN("SoundMgr","Failed to initialize playback.");
         return false;
     }
 
@@ -158,8 +162,8 @@ bool SoundMgr::removePlaybackDevice(unsigned short index) {
 
     // comprobar si existe
     if (index >= playbacks_.size()) {
-        std::cerr << "[SoundMgr]  Selected index " << index;
-        std::cerr << " out of bounds (" << playbacks_.size() <<")" << std::endl;
+        SYS_WARN("SoundMgr","Selected index " + std::to_string(index) +
+            " out of bounds (" + std::to_string(playbacks_.size()) + ")");;
         return false;
     }
     
@@ -177,7 +181,7 @@ bool SoundMgr::removePlaybackDevice(unsigned short index) {
 bool SoundMgr::playbackTest() {
 
     if (!ctx_initialized_) {
-        std::cerr << "[SoundMgr]    ERROR Audio context not initialized." << std::endl;
+        SYS_WARN("SoundMgr","Audio context not initialized.");
         return false;
     }
 

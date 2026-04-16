@@ -54,11 +54,11 @@ bool NetMgr::addReceiver(
     // Evitar duplicados por nombre y puerto
     for (const auto& rcv : receivers_) {
         if (rcv->name() == name) {
-            std::cerr << "[NetMgr]  Socket already exists with name " << name << std::endl;
+            SYS_WARN("NetMgr","Socket already exists with name " + name);;
             return false;
         }
         if (rcv->port() == local_port) {
-            std::cerr << "[NetMgr]  Socket already exists with port " << local_port << std::endl;
+            SYS_WARN("NetMgr","Socket already exists with port " + std::to_string(local_port));
             return false;
         }
     }
@@ -71,7 +71,7 @@ bool NetMgr::addReceiver(
     if (!receiver->init(local_port, local_ip, rcv_packet_size))
     {
         // No hay nada que limpiar, el puntero make_unique se destruye al salir.
-        std::cerr << "[NetMgr]  Failed to initialize socket on port " << local_port << std::endl;
+        SYS_WARN("NetMgr","Failed to initialize socket on port " + std::to_string(local_port));
         return false;
     }
 
@@ -94,8 +94,8 @@ bool NetMgr::removeReceiver(unsigned int index) {
     std::lock_guard<std::mutex> lock(mtx_receivers_);
 
     if (index >= receivers_.size()) {
-        std::cerr << "[NetMgr]  Selected index " << index;
-        std::cerr << " out of bounds (" << receivers_.size() <<")" << std::endl;
+        SYS_WARN("NetMgr","Selected index " + std::to_string(index) 
+            + " out of bounds (" + std::to_string(receivers_.size()) +")");
         return false;
     }
 
@@ -134,7 +134,7 @@ int NetMgr::getSocketIndex(std::string const& name) const {
 std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
 
     if (index >= receivers_.size()) {
-        std::cerr << "[NetMgr]  ERROR Selected index out of limits" << std::endl;
+        SYS_WARN("NetMgr","Selected index out of limits");
         return {};
     }
 

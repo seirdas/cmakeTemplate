@@ -49,7 +49,7 @@ using namespace ImGui;
 
 GUiMgr::GUiMgr(IAppControl* controller) : ctrl_(controller) {
 	if (ctrl_==nullptr)
-		std::cerr << "[GUiMgr]	Cannot handle any controller." << std::endl;
+		SYS_WARN("GUiMgr","Cannot handle any controller.");
 }
 
 GUiMgr::~GUiMgr() {
@@ -90,7 +90,7 @@ bool GUiMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        std::cerr << "[GUiMgr]	ERROR glfwCreateWindow error." << std::endl;
+        SYS_ERROR("GUiMgr","glfwCreateWindow error.");
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -142,7 +142,7 @@ bool GUiMgr::init() {
 			stbi_image_free(pixels);
 			SYS_INFO("GUiMgr", "Linux window icon loaded from file.");
 		} else {
-			std::cerr << "[GUiMgr]   WARN: Could not load icon.png for Linux window." << std::endl;
+			SYS_WARN("GUiMgr","Could not load icon.png for Linux window.");
 		}
 	#endif
 
@@ -613,7 +613,7 @@ void GUiMgr::addTextureFromFile(std::string filename) {
 	unsigned char* data = stbi_load(filename.c_str(), &img_data.x, &img_data.y, &channels, 4);
 	if (!data)
 	{
-		std::cerr << "[GUiMgr]	ERROR loading image: " << filename << std::endl;
+		SYS_WARN("GUiMgr","Error loading image: " + filename);
 		return;
 	}
 
@@ -644,11 +644,11 @@ void GUiMgr::updateDensity(int delta) {
     int new_size = (int)style_->FontSizeBase + delta;
 
     if (new_size > (int)MAX_FONT_SIZE_) {
-        std::cerr << "[GUiMgr] WARN font size bigger than max allowed." << std::endl;
+        SYS_WARN("GUiMgr","Font size bigger than max allowed.");
         return;
     }
     if (new_size < (int)MIN_FONT_SIZE_) {
-        std::cerr << "[GUiMgr] WARN font size smaller than min allowed." << std::endl;
+        SYS_WARN("GUiMgr","Font size smaller than min allowed.");
         return;
     }
 
