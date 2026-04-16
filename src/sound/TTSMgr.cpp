@@ -65,7 +65,7 @@ bool TTSMgr::init() {
     init_percent_ = static_cast<int>(100.0 * num_loaded_models_ / num_available_models_);
 
     if (num_loaded_models_ != num_available_models_) {
-        SYS_WARN("TTSMgr", "Load finished with " + std::to_string(num_available_models_-num_loaded_models_) + "left.")
+        SYS_WARN("TTSMgr", "Load finished with " + std::to_string(num_available_models_-num_loaded_models_) + "left.");
         loadRemaining();
     }
 
