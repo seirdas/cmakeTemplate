@@ -43,7 +43,6 @@ file(MAKE_DIRECTORY "${SHERPA_INSTALL_DIR}")
 function(download_sherpa SHERPA_BIN URL)
     if (EXISTS "${SHERPA_INSTALL_DIR}/${SHERPA_BIN}/lib/${SHERPA_CHECK_LIB}")
         message(STATUS "Sherpa-ONNX ${SHERPA_BIN} found locally.")
-        return()
     else()
         message(STATUS "Sherpa-ONNX ${SHERPA_BIN} not found. Downloading...")
         # Descarga y descomprimir
@@ -55,9 +54,18 @@ function(download_sherpa SHERPA_BIN URL)
             RESULT_VARIABLE tar_status
         )
     endif()
+
     # Borrar el archivo comprimido
     if (EXISTS ${TEMP_ARCHIVE})
         file(REMOVE "${TEMP_ARCHIVE}")
+    endif()
+
+    # Borrar carpeta bin (no se usa)
+    set (SHERPA_BIN_DIR "${SHERPA_INSTALL_DIR}/${SHERPA_BIN}/bin")
+    message(STATUS "${SHERPA_BIN_DIR}")
+    if(EXISTS "${SHERPA_BIN_DIR}")
+        message(STATUS "Deleting ${SHERPA_BIN_DIR} (not used)")
+        file(REMOVE_RECURSE "${SHERPA_BIN_DIR}")
     endif()
     
 endfunction()
