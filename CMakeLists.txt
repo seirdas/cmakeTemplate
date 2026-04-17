@@ -106,8 +106,8 @@ endif()
 # Librería daisySP
 option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
 if(USE_DAISYSP)
-include(lib-daisysp)                                            # Ejecuta el archivo toolchains/lib-daisysp.cmake
-add_definitions(-DUSE_DAISYSP=1)                                # Definición para usar en el código C++
+  include(lib-daisysp)                                            # Ejecuta el archivo toolchains/lib-daisysp.cmake
+  add_definitions(-DUSE_DAISYSP=1)                                # Definición para usar en el código C++
 endif()
 
 
@@ -118,15 +118,15 @@ endif()
 # Herramienta de compilación Ninja (Necesita al menos una configuración correcta previa)
 option(USE_NINJA "Utilizar Ninja" ON)      # Activar/desactivar herramienta
 if(USE_NINJA)
-include(utils-ninja)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
-add_definitions(-DUSE_NINJA=1)                # Definición para activar herramienta
+  include(utils-ninja)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
+  add_definitions(-DUSE_NINJA=1)                # Definición para activar herramienta
 endif()
 
 # Documentación doxygen
 option(USE_DOXYGEN "Utilizar Doxygen" ON)      # Activar/desactivar herramienta
 if(USE_DOXYGEN)
-include(utils-doxygen)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
-add_definitions(-DUSE_DOXYGEN=1)                # Definición para activar herramienta
+  include(utils-doxygen)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
+  add_definitions(-DUSE_DOXYGEN=1)                # Definición para activar herramienta
 endif()
 
 
@@ -145,7 +145,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 
 # ===============================
-# Configuración específica del compilador/SO
+# Configuración específica del SO
 # ===============================
 
 if (WIN32)
@@ -199,7 +199,9 @@ if (WIN32)
 endif()
 
 
-# Configuración específica para MSVC (IDE Visual Studio)
+# ===============================
+# Configuración específica del compilador
+# ===============================
 if(MSVC)
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
@@ -311,9 +313,9 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Configurar carpetas de salida del ejecutable y librerías
 set_target_properties(${PROJECT_NAME} PROPERTIES 
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
 
 # Generar Doxygen

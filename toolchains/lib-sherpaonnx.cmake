@@ -48,6 +48,7 @@ function(download_sherpa SHERPA_BIN URL)
         # Descarga y descomprimir
         set(TEMP_ARCHIVE "${CMAKE_CURRENT_SOURCE_DIR}/sherpa_${SHERPA_BIN}.tar.bz2")
         file(DOWNLOAD "${URL}" "${TEMP_ARCHIVE}" SHOW_PROGRESS)
+        message(STATUS "Extracting ${TEMP_ARCHIVE}...")
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E tar xf "${TEMP_ARCHIVE}"
             WORKING_DIRECTORY "${SHERPA_INSTALL_DIR}"
