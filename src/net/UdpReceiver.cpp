@@ -1,7 +1,7 @@
 #include "net/UdpReceiver.hpp"
 #include <system/sys.hpp>
 
-#define MAX_UDP_PACKET_SIZE 65536 // Tamaño máximo de un paquete UDP (64 KB)
+constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paquete UDP (64 KB)
 
 // General ------------------------------------------------------------------------------
 
@@ -24,7 +24,7 @@ UdpReceiver::~UdpReceiver() {
 
 bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, unsigned int rcv_packet_size) {
     
-    std::string st_local_ip = ((local_ip=="") ? "all" : local_ip );
+    std::string st_local_ip = ((local_ip.empty()) ? "all" : local_ip );
     std::string st_rcv_packet_size = std::to_string((rcv_packet_size==0) ? MAX_UDP_PACKET_SIZE : rcv_packet_size);
 
     SYS_INFO("UdpReceiver", "Creating new socket...");
@@ -47,7 +47,6 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
         SYS_WARN("UdpReceiver","Packet size exceeds maximum UDP packet size.");
         return false;
     }
-
     
     // Variable para almacenar errores de asio
     asio::error_code ec;
