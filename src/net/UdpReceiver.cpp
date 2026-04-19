@@ -1,6 +1,4 @@
 #include "net/UdpReceiver.hpp"
-#include <iostream>
-#include <atomic>
 #include <system/sys.hpp>
 
 #define MAX_UDP_PACKET_SIZE 65536 // Tamaño máximo de un paquete UDP (64 KB)
@@ -40,13 +38,13 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
 
     // Check puerto válido
     if (local_port==0) {
-        std::cerr << "[UdpReceiver] ERROR Port 0 is invalid." << std::endl;
+        SYS_WARN("UdpReceiver","Port 0 is invalid.");
         return false;
     }
 
     // Check tamaño de paquete válido
     if (rcv_packet_size > MAX_UDP_PACKET_SIZE) {
-        std::cerr << "[UdpReceiver] Packet size exceeds maximum UDP packet size." << std::endl;
+        SYS_WARN("UdpReceiver","Packet size exceeds maximum UDP packet size.");
         return false;
     }
 
@@ -60,15 +58,15 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
 
     // generar local_endpoint (Ip_local + puerto_local)
     if (!createLocalEndpoint(local_port, local_ip)) {
-        std::cerr << "[UdpReceiver] ERROR Failed to create endpoint." << std::endl;
+        SYS_WARN("UdpReceiver","Failed to create endpoint.");
         return false;
     }
 
     // Abrir (bind) el socket
     if (!openSocket() && socket_.is_open()) {
-        std::cerr << "[UdpReceiver] ERROR Socket is not open after bind." << std::endl;
-        socket_.close(ec);
-        if (ec) std::cerr << "[UdpReceiver] ERROR closing socket after failure: " << ec.message() << std::endl;
+        SYS_WARN("UdpReceiver","Socket is not open after bind.");
+        if (!socket_.close(ec)) 
+            SYS_WARN("UdpReceiver","Error closing socket after failure: " + ec.message());;
         return false;
     }
 
@@ -91,7 +89,7 @@ bool UdpReceiver::createLocalEndpoint(unsigned short local_port, const std::stri
         // Convertir la cadena a asio::ip::address
         asio::ip::address localIP = asio::ip::make_address(local_ip, ec);
         if (ec) {
-            std::cerr << "[UdpReceiver] ERROR Invalid IP: " << local_ip << " - " << ec.message() << std::endl;
+            SYS_WARN("UdpReceiver","Invalid IP: " + local_ip + " - " + ec.message());
             return false;
         } 
         local_endpoint_ = asio::ip::udp::endpoint(localIP, local_port);
@@ -104,10 +102,14 @@ void UdpReceiver::stop() {
     
     // Cerrar el socket si está abierto
     if (socket_.is_open()) {
-        socket_.cancel(ec); // Cancelar cualquier operación pendiente
-        socket_.close(ec);
+        // Cancelar cualquier operación pendiente
+        if(!socket_.cancel(ec))
+            SYS_WARN("UdpReceiver","Failed to cancel remaining operations");
+
+        // Cerrar completamente
+        if(!socket_.close(ec))
+            SYS_WARN("UdpReceiver","Failed to close socket");
     }
-    if (ec) std::cerr << "[UdpReceiver] ERROR Failed closing socket: " << ec.message() << std::endl;
 
     // Despertar cualquier hilo que esté esperando en la cola de datos
     condition_.notify_all(); 
@@ -142,28 +144,25 @@ bool UdpReceiver::openSocket() {
     asio::error_code ec;
 
     // Abrir el socket 
-    socket_.open(local_endpoint_.protocol(), ec);
-    if (ec) {
-        std::cerr << "[UdpReceiver] ERROR Failed opening socket: " << ec.message() << std::endl;
+    if (!socket_.open(local_endpoint_.protocol(), ec)) {
+        SYS_WARN("UdpReceiver","Failed opening socket: " + ec.message());
         return false;
     }
     
     // Confirgurar el socket para permitir reutilizar la dirección local 
-    socket_.set_option(asio::socket_base::reuse_address(true), ec);
-    if (ec) {
-        std::cerr << "[UdpReceiver] ERROR setting socket option: " << ec.message() << std::endl;
+    if (!socket_.set_option(asio::socket_base::reuse_address(true), ec)) {
+        SYS_WARN("UdpReceiver","Error setting socket option: " + ec.message());
         return false;
     }
 
     // Enlazar el socket al endpoint local
-    socket_.bind(local_endpoint_, ec);
-    if (ec) {
+    if (!socket_.bind(local_endpoint_, ec)) {
         if (ec == asio::error::access_denied) 
-            std::cerr << "[UdpReceiver] ERROR Access denied. Check firewall rules and try again." << std::endl;
+            SYS_WARN("UdpReceiver","Access denied binding socket. Check firewall rules and try again.");
         else if (ec == asio::error::address_in_use) 
-            std::cerr << "[UdpReceiver] ERROR Port " << local_endpoint_.port() << " already in use." << std::endl;
+            SYS_WARN("UdpReceiver","Port " + std::to_string(local_endpoint_.port()) + " already in use.");
         else
-            std::cerr << "[UdpReceiver] ERROR unhandled error: " << ec.message() << std::endl;
+            SYS_WARN("UdpReceiver","Unhandled error: " + ec.message());
         return false;
     }
 
@@ -174,11 +173,11 @@ bool UdpReceiver::openSocket() {
 void UdpReceiver::start() {
     if (running_)           return;
     if (!socket_.is_open() && !openSocket()) {
-        std::cerr << "[UdpReceiver] ERROR Cannot open socket" << name_ << ":"<< local_endpoint_.port() << std::endl;
+        SYS_WARN("UdpReceiver","Cannot open socket" + name_ + ":" + std::to_string(local_endpoint_.port()));
         return;
     }
     if (!initialized_) {
-        std::cerr << "[UdpReceiver] ERROR socket " << name_ << ":" << local_endpoint_.port() <<" not initialized." << std::endl;
+        SYS_WARN("UdpReceiver","Socket " + name_ + ":" + std::to_string(local_endpoint_.port()) + " not initialized.");
         return;
     }
 
@@ -206,7 +205,7 @@ void UdpReceiver::start_receive() {
                     return;
                 } else {
                     // Continúa recibiendo a pesar del error (si !abortar)
-                    std::cerr << "[UdpReceiver] "<< name_ << " ERROR Reception error: " << ec.message() << std::endl;
+                    SYS_WARN("UdpReceiver","Socket "+name_+"Reception error: " + ec.message());
                     if (socket_.is_open())
                         start_receive();
                 }
@@ -226,19 +225,20 @@ void UdpReceiver::handle_received_packet(std::size_t bytes_recvd) {
     
     // Si se ha recibido un paquete vacío, lo reportamos pero seguimos esperando
     if(bytes_recvd == 0) {
-        std::cerr << "[UdpReceiver] WARN Received empty packet from " << remote_endpoint_ << std::endl;
+        SYS_WARN("UdpReceiver","Received empty packet."); // no sé meter remote_endpoint_.address()
         return;
     }
 
     // Si se ha especificado un tamaño esperado de paquete y el tamaño recibido es diferente, lo reportamos pero seguimos esperando
     if (rcv_packet_size_!=0 && bytes_recvd!=rcv_packet_size_){
-        std::cerr << "[UdpReceiver] WARN Received packet size different from expected (" << bytes_recvd << " bytes, expected " << rcv_packet_size_ << " bytes) from " << remote_endpoint_ << std::endl;
+        SYS_WARN("UdpReceiver","Received packet size different from expected (" +
+            std::to_string(bytes_recvd) + " bytes, expected " + std::to_string(rcv_packet_size_) + " bytes)");
         return;
     }
 
     // Si el paquete ya no entra en la cola, lo descartamos
     if (isQueueFull()){
-        std::cerr << "[UdpReceiver] WARN Reception queue overloaded with " << getQueueSize() << " elements" << std::endl;
+        SYS_WARN("UdpReceiver","Reception queue overloaded with " + std::to_string(getQueueSize()) + " elements");
         return;
     }
     

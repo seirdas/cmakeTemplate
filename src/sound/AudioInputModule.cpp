@@ -1,6 +1,5 @@
 
 #include "sound/AudioInputModule.hpp"
-#include <iostream>
 #include <system/sys.hpp>
 
 // General ------------------------------------------------------------------------------
@@ -96,14 +95,14 @@ bool AudioInputModule::initRecorder() {
     
     SYS_INFO("AudioInputModule", "Initializating capture device...");
     if (ma_device_init(snd_ctx_, &deviceConfig, &device_) != MA_SUCCESS) {
-        std::cerr << "[AudioInputModule] Failed to initialize capture device." << std::endl;
+        SYS_WARN("AudioInputModule","Failed to initialize capture device.");
         ma_encoder_uninit(&rec_ctx_.encoder);
         return false;
     }
 
     SYS_INFO("AudioInputModule", "Starting capturing device...");
     if (ma_device_start(&device_) != MA_SUCCESS) {
-        std::cerr << "[AudioInputModule] Failed to start capture device." << std::endl;
+        SYS_WARN("AudioInputModule","Failed to start capture device.");
         ma_device_uninit(&device_);
         ma_encoder_uninit(&rec_ctx_.encoder);
         return false;

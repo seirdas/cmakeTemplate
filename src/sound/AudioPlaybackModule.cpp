@@ -1,5 +1,5 @@
 #include "sound/AudioPlaybackModule.hpp"
-#include <iostream>
+#include "system/sys.hpp"
 
 AudioPlaybackModule::AudioPlaybackModule(ma_context* ctx, ma_device_info const& device_info)
     :
@@ -26,7 +26,7 @@ bool AudioPlaybackModule::start()
     config.pPlaybackDeviceID = &device_info_.id; 
 
     if (ma_engine_init(&config, &engine_) != MA_SUCCESS) {
-        std::cerr << "[APM] ERROR Engine init failed\n";
+        SYS_ERROR("AudioPlaybackModule","Engine init failed");
         return false;
     }
 
