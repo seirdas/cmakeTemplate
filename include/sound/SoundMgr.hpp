@@ -71,7 +71,7 @@ public:
 
 private:
 
-    /************ Variables ********************************************************/
+/************ Variables ****************************************************************/
 
     // Motor de audio
     ma_context snd_context_;                        // Contexto de audio

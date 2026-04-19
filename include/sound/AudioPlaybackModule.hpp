@@ -33,7 +33,11 @@ struct SoundInstance
  */
 class AudioPlaybackModule
 {
+    
 public:
+
+// General ------------------------------------------------------------------------------
+
     /**
      * @brief Constructor de AudioPlaybackModule.
      * @param ctx Contexto de mini audio.
@@ -45,6 +49,9 @@ public:
      * @brief Destructor de AudioPlaybackModule.
      */
     ~AudioPlaybackModule();
+
+
+// Acciones -----------------------------------------------------------------------------
 
     /**
      * @brief Inicializa el motor de audio y comienza la reproducción.
@@ -97,6 +104,9 @@ public:
      */
     void setPitch(SoundID id, float pitch);
 
+
+// Datos del módulo ---------------------------------------------------------------------
+
     /**
      * @brief Verifica si un sonido está en reproducción.
      * @param id Identificador del sonido.
@@ -111,6 +121,7 @@ public:
     std::string deviceName() const;
 
 private:
+
     /**
      * @brief Obtiene el ID del dispositivo.
      * @return Identificador del dispositivo.
@@ -129,9 +140,8 @@ private:
      */
     void cleanupFinished();
 
-private:
 
-    /************ Variables ********************************************************/
+/************ Variables ****************************************************************/
     
     ma_context*     context_;       // Contexto de mini audio.
     ma_device_info  device_info_;   // Información del dispositivo de audio.

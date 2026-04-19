@@ -52,7 +52,8 @@ public:
      */
     void loadRemaining();
 
-// Datos generales ----------------------------------------------------------------------
+
+// Datos del módulo TTS -----------------------------------------------------------------
 
     /**
      * @brief Obtiene el porcentaje de inicialización del módulo TTS.
@@ -85,7 +86,8 @@ public:
      */
     bool isWorking() const;
 
-// Control de modelos -----------------------------------------------------------------
+
+// Datos y control de modelos -----------------------------------------------------------
 
     /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
@@ -114,12 +116,15 @@ public:
 
 private:
 
+// Inicialización de modelos ------------------------------------------------------------
+
     /**
      * @brief Carga un modelo vits TTS 
      */
     bool load_vits_model(std::filesystem::path modelDir);
 
-    /************ Variables ********************************************************/
+    
+/************ Variables ********************************************************/
 
     using TTSModelsMap  = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
     using TTSTextsMap   = std::unordered_map<std::string, std::string>; // Podría ser un struct con más datos

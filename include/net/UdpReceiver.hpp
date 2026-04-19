@@ -1,7 +1,6 @@
 #pragma once
 
 #include <asio.hpp>             // asio external lib
-#include <thread>               // Hilos
 #include <queue>                // Colas
 #include <mutex>                // Mutex (Cerrojos) para concurrencia
 #include <condition_variable>   // Variable condicional para concurrencia
@@ -42,7 +41,7 @@ class UdpReceiver : public std::enable_shared_from_this<UdpReceiver> {
 
 public:
 
-    // Socket ------------------------------------------------------------
+// General ------------------------------------------------------------
 
     /**
      * @brief Constructor. 
@@ -57,11 +56,14 @@ public:
 
     /**
      * @brief Inicializa el socket: Configura el socket UDP para recibir datos en la IP y puerto especificados.
-     *        Si la IP local es vacía, se enlaza a todas las interfaces disponibles
+     *  Si la IP local es vacía, se enlaza a todas las interfaces disponibles
      * @param io Contexto de operaciones asíncronas.
      * @param LocalPort Puerto en el que se desea recibir los datos UDP.
-     * @param ipLocal Dirección IP local a la que se desea enlazar el socket. Si es vacía, se enlaza a todas las interfaces disponibles.
-     * @param rcv_packet_size Tamaño máximo de los paquetes UDP que se esperan recibir. Elimina el paquete si es diferente a este tamaño. Si es 0, se aceptan paquetes de cualquier tamaño.
+     * @param ipLocal Dirección IP local a la que se desea enlazar el socket. 
+     *  Si es vacía, se enlaza a todas las interfaces disponibles.
+     * @param rcv_packet_size Tamaño máximo de los paquetes UDP que se esperan recibir. 
+     *  Elimina el paquete si es diferente a este tamaño. 
+     *  Si es 0, se aceptan paquetes de cualquier tamaño.
      */
     bool init(unsigned short local_port, const std::string& local_ip = "", unsigned int rcv_packet_size = 0);
 
@@ -101,7 +103,7 @@ public:
     bool isOpen() const;
 
 
-    // Gestión de la cola de datos recibidos ------------------------------------------------------------
+// Gestión de la cola de datos recibidos ------------------------------------------------------------
 
     /**
      * @brief Devuelve el primer paquete recibido de la cola. Si la cola está vacía, espera hasta que llegue un nuevo paquete.
@@ -139,7 +141,7 @@ public:
 
 private:
     
-    // Socket ------------------------------------------------------------
+// Socket ------------------------------------------------------------
 
     /**
      * @brief Crear endpoint local con IP+puerto en variable miembro local_endpoint
@@ -164,7 +166,7 @@ private:
     void handle_received_packet(std::size_t bytes_recvd);
 
 
-    // Gestión de la cola de datos recibidos ------------------------------------------------------------
+// Gestión de la cola de datos recibidos ------------------------------------------------------------
 
     /**
      * @brief Añade un paquete recibido a la cola de datos. 
@@ -202,20 +204,21 @@ private:
     bool compareLast(std::vector<char> const& data);
 
 
-    /************ Variables ********************************************************/
+/************ Variables ****************************************************************/
     using CStrand = asio::strand<asio::io_context::executor_type>;
     using CSocket = asio::basic_datagram_socket<asio::ip::udp, asio::io_context::executor_type>;
 
     // Configuración y estado del receptor UDP
-    std::string                     name_;              // Nombre dado al socket para identificarlo
-    CStrand                         strand_;            // Protección del buffer asíncrono de recepción
-    CSocket                         socket_;            // Socket asio
-    asio::ip::udp::endpoint         local_endpoint_;    // Endpoint local (ip+puerto local)
-    asio::ip::udp::endpoint         remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
-    std::vector<char>               recv_buffer_;       // Buffer para almacenar los datos recibidos
-    unsigned int                    rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
-    bool                            initialized_;       // Socket inicializado
-    bool                            running_;           // Socket corriendo
+    std::string                 name_;              // Nombre dado al socket para identificarlo
+    CStrand                     strand_;            // Protección del buffer asíncrono de recepción
+    CSocket                     socket_;            // Socket asio
+    asio::ip::udp::endpoint     local_endpoint_;    // Endpoint local (ip+puerto local)
+    asio::ip::udp::endpoint     remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
+    std::vector<char>           recv_buffer_;       // Buffer para almacenar los datos recibidos
+    unsigned int                rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
+
+    bool                        initialized_;       // Socket inicializado
+    bool                        running_;           // Socket corriendo
 
     // Cola de datos recibidos
     std::queue<std::vector<char>>   queue_;                     // Cola de datos recibidos

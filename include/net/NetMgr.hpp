@@ -37,10 +37,10 @@ class UdpReceiver;
   */
 class NetMgr {
 
-// General ------------------------------------------------------------------------------
-
 public:
 
+// General ------------------------------------------------------------------------------
+    
     /**
      * @brief Constructor.
      * @note explicit es para recibir literalmente un size_t en thread_count.
@@ -58,6 +58,8 @@ public:
      */
     void printReceivers();
 
+// Gestión de sockets -------------------------------------------------------------------
+
     /**
      * @brief Añade un socket.
      */
@@ -74,6 +76,9 @@ public:
      */
     bool removeReceiver(unsigned int index);
 
+
+// Datos de sockets -------------------------------------------------------------------
+
     /**
      * @brief Obtener el ID/index del socket por puerto.
      */
@@ -88,6 +93,9 @@ public:
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
      */
     std::vector<char> getDataFromSocket(unsigned int index);
+
+
+// Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
@@ -104,13 +112,13 @@ public:
     void stop();
 
     /**
-     * @brief Devuelve si la red está activa (el contexto i/o está corriendo)
+     * @brief Devuelve si la red está activa (los sockets están activos)
      */
     bool isRunning() const;
 
 private:
 
-    /************ Variables ********************************************************/
+/************ Variables ****************************************************************/
 
     using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
     using RcvVector = std::vector<std::shared_ptr<UdpReceiver>>;
