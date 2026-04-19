@@ -7,7 +7,7 @@ namespace fs = std::filesystem;
 
 // General ______________________________________________________________________________
 LogMgr::LogMgr(std::string const& filepath) :
-	filepath_(filepath), 
+	filepath_(std::move(filepath)), 
 	enabled_(true), 
 	keep_open_(true)
 {
