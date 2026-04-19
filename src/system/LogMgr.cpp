@@ -73,7 +73,7 @@ void LogMgr::clear() {
 }
 
 std::string LogMgr::getFilePath() const {
-	return filepath_;
+	return filepath_.string();
 }
 
 std::string LogMgr::getTimestamp()
