@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstring>
 #include <mutex>
+#include "sherpa-onnx/c-api/cxx-api.h"
 
 // Este #define está definido en lib-sherpaonnx.cmake según la ruta de descarga
 // Se redefine aquí por si acaso, pero no se debería usar ésta
@@ -79,7 +80,7 @@ void TTSMgr::cerrar() {
         return active_tasks_ == 0;
     });
 
-    // Destruye los modelos creados
+    // Destruye los modelos creados (opcional con cxx, mejor)
     for (auto& [name,model] : loaded_models_) {
         SYS_INFO("TTSMgr","Unloading model " + name);
         SherpaOnnxDestroyOfflineTts(model);

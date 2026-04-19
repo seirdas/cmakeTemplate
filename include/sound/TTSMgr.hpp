@@ -1,11 +1,13 @@
 #pragma once
 
-#include "sherpa-onnx/c-api/c-api.h"
 #include <thread>               // num_threads_
 #include <unordered_map>
 #include <vector>
 #include <condition_variable>
 #include <filesystem>
+
+// Declaración como estructura para evitar includes en hpp
+struct SherpaOnnxOfflineTts;
 
 /**
  * @brief Clase TTS para generar audios usando la librería Sherpa TTS

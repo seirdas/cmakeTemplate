@@ -4,19 +4,14 @@ cmake_policy(SET CMP0135 NEW)
 
 set(SHERPA_VERSION "1.12.34")
 
-# - Para Windows ofrecen binarios de todo tipo MENOS la opción
-#     compatible con GPU, así que solo procesa con CPU.
-#     La única opción es con CUDA (solo NVIDIA, necesita 
-#     instalación) o compilar todo el código fuente de 
-#     sherpa para generar la versión compatible con
-#     DirectML GPU (universal).
-# - Para Linux sí hay binario GPU
-# (Pendiente de probar binario GPU Windows:
-#  https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.34/sherpa-onnx-v1.12.34-win-x64-cuda.tar.bz2)
 
 # Configurar URLs según plataforma
 if(WIN32)
-    set(SHERPA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/sherpa_win_bin")
+
+    # Directorio de descarga y libreria objetivo
+    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_win_bin")
+    file(MAKE_DIRECTORY "${SHERPA_INSTALL_PATH}")
+
     # Nombre de carpeta/zip (aparentemente es igual que el paquete)
     set(SHERPA_WIN_BIN_DEBUG            "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Debug" )
     set(SHERPA_WIN_BIN_RELEASE          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Release" )
@@ -27,24 +22,43 @@ if(WIN32)
     set(SHERPA_WIN_URL_RELEASE        "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELEASE}.tar.bz2")
     set(SHERPA_WIN_URL_MINSIZEREL     "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_MINSIZEREL}.tar.bz2")
     set(SHERPA_WIN_URL_RELWITHDEBINFO "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELWITHDEBINFO}.tar.bz2")
-    set(SHERPA_CHECK_LIB sherpa-onnx-c-api.lib)
+    set(SHERPA_CHECK_LIB 
+        sherpa-onnx-c-api.lib
+        sherpa-onnx-cxx-api.lib
+        )
 else()
-    set(SHERPA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/sherpa_linux_bin")
+    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_linux_bin")
     # Nombre de carpeta/zip y paquete a descargar
     set(SHERPA_LINUX_BIN "sherpa-onnx-v${SHERPA_VERSION}-linux-x64-gpu" )
     set(SHERPA_LINUX_URL "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_LINUX_BIN}.tar.bz2")
-    set(SHERPA_CHECK_LIB libsherpa-onnx-c-api.so)
+    set(SHERPA_CHECK_LIB 
+        libsherpa-onnx-c-api.so
+        libsherpa-onnx-cxx-api.so
+        libonnxruntime.so
+        libonnxruntime_providers_shared.so
+        libonnxruntime_providers_cuda.so
+        libonnxruntime_providers_tensorrt.so
+    )
 endif()
 
 # Crear el directorio de descarga
-file(MAKE_DIRECTORY "${SHERPA_INSTALL_DIR}")
+file(MAKE_DIRECTORY "${SHERPA_INSTALL_PATH}")
 
 # Función de descarga
 function(download_sherpa SHERPA_BIN URL)
-    if (EXISTS "${SHERPA_INSTALL_PATH}/${SHERPA_BIN}/lib/${SHERPA_CHECK_LIB}")
-        message(STATUS "Sherpa-ONNX ${SHERPA_BIN} found locally.")
+
+    set(ALL_LIBS_EXIST TRUE)
+    foreach(LIB_NAME ${SHERPA_CHECK_LIB})
+        if (NOT EXISTS "${SHERPA_INSTALL_PATH}/${SHERPA_BIN}/lib/${LIB_NAME}")
+            set(ALL_LIBS_EXIST FALSE)
+            break()
+        endif()
+    endforeach()
+
+    if (ALL_LIBS_EXIST)
+        message(STATUS "Sherpa-ONNX ${SHERPA_BIN} all libs found locally.")
     else()
-        message(STATUS "Sherpa-ONNX ${SHERPA_BIN} not found. Downloading...")
+        message(STATUS "Sherpa-ONNX ${SHERPA_BIN} missing components. Downloading...")
         # Descarga y descomprimir
         set(TEMP_ARCHIVE "${CMAKE_CURRENT_SOURCE_DIR}/${SHERPA_BIN}.tar.bz2")
         file(DOWNLOAD "${URL}" "${TEMP_ARCHIVE}" SHOW_PROGRESS)
@@ -74,11 +88,6 @@ endfunction()
 
 # Configurar según plataforma
 if(WIN32)
-
-    # Directorio de descarga y libreria objetivo
-    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_win_bin")
-    file(MAKE_DIRECTORY "${SHERPA_INSTALL_PATH}")
-    set(SHERPA_CHECK_LIB sherpa-onnx-c-api.lib)
     
     if (USE_SHERPA_WIN_GPU)
         # Versión compatible con GPU (DirectML, aunque no lo ponga), hace también fallback a CPU si falla
@@ -95,8 +104,10 @@ if(WIN32)
         target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/include")
 
         # Link de librerías
+        foreach(LIB_NAME ${SHERPA_CHECK_LIBS})
+            target_link_libraries(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib/${LIB_NAME}")
+        endforeach()
         target_link_libraries(sherpa_lib INTERFACE 
-            "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib/${SHERPA_CHECK_LIB}"  # La librería de Sherpa
             ws2_32      # Winsock2 - API de sockets de Windows (prob. no necesario)
             winmm       # Bibliotecas de Multimedia de Windows
         )
@@ -127,11 +138,15 @@ if(WIN32)
         target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELEASE}/include")
 
         # Link de librerías (se va a elegir la de la configuración correspondiente)
+        foreach(LIB_NAME ${SHERPA_CHECK_LIB})
+            target_link_libraries(sherpa_lib INTERFACE 
+                "$<$<CONFIG:Debug>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_DEBUG}/lib/${LIB_NAME}>"
+                "$<$<CONFIG:Release>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELEASE}/lib/${LIB_NAME}>"
+                "$<$<CONFIG:MinSizeRel>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_MINSIZEREL}/lib/${LIB_NAME}>"
+                "$<$<CONFIG:RelWithDebInfo>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELWITHDEBINFO}/lib/${LIB_NAME}>"
+            )
+        endforeach()
         target_link_libraries(sherpa_lib INTERFACE 
-            "$<$<CONFIG:Debug>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_DEBUG}/lib/${SHERPA_CHECK_LIB}>"
-            "$<$<CONFIG:Release>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELEASE}/lib/${SHERPA_CHECK_LIB}>"
-            "$<$<CONFIG:MinSizeRel>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_MINSIZEREL}/lib/${SHERPA_CHECK_LIB}>"
-            "$<$<CONFIG:RelWithDebInfo>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELWITHDEBINFO}/lib/${SHERPA_CHECK_LIB}>"
             ws2_32      # Winsock2 - API de sockets de Windows (prob. no necesario)
             winmm       # Bibliotecas de Multimedia de Windows
         )
@@ -161,6 +176,7 @@ else()
     set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_LINUX_BIN}/lib")     
     target_link_libraries(sherpa_lib INTERFACE 
         "${SHERPA_LIB_PATH}/libsherpa-onnx-c-api.so"
+        "${SHERPA_LIB_PATH}/libsherpa-onnx-cxx-api.so"
         "${SHERPA_LIB_PATH}/libonnxruntime.so"
         pthread
         dl
@@ -191,15 +207,18 @@ function(configure_sherpa_assets)
     # Copiar DLLs necesarias
     if(WIN32)
 
+        # Obtener ruta de librería según CPU / GPU
         if (USE_SHERPA_WIN_GPU)
             set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib")
         else()
             set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-$<CONFIG>/lib")
         endif()
         
+        # Copiar Las dlls al lado del ejecutable
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${SHERPA_LIB_PATH}/sherpa-onnx-c-api.dll"
+            "${SHERPA_LIB_PATH}/sherpa-onnx-cxx-api.dll"
             "${SHERPA_LIB_PATH}/onnxruntime.dll"
             "${SHERPA_LIB_PATH}/onnxruntime_providers_shared.dll"
             "${SHERPA_LIB_PATH}/onnxruntime_providers_cuda.dll"
@@ -208,9 +227,11 @@ function(configure_sherpa_assets)
             COMMENT "Copying Sherpa and ONNX Runtime DLLs ($<CONFIG>)..."
         )
     elseif(UNIX)   
+        # Copiar Las dlls al lado del ejecutable
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${SHERPA_LIB_PATH}/libsherpa-onnx-c-api.so"
+            "${SHERPA_LIB_PATH}/libsherpa-onnx-cxx-api.so"
             "${SHERPA_LIB_PATH}/libonnxruntime.so"
             "${SHERPA_LIB_PATH}/libonnxruntime_providers_shared.so"
             "${SHERPA_LIB_PATH}/libonnxruntime_providers_cuda.so"
