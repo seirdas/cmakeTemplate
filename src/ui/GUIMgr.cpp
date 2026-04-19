@@ -146,9 +146,6 @@ bool GUiMgr::init() {
 		}
 	#endif
 
-	// Carga de imágenes
-	loadImages();
-
     ImGui_ImplGlfw_InitForOpenGL(window_, true);
     ImGui_ImplOpenGL3_Init("#version 130");     // Versión de OpenGL
 
@@ -375,8 +372,7 @@ void GUiMgr::ventanaPrincipal() {
 
 	SameLine(); // Pegamos la siguiente columna
 
-	
-	//  Layout principal (columna derecha)
+	//  COLUMNA DERECHA (Layout principal)
 	BeginGroup(); 
 	{
 		static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
@@ -384,8 +380,28 @@ void GUiMgr::ventanaPrincipal() {
 
 			if (BeginTabItem("Demo1")) {
 				// Test imagen
-				Image(images_["imageres/cat.png"].tex, ImVec2(200, 100));
-	
+				if (BeginTable("demo1tab", 3))
+				{
+					// No sale nada antes de estos dos
+					TableNextRow();
+					TableNextColumn();
+					
+					Text("Test Imagen:");
+					TableNextColumn();
+					Text("Test imagen fallida");
+					TableNextColumn();
+					Text("Test imagen precargada");
+					TableNextRow();
+					TableNextColumn();
+					Image(getImage("imageres/cat.png"), ImVec2(200,100));
+					TableNextColumn();
+					Image(getImage("imageres/nonexist?"), ImVec2(200,100));
+					TableNextColumn();
+					Image(getImage("imageres/cat.png"), ImVec2(100,200));
+
+					EndTable();
+				}
+				
 				// Test spinners
 				SameLine();
 				ImSpinner::SpinnerAng8(           "Ang",     16, 2);	SameLine(0.0, -1.0);
@@ -574,16 +590,12 @@ void GUiMgr::ventanaPrincipal() {
 
 }
 
-void GUiMgr::loadImages() {
-	SYS_INFO("GUiMgr", "Loading images...");
+uintptr_t GUiMgr::getImage(std::string path) {
+	// Si la imagen no está precacheada, se añade
+	if (images_.find(path) == images_.end())
+		addTextureFromFile(path);
 
-	// Añadir aquí las imágenes que se desean cargar
-	addTextureFromFile("imageres/cat.png");
-	addTextureFromFile("imageres/play.png");
-	addTextureFromFile("imageres/stop.png");
-	addTextureFromFile("imageres/pause.png");
-	addTextureFromFile("imageres/repeat.png");
-
+	return images_[path].tex;
 }
 
 void GUiMgr::unloadImages() {
@@ -603,41 +615,81 @@ void GUiMgr::unloadImages() {
             img.second.tex = 0; // Limpiar para evitar usos accidentales
         }
     }
+	images_.clear();	// Por si se vuelve a usar
 }
 
 void GUiMgr::addTextureFromFile(std::string filename) {
+
 	imageData img_data;		// Variable temporal para almacenar datos de la imagen cargada
-	int channels;			// Canales de imagen
+	img_data.tex 	  = 0;	// Textura por defecto
 
 	// Carga de archivo de imagen
-	unsigned char* data = stbi_load(filename.c_str(), &img_data.x, &img_data.y, &channels, 4);
-	if (!data)
+	unsigned char* data = stbi_load(filename.c_str(), &img_data.x, &img_data.y, &img_data.channels, 4);
+	
+	// Generar tex: Desde imagen o textura por defecto
+	if (data)
 	{
+		// Generar la textura desde imagen
+		GLuint texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,	img_data.x, img_data.y ,0 , GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		img_data.tex = (uintptr_t)texture;				// Guardar la textura generada
+		stbi_image_free(data);	// Liberar memoria de datos de imagen temportales
+		
+		SYS_INFO("GUiMgr", "Loaded image " + filename);
+	} else {
+		if (defaultTexture_ == 0) generateDefaultTexture();
+		img_data.tex = defaultTexture_;
 		SYS_WARN("GUiMgr","Error loading image: " + filename);
-		return;
 	}
-
-	// Textura desde imagen
-	GLuint texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,	img_data.x, img_data.y ,0 , GL_RGBA, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// Guardar la textura generada
-	img_data.tex = (uintptr_t)texture;
-
-	// Liberar memoria de datos de imagen temporales
-	stbi_image_free(data);
 
 	// Guardar la imagen en el mapa de imágenes
 	images_[filename] = img_data;
-	images_[filename].name = filename.c_str();
 	
-	SYS_INFO("GUiMgr", "Loaded image " + filename);
     return;
 };
+
+void GUiMgr::generateDefaultTexture() {
+    const int width = 64;
+    const int height = 64;
+    const int checkSize = 32; // Tamaño de cada cuadro del mosaico
+    
+    // 4 bytes por píxel (RGBA)
+    std::vector<unsigned char> data(width * height * 4);
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int index = (y * width + x) * 4;
+            
+            // Lógica del mosaico: (x / tamaño) + (y / tamaño) es par o impar
+            bool isPink = ((x / checkSize) + (y / checkSize)) % 2 == 0;
+
+            if (isPink) {
+                // Rosa (Magenta: R=255, G=0, B=255)
+                data[index + 0] = 255; data[index + 1] = 0; data[index + 2] = 255; data[index + 3] = 255;
+            } else {
+                // Negro (R=0, G=0, B=0) o Blanco (R=255, G=255, B=255)
+                data[index + 0] = 0;   data[index + 1] = 0; data[index + 2] = 0;   data[index + 3] = 255;
+            }
+        }
+    }
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    
+    // Usamos GL_NEAREST para que los bordes del mosaico se vean nítidos y "retro"
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+
+    defaultTexture_ = (uintptr_t)texture;
+	return;
+}
 
 void GUiMgr::updateDensity(int delta) {
 

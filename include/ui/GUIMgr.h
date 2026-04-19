@@ -31,6 +31,7 @@ public:
 
     /**
      * @brief Constructor por defecto.
+     * @param ctrl_ Controlador para pedir datos a AppController
      */
     GUiMgr(IAppControl* ctrl_ = nullptr);
     
@@ -45,16 +46,18 @@ public:
      */
     void setController(IAppControl* controller);
 
-    // Estados __________________________________
+
+// Estados ------------------------------------------------------------------------------
 
     /**
      * @brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.
-     * @return	True si la inicialización fue exitosa, false si hubo algún error (como no poder crear la ventana).
+     * @return	True si la inicialización fue exitosa, false si hubo algún error 
      */
     bool init();
 
     /**
-     * @brief Inicia el bucle principal de la ventana. Este método bloquea hasta que la ventana se cierre.
+     * @brief Inicia el bucle principal de la ventana. 
+     * @note Este método es bloqueante hasta que la ventana se cierre.
      */
     void run();
 
@@ -71,7 +74,8 @@ public:
 
 
 private:
-    // Bucle principal ____________________________________
+
+// Bucle principal ----------------------------------------------------------------------
 
     /**
     * @brief Inicia un nuevo frame de ImGui.
@@ -94,6 +98,9 @@ private:
      */
     virtual void BuclePrincipal();
 
+
+// Elementos de interfaz ----------------------------------------------------------------
+
     /**
      * @brief Crea la barra de menú principal.
      */
@@ -104,12 +111,13 @@ private:
      */
     void ventanaPrincipal();
 
-    // Carga de imágenes __________________________________
-    
+
+// Carga de imágenes --------------------------------------------------------------------
+   
     /**
-     * @brief Prepara las imágenes que se van a representar.
+     * @brief Utiliza una imagen y la precarga en el sistema para usos posteriores.
      */
-    void loadImages();
+    uintptr_t getImage(std::string path);
 
     /**
      * @brief Libera los recursos de las imágenes cargadas de forma dinámica.
@@ -119,21 +127,25 @@ private:
     
     /**
      * @brief Carga una textura de imagen desde un archivo de imagen.
-     *  Ejemplo: images_["filename.png"].tex
-     * @note Soporte para png.
+     * @details Soporte para png.
+     * @note Precachea textura por defecto desde defaultTexture_ si falla. 
      * @param filename Ruta del archivo de imagen que se va a cargar.
-     * @return intptr_t El identificador de la textura cargada.
      */
     void addTextureFromFile(std::string filename);
+
+    /**
+     * @brief Genera la textura del clásico mosaico rosa/blanco para texturas fallidas
+     * @details Lo guarda en la variable defaultTexture_
+     */
+    void generateDefaultTexture();
     
+// Aspecto y temas ----------------------------------------------------------------------
+
     /**
      * @brief Actualiza el tamaño de los elementos de la ui incluyendo fuentes.
      * @param delta diferencia de tamaño (+1, +2, -1, -2...) 
      */
     void updateDensity(int delta);
-
-
-// Temas --------------------------------------------------------------------------------
 
     /**
      * @brief Cambia la barra de título entre modo claro/oscuro
@@ -191,21 +203,18 @@ private:
 // Imágenes _________________________________
 
     struct imageData {      // Datos de imagen
-        const char* name={};// Nombre de la imagen (para ID)
         uintptr_t tex = 0;  // Puntero a textura (lo que usa imgui)
         int x = 0;          // resolución width (ancho)
         int y = 0;          // resolución height (alto)
+        int channels = 0;   // Canales de color (no se usa)
     };
     // Cargar las imágenes en la función loadImages
     std::unordered_map<std::string, imageData> images_;         // Mapa de imágenes cargadas
+    uintptr_t defaultTexture_ = 0;                              // Textura generada por defecto (mosaico blaco/rosa)
 
 // Variables (MenuBar) ______________________
     float           MainMenuBar_Height_       = 0.0f;           // Almacena el alto de la barra de menú para ajustar la ventana principal
-    
-// Elementos (1) ____________________________
-    int      sl_volume = 2;
-    float    sl_pitch = 0;
-    float    sl_position = 0;
+
 };
 
 /**** imgui knobs
