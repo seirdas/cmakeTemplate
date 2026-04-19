@@ -277,7 +277,11 @@ bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
     config.model.vits.noise_scale   = 1.0f;     // Controla la expresividad/varianza
     config.model.vits.noise_scale_w = 0.8f;     // Varianza en la duración de los fonemas
     config.model.vits.length_scale  = 1.0f;     // 1.0 = normal, >1.0 más lento, <1.0 más rápido
-    config.model.provider = "directml";         // Soporte para generación con GPU
+
+    // Proveedor CPU / GPU
+    #ifdef _WIN32
+        config.model.provider = "directml";         // Soporte para generación con GPU (Windows)
+    #endif  // Fallback a CPU en caso contrario
 
     // Inicializa el modelo con la configuración (tarda un poco)
     SYS_INFO("TTSMgr","Initializating voice model " + st_modelname);
