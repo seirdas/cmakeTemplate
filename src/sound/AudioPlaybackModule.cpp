@@ -15,16 +15,15 @@ AudioPlaybackModule::~AudioPlaybackModule()
 
 bool AudioPlaybackModule::start()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-
     if (running_)
         return true;
 
-    ma_engine_config config = ma_engine_config_init();
+    std::lock_guard<std::mutex> lock(mutex_);
 
+    // Inicializar el dispositivo de reproducción
+    ma_engine_config config = ma_engine_config_init();
     config.pContext = context_;
     config.pPlaybackDeviceID = &device_info_.id; 
-
     if (ma_engine_init(&config, &engine_) != MA_SUCCESS) {
         SYS_ERROR("AudioPlaybackModule","Engine init failed");
         return false;
@@ -36,10 +35,10 @@ bool AudioPlaybackModule::start()
 
 void AudioPlaybackModule::stop()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-
     if (!running_)
         return;
+    
+    std::lock_guard<std::mutex> lock(mutex_);
 
     // Limpiar instancias activas
     for (auto& [id, inst] : sounds_) {
@@ -53,20 +52,23 @@ void AudioPlaybackModule::stop()
     }
     cache_.clear();
 
+    // Desinicializar el sistema
     ma_engine_uninit(&engine_);
     running_ = false;
 }
 
 bool AudioPlaybackModule::preload(const std::string& filepath)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-
     if (!running_)
         return false;
 
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // Comprobar si ya está precargado
     if (cache_.count(filepath))
         return true;
 
+    
     auto snd = std::make_unique<ma_sound>();
 
     if (ma_sound_init_from_file(
@@ -90,12 +92,13 @@ SoundID AudioPlaybackModule::play(const std::string& filepath,
                                   float pitch,
                                   LoopMode loop)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-
     cleanupFinished();
 
     if (!running_)
         return 0;
+
+    std::lock_guard<std::mutex> lock(mutex_);
+
 
     auto inst = std::make_unique<SoundInstance>();
 
