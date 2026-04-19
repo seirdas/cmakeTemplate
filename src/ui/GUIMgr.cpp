@@ -60,6 +60,9 @@ void GUiMgr::setController(IAppControl* controller){
 	ctrl_ = controller;
 }
 
+
+// Estados ------------------------------------------------------------------------------
+
 bool GUiMgr::init() {
 
 	SYS_INFO("GUiMgr", "Initializating UI...");
@@ -191,6 +194,8 @@ void GUiMgr::cerrar() {
 }
 
 
+// Bucle principal ----------------------------------------------------------------------
+
 void GUiMgr::initCuadro() {
     glfwPollEvents();
     
@@ -265,6 +270,9 @@ void GUiMgr::BuclePrincipal() {
 
     endCuadro();
 }
+
+
+// Elementos de interfaz ----------------------------------------------------------------
 
 void GUiMgr::crearMainMenuBar() {
 	if (BeginMainMenuBar()) {
@@ -403,7 +411,6 @@ void GUiMgr::ventanaPrincipal() {
 				}
 				
 				// Test spinners
-				SameLine();
 				ImSpinner::SpinnerAng8(           "Ang",     16, 2);	SameLine(0.0, -1.0);
 				ImSpinner::SpinnerPulsar(         "Pulsar",  16, 2);	SameLine(0.0, -1.0);
 				ImSpinner::SpinnerClock(          "Clock",   16, 2);	SameLine(0.0, -1.0);
@@ -590,6 +597,9 @@ void GUiMgr::ventanaPrincipal() {
 
 }
 
+
+// Carga de imágenes --------------------------------------------------------------------
+   
 uintptr_t GUiMgr::getImage(std::string path) {
 	// Si la imagen no está precacheada, se añade
 	if (images_.find(path) == images_.end())
@@ -691,6 +701,9 @@ void GUiMgr::generateDefaultTexture() {
 	return;
 }
 
+
+// Aspecto y temas ----------------------------------------------------------------------
+
 void GUiMgr::updateDensity(int delta) {
 
     int new_size = (int)style_->FontSizeBase + delta;
@@ -723,8 +736,6 @@ void GUiMgr::updateDensity(int delta) {
 
     SYS_INFO("GUiMgr", "Density adjusted to font size: " + std::to_string(style_->FontSizeBase));
 };
-
-// Temas --------------------------------------------------------------------------------
 
 void GUiMgr::titleBarDarkMode(bool useDarkMode) {
 	#ifdef _WIN32
