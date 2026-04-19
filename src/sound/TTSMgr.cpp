@@ -272,10 +272,11 @@ bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
     config.model.vits.tokens    = st_tokens_path.c_str();
     config.model.vits.data_dir  = st_datadir_path.c_str();
     config.model.num_threads    = num_threads_; // CUIDADO con la generación paralela (usar varios tts a la vez)
-    config.model.debug          = 0;            // 1 para logs en consola
+    config.model.debug          = 1;            // 1 para logs en consola
     config.model.vits.noise_scale   = 1.0f;     // Controla la expresividad/varianza
     config.model.vits.noise_scale_w = 0.8f;     // Varianza en la duración de los fonemas
     config.model.vits.length_scale  = 1.0f;     // 1.0 = normal, >1.0 más lento, <1.0 más rápido
+    config.model.provider = "directml";         // Soporte para generación con GPU
 
     // Inicializa el modelo con la configuración (tarda un poco)
     SYS_INFO("TTSMgr","Initializating voice model " + st_modelname);
@@ -285,7 +286,7 @@ bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
     exit_cv_.notify_all();
 
     // Comprueba si se ha generado bien
-    if (!tts_model) SYS_ERROR("Cannot load voice model: " + st_modelname_path, "TTSMgr");
+    if (!tts_model) SYS_ERROR("TTSMgr","Cannot load voice model: " + st_modelname_path);
 
     // Agregarlo a la lista de modelos disponibles del TTSMgr
     std::lock_guard<std::mutex> lock(models_mutex_);

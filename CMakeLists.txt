@@ -62,7 +62,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadi
 # Librería TTS
 option(USE_TTS "Compilar con soporte para TTS" ON)
 if(USE_TTS)
-  include(lib-sherpaonnx)    # Motor de Inferencia ONNX
+  include(lib-sherpaonnx)       # Motor de Inferencia ONNX
+  include(tts-assets)           # Assets TTS (Voces)
   add_definitions(-DUSE_TTS=1) 
 endif()
 
@@ -118,14 +119,14 @@ endif()
 # Herramienta de compilación Ninja (Necesita al menos una configuración correcta previa)
 option(USE_NINJA "Utilizar Ninja" ON)      # Activar/desactivar herramienta
 if(USE_NINJA)
-  include(utils-ninja)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
+  include(utils-ninja)                          # Ejecuta el archivo toolchains/utils-ninja.cmake
   add_definitions(-DUSE_NINJA=1)                # Definición para activar herramienta
 endif()
 
 # Documentación doxygen
 option(USE_DOXYGEN "Utilizar Doxygen" ON)      # Activar/desactivar herramienta
 if(USE_DOXYGEN)
-  include(utils-doxygen)                          # Ejecuta el archivo toolchains/lib-daisysp.cmake
+  include(utils-doxygen)                          # Ejecuta el archivo toolchains/utils-doxygen.cmake
   add_definitions(-DUSE_DOXYGEN=1)                # Definición para activar herramienta
 endif()
 

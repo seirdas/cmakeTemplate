@@ -41,17 +41,17 @@ file(MAKE_DIRECTORY "${SHERPA_INSTALL_DIR}")
 
 # Función de descarga
 function(download_sherpa SHERPA_BIN URL)
-    if (EXISTS "${SHERPA_INSTALL_DIR}/${SHERPA_BIN}/lib/${SHERPA_CHECK_LIB}")
+    if (EXISTS "${SHERPA_INSTALL_PATH}/${SHERPA_BIN}/lib/${SHERPA_CHECK_LIB}")
         message(STATUS "Sherpa-ONNX ${SHERPA_BIN} found locally.")
     else()
         message(STATUS "Sherpa-ONNX ${SHERPA_BIN} not found. Downloading...")
         # Descarga y descomprimir
-        set(TEMP_ARCHIVE "${CMAKE_CURRENT_SOURCE_DIR}/sherpa_${SHERPA_BIN}.tar.bz2")
+        set(TEMP_ARCHIVE "${CMAKE_CURRENT_SOURCE_DIR}/${SHERPA_BIN}.tar.bz2")
         file(DOWNLOAD "${URL}" "${TEMP_ARCHIVE}" SHOW_PROGRESS)
         message(STATUS "Extracting ${TEMP_ARCHIVE}...")
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E tar xf "${TEMP_ARCHIVE}"
-            WORKING_DIRECTORY "${SHERPA_INSTALL_DIR}"
+            WORKING_DIRECTORY "${SHERPA_INSTALL_PATH}"
             RESULT_VARIABLE tar_status
         )
     endif()
@@ -62,7 +62,7 @@ function(download_sherpa SHERPA_BIN URL)
     endif()
 
     # Borrar carpeta bin (no se usa)
-    set (SHERPA_BIN_DIR "${SHERPA_INSTALL_DIR}/${SHERPA_BIN}/bin")
+    set (SHERPA_BIN_DIR "${SHERPA_INSTALL_PATH}/${SHERPA_BIN}/bin")
     message(STATUS "${SHERPA_BIN_DIR}")
     if(EXISTS "${SHERPA_BIN_DIR}")
         message(STATUS "Deleting ${SHERPA_BIN_DIR} (not used)")
@@ -71,30 +71,83 @@ function(download_sherpa SHERPA_BIN URL)
     
 endfunction()
 
-if (WIN32)
-    # Aprovechamos y descargamos todas las configuraciones
-    download_sherpa(${SHERPA_WIN_BIN_DEBUG}          ${SHERPA_WIN_URL_DEBUG})
-    download_sherpa(${SHERPA_WIN_BIN_RELEASE}        ${SHERPA_WIN_URL_RELEASE})
-    download_sherpa(${SHERPA_WIN_BIN_MINSIZEREL}     ${SHERPA_WIN_URL_MINSIZEREL})
-    download_sherpa(${SHERPA_WIN_BIN_RELWITHDEBINFO} ${SHERPA_WIN_URL_RELWITHDEBINFO})
 
-    # Crear la librería de interfaz
-    add_library(sherpa_lib INTERFACE)
+# Configurar según plataforma
+if(WIN32)
 
-    # Incluir headers
-    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_RELEASE}/include")
+    # Directorio de descarga y libreria objetivo
+    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_win_bin")
+    file(MAKE_DIRECTORY "${SHERPA_INSTALL_PATH}")
+    set(SHERPA_CHECK_LIB sherpa-onnx-c-api.lib)
     
-    # Link de librerías (se va a elegir la de la configuración correspondiente)
-    target_link_libraries(sherpa_lib INTERFACE 
-        "$<$<CONFIG:Debug>:${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_DEBUG}/lib/${SHERPA_CHECK_LIB}>"
-        "$<$<CONFIG:Release>:${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_RELEASE}/lib/${SHERPA_CHECK_LIB}>"
-        "$<$<CONFIG:MinSizeRel>:${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_MINSIZEREL}/lib/${SHERPA_CHECK_LIB}>"
-        "$<$<CONFIG:RelWithDebInfo>:${SHERPA_INSTALL_DIR}/${SHERPA_WIN_BIN_RELWITHDEBINFO}/lib/${SHERPA_CHECK_LIB}>"
-        ws2_32      # Winsock2 - API de sockets de Windows (prob. no necesario)
-        winmm       # Bibliotecas de Multimedia de Windows
-    )
+    if (USE_SHERPA_WIN_GPU)
+        # Versión compatible con GPU (DirectML, aunque no lo ponga), hace también fallback a CPU si falla
+        set(SHERPA_WIN_BIN_GPU          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-cuda")
+        set(SHERPA_WIN_URL_GPU          "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_GPU}.tar.bz2")
 
-elseif(UNIX)
+        # Descargar y desplegar el paquete
+        download_sherpa(${SHERPA_WIN_BIN_GPU}          ${SHERPA_WIN_URL_GPU})
+        
+        # Crear la librería de interfaz
+        add_library(sherpa_lib INTERFACE)
+
+        # Incluir headers
+        target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/include")
+
+        # Link de librerías
+        target_link_libraries(sherpa_lib INTERFACE 
+            "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib/${SHERPA_CHECK_LIB}"  # La librería de Sherpa
+            ws2_32      # Winsock2 - API de sockets de Windows (prob. no necesario)
+            winmm       # Bibliotecas de Multimedia de Windows
+        )
+
+    else()
+        # Nombre de carpeta/zip (aparentemente es igual que el paquete)
+        set(SHERPA_WIN_BIN_DEBUG            "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Debug" )
+        set(SHERPA_WIN_BIN_RELEASE          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Release" )
+        set(SHERPA_WIN_BIN_MINSIZEREL       "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-MinSizeRel" )
+        set(SHERPA_WIN_BIN_RELWITHDEBINFO   "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-RelWithDebInfo" )
+
+        # Urls
+        set(SHERPA_WIN_URL_DEBUG          "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_DEBUG}.tar.bz2")
+        set(SHERPA_WIN_URL_RELEASE        "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELEASE}.tar.bz2")
+        set(SHERPA_WIN_URL_MINSIZEREL     "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_MINSIZEREL}.tar.bz2")
+        set(SHERPA_WIN_URL_RELWITHDEBINFO "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELWITHDEBINFO}.tar.bz2")
+
+        # Aprovechamos y descargamos todas las configuraciones
+        download_sherpa(${SHERPA_WIN_BIN_DEBUG}          ${SHERPA_WIN_URL_DEBUG})
+        download_sherpa(${SHERPA_WIN_BIN_RELEASE}        ${SHERPA_WIN_URL_RELEASE})
+        download_sherpa(${SHERPA_WIN_BIN_MINSIZEREL}     ${SHERPA_WIN_URL_MINSIZEREL})
+        download_sherpa(${SHERPA_WIN_BIN_RELWITHDEBINFO} ${SHERPA_WIN_URL_RELWITHDEBINFO})
+        
+        # Crear la librería de interfaz
+        add_library(sherpa_lib INTERFACE)
+
+        # Incluir headers (Todos son iguales, cualquier config vale)
+        target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELEASE}/include")
+
+        # Link de librerías (se va a elegir la de la configuración correspondiente)
+        target_link_libraries(sherpa_lib INTERFACE 
+            "$<$<CONFIG:Debug>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_DEBUG}/lib/${SHERPA_CHECK_LIB}>"
+            "$<$<CONFIG:Release>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELEASE}/lib/${SHERPA_CHECK_LIB}>"
+            "$<$<CONFIG:MinSizeRel>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_MINSIZEREL}/lib/${SHERPA_CHECK_LIB}>"
+            "$<$<CONFIG:RelWithDebInfo>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELWITHDEBINFO}/lib/${SHERPA_CHECK_LIB}>"
+            ws2_32      # Winsock2 - API de sockets de Windows (prob. no necesario)
+            winmm       # Bibliotecas de Multimedia de Windows
+        )
+    endif()
+
+    
+else()
+    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_linux_bin")
+    file(MAKE_DIRECTORY "${SHERPA_INSTALL_PATH}")
+
+    # Nombre de carpeta/zip y paquete a descargar
+    set(SHERPA_LINUX_BIN "sherpa-onnx-v${SHERPA_VERSION}-linux-x64-gpu" )
+    set(SHERPA_LINUX_URL "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_LINUX_BIN}.tar.bz2")
+    set(SHERPA_CHECK_LIB libsherpa-onnx-c-api.so)
+    set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_LINUX_BIN}/lib")
+
     # Descarga el binario de Linux
     download_sherpa(${SHERPA_LINUX_BIN}          ${SHERPA_LINUX_URL})
 
@@ -102,16 +155,17 @@ elseif(UNIX)
     add_library(sherpa_lib INTERFACE)
 
     # Incluir headers
-    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_DIR}/${SHERPA_LINUX_BIN}/include")
+    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_LINUX_BIN}/include")
 
     # Link de librerías 
-    set(SHERPA_LIB_DIR "${SHERPA_INSTALL_DIR}/${SHERPA_LINUX_BIN}/lib")     
+    set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_LINUX_BIN}/lib")     
     target_link_libraries(sherpa_lib INTERFACE 
-        "${SHERPA_LIB_DIR}/libsherpa-onnx-c-api.so"
-        "${SHERPA_LIB_DIR}/libonnxruntime.so"
+        "${SHERPA_LIB_PATH}/libsherpa-onnx-c-api.so"
+        "${SHERPA_LIB_PATH}/libonnxruntime.so"
         pthread
         dl
     )
+
 endif()
 
 # Omitir warnings de la propia librería
@@ -125,116 +179,6 @@ target_compile_options(sherpa_lib INTERFACE
     >
 )
 
-# =================================
-#   Assets Sherpa (voices)
-# =================================
-
-# Directorio de descarga de assets-tts/modelos de voz
-set(ASSETS_CMAKE_FOLDER "tts-assets")
-set(VOICES_DIR tts-voices)
-set(DOWNLOAD_TTS_ASSETS_DIR "${EXTERNAL_LIB_PATH}/${ASSETS_CMAKE_FOLDER}/${VOICES_DIR}")
-
-# Crear carpeta (si no existe)
-file(MAKE_DIRECTORY "${DOWNLOAD_TTS_ASSETS_DIR}")
-file(REAL_PATH "${DOWNLOAD_TTS_ASSETS_DIR}" DOWNLOAD_TTS_ASSETS_DIR)
-
-# Ruta como define para usar en código (ver en la función de abajo)
-file(TO_CMAKE_PATH "${VOICES_DIR}" DEFINE_VOICE_DEST_DIR)
-
-# Función para descargar las voces
-function(download_voice NAME URL)
-    # Destino
-    set(MODEL_DIR "${DOWNLOAD_TTS_ASSETS_DIR}/${NAME}")
-    file(TO_CMAKE_PATH "${DOWNLOAD_TTS_ASSETS_DIR}/${NAME}" MODEL_DIR)
-    
-    # Archivo temporal descargado
-    get_filename_component(FILENAME "${URL}" NAME)
-    set(ARCHIVE_PATH "${DOWNLOAD_TTS_ASSETS_DIR}/${FILENAME}")
-
-    # Si ya existe el modelo, no hacer nada
-    if(EXISTS "${MODEL_DIR}")
-        message(STATUS "Using local TTS Model: ${NAME}...")
-
-        # Borrar archivo comprimido si existe
-        if(EXISTS "${ARCHIVE_PATH}")
-            file(REMOVE "${ARCHIVE_PATH}")
-        endif()
-
-        return()
-    endif()
-
-    message(STATUS "Downloading TTS Model: ${NAME}...")
-
-    # Asegurar carpeta base
-    file(MAKE_DIRECTORY "${DOWNLOAD_TTS_ASSETS_DIR}")
-
-    # Descargar archivo
-    file(DOWNLOAD
-        "${URL}"
-        "${ARCHIVE_PATH}"
-        SHOW_PROGRESS
-    )
-    # Extraer archivo (tar.bz2 compatible)
-    message(STATUS "Extracting ${NAME}...")
-    file(MAKE_DIRECTORY "${MODEL_DIR}")
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xvf "${ARCHIVE_PATH}"
-        WORKING_DIRECTORY "${DOWNLOAD_TTS_ASSETS_DIR}"
-        RESULT_VARIABLE TAR_RESULT
-    )
-    if(NOT TAR_RESULT EQUAL 0)
-        message(FATAL_ERROR "Extraction failed for ${NAME}")
-    endif()
-
-    # Borrar archivo comprimido
-    if(EXISTS "${ARCHIVE_PATH}")
-        file(REMOVE "${ARCHIVE_PATH}")
-    endif()
-
-    message(STATUS "TTS Model ${NAME} extracted in ${ARCHIVE_PATH}")
-endfunction()
-
-# Añadir aquí las descarga de voces para Sherpa:
-download_voice(
-    vits-piper-en_GB-alan-low
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-low.tar.bz2
-)
-download_voice(
-    vits-piper-en_GB-southern_english_female-low 
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-low.tar.bz2
-    )
-download_voice(
-    vits-piper-en_US-amy-low
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
-)
-download_voice(
-    vits-piper-en_US-danny-low
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-danny-low.tar.bz2
-)
-download_voice(
-    vits-piper-en_US-kathleen-low
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kathleen-low.tar.bz2
-)
-download_voice(
-    vits-piper-en_US-lessac-low
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-low.tar.bz2
-)
-download_voice(
-    vits-piper-en_US-ryan-low
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low.tar.bz2
-)
-download_voice(
-    vits-piper-en_US-sam-medium
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-sam-medium.tar.bz2
-)
-download_voice(
-    vits-piper-en_GB-miro-high
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-miro-high.tar.bz2
-)
-download_voice(
-    vits-piper-en_GB-alan-medium
-    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-medium.tar.bz2
-)
 
 
 # =================================
@@ -246,23 +190,31 @@ function(configure_sherpa_assets)
 
     # Copiar DLLs necesarias
     if(WIN32)
-        # Usamos un generador de expresiones anidado para construir el nombre de la carpeta larga
-        set(SHERPA_LIB_DIR "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-$<CONFIG>/lib")
+
+        if (USE_SHERPA_WIN_GPU)
+            set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib")
+        else()
+            set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-$<CONFIG>/lib")
+        endif()
+        
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SHERPA_INSTALL_DIR}/${SHERPA_LIB_DIR}/sherpa-onnx-c-api.dll"
-            "${SHERPA_INSTALL_DIR}/${SHERPA_LIB_DIR}/onnxruntime.dll"
+            "${SHERPA_LIB_PATH}/sherpa-onnx-c-api.dll"
+            "${SHERPA_LIB_PATH}/onnxruntime.dll"
+            "${SHERPA_LIB_PATH}/onnxruntime_providers_shared.dll"
+            "${SHERPA_LIB_PATH}/onnxruntime_providers_cuda.dll"
+            "${SHERPA_LIB_PATH}/onnxruntime_providers_tensorrt.dll"
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             COMMENT "Copying Sherpa and ONNX Runtime DLLs ($<CONFIG>)..."
         )
     elseif(UNIX)   
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SHERPA_LIB_DIR}/libsherpa-onnx-c-api.so"
-            "${SHERPA_LIB_DIR}/libonnxruntime.so"
-            "${SHERPA_LIB_DIR}/libonnxruntime_providers_shared.so"
-            "${SHERPA_LIB_DIR}/libonnxruntime_providers_cuda.so"
-            "${SHERPA_LIB_DIR}/libonnxruntime_providers_tensorrt.so"
+            "${SHERPA_LIB_PATH}/libsherpa-onnx-c-api.so"
+            "${SHERPA_LIB_PATH}/libonnxruntime.so"
+            "${SHERPA_LIB_PATH}/libonnxruntime_providers_shared.so"
+            "${SHERPA_LIB_PATH}/libonnxruntime_providers_cuda.so"
+            "${SHERPA_LIB_PATH}/libonnxruntime_providers_tensorrt.so"
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             COMMENT "Copying Sherpa and ONNX Runtime Shared Libs (GPU support)..."
         )
