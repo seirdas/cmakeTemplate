@@ -37,7 +37,7 @@ void LogMgr::enable(bool sel) {
 		file_.close();
 }
 
-void LogMgr::write(std::string txt)
+void LogMgr::write(std::string const& txt)
 {
 	if (!enabled_) return;
 
@@ -70,6 +70,10 @@ void LogMgr::clear() {
 		write("");
 		file_.close();
 	}
+}
+
+std::string LogMgr::getFilePath() const {
+	return filepath_;
 }
 
 std::string LogMgr::getTimestamp()
