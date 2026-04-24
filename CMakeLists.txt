@@ -96,10 +96,17 @@ if(USE_JSON)
 endif()
 
 # Libreria stb
-option(USE_STB "Compilar con soporte para STB" ON)          # Activar/desactivar librería
+option(USE_STB "Compilar con soporte para STB" ON)           # Activar/desactivar librería
 if(USE_STB)
   include(lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
+endif()
+
+# Libreria fastdds
+option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" ON)   # Activar/desactivar librería
+if(USE_CYCLONEDDS)
+  include(lib-cyclonedds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
+  add_definitions(-DUSE_CYCLONEDDS=1)                           # Definición para usar en el código C++
 endif()
     
 # ----------- Librerías no probadas aún:
@@ -285,13 +292,14 @@ endif()
 
 # Se enlazan automáticamente si están activas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-  $<$<BOOL:${USE_ASIO}>:asio_lib>              # Librería creada con Asio + Winsock2 (Windows) 
-  $<$<BOOL:${USE_IMGUI}>:imgui_lib>            # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JSON}>:nlohmann_json>         # Librería creada con nlohmann/json
-  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>    # Librería creada con Miniaudio + winmm (Windows)
-  $<$<BOOL:${USE_STB}>:stb_lib>                # Librería creada con STB
-  $<$<BOOL:${USE_TTS}>:sherpa_lib>             # Librería creada con motor TTS (Sherpa)
-  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>        # Librería creada con DaisySP (DSP)
+  $<$<BOOL:${USE_ASIO}>:asio_lib>               # Librería creada con Asio + Winsock2 (Windows) 
+  $<$<BOOL:${USE_IMGUI}>:imgui_lib>             # Librería creada con ImGui + GLFW + OpenGL
+  $<$<BOOL:${USE_JSON}>:nlohmann_json>          # Librería creada con nlohmann/json
+  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>     # Librería creada con Miniaudio + winmm (Windows)
+  $<$<BOOL:${USE_STB}>:stb_lib>                 # Librería creada con STB
+  $<$<BOOL:${USE_TTS}>:sherpa_lib>              # Librería creada con motor TTS (Sherpa)
+  $<$<BOOL:${USE_CYCLONEDDS}>:CycloneDDS::ddsc> # Librería de Cyclone DDS
+  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>         # Librería creada con DaisySP (DSP)
 )
 
 # Copiar librerías dinámicas de TTS
