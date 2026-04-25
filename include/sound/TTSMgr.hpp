@@ -140,7 +140,7 @@ private:
     std::mutex              models_mutex_;          // Mutex para proteger el mapa de modelos y init_percent
 
     TTSTextsMap             processing_texts_;      // Relaciona modelo - texto que está procesando
-    mutable std::mutex      processing_mtx_;        // Mutex para proteger el acceso al mapa
+    mutable std::mutex      processing_mtx_;        // Mutex para proteger el acceso al mapa (mutable para métodos const)
 
     std::atomic<short>      active_tasks_;      // Indica si hay algo en ejecución
     std::atomic<bool>       running_;           // Indica si no se ha comandado destruir la clase
