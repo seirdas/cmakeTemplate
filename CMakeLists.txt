@@ -113,9 +113,9 @@ if(USE_CYCLONEDDS)
   message(STATUS "CMAKE_SOURCE_DIR:" ${CMAKE_SOURCE_DIR})
 
 # SINTAXIS CORRECTA: idlc_generate(nombre_target archivo1.idl archivo2.idl ...)
-  idlcxx_generate(
+  idlc_generate(
     idl_generated_lib
-    "${CMAKE_SOURCE_DIR}/idl_data.idl"
+    "${CMAKE_SOURCE_DIR}/IDL/idl_data.idl"
   )
 
 
@@ -322,9 +322,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>     # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_STB}>:stb_lib>                 # Librería creada con STB
   $<$<BOOL:${USE_TTS}>:sherpa_lib>              # Librería creada con motor TTS (Sherpa)
-  $<$<BOOL:${USE_CYCLONEDDS}>:CycloneDDS::ddsc> # Librería de Cyclone DDS
-  $<$<BOOL:${USE_CYCLONEDDS}>:idl_generated_lib> # Librería de Cyclone DDS
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>         # Librería creada con DaisySP (DSP)
+  $<$<BOOL:${USE_CYCLONEDDS}>:                  # Librerías de Cyclone DDS
+    CycloneDDS::ddsc          
+    idl_generated_lib
+  >
 )
 
 # Copiar librerías dinámicas de TTS
