@@ -110,3 +110,35 @@ download_voice(
     vits-piper-en_GB-alan-medium
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-medium.tar.bz2
 )
+
+
+# =================================
+#   Funcion de copia a la salida
+# =================================
+
+function(copy_tts_assets)
+    # 1. Definimos las rutas (Nativas para que Windows no proteste con las barras)
+    set(SRC "${EXTERNAL_LIB_PATH}/tts-assets")
+    set(DST "$<TARGET_FILE_DIR:${PROJECT_NAME}>/tts-assets")
+
+    if(WIN32)
+        # Windows: Usamos Junction (/J) para carpetas. Es lo más parecido a un hardlink.
+        # Orden: mklink /J <Enlace> <Objetivo>
+        file(TO_NATIVE_PATH "${SRC}" SRC_NATIVE)
+        file(TO_NATIVE_PATH "${DST}" DST_NATIVE)
+        set(LINK_CMD cmd /c mklink /J "${DST_NATIVE}" "${SRC_NATIVE}")
+    else()
+        # Linux: Usamos Symlink (-s) porque los hardlinks de carpetas están prohibidos.
+        # Orden: ln -s <Objetivo> <Enlace>
+        set(LINK_CMD ln -s "${SRC}" "${DST}")
+    endif()
+
+    # 2. Ejecutamos el comando
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        # Primero borramos el destino si existe (evita errores de "ya existe")
+        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DST}"
+        COMMAND ${LINK_CMD}
+        COMMENT "Linking TTS assets to executable directory..."
+        VERBATIM
+    )
+endfunction()

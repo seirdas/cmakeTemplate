@@ -207,7 +207,7 @@ target_compile_options(sherpa_lib INTERFACE
 # =================================
 
 # función para el cmakelists, para copiar las dlls y assets en la ruta del exe
-function(configure_sherpa_assets)
+function(configure_sherpa_deps)
 
     # Copiar DLLs necesarias
     if(WIN32)
@@ -245,14 +245,6 @@ function(configure_sherpa_assets)
             COMMENT "Copying Sherpa and ONNX Runtime Shared Libs (GPU support)..."
         )
     endif()
-
-    # Copiar assets de voces
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${EXTERNAL_LIB_PATH}/tts-assets"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-        COMMENT "Copying TTS voice assets..."
-    )
 
     # Los siguientes target_properties hay que hacerlos cuando el proyecto esté creado:
 

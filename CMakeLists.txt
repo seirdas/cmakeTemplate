@@ -329,7 +329,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 # Copiar librerías dinámicas de TTS
 if(USE_TTS)
-  configure_sherpa_assets()
+  configure_sherpa_deps()
+  copy_tts_assets()
 endif()
 
 # ===============================
