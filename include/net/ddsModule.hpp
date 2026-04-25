@@ -51,7 +51,7 @@ public:
         // 5. Limpieza
         rc = dds_delete(participant);
         
-        return 0;
+        return;
     }
 
 

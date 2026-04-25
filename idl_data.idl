@@ -1,0 +1,4 @@
+struct HelloWorld {
+    long id;
+    string message;
+};

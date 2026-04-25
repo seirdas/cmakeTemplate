@@ -102,11 +102,35 @@ if(USE_STB)
   add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
 endif()
 
-# Libreria fastdds
+# Libreria cyclonedds
 option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" ON)   # Activar/desactivar librería
 if(USE_CYCLONEDDS)
   include(lib-cyclonedds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_CYCLONEDDS=1)                           # Definición para usar en el código C++
+
+  cmake_policy(SET CMP0121 NEW)
+
+  message(STATUS "CMAKE_SOURCE_DIR:" ${CMAKE_SOURCE_DIR})
+
+# SINTAXIS CORRECTA: idlc_generate(nombre_target archivo1.idl archivo2.idl ...)
+  idlcxx_generate(
+    idl_generated_lib
+    "${CMAKE_SOURCE_DIR}/idl_data.idl"
+  )
+
+
+# 2. Al ser una librería INTERFACE, todo debe llevar el prefijo INTERFACE
+  target_include_directories(idl_generated_lib 
+    INTERFACE 
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  )
+
+  # 3. También vinculamos el core de forma INTERFACE
+  target_link_libraries(idl_generated_lib 
+    INTERFACE 
+      CycloneDDS::ddsc
+  )
+
 endif()
     
 # ----------- Librerías no probadas aún:
@@ -299,6 +323,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_STB}>:stb_lib>                 # Librería creada con STB
   $<$<BOOL:${USE_TTS}>:sherpa_lib>              # Librería creada con motor TTS (Sherpa)
   $<$<BOOL:${USE_CYCLONEDDS}>:CycloneDDS::ddsc> # Librería de Cyclone DDS
+  $<$<BOOL:${USE_CYCLONEDDS}>:idl_generated_lib> # Librería de Cyclone DDS
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>         # Librería creada con DaisySP (DSP)
 )
 
