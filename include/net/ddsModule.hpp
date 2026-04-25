@@ -2,7 +2,7 @@
 
 #include "dds/dds.h"
 #include <iostream>
-#include "net/idl.h"
+#include "idl_data.h"
 
 class ddsModule {
 
