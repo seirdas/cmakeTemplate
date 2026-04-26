@@ -218,32 +218,61 @@ function(configure_sherpa_deps)
         else()
             set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-$<CONFIG>/lib")
         endif()
+
+        # Lista de DLLs
+        set(DLL_LIST 
+            "sherpa-onnx-c-api.dll" 
+            "sherpa-onnx-cxx-api.dll" 
+            "onnxruntime.dll" 
+            "onnxruntime_providers_shared.dll" 
+            "onnxruntime_providers_tensorrt.dll"
+        )
+        # Añadir dll de cuda si está activado
+        if (USE_SHERPA_WIN_GPU AND USE_CUDA)
+            list(APPEND DLL_LIST "onnxruntime_providers_cuda.dll")
+        endif()
         
-        # Copiar Las dlls al lado del ejecutable
+        # Copiar las dlls al lado del ejecutable
+        foreach(DLL_NAME ${DLL_LIST})
+            set(SRC_PATH "${SHERPA_LIB_PATH}/${DLL_NAME}")
+            file(TO_NATIVE_PATH "${SRC_PATH}" SRC_PATH)
+            
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
+                WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+                COMMAND cmd /c if not exist "${DLL_NAME}" mklink /H "${DLL_NAME}" "${SRC_PATH}"
+                VERBATIM
+            )
+        endforeach()
+
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SHERPA_LIB_PATH}/sherpa-onnx-c-api.dll"
-            "${SHERPA_LIB_PATH}/sherpa-onnx-cxx-api.dll"
-            "${SHERPA_LIB_PATH}/onnxruntime.dll"
-            "${SHERPA_LIB_PATH}/onnxruntime_providers_shared.dll"
-            "${SHERPA_LIB_PATH}/onnxruntime_providers_cuda.dll"
-            "${SHERPA_LIB_PATH}/onnxruntime_providers_tensorrt.dll"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMENT "Copying Sherpa and ONNX Runtime DLLs ($<CONFIG>)..."
+                COMMAND @echo Vínculos terminados.
+            )
+    elseif(UNIX)
+
+        # Lista de DLLs
+        set(DLL_LIST 
+            "libsherpa-onnx-c-api.so" 
+            "libsherpa-onnx-cxx-api.so" 
+            "libonnxruntime.so" 
+            "libonnxruntime_providers_shared.so" 
+            "libonnxruntime_providers_tensorrt.so"
         )
-    elseif(UNIX)   
-        # Copiar Las dlls al lado del ejecutable
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SHERPA_LIB_PATH}/libsherpa-onnx-c-api.so"
-            "${SHERPA_LIB_PATH}/libsherpa-onnx-cxx-api.so"
-            "${SHERPA_LIB_PATH}/libonnxruntime.so"
-            "${SHERPA_LIB_PATH}/libonnxruntime_providers_shared.so"
-            "${SHERPA_LIB_PATH}/libonnxruntime_providers_cuda.so"
-            "${SHERPA_LIB_PATH}/libonnxruntime_providers_tensorrt.so"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMENT "Copying Sherpa and ONNX Runtime Shared Libs (GPU support)..."
-        )
+        # Añadir dll de cuda si está activado
+        if (USE_CUDA)
+            list(APPEND DLL_LIST "libonnxruntime_providers_cuda.so")
+        endif()
+
+        foreach(DLL_NAME ${DLL_LIST})
+
+            # Copiar Las dlls al lado del ejecutable
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+                COMMAND ln -sf "${SHERPA_LIB_PATH}/${DLL_NAME}" "${LINK_NAME}"
+                VERBATIM
+            )
+        endforeach()
+
     endif()
 
     # Los siguientes target_properties hay que hacerlos cuando el proyecto esté creado:

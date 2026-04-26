@@ -116,11 +116,10 @@ download_voice(
 #   Funcion de copia a la salida
 # =================================
 
-function(copy_tts_assets)
+function(link_tts_assets)
     set(SRC_DIR "${EXTERNAL_LIB_PATH}/tts-assets/tts-voices")
     file(TO_NATIVE_PATH "${SRC_DIR}" SRC_NATIVE)
 
-    # Unión (junction) en Windows
     if(WIN32)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             # cd para evitar problemas de "/"
@@ -130,18 +129,13 @@ function(copy_tts_assets)
             COMMAND ${CMAKE_COMMAND} -E remove_directory "${VOICES_DIR}"
             
             # Se ejecuta junction (unión)
-            COMMAND cmd /c mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
+            COMMAND cmd /c if not exist "${VOICES_DIR}" mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
             COMMENT "Linking TTS assets..."
-            VERBATIM
         )
-    # Vínculo simbólico (Symlink -s) para UNIX
-    elseif(UNIX)
-
+    else()
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${VOICES_DIR}"
-            COMMAND ln -s "${SRC_DIR}" "${VOICES_DIR}"
-            COMMENT "Linking TTS assets..."
+            COMMAND ln -sf "${SRC_DIR}" "${LINK_NAME}"
             VERBATIM
         )
     endif()
