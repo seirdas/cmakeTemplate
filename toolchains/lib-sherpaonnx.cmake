@@ -4,7 +4,8 @@ cmake_policy(SET CMP0135 NEW)
 
 set(SHERPA_VERSION "1.12.34")
 
-option(USE_SHERPA_WIN_GPU "Compilar con soporte Windows GPU" ON)      # Activar/desactivar librería compatible con GPU (Windows)
+option(USE_SHERPA_WIN_GPU   "Compilar con soporte Windows GPU"  ON)      # Activar/desactivar librería compatible con GPU (Windows)
+option(USE_CUDA             "Sherpa con soporte CUDA"           OFF)     # Activar/desactivar copiar la dll pesada de CUDA
 
 # Configurar URLs según plataforma
 if(WIN32)
@@ -268,7 +269,8 @@ function(configure_sherpa_deps)
             # Copiar Las dlls al lado del ejecutable
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMAND ln -sf "${SHERPA_LIB_PATH}/${DLL_NAME}" "${LINK_NAME}"
+                COMMAND ln -sf "${SHERPA_LIB_PATH}/${DLL_NAME}" "${DLL_NAME}"
+                COMMENT "ln -sf ${SHERPA_LIB_PATH}/${DLL_NAME} ${DLL_NAME}"
                 VERBATIM
             )
         endforeach()

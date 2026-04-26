@@ -132,10 +132,10 @@ function(link_tts_assets)
             COMMAND cmd /c if not exist "${VOICES_DIR}" mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
             COMMENT "Linking TTS assets..."
         )
-    else()
+    elseif(UNIX)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMAND ln -sf "${SRC_DIR}" "${LINK_NAME}"
+            COMMAND ln -sf "${SRC_DIR}" "${VOICES_DIR}"
             VERBATIM
         )
     endif()
