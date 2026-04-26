@@ -5,7 +5,7 @@
 
 # Directorio de descarga de assets-tts/modelos de voz
 set(ASSETS_CMAKE_FOLDER "tts-assets")
-set(VOICES_DIR tts-voices)
+set(VOICES_DIR "tts-voices")
 set(DOWNLOAD_TTS_ASSETS_DIR "${EXTERNAL_LIB_PATH}/${ASSETS_CMAKE_FOLDER}/${VOICES_DIR}")
 
 # Crear carpeta (si no existe)
@@ -117,28 +117,37 @@ download_voice(
 # =================================
 
 function(copy_tts_assets)
-    # 1. Definimos las rutas (Nativas para que Windows no proteste con las barras)
-    set(SRC "${EXTERNAL_LIB_PATH}/tts-assets")
-    set(DST "$<TARGET_FILE_DIR:${PROJECT_NAME}>/tts-assets")
+    # 1. El origen es una ruta fija que conocemos en tiempo de configuración.
+    # Usamos TO_NATIVE_PATH aquí porque SÍ funcionará (es una variable normal).
+    set(SRC_DIR "${EXTERNAL_LIB_PATH}/tts-assets/tts-voices")
+    file(TO_NATIVE_PATH "${SRC_DIR}" SRC_NATIVE)
 
     if(WIN32)
-        # Windows: Usamos Junction (/J) para carpetas. Es lo más parecido a un hardlink.
-        # Orden: mklink /J <Enlace> <Objetivo>
-        file(TO_NATIVE_PATH "${SRC}" SRC_NATIVE)
-        file(TO_NATIVE_PATH "${DST}" DST_NATIVE)
-        set(LINK_CMD cmd /c mklink /J "${DST_NATIVE}" "${SRC_NATIVE}")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            # cd para evitar problemas de "/"
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            
+            # Borramos el link si ya existía (usando el nombre relativo)
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${LINK_NAME}"
+            
+            # Se ejecuta junction (unión)
+            COMMAND cmd /c mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
+            
+            COMMENT "Linking TTS assets..."
+            VERBATIM
+        )
     else()
-        # Linux: Usamos Symlink (-s) porque los hardlinks de carpetas están prohibidos.
-        # Orden: ln -s <Objetivo> <Enlace>
-        set(LINK_CMD ln -s "${SRC}" "${DST}")
+        # En Linux/Unix el comando 'ln' no es tan tiquismiquis con los slashes,
+        # pero mantenemos la lógica por consistencia.
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${LINK_NAME}"
+            COMMAND ln -s "${SRC_DIR}" "${LINK_NAME}"
+            VERBATIM
+        )
     endif()
 
-    # 2. Ejecutamos el comando
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        # Primero borramos el destino si existe (evita errores de "ya existe")
-        COMMAND ${CMAKE_COMMAND} -E remove_directory "${DST}"
-        COMMAND ${LINK_CMD}
-        COMMENT "Linking TTS assets to executable directory..."
-        VERBATIM
-    )
+    # Translado la ruta de las voces como #define de código c++
+    target_compile_definitions(${PROJECT_NAME} PRIVATE VOICES_PATH="${DEFINE_VOICE_DEST_DIR}")
+
 endfunction()

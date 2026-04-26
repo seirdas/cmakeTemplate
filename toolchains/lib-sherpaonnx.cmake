@@ -255,7 +255,5 @@ function(configure_sherpa_deps)
         set(SHERPA_RPATH_CONFIGURED ON CACHE INTERNAL "RPATH has been set for Sherpa")
     endif()
 
-    # Translado la ruta de las voces como #define de código c++
-    target_compile_definitions(${PROJECT_NAME} PRIVATE VOICES_PATH="${DEFINE_VOICE_DEST_DIR}")
 
 endfunction()
