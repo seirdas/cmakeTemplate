@@ -117,32 +117,31 @@ download_voice(
 # =================================
 
 function(copy_tts_assets)
-    # 1. El origen es una ruta fija que conocemos en tiempo de configuración.
-    # Usamos TO_NATIVE_PATH aquí porque SÍ funcionará (es una variable normal).
     set(SRC_DIR "${EXTERNAL_LIB_PATH}/tts-assets/tts-voices")
     file(TO_NATIVE_PATH "${SRC_DIR}" SRC_NATIVE)
 
+    # Unión (junction) en Windows
     if(WIN32)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             # cd para evitar problemas de "/"
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             
             # Borramos el link si ya existía (usando el nombre relativo)
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${LINK_NAME}"
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${VOICES_DIR}"
             
             # Se ejecuta junction (unión)
             COMMAND cmd /c mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
-            
             COMMENT "Linking TTS assets..."
             VERBATIM
         )
-    else()
-        # En Linux/Unix el comando 'ln' no es tan tiquismiquis con los slashes,
-        # pero mantenemos la lógica por consistencia.
+    # Vínculo simbólico (Symlink -s) para UNIX
+    elseif(UNIX)
+
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${LINK_NAME}"
-            COMMAND ln -s "${SRC_DIR}" "${LINK_NAME}"
+            COMMAND ${CMAKE_COMMAND} -E remove_directory "${VOICES_DIR}"
+            COMMAND ln -s "${SRC_DIR}" "${VOICES_DIR}"
+            COMMENT "Linking TTS assets..."
             VERBATIM
         )
     endif()
