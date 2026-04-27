@@ -64,5 +64,6 @@
     "editor.mouseWheelZoom": true,
 
     // Formato comentarios doxygen
-    "C_Cpp.doxygen.generatedStyle": "/**"
+    "C_Cpp.doxygen.generatedStyle": "/**",
+    "C_Cpp.errorSquiggles": "enabled"
 }
