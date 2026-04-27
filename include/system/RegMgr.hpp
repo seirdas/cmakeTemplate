@@ -3,10 +3,15 @@
 #include <windows.h>
 #include <cstdint>
 
-class RegMgr
-{
-// General ______________________________________________________________________________
+/**
+ * @class RegMgr
+ * @brief Clase para leer y escribir en el registro de Windows
+ */
+class RegMgr {
+
 public:
+
+// General ------------------------------------------------------------------------------
 
 	/**
 	 * @brief Constructor estándar
@@ -18,12 +23,11 @@ public:
 	 */
 	~RegMgr();
 
-// Getters ______________________________________________________________________________
-public:
+// Getters ------------------------------------------------------------------------------
 
 	/**
 	 * @brief  Obtiene un valor del registro
-	* @param path -- Ruta del registro
+	 * @param path -- Ruta del registro
 	 * @param clave -- Clave de registro
 	 * @param dwvalor -- Valor DWORD 
  	 * @param qwvalor -- Valor QWORD
@@ -50,8 +54,7 @@ public:
 	 */
 	bool Get_STR(std::string path, std::string clave, std::string *valor);
 
-// Setters ______________________________________________________________________________
-public:
+// Setters ------------------------------------------------------------------------------
 
 	/**
 	 * @brief  Establece un valor del registro
@@ -82,10 +85,12 @@ public:
 	 */
 	bool Set_STR(std::string path, std::string clave, std::string valor);
 	
+// Otros --------------------------------------------------------------------------------
+
 	/**
- 	* @brief  Espera hasta que haya un cambio en la clave del registro indicada
+ 	* @brief Espera hasta que haya un cambio en la clave del registro indicada
  	* @param path -- Ruta del registro
-	 * @return 
-	 */
+	* @return 
+	*/
 	bool WaitUntilChange(std::string path);
 };
