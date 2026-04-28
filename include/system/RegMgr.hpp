@@ -3,9 +3,19 @@
 #include <string>
 #include <cstdint>		// provides uint32_t, uint64_t
 
+
+// Macros de conveniencia para leer/escribir en el registro
+#define REG_GET_DWORD(root, path, clave)  		RegMgr::instance().Get_DWORD(root, path, clave)
+#define REG_GET_QWORD(root, path, clave)  		RegMgr::instance().Get_QWORD(root, path, clave)
+#define REG_GET_SZ(root, path, clave)     		RegMgr::instance().Get_SZ(root, path, clave)
+#define REG_SET_DWORD(root, path, clave, val) 	RegMgr::instance().Set_DWORD(root, path, clave, val)
+#define REG_SET_QWORD(root, path, clave, val) 	RegMgr::instance().Set_DWORD(root, path, clave, val)
+#define REG_SET_STR(root, path, clave, val)   	RegMgr::instance().Set_STR(root, path, clave, val)
+
+
 /**
  * @class RegMgr
- * @brief Clase para leer y escribir en el registro de Windows
+ * @brief Clase singleton para leer y escribir en el registro de Windows
  * @note  En Linux/macOS todos los métodos son stubs que emiten SYS_WARN.
  */
 class RegMgr {
@@ -14,21 +24,10 @@ public:
 
 // General ------------------------------------------------------------------------------
 
-	/**
-	 * @brief Constructor estándar
-	 */
-	RegMgr();
-
-	/**
-	 * @brief Destructor estándar
-	 */
-	~RegMgr();
-
-	/**
-     * @brief Evitar copias
+    /**
+     * @brief Declara la instancia estática de la clase
      */
-	RegMgr(const RegMgr&)            = delete;
-    RegMgr& operator=(const RegMgr&) = delete;
+    static RegMgr& instance();
 
 
 // Getters ------------------------------------------------------------------------------
@@ -114,6 +113,24 @@ public:
 	bool WaitUntilChange(std::wstring const& root, std::wstring const& path, std::wstring const& clave);
 
 private:
+
+// General ------------------------------------------------------------------------------
+
+	/**
+	 * @brief Constructor estándar
+	 */
+	RegMgr();
+
+	/**
+	 * @brief Destructor estándar
+	 */
+	~RegMgr();
+
+	/**
+     * @brief Evitar copias
+     */
+	RegMgr(const RegMgr&)            = delete;
+    RegMgr& operator=(const RegMgr&) = delete;
 
 // Otros --------------------------------------------------------------------------------
 

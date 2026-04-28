@@ -10,6 +10,11 @@
 
 	// General ------------------------------------------------------------------------------
 
+	RegMgr& RegMgr::instance() {
+        static RegMgr inst;
+        return inst;
+    }
+
 	RegMgr::RegMgr() {
 
 	}
@@ -18,6 +23,7 @@
 
 	}
 
+	
 	// Getters ------------------------------------------------------------------------------
 
 	uint32_t RegMgr::Get_DWORD(std::wstring const& root,std::wstring const& path, std::wstring const& clave) {
@@ -144,6 +150,7 @@
 		return resultado;
 	}
 
+
 	// Setters ------------------------------------------------------------------------------
 
 	bool RegMgr::Set_DWORD(std::wstring const& root, std::wstring const& path, std::wstring const& clave, uint32_t valor) {
@@ -198,7 +205,7 @@
 		if (!ptr_Root) return false;
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. ERROR BLOQUEANTE
-		DWORD actualType = (DWORD)queryType(hRoot, path, clave);
+		DWORD actualType = (DWORD)queryType(ptr_Root, path, clave);
 		if (actualType != REG_NONE && actualType != REG_SZ) {
 			SYS_ERROR("RegMgr", "Type mismatch: cannot write REG_SZ over existing "
 							+ std::string(regTypeName(actualType))
@@ -215,7 +222,26 @@
 		return true;
 	}
 
+
 	// Otros --------------------------------------------------------------------------------
+
+	bool RegMgr::WaitUntilChange(std::wstring const& root, std::wstring const& path, std::wstring const& clave) {
+        void* ptr_Root = ResolveRoot(root);
+        if (!ptr_Root) return false;
+
+        HKEY hKey = nullptr;
+        if (RegOpenKeyExW(static_cast<HKEY>(ptr_Root), path.c_str(), 0, KEY_NOTIFY, &hKey) != ERROR_SUCCESS) {
+            return false;
+        }
+        
+        // El handle hKey es el que se monitoriza
+        bool ok = (RegNotifyChangeKeyValue(hKey, TRUE, REG_NOTIFY_CHANGE_LAST_SET, NULL, FALSE) == ERROR_SUCCESS);
+        RegCloseKey(hKey);
+        return ok;
+    }
+
+
+	// Otros (privado) ------------------------------------------------------------------
 
 	void* RegMgr::ResolveRoot(std::wstring const& root) {
 		// Se devuelve en void* y luego se castea a HKEY (debería ser lo mismo)
@@ -243,18 +269,6 @@
 			case (DWORD)REG_SZ:    return "REG_SZ";
 			default:        return "REG_UNKNOWN";
 		}
-	}
-
-	bool RegMgr::WaitUntilChange(std::wstring const& root, std::wstring const& path, std::wstring const& clave) {
-		// Comprueba valor de prefijo de ruta
-		HKEY hRoot = static_cast<HKEY>(ResolveRoot(root));
-		if (!hRoot) return false;
-
-		if (RegOpenKeyExW(hRoot, path.c_str(), 0, KEY_NOTIFY, &clave.c_str()) != ERROR_SUCCESS) return false;
-		
-		bool ok = (RegNotifyChangeKeyValue(hKey, TRUE, REG_NOTIFY_CHANGE_LAST_SET, NULL, FALSE) == ERROR_SUCCESS);
-		RegCloseKey(hKey);
-		return ok;
 	}
 
 #else
