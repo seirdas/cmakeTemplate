@@ -16,6 +16,19 @@ public:
     void warning(std::string const& module, std::string const& msg);
     void info(std::string const& module, std::string const& msg);
 
+
+// Conversiones -------------------------------------------------------------------------
+
+    /**
+     * @brief Convierte std::string a std::wstring
+     */
+    inline std::wstring stringToWString(std::string const& str);
+
+    /**
+     * @brief Convierte std::wstring a std::string 
+     */
+    inline std::string wstringToString(std::wstring const& ws);
+
 private:
     Sys(); // constructor privado
     ~Sys();
