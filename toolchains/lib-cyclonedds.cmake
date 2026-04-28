@@ -38,8 +38,31 @@ FetchContent_Declare(
     GIT_TAG        0.10.5      # Usa un tag concreto, no una rama, para builds reproducibles
     GIT_SHALLOW    TRUE
     SOURCE_DIR     "${CYCLONE_SRC_DIR}"
+    EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(cyclonedds)
+
+# Omitir warnings de la librería
+target_compile_options(ddsc PRIVATE
+    $<$<CXX_COMPILER_ID:MSVC>:
+        /W0            # Nivel de advertencia 0 (silencio total)
+        /wd4244        # double a float
+        /wd4305        # truncamiento de constantes
+        /wd4267        # size_t a int
+        /external:W0   # (CMake 3.22+) Silencia cabeceras externas
+    >
+    
+    # --- Configuración para GCC / Clang / MinGW ---
+    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
+        -w             # Suprime todos los warnings
+        -Wno-conversion
+        -Wno-sign-compare
+        -Wno-unused-parameter
+        -Wno-unused-variable
+        -Wno-unused-but-set-variable
+        -Wno-shadow
+    >
+)
 
 # =======================
 # Compilación de archivos IDL
