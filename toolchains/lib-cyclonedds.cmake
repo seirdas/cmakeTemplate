@@ -24,8 +24,10 @@ set(ENABLE_SSL     OFF CACHE INTERNAL "")
 set(ENABLE_SHM     OFF CACHE INTERNAL "")
 set(BUILD_EXAMPLES OFF CACHE INTERNAL "")
 set(BUILD_TESTING  OFF CACHE INTERNAL "")
+set(BUILD_DDSPERF  OFF CACHE INTERNAL "")
 set(BUILD_IDLC     ON  CACHE INTERNAL "")  # ON: necesario para compilar archivos .idl
 set(CYCLONEDDS_INSTALL_C_HEADERS OFF CACHE INTERNAL "")
+set(CYCLONEDDS_INSTALL_CXX_HEADERS OFF CACHE INTERNAL "")
 set(BUILD_CPP_BINDINGS ON CACHE INTERNAL "")
 set(ENABLE_SECURITY OFF CACHE INTERNAL "")
 
@@ -39,12 +41,20 @@ FetchContent_Declare(
     GIT_SHALLOW    TRUE
     SOURCE_DIR     "${CYCLONE_SRC_DIR}"
     EXCLUDE_FROM_ALL TRUE
+    SYSTEM
 )
 FetchContent_MakeAvailable(cyclonedds)
 
 # Omitir warnings de la librería
 target_compile_options(ddsc PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:
+        /W0            # Nivel de advertencia 0 (silencio total)
+        /wd4244        # double a float
+        /wd4305        # truncamiento de constantes
+        /wd4267        # size_t a int
+        /external:W0   # (CMake 3.22+) Silencia cabeceras externas
+    >
+    $<$<C_COMPILER_ID:MSVC>:
         /W0            # Nivel de advertencia 0 (silencio total)
         /wd4244        # double a float
         /wd4305        # truncamiento de constantes
@@ -64,21 +74,23 @@ target_compile_options(ddsc PRIVATE
     >
 )
 
-# =======================
-# Compilación de archivos IDL
-# =======================
-# CycloneDDS SÍ incluye su propio compilador IDL (idlc) y una función CMake nativa.
-# BUILD_IDLC ON es suficiente; después de FetchContent_MakeAvailable puedes usar:
-#
-#   idlc_generate(
-#       TARGET    mi_idl_lib
-#       FILES     mi_archivo.idl otro.idl
-#   )
-#   target_link_libraries(mi_target PRIVATE mi_idl_lib CycloneDDS::ddsc)
-#
-# idlc_generate crea automáticamente un target con los .c/.h generados.
+
 
 # =======================
-# Enlace (en tu target principal)
+# Compilación de archivos IDL (en modo .c)
+# idlc_generate crea automáticamente un target con los .c/.h generados.
 # =======================
-# target_link_libraries(mi_target PRIVATE CycloneDDS::ddsc)
+
+# Generar el "código" c y h a partir del IDL
+idlc_generate(
+    idl_generated_lib
+    "${CMAKE_SOURCE_DIR}/IDL/idl_data.idl"
+)
+
+# Añade el .h generado al proyecto
+target_include_directories(idl_generated_lib INTERFACE 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+)
+
+# También se vincula el propio cyclone al idl 
+target_link_libraries(idl_generated_lib INTERFACE CycloneDDS::ddsc)
