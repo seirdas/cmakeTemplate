@@ -5,7 +5,8 @@
 
 // General ------------------------------------------------------------------------------
 
-AppController::AppController() : 
+AppController::AppController() :
+    reg_(RegMgr::instance()), 
     gui_(this),
     net_initialized_(false),
     gui_initialized_(false),
@@ -14,7 +15,7 @@ AppController::AppController() :
     running_(false),
     online_mode_(true),
     version_(std::to_string(VERSION))
-{
+ {
 
 }
 

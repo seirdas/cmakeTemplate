@@ -5,12 +5,13 @@
 
 #include <nlohmann/json.hpp>    // Manipula archivos .json
 
-#include "ui/GUIMgr.h"           // Clase de gestión de ventana UI
+#include "ui/GUIMgr.h"          // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "system/LogMgr.hpp"    // Clase para gestionar logs
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
+#include "system/RegMgr.hpp"      // Clase Registro
 
 #define VERSION 0.8
 
@@ -153,6 +154,7 @@ private:
     GUiMgr      gui_;                           // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                           // Gestor de audio
     TTSMgr      tts_;                           // Gestor módulo TTS
+    RegMgr&      reg_;                           // Gestor de registro
 
     bool        net_initialized_;               // Indica si net está inicializado
     bool        gui_initialized_;               // Indica si gui está inicializado
