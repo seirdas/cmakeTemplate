@@ -6,7 +6,6 @@
 // General ------------------------------------------------------------------------------
 
 AppController::AppController() :
-    reg_(RegMgr::instance()), 
     gui_(this),
     net_initialized_(false),
     gui_initialized_(false),
@@ -15,7 +14,7 @@ AppController::AppController() :
     running_(false),
     online_mode_(true),
     version_(std::to_string(VERSION))
- {
+{
 
 }
 
@@ -186,5 +185,3 @@ void AppController::TWorker() {
     std::string AppController::getTTSProcessingText(std::string modelName) const noexcept {
         return tts_.getProccesingText(modelName);
     }
-
-    

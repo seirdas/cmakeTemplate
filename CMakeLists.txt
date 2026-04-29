@@ -107,30 +107,6 @@ option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" ON)   # Activar/des
 if(USE_CYCLONEDDS)
   include(lib-cyclonedds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_CYCLONEDDS=1)                           # Definición para usar en el código C++
-
-  cmake_policy(SET CMP0121 NEW)
-
-  message(STATUS "CMAKE_SOURCE_DIR:" ${CMAKE_SOURCE_DIR})
-
-# SINTAXIS CORRECTA: idlc_generate(nombre_target archivo1.idl archivo2.idl ...)
-  idlc_generate(
-    idl_generated_lib
-    "${CMAKE_SOURCE_DIR}/IDL/idl_data.idl"
-  )
-
-
-# 2. Al ser una librería INTERFACE, todo debe llevar el prefijo INTERFACE
-  target_include_directories(idl_generated_lib 
-    INTERFACE 
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-  )
-
-  # 3. También vinculamos el core de forma INTERFACE
-  target_link_libraries(idl_generated_lib 
-    INTERFACE 
-      CycloneDDS::ddsc
-  )
-
 endif()
     
 # ----------- Librerías no probadas aún:
