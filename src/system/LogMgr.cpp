@@ -1,7 +1,6 @@
 #include "system/LogMgr.hpp"
 
 #include <sstream>
-#include <filesystem>
 namespace fs = std::filesystem;
 
 
@@ -74,6 +73,10 @@ void LogMgr::clear() {
 
 std::string LogMgr::getFilePath() const {
 	return filepath_.string();
+}
+
+std::string LogMgr::getName() const {
+	return name_;
 }
 
 std::string LogMgr::getTimestamp()
