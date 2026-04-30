@@ -117,7 +117,7 @@ if(USE_CYCLONEDDSCXX)
 endif()
 
 # Libreria fastdds
-option(USE_FASTDDS "Compilar con soporte para FASTDDS" ON)   # Activar/desactivar librería
+option(USE_FASTDDS "Compilar con soporte para FASTDDS" OFF)   # Activar/desactivar librería
 if(USE_FASTDDS)
   include(lib-fastdds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_FASTDDS=1)                           # Definición para usar en el código C++
@@ -312,7 +312,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>     # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_STB}>:stb_lib>                 # Librería creada con STB
   $<$<BOOL:${USE_TTS}>:sherpa_lib>              # Librería creada con motor TTS (Sherpa)
-  $<$<BOOL:${USE_FASTDDS}>:fastdds>         # Librería creada con FastDDS
+  $<$<BOOL:${USE_FASTDDS}>:fastdds>             # Librería creada con FastDDS
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>         # Librería creada con DaisySP (DSP)
   $<$<BOOL:${USE_CYCLONEDDS}>:                  # Librerías de Cyclone DDS
     CycloneDDS::ddsc          
