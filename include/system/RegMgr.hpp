@@ -9,7 +9,7 @@
 #define REG_GET_QWORD(root, path, clave)  		RegMgr::instance().Get_QWORD(root, path, clave)
 #define REG_GET_SZ(root, path, clave)     		RegMgr::instance().Get_SZ(root, path, clave)
 #define REG_SET_DWORD(root, path, clave, val) 	RegMgr::instance().Set_DWORD(root, path, clave, val)
-#define REG_SET_QWORD(root, path, clave, val) 	RegMgr::instance().Set_DWORD(root, path, clave, val)
+#define REG_SET_QWORD(root, path, clave, val) 	RegMgr::instance().Set_QWORD(root, path, clave, val)
 #define REG_SET_STR(root, path, clave, val)   	RegMgr::instance().Set_STR(root, path, clave, val)
 
 

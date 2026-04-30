@@ -131,7 +131,9 @@
 
 		// El tamaño viene en bytes, lo pasamos a número de caracteres wchar_t
 		std::wstring resultado;
-		resultado.resize(size / sizeof(wchar_t) - 1); 
+		if (size >= sizeof(wchar_t)) {
+			resultado.resize((size / sizeof(wchar_t)) - 1);
+		}
 
 		// Segunda llamada para copiar el contenido
 		status = RegGetValueW(
@@ -295,7 +297,13 @@ uint32_t RegMgr::queryType(void* hRoot, const std::wstring& path, const std::wst
 #endif
 
 std::string RegMgr::toStr(std::wstring const& ws) {
-    return std::string(ws.begin(), ws.end());
+	// Forma de conversión rápida (probablemente se vean mal carácteres especiales)
+    std::string s;
+    s.reserve(ws.length());
+    for (wchar_t wc : ws) {
+        s += static_cast<char>(wc);
+    }
+    return s;
 }
 
 inline void RegMgr::unsupported() {
