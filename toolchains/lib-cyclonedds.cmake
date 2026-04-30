@@ -20,15 +20,17 @@ endif()
 # =======================
 # Opciones de compilación
 # =======================
-set(ENABLE_SSL     OFF CACHE INTERNAL "")
-set(ENABLE_SHM     OFF CACHE INTERNAL "")
-set(BUILD_EXAMPLES OFF CACHE INTERNAL "")
-set(BUILD_TESTING  OFF CACHE INTERNAL "")
-set(BUILD_DDSPERF  OFF CACHE INTERNAL "")
-set(BUILD_IDLC     ON  CACHE INTERNAL "")  # ON: necesario para compilar archivos .idl
-set(CYCLONEDDS_INSTALL_C_HEADERS OFF CACHE INTERNAL "")
-set(CYCLONEDDS_INSTALL_CXX_HEADERS OFF CACHE INTERNAL "")
-set(BUILD_CPP_BINDINGS ON CACHE INTERNAL "")
+set(CYCLONEDDS_INSTALL_COMPONENTS   OFF CACHE INTERNAL "" FORCE)
+set(CYCLONEDDS_INSTALL_C_HEADERS    OFF CACHE INTERNAL "")
+set(CYCLONEDDS_INSTALL_CXX_HEADERS  OFF CACHE INTERNAL "")
+set(BUILD_CPP_BINDINGS              ON  CACHE INTERNAL "")    # Compatibilidad con generación de C a C++
+set(ENABLE_INSTALL ON   CACHE INTERNAL "" FORCE)
+set(ENABLE_SSL     OFF  CACHE INTERNAL "")
+set(ENABLE_SHM     OFF  CACHE INTERNAL "")
+set(BUILD_EXAMPLES OFF  CACHE INTERNAL "")
+set(BUILD_TESTING  OFF  CACHE INTERNAL "")
+set(BUILD_DDSPERF  OFF  CACHE INTERNAL "")
+set(BUILD_IDLC     ON   CACHE INTERNAL "")  # ON: necesario para compilar archivos .idl
 set(ENABLE_SECURITY OFF CACHE INTERNAL "")
 
 # =======================
@@ -37,42 +39,41 @@ set(ENABLE_SECURITY OFF CACHE INTERNAL "")
 FetchContent_Declare(
     cyclonedds
     GIT_REPOSITORY https://github.com/eclipse-cyclonedds/cyclonedds.git
-    GIT_TAG        0.10.5      # Usa un tag concreto, no una rama, para builds reproducibles
+    GIT_TAG        11.0.1      # Usa un tag concreto para builds reproducibles
     GIT_SHALLOW    TRUE
     SOURCE_DIR     "${CYCLONE_SRC_DIR}"
     EXCLUDE_FROM_ALL TRUE
     SYSTEM
 )
+# Evitar que CycloneDDS propague sus warnings a nuestro proyecto
+set(FETCHCONTENT_QUIET ON)
 FetchContent_MakeAvailable(cyclonedds)
 
 # Omitir warnings de la librería
-target_compile_options(ddsc PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:
-        /W0            # Nivel de advertencia 0 (silencio total)
-        /wd4244        # double a float
-        /wd4305        # truncamiento de constantes
-        /wd4267        # size_t a int
-        /external:W0   # (CMake 3.22+) Silencia cabeceras externas
-    >
-    $<$<C_COMPILER_ID:MSVC>:
-        /W0            # Nivel de advertencia 0 (silencio total)
-        /wd4244        # double a float
-        /wd4305        # truncamiento de constantes
-        /wd4267        # size_t a int
-        /external:W0   # (CMake 3.22+) Silencia cabeceras externas
-    >
-    
-    # --- Configuración para GCC / Clang / MinGW ---
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
-        -w             # Suprime todos los warnings
-        -Wno-conversion
-        -Wno-sign-compare
-        -Wno-unused-parameter
-        -Wno-unused-variable
-        -Wno-unused-but-set-variable
-        -Wno-shadow
-    >
-)
+set(CYCLONE_TARGETS ddsc idlc )
+foreach (tgt ${CYCLONE_TARGETS})
+    if (MSVC)
+        # --- Configuración para MSVC (Visual Studio) ---
+        target_compile_options(${tgt} PRIVATE
+            /W0            # Nivel de advertencia 0 (silencio total)
+            /wd4244        # double a float
+            /wd4305        # truncamiento de constantes
+            /wd4267        # size_t a int
+            /external:W0   # (CMake 3.22+) Silencia cabeceras externas
+        )
+    else()
+        # --- Configuración para GCC / Clang / MinGW ---
+        target_compile_options(${tgt} PRIVATE
+            -w             # Suprime todos los warnings
+            -Wno-conversion
+            -Wno-sign-compare
+            -Wno-unused-parameter
+            -Wno-unused-variable
+            -Wno-unused-but-set-variable
+            -Wno-shadow
+        )
+    endif()
+endforeach()
 
 
 
@@ -81,16 +82,28 @@ target_compile_options(ddsc PRIVATE
 # idlc_generate crea automáticamente un target con los .c/.h generados.
 # =======================
 
-# Generar el "código" c y h a partir del IDL
-idlc_generate(
-    idl_generated_lib
-    "${CMAKE_SOURCE_DIR}/IDL/idl_data.idl"
-)
+file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
 
-# Añade el .h generado al proyecto
-target_include_directories(idl_generated_lib INTERFACE 
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-)
+if(IDL_FILES)
+      message(STATUS "Archivos IDL encontrados: ${IDL_FILES}")
 
-# También se vincula el propio cyclone al idl 
-target_link_libraries(idl_generated_lib INTERFACE CycloneDDS::ddsc)
+      # Generar el "código" c y h a partir de los .idl de la carpeta IDL
+      idlc_generate(
+        TARGET idl_generated_lib
+        FILES  ${IDL_FILES}
+      )
+
+      # Silenciar los warnings de los enums en el código generado (MSVC 2026)
+      if(MSVC)
+          target_compile_options(idl_generated_lib INTERFACE /wd5286 /wd5287 /W0)
+      endif()
+
+      # Añade el .h generado al proyecto
+      target_include_directories(idl_generated_lib 
+        INTERFACE 
+          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+      )
+  else()
+      message(WARNING "No se encontraron archivos .idl en la carpeta IDL/")
+endif()
+
