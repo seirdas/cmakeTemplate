@@ -22,7 +22,7 @@ endif()
 # =======================
 set(CYCLONEDDS_INSTALL_COMPONENTS   OFF CACHE INTERNAL "" FORCE)
 set(CYCLONEDDS_INSTALL_C_HEADERS    OFF CACHE INTERNAL "")
-set(ENABLE_INSTALL  ON   CACHE INTERNAL "" FORCE)
+set(ENABLE_INSTALL  OFF   CACHE INTERNAL "" FORCE)
 set(BUILD_IDLC      ON   CACHE INTERNAL "")  # ON: necesario para compilar archivos .idl
 set(ENABLE_SSL      OFF  CACHE INTERNAL "")
 set(ENABLE_SHM      OFF  CACHE INTERNAL "")
@@ -46,7 +46,9 @@ FetchContent_Declare(
 )
 # Evitar que CycloneDDS propague sus warnings a nuestro proyecto
 set(FETCHCONTENT_QUIET ON)
+set(CMAKE_SKIP_INSTALL_RULES TRUE)
 FetchContent_MakeAvailable(cyclonedds)
+set(CMAKE_SKIP_INSTALL_RULES FALSE)
 
 # Omitir warnings de la librería
 set(CYCLONE_TARGETS ddsc idlc )
@@ -74,6 +76,19 @@ foreach (tgt ${CYCLONE_TARGETS})
     endif()
 endforeach()
 
+if(TARGET ddsc)
+    message(STATUS "target ddsc found.")
+endif()
+if(TARGET CycloneDDS::ddsc)
+    message(STATUS "target CycloneDDS::ddsc found.")
+endif()
+if(NOT TARGET CycloneDDS::ddsc AND NOT TARGET ddsc)
+    message(STATUS "TARGETS CycloneDDS::ddsc AND ddsc NOT FOUND.")
+endif()
+
+if(TARGET ddsc AND NOT TARGET CycloneDDS::ddsc)
+    add_library(CycloneDDS::ddsc ALIAS ddsc)
+endif()
 
 
 # =======================
