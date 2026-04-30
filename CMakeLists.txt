@@ -102,11 +102,18 @@ if(USE_STB)
   add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
 endif()
 
-# Libreria cyclonedds
-option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" ON)   # Activar/desactivar librería
+# Libreria cyclonedds (compatible con IDL en C)
+option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" OFF)   # Activar/desactivar librería
 if(USE_CYCLONEDDS)
   include(lib-cyclonedds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_CYCLONEDDS=1)                           # Definición para usar en el código C++
+endif()
+
+# Libreria cyclonedds (compatible con IDL en C++)
+option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" ON)   # Activar/desactivar librería
+if(USE_CYCLONEDDSCXX)
+  include(lib-cycloneddscxx)                                       # Ejecuta el archivo toolchains/lib-json.cmake
+  add_definitions(-DUSE_CYCLONEDDSCXX=1)                           # Definición para usar en el código C++
 endif()
     
 # ----------- Librerías no probadas aún:
@@ -301,6 +308,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>         # Librería creada con DaisySP (DSP)
   $<$<BOOL:${USE_CYCLONEDDS}>:                  # Librerías de Cyclone DDS
     CycloneDDS::ddsc          
+    idl_generated_lib
+  >
+  $<$<BOOL:${USE_CYCLONEDDSCXX}>:               # Librerías de Cyclone DDS CXX
+    CycloneDDS::ddscxx           
     idl_generated_lib
   >
 )
