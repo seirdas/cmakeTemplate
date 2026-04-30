@@ -53,6 +53,19 @@ ExternalProject_Add(cyclonedds_cpp_binding
 )
 
 # 3. Targets Importados
+
+# El configure necesita que la carpeta exista previamente
+file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include")
+
+# Librerías según plataforma
+if(WIN32)
+    set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddsc.lib")
+    set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddscxx.lib")
+else()
+    set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.a")
+    set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.a")
+endif()
+
 add_library(CycloneDDS::ddsc STATIC IMPORTED GLOBAL)
 set_target_properties(CycloneDDS::ddsc PROPERTIES
     IMPORTED_LOCATION "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddsc.lib"
@@ -91,6 +104,10 @@ if(IDL_FILES)
         )
         list(APPEND IDL_GENERATED_SOURCES "${_out_cpp}")
     endforeach()
+
+    # Asegurar que existe la carpeta para el configure
+    file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include")
+    file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx")
 
     add_library(idl_generated_lib STATIC ${IDL_GENERATED_SOURCES})
 
