@@ -132,7 +132,7 @@ private:
     using TTSTextsMap   = std::unordered_map<std::string, std::string>; // Podría ser un struct con más datos
 
     TTSModelsMap            loaded_models_;         // Mapa de modelos TTS cargados
-    int32_t                 num_threads_;           // Número de hilos con los que se generarán los audios
+    size_t                  num_threads_;           // Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       // Activa/desactiva la inicialización concurrente (experimental)
     std::string const       models_path_;           // Ruta de carpetas donde residen los modelos
     short                   num_available_models_;  // Número de modelos disponibles
