@@ -191,15 +191,27 @@ else()
 endif()
 
 # Omitir warnings de la propia librería
-target_compile_options(sherpa_lib INTERFACE
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
-      -Wno-shadow
-      -Wno-unused-parameter
-      -Wno-sign-compare
-      -Wno-unused-variable
-      -Wunused-but-set-variable
-    >
-)
+if (MSVC)
+    # --- Configuración para MSVC (Visual Studio) ---
+    target_compile_options(sherpa_lib INTERFACE
+        /W0            # Nivel de advertencia 0 (silencio total)
+        /wd4244        # double a float
+        /wd4305        # truncamiento de constantes
+        /wd4267        # size_t a int
+        /external:W0   # (CMake 3.22+) Silencia cabeceras externas
+    )
+else()
+    # --- Configuración para GCC / Clang / MinGW ---
+    target_compile_options(sherpa_lib INTERFACE
+        -w             # Suprime todos los warnings
+        -Wno-conversion
+        -Wno-sign-compare
+        -Wno-unused-parameter
+        -Wno-unused-variable
+        -Wno-unused-but-set-variable
+        -Wno-shadow
+    )
+endif()
 
 
 
