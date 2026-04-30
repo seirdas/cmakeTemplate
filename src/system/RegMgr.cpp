@@ -255,12 +255,12 @@
 		return nullptr;
 	}
 
-	uint32_t RegMgr::queryType(void* hRoot, const std::wstring& path, const std::wstring& clave) {
-		DWORD type = REG_NONE;
-		DWORD size = 0;
-		RegGetValueW(hRoot, path.c_str(), clave.c_str(), RRF_RT_ANY, &type, nullptr, &size);
-		return type;
-	}
+uint32_t RegMgr::queryType(void* hRoot, const std::wstring& path, const std::wstring& clave) {
+    DWORD type = REG_NONE;
+    DWORD size = 0;
+    RegGetValueW(static_cast<HKEY>(hRoot), path.c_str(), clave.c_str(), RRF_RT_ANY, &type, nullptr, &size);
+    return type;
+}
 
 	const char* RegMgr::regTypeName(uint32_t type) {
 		switch (type) {

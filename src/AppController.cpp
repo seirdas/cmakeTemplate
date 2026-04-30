@@ -5,7 +5,7 @@
 
 // General ------------------------------------------------------------------------------
 
-AppController::AppController() : 
+AppController::AppController() :
     gui_(this),
     net_initialized_(false),
     gui_initialized_(false),
@@ -185,5 +185,3 @@ void AppController::TWorker() {
     std::string AppController::getTTSProcessingText(std::string modelName) const noexcept {
         return tts_.getProccesingText(modelName);
     }
-
-    

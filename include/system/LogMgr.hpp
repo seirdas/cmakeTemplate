@@ -52,6 +52,12 @@ public:
      */
     std::string getFilePath() const;
 
+    /**
+     * @brief Devuelve el nombre del archivo
+     * @return Nombre del archivo
+     */
+    std::string getName() const;
+
 private:
 
     /**

@@ -5,7 +5,7 @@
 
 #include <nlohmann/json.hpp>    // Manipula archivos .json
 
-#include "ui/GUIMgr.h"           // Clase de gestión de ventana UI
+#include "ui/GUIMgr.h"          // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
