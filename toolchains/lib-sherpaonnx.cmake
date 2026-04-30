@@ -79,7 +79,6 @@ function(download_sherpa SHERPA_BIN URL)
 
     # Borrar carpeta bin (no se usa)
     set (SHERPA_BIN_DIR "${SHERPA_INSTALL_PATH}/${SHERPA_BIN}/bin")
-    message(STATUS "${SHERPA_BIN_DIR}")
     if(EXISTS "${SHERPA_BIN_DIR}")
         message(STATUS "Deleting ${SHERPA_BIN_DIR} (not used)")
         file(REMOVE_RECURSE "${SHERPA_BIN_DIR}")

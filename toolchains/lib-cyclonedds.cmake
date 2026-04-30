@@ -1,6 +1,6 @@
 # -------------------------------
 # Librería CycloneDDS
-# Target final: CycloneDDS::ddsc
+# Target final: CycloneDDS::ddsc (o ddsc)
 # -------------------------------
 
 include(FetchContent)
@@ -8,25 +8,22 @@ include(FetchContent)
 message(STATUS "Fetching CycloneDDS...")
 
 # =======================
-# Rutas locales
-# =======================
-set(CYCLONE_SRC_DIR "${EXTERNAL_LIB_PATH}/cyclonedds_src")
-
-if(EXISTS "${CYCLONE_SRC_DIR}/.git")
-    message(STATUS "Using local CycloneDDS source at ${CYCLONE_SRC_DIR}")
-    set(FETCHCONTENT_SOURCE_DIR_CYCLONEDDS "${CYCLONE_SRC_DIR}" CACHE PATH "" FORCE)
-endif()
-
-# =======================
 # Opciones de compilación
 # =======================
-set(CYCLONEDDS_INSTALL_COMPONENTS   OFF CACHE INTERNAL "" FORCE)
+
+# Compilación estática
+set(CMAKE_CROSSCOMPILING ON CACHE INTERNAL "" FORCE)
+if(NOT CMAKE_SYSTEM_NAME)
+    set(CMAKE_SYSTEM_NAME ${CMAKE_HOST_SYSTEM_NAME} CACHE INTERNAL "" FORCE)
+endif()
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
+
+set(ENABLE_INSTALL OFF CACHE INTERNAL "" FORCE)
 set(CYCLONEDDS_INSTALL_C_HEADERS    OFF CACHE INTERNAL "")
-set(ENABLE_INSTALL  OFF   CACHE INTERNAL "" FORCE)
 set(BUILD_IDLC      ON   CACHE INTERNAL "")  # ON: necesario para compilar archivos .idl
 set(ENABLE_SSL      OFF  CACHE INTERNAL "")
 set(ENABLE_SHM      OFF  CACHE INTERNAL "")
-set(ENABLE_ICEORYX OFF  CACHE INTERNAL "")
+set(ENABLE_ICEORYX  OFF  CACHE INTERNAL "")
 set(BUILD_EXAMPLES  OFF  CACHE INTERNAL "")
 set(BUILD_TESTING   OFF  CACHE INTERNAL "")
 set(BUILD_DDSPERF   OFF  CACHE INTERNAL "")
@@ -35,6 +32,11 @@ set(ENABLE_SECURITY OFF CACHE INTERNAL "")
 # =======================
 # Descarga
 # =======================
+set(CYCLONE_SRC_DIR "${EXTERNAL_LIB_PATH}/cyclonedds_src")
+if(EXISTS "${CYCLONE_SRC_DIR}/.git")
+    message(STATUS "Using local CycloneDDS source at ${CYCLONE_SRC_DIR}")
+    set(FETCHCONTENT_SOURCE_DIR_CYCLONEDDS "${CYCLONE_SRC_DIR}" CACHE PATH "" FORCE)
+endif()
 FetchContent_Declare(
     cyclonedds
     GIT_REPOSITORY https://github.com/eclipse-cyclonedds/cyclonedds.git
@@ -42,13 +44,26 @@ FetchContent_Declare(
     GIT_SHALLOW    TRUE
     SOURCE_DIR     "${CYCLONE_SRC_DIR}"
     EXCLUDE_FROM_ALL TRUE
-    SYSTEM
 )
-# Evitar que CycloneDDS propague sus warnings a nuestro proyecto
-set(FETCHCONTENT_QUIET ON)
-set(CMAKE_SKIP_INSTALL_RULES TRUE)
+set(CMAKE_SKIP_INSTALL_RULES TRUE) 
 FetchContent_MakeAvailable(cyclonedds)
 set(CMAKE_SKIP_INSTALL_RULES FALSE)
+if(TARGET ddsc)
+    target_include_directories(ddsc PRIVATE 
+        "${CYCLONE_SRC_DIR}/src/core/cdr/include"
+        "${CYCLONE_SRC_DIR}/src/core/include"
+        "${CYCLONE_SRC_DIR}/src/core/ddsi/include"
+        "${CYCLONE_SRC_DIR}/src/core/ddsc/include"
+        "${CYCLONE_SRC_DIR}/src/core/ddsc/src"
+        "${CYCLONE_SRC_DIR}/src/core/ddsi/src"
+        "${CYCLONE_SRC_DIR}/src/ddsrt/include"
+        "${CYCLONE_SRC_DIR}/src/ddsrt/src"
+        "${CYCLONE_SRC_DIR}/src/core/ddsi/include"
+    )
+    target_include_directories(ddsc PRIVATE 
+        ${CMAKE_BINARY_DIR}/_deps/cyclonedds-build/include # <--- ¡IMPORTANTE! Aquí están los generados
+    )
+endif()
 
 # Omitir warnings de la librería
 set(CYCLONE_TARGETS ddsc idlc )
@@ -72,22 +87,18 @@ foreach (tgt ${CYCLONE_TARGETS})
             -Wno-unused-variable
             -Wno-unused-but-set-variable
             -Wno-shadow
+            -Wno-implicit-function-declaration
+            -Wno-int-conversion
         )
     endif()
 endforeach()
 
-if(TARGET ddsc)
-    message(STATUS "target ddsc found.")
-endif()
-if(TARGET CycloneDDS::ddsc)
-    message(STATUS "target CycloneDDS::ddsc found.")
-endif()
-if(NOT TARGET CycloneDDS::ddsc AND NOT TARGET ddsc)
-    message(STATUS "TARGETS CycloneDDS::ddsc AND ddsc NOT FOUND.")
-endif()
-
+# Crear alias de namespace (FetchContent expone targets sin namespace)
 if(TARGET ddsc AND NOT TARGET CycloneDDS::ddsc)
     add_library(CycloneDDS::ddsc ALIAS ddsc)
+endif()
+if(TARGET idlc AND NOT TARGET CycloneDDS::idlc)
+    add_executable(CycloneDDS::idlc ALIAS idlc)
 endif()
 
 
@@ -106,6 +117,7 @@ if(IDL_FILES)
         TARGET idl_generated_lib
         FILES  ${IDL_FILES}
       )
+      add_dependencies(idl_generated_lib idlc)
 
       # Silenciar los warnings de los enums en el código generado (MSVC 2026)
       if(MSVC)

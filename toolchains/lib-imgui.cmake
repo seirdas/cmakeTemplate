@@ -24,7 +24,7 @@ endif()
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/.git")
-  message(STATUS "Using local GLFW source")
+  message(STATUS "Source of 'GLFW' found locally at: '${EXTERNAL_LIB_PATH}/glfw_src'")
   set(FETCHCONTENT_SOURCE_DIR_GLFW
       "${EXTERNAL_LIB_PATH}/glfw_src"
       CACHE PATH "" FORCE)
@@ -52,7 +52,7 @@ message(STATUS "Fetching ImGui library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_src/.git")
-  message(STATUS "Using local ImGui source")
+  message(STATUS "Source of 'ImGui' found locally at: '${EXTERNAL_LIB_PATH}/imgui_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI
       "${EXTERNAL_LIB_PATH}/imgui_src"
       CACHE PATH "" FORCE)
@@ -79,7 +79,7 @@ message(STATUS "Fetching Implot library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/implot_src/.git")
-  message(STATUS "Using local ImPlot source")
+  message(STATUS "Source of 'ImPlot' found locally at: '${EXTERNAL_LIB_PATH}/implot_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMPLOT
       "${EXTERNAL_LIB_PATH}/implot_src"
       CACHE PATH "" FORCE)
@@ -105,7 +105,7 @@ message(STATUS "Fetching ImGui-Knobs library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_knobs_src/README.md")
-  message(STATUS "Using local ImGui-Knobs source")
+  message(STATUS "Source of 'imgui_knobs' found locally at: '${EXTERNAL_LIB_PATH}/imgui_knobs_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI_KNOBS
       "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
       CACHE PATH "" FORCE)
@@ -133,7 +133,7 @@ message(STATUS "Fetching ImSpinner library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imspinner_src/.git")
-  message(STATUS "Using local ImSpinner source")
+  message(STATUS "Source of 'imspinner' found locally at: '${EXTERNAL_LIB_PATH}/imspinner_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMSPINNER
       "${EXTERNAL_LIB_PATH}/imspinner_src"
       CACHE PATH "" FORCE)

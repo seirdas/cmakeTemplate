@@ -25,9 +25,9 @@ set(FASTRTPS_INSTALLER_LOC "${CMAKE_BINARY_DIR}/install" CACHE PATH "" FORCE)   
 # =======================
 # Dependencia: FastCDR
 # =======================
-
+message(STATUS "Fetching fastcdr library...")
 if (EXISTS "${EXTERNAL_LIB_PATH}/fastcdr_src/.git")
-  message(STATUS "Using local fastcdr source")
+  message(STATUS "Library 'fastcdr' found locally at: '${EXTERNAL_LIB_PATH}/fastcdr_src'")
   set(FETCHCONTENT_SOURCE_DIR_FASTCDR
       "${EXTERNAL_LIB_PATH}/fastcdr_src"
       CACHE PATH "" FORCE)
@@ -42,8 +42,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fastcdr)
 
+# =======================
+# Dependencia: foonathan/memory
+# =======================
+message(STATUS "Fetching foonathan/memory library...")
 if (EXISTS "${EXTERNAL_LIB_PATH}/foomemory_src/.git")
-  message(STATUS "Using local foomemory source")
+  message(STATUS "Library 'foonathan/memory' found locally at: '${EXTERNAL_LIB_PATH}/fastcdr_src'")
   set(FETCHCONTENT_SOURCE_DIR_FOOMEMORY
       "${EXTERNAL_LIB_PATH}/foomemory_src"
       CACHE PATH "" FORCE)
@@ -58,8 +62,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(foomemory)
 
+# =======================
+# Core: FastDDS
+# =======================
+message(STATUS "Fetching fastdds library...")
 if (EXISTS "${EXTERNAL_LIB_PATH}/fastdds_src/.git")
-  message(STATUS "Using local foomemory source")
+  message(STATUS "Library 'fastdds' found locally at: '${EXTERNAL_LIB_PATH}/fastdds_src'")
   set(FETCHCONTENT_SOURCE_DIR_FASTDDS
       "${EXTERNAL_LIB_PATH}/fastdds_src"
       CACHE PATH "" FORCE)
