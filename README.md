@@ -111,17 +111,6 @@ pacman -Rs mingw-w64-x86_64-toolchain         # Desinstalar MinGW
 pacman -Rs mingw-w64-clang-x86_64-toolchain   # Desinstalar Clang
 ```
 
-### TL;DR
-
-- Copia y pega este script en un cmd (con permisos de administrador) para descargar las herramientas de compilación mingw por msys [WIP, pendiente de revisar]:
-  
-  ```bash
-  winget install msys2.msys2
-  C:\msys64\msys2.exe -msys -c "pacman -Syu"
-  C:\msys64\msys2.exe -msys -c "pacman -S mingw-w64-x86_64-toolchain"
-  C:\msys64\msys2.exe -msys -c "pacman -S mingw-w64-clang-x86_64-toolchain"
-  ```
-  
 ## Ninja
 
 Por defecto sólo se necesita `Ninja.exe`. El sistema está configurado para tomarlo del mismo proyecto en la carpeta _other/ninja.exe_, pero esta ruta es configurable desde los presets de cmake.
@@ -133,9 +122,27 @@ Se puede personalizar la ruta de Ninja de MinGW y Clang en los presets:
   },
   ```
 
-## Extensiones Visual Studio Code
-- Cmake
-- [ ] TODO
+## Extensiones necesarias de Visual Studio Code
+
+### CMake Tools (Microsoft)
+
+Sirve para configurar, compilar y depurar el proyecto. Al instalarlo, aparecerá un icono más en el panel lateral izquierdo que permite configurar la generación del proyecto y otros parámetros.
+Es impresdindible para este entorno, ya que el proyecto se basa en CMake.
+Los comandos de la extensión CMake Tools para vscode están [aquí](https://github.com/microsoft/vscode-cmake-tools/blob/main/docs/cmake-settings.md)
+
+### C/C++ Dev Tools (Microsoft)
+
+Sirve para que Visual Studio Code reconozca el tipo de compilación de las herramientas de compilación de Visual Studio (MSVC).
+Concretamente, es para que tenga compatibilidad con los tipos `cppvsdbg` y `cppdbg` del `launch.json`
+No es compatible con las instalaciones que no sean vscode de microsoft (vscodium, code - oss, etc...), aunque para ello también hay alternativas.
+
+### CodeLLDB (Vadim Chugunov)
+
+Permite la depuración `lldb`, compatible con las herramientas de compilación `Clang` principalmente, aunque también sirve para las demás.
+
+En resumen, permite depurar con la opción `LLDB (CodeLLDB)`.
+
+
 
 # Generación de proyectos
 
@@ -159,25 +166,3 @@ cmake .. --preset vs2026 # Generar solución para Visual Studio 2026
 cmake .. --preset mingw64 # Generar archivos Makefile para MinGW-w64 de MSYS
 # etc...
 ```
-
-## Generación con Visual Studio IDE
-
-- [ ] TODO
-
-## Generación con VSCode
-
-- [ ] TODO
-
-> Los comandos de la extensión CMake Tools están [aquí](https://github.com/microsoft/vscode-cmake-tools/blob/main/docs/cmake-settings.md)  
-> Desinstalar ucrt:  pacman -Rs mingw-w64-ucrt-x86_64-toolchain  
-
-> # TODO
-> - [ ] README Documentar compatibilidades con Visual Studio, vscode y vscodium
-> - [ ] README: NO AÑADIR ARCHIVOS/CLASES (.cpp, .h) DESDE VISUAL STUDIO DIRECTAMENTE
-> - [ ] README: Documentar compilación en IDE Visual Studio.
-> - [ ] README: Documentar depuración Clang LLDB en vscode con la extensión CodeLLDB.
-> - [ ] Compilación Ninja Multi-Config MingW
-> - [x] ~~Compilación Ninja Multi-config Clang~~
-> - [x] ~~Compilación Clang `pacman -S mingw-w64-clang-x86_64-toolchain`~~
-> - [x] ~~En Mingw al cambiar el main.cpp no funciona bien la recompilación.~~
-> - [x] ~~El nombre de proyecto lo toma directamente del nombre de la carpeta~~
