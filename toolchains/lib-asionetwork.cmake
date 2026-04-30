@@ -8,7 +8,7 @@ include(FetchContent)
 message(STATUS "Fetching asio-network library...")
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.github")
+if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.git")
   message(STATUS "Using local asio source")
   set(FETCHCONTENT_SOURCE_DIR_ASIO_NETWORK
       "${EXTERNAL_LIB_PATH}/asio_src"

@@ -29,7 +29,7 @@ function(fetch_lib LIB URL TAG)
     string(TOUPPER ${LIB} LIB_UP)
     set(SRC_PATH "${EXTERNAL_LIB_PATH}/${LIB_LOW}_src")
     # Usa la librería ya descargada en external/ si existe
-    if (EXISTS "${EXTERNAL_LIB_PATH}/${LIB_LOW}_src/.github")
+    if (EXISTS "${EXTERNAL_LIB_PATH}/${LIB_LOW}_src/.git")
     message(STATUS "Using local ${LIB} source")
     set(FETCHCONTENT_SOURCE_DIR_${LIB_UP}
         ${SRC_PATH}

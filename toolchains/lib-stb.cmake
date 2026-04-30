@@ -8,7 +8,7 @@ include(FetchContent)
 message(STATUS "Fetching stb library...")
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/stb_src/.github")
+if (EXISTS "${EXTERNAL_LIB_PATH}/stb_src/.git")
   message(STATUS "Using local stb source")
   set(FETCHCONTENT_SOURCE_DIR_STB
       "${EXTERNAL_LIB_PATH}/stb_src"

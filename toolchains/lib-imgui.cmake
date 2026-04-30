@@ -23,7 +23,7 @@ if (MSVC)
 endif()
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/.github")
+if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/.git")
   message(STATUS "Using local GLFW source")
   set(FETCHCONTENT_SOURCE_DIR_GLFW
       "${EXTERNAL_LIB_PATH}/glfw_src"
@@ -51,7 +51,7 @@ find_package(OpenGL REQUIRED)   # Necesita librería de OpenGL (GLFW la usa para
 message(STATUS "Fetching ImGui library...")
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_src/.github")
+if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_src/.git")
   message(STATUS "Using local ImGui source")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI
       "${EXTERNAL_LIB_PATH}/imgui_src"
@@ -78,7 +78,7 @@ file(GLOB IMGUI_SOURCES
 message(STATUS "Fetching Implot library...")
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/implot_src/.github")
+if (EXISTS "${EXTERNAL_LIB_PATH}/implot_src/.git")
   message(STATUS "Using local ImPlot source")
   set(FETCHCONTENT_SOURCE_DIR_IMPLOT
       "${EXTERNAL_LIB_PATH}/implot_src"
@@ -132,7 +132,7 @@ file(GLOB IMGUI_KNOBS_SOURCES
 message(STATUS "Fetching ImSpinner library...")
 
 # Usa la librería ya descargada en external/ si existe
-if (EXISTS "${EXTERNAL_LIB_PATH}/imspinner_src/.github")
+if (EXISTS "${EXTERNAL_LIB_PATH}/imspinner_src/.git")
   message(STATUS "Using local ImSpinner source")
   set(FETCHCONTENT_SOURCE_DIR_IMSPINNER
       "${EXTERNAL_LIB_PATH}/imspinner_src"
