@@ -62,29 +62,29 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadi
 # Librería TTS
 option(USE_TTS "Compilar con soporte para TTS" ON)
 if(USE_TTS)
-  include(lib-sherpaonnx)       # Motor de Inferencia ONNX
-  include(tts-assets)           # Assets TTS (Voces)
+  include(audio/lib-sherpaonnx)       # Motor de Inferencia ONNX
+  include(audio/tts-assets)           # Assets TTS (Voces)
   add_definitions(-DUSE_TTS=1) 
 endif()
 
 # Libreria asio network ( incluir ANTES DE windows.h )
 option(USE_ASIO "Compilar con soporte para asio" ON)         # Activar/desactivar librería
 if(USE_ASIO)
-  include(lib-asionetwork)                                   # Ejecuta el archivo toolchains/lib-asionetwork.cmake
+  include(net/lib-asionetwork)                                   # Ejecuta el archivo toolchains/lib-asionetwork.cmake
   add_definitions(-DUSE_ASIO=1)                              # Definición para usar en el código C++
 endif()
 
 # Librería miniaudio
 option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)  # Activar/desactivar librería
 if(USE_MINIAUDIO)
-  include(lib-miniaudio)                                     # Ejecuta el archivo toolchains/lib-miniaudio.cmake
+  include(audio/lib-miniaudio)                                     # Ejecuta el archivo toolchains/lib-miniaudio.cmake
   add_definitions(-DUSE_MINIAUDIO=1)                         # Definición para usar en el código C++
 endif()
 
 # Librería de IMGUI (gráficos, ventanas)
 option(USE_IMGUI "Compilar con soporte para IMGUI" ON)       # Activar/desactivar librería
 if(USE_IMGUI)
-  include(lib-imgui)                                         # Ejecuta el archivo toolchains/lib-imgui.cmake
+  include(gui/lib-imgui)                                         # Ejecuta el archivo toolchains/lib-imgui.cmake
   add_definitions(-DUSE_IMGUI=1)                             # Definición para usar en el código C++
 endif()
 
@@ -98,7 +98,7 @@ endif()
 # Libreria stb
 option(USE_STB "Compilar con soporte para STB" ON)           # Activar/desactivar librería
 if(USE_STB)
-  include(lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
+  include(gui/lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
 endif()
 
@@ -119,7 +119,7 @@ endif()
 # Libreria fastdds
 option(USE_FASTDDS "Compilar con soporte para FASTDDS" OFF)   # Activar/desactivar librería
 if(USE_FASTDDS)
-  include(lib-fastdds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
+  include(net/lib-fastdds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_FASTDDS=1)                           # Definición para usar en el código C++
 endif()
     
@@ -128,7 +128,7 @@ endif()
 # Librería daisySP
 option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
 if(USE_DAISYSP)
-  include(lib-daisysp)                                            # Ejecuta el archivo toolchains/lib-daisysp.cmake
+  include(audio/lib-daisysp)                                            # Ejecuta el archivo toolchains/lib-daisysp.cmake
   add_definitions(-DUSE_DAISYSP=1)                                # Definición para usar en el código C++
 endif()
 
@@ -140,14 +140,14 @@ endif()
 # Herramienta de compilación Ninja (Necesita al menos una configuración correcta previa)
 option(USE_NINJA "Utilizar Ninja" ON)      # Activar/desactivar herramienta
 if(USE_NINJA)
-  include(utils-ninja)                          # Ejecuta el archivo toolchains/utils-ninja.cmake
+  include(tools/utils-ninja)                          # Ejecuta el archivo toolchains/utils-ninja.cmake
   add_definitions(-DUSE_NINJA=1)                # Definición para activar herramienta
 endif()
 
 # Documentación doxygen
 option(USE_DOXYGEN "Utilizar Doxygen" ON)      # Activar/desactivar herramienta
 if(USE_DOXYGEN)
-  include(utils-doxygen)                          # Ejecuta el archivo toolchains/utils-doxygen.cmake
+  include(tools/utils-doxygen)                          # Ejecuta el archivo toolchains/utils-doxygen.cmake
   add_definitions(-DUSE_DOXYGEN=1)                # Definición para activar herramienta
 endif()
 
