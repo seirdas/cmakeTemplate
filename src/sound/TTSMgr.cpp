@@ -117,7 +117,7 @@ std::vector<std::string> TTSMgr::getAvailableModels() {
         return {};
     }
 
-    num_available_models_ = available_models.size();
+    num_available_models_ = static_cast<short>(available_models.size());
     return available_models;
 }
 
@@ -298,7 +298,7 @@ bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
     loaded_models_[st_modelname] = tts_model;
 
     // Actualizar el porcentaje de inicialización
-    num_loaded_models_ = loaded_models_.size();
+    num_loaded_models_ = static_cast<short>(loaded_models_.size());
 
     return true;
 }
