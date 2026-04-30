@@ -17,9 +17,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fastcdr)
 
-# *** FIX: el Config está en la raíz del binary dir, NO en /cmake ***
-set(fastcdr_DIR "${fastcdr_BINARY_DIR}" CACHE PATH "" FORCE)
-list(PREPEND CMAKE_PREFIX_PATH "${fastcdr_BINARY_DIR}")
+# FIX: fastcdrConfig.cmake se genera en tiempo de BUILD, no de CONFIGURE.
+# find_package() interno de FastDDS no lo encuentra en disco todavía.
+# Creamos un config sintético mínimo; el target 'fastcdr' ya está en scope
+# porque FetchContent_MakeAvailable hizo add_subdirectory.
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/cmake/fastcdr")
+file(WRITE "${CMAKE_BINARY_DIR}/cmake/fastcdr/fastcdrConfig.cmake"
+[[
+# fastcdr target already in scope via FetchContent/add_subdirectory
+set(fastcdr_FOUND TRUE)
+set(fastcdr_VERSION "2.2.1")
+]])
+set(fastcdr_DIR "${CMAKE_BINARY_DIR}/cmake/fastcdr" CACHE PATH "" FORCE)
 
 # =======================
 # Dependencia: foonathan_memory
@@ -44,9 +53,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(foonathan_memory)
 
-# *** FIX: exponer foonathan_memory al find_package interno de FastDDS ***
-set(foonathan_memory_DIR "${foonathan_memory_BINARY_DIR}" CACHE PATH "" FORCE)
-list(PREPEND CMAKE_PREFIX_PATH "${foonathan_memory_BINARY_DIR}")
+# Mismo problema que con fastcdr: config generado en build-time
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/cmake/foonathan_memory")
+file(WRITE "${CMAKE_BINARY_DIR}/cmake/foonathan_memory/foonathan_memoryConfig.cmake"
+[[
+# foonathan_memory target already in scope via FetchContent/add_subdirectory
+set(foonathan_memory_FOUND TRUE)
+]])
+set(foonathan_memory_DIR "${CMAKE_BINARY_DIR}/cmake/foonathan_memory" CACHE PATH "" FORCE)
 
 # =======================
 # Opciones de FastDDS (antes del MakeAvailable)
@@ -55,9 +69,9 @@ set(COMPILE_EXAMPLES    OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS   OFF CACHE BOOL "" FORCE)
 set(CHECK_DOCUMENTATION OFF CACHE BOOL "" FORCE)
 set(STRICT_REALTIME     OFF CACHE BOOL "" FORCE)
-# *** FIX: deshabilitar THIRDPARTY para que no intente buscar fastcdr vía git submodule ***
-set(THIRDPARTY          OFF CACHE STRING "" FORCE)
-set(THIRDPARTY_fastcdr  OFF CACHE STRING "" FORCE)
+# Impedir que eprosima_find_package intente git submodule update de fastcdr
+set(THIRDPARTY         OFF CACHE STRING "" FORCE)
+set(THIRDPARTY_fastcdr OFF CACHE STRING "" FORCE)
 
 # =======================
 # Core: FastDDS
