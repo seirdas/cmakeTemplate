@@ -91,8 +91,15 @@ endif()
 # Libreria json
 option(USE_JSON "Compilar con soporte para JSON" ON)
 if(USE_JSON)
-  include(lib-json)                                          # Ejecuta el archivo toolchains/lib-json.cmake
-  add_definitions(-DUSE_JSON=1)                              # Definición para usar en el código C++
+  include(file/lib-json)
+  add_definitions(-DUSE_JSON=1)
+endif()
+
+# Libreria xml
+option(USE_XML "Compilar con soporte para XML" ON)
+if(USE_XML)
+  include(file/lib-xml)
+  add_definitions(-DUSE_XML=1)
 endif()
 
 # Libreria stb
@@ -309,6 +316,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_ASIO}>:asio_lib>               # Librería creada con Asio + Winsock2 (Windows) 
   $<$<BOOL:${USE_IMGUI}>:imgui_lib>             # Librería creada con ImGui + GLFW + OpenGL
   $<$<BOOL:${USE_JSON}>:nlohmann_json>          # Librería creada con nlohmann/json
+  $<$<BOOL:${USE_XML}>:tinyxml2_lib>            # Librería creada con tinyxml
   $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>     # Librería creada con Miniaudio + winmm (Windows)
   $<$<BOOL:${USE_STB}>:stb_lib>                 # Librería creada con STB
   $<$<BOOL:${USE_TTS}>:sherpa_lib>              # Librería creada con motor TTS (Sherpa)
