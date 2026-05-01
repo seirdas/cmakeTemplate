@@ -70,66 +70,66 @@ endif()
 # Libreria asio network ( incluir ANTES DE windows.h )
 option(USE_ASIO "Compilar con soporte para asio" ON)         # Activar/desactivar librería
 if(USE_ASIO)
-  include(net/lib-asionetwork)                                   # Ejecuta el archivo toolchains/lib-asionetwork.cmake
+  include(net/lib-asionetwork)                               # Ejecuta el toolchain
   add_definitions(-DUSE_ASIO=1)                              # Definición para usar en el código C++
 endif()
 
 # Librería miniaudio
-option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)  # Activar/desactivar librería
+option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)
 if(USE_MINIAUDIO)
-  include(audio/lib-miniaudio)                                     # Ejecuta el archivo toolchains/lib-miniaudio.cmake
-  add_definitions(-DUSE_MINIAUDIO=1)                         # Definición para usar en el código C++
+  include(audio/lib-miniaudio)
+  add_definitions(-DUSE_MINIAUDIO=1)
 endif()
 
 # Librería de IMGUI (gráficos, ventanas)
-option(USE_IMGUI "Compilar con soporte para IMGUI" ON)       # Activar/desactivar librería
+option(USE_IMGUI "Compilar con soporte para IMGUI" ON)
 if(USE_IMGUI)
-  include(gui/lib-imgui)                                         # Ejecuta el archivo toolchains/lib-imgui.cmake
-  add_definitions(-DUSE_IMGUI=1)                             # Definición para usar en el código C++
+  include(gui/lib-imgui)
+  add_definitions(-DUSE_IMGUI=1)
 endif()
 
 # Libreria json
-option(USE_JSON "Compilar con soporte para JSON" ON)         # Activar/desactivar librería
+option(USE_JSON "Compilar con soporte para JSON" ON)
 if(USE_JSON)
   include(lib-json)                                          # Ejecuta el archivo toolchains/lib-json.cmake
   add_definitions(-DUSE_JSON=1)                              # Definición para usar en el código C++
 endif()
 
 # Libreria stb
-option(USE_STB "Compilar con soporte para STB" ON)           # Activar/desactivar librería
+option(USE_STB "Compilar con soporte para STB" ON)
 if(USE_STB)
-  include(gui/lib-stb)                                           # Ejecuta el archivo toolchains/lib-json.cmake
-  add_definitions(-DUSE_STB=1)                               # Definición para usar en el código C++
+  include(gui/lib-stb)
+  add_definitions(-DUSE_STB=1)
 endif()
 
 # Libreria cyclonedds (compatible con IDL en C)
-option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" OFF)   # Activar/desactivar librería
+option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" OFF)
 if(USE_CYCLONEDDS)
-  include(lib-cyclonedds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
-  add_definitions(-DUSE_CYCLONEDDS=1)                           # Definición para usar en el código C++
+  include(lib-cyclonedds)
+  add_definitions(-DUSE_CYCLONEDDS=1)
 endif()
 
 # Libreria cyclonedds (compatible con IDL en C++)
-option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" OFF)   # Activar/desactivar librería
+option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" OFF)
 if(USE_CYCLONEDDSCXX)
-  include(lib-cycloneddscxx)                                       # Ejecuta el archivo toolchains/lib-json.cmake
-  add_definitions(-DUSE_CYCLONEDDSCXX=1)                           # Definición para usar en el código C++
+  include(lib-cycloneddscxx)
+  add_definitions(-DUSE_CYCLONEDDSCXX=1)
 endif()
 
 # Libreria fastdds
-option(USE_FASTDDS "Compilar con soporte para FASTDDS" OFF)   # Activar/desactivar librería
+option(USE_FASTDDS "Compilar con soporte para FASTDDS" ON)
 if(USE_FASTDDS)
-  include(net/lib-fastdds)                                       # Ejecuta el archivo toolchains/lib-json.cmake
-  add_definitions(-DUSE_FASTDDS=1)                           # Definición para usar en el código C++
+  include(net/lib-fastdds)
+  add_definitions(-DUSE_FASTDDS=1)
 endif()
     
 # ----------- Librerías no probadas aún:
     
 # Librería daisySP
-option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)      # Activar/desactivar librería
+option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)
 if(USE_DAISYSP)
-  include(audio/lib-daisysp)                                            # Ejecuta el archivo toolchains/lib-daisysp.cmake
-  add_definitions(-DUSE_DAISYSP=1)                                # Definición para usar en el código C++
+  include(audio/lib-daisysp)
+  add_definitions(-DUSE_DAISYSP=1)
 endif()
 
 
