@@ -141,7 +141,7 @@ endif()
 
 FetchContent_Declare(
   imspinner
-  GIT_REPOSITORY https://github.com/dalerank/imspinner.git
+  GIT_REPOSITORY https://github.com/dalerank/imspinner
   GIT_TAG master
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imspinner_src"
   GIT_SHALLOW    TRUE
