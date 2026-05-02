@@ -49,6 +49,5 @@ else()
         -Wno-unused-variable
         -Wno-unused-but-set-variable
         -Wno-shadow
-        -Wno-int-conversion
     )
 endif()
