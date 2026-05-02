@@ -124,10 +124,17 @@ if(USE_CYCLONEDDSCXX)
 endif()
 
 # Libreria fastdds
-option(USE_FASTDDS "Compilar con soporte para FASTDDS" ON)
+option(USE_FASTDDS "Compilar con soporte para FASTDDS" OFF)
 if(USE_FASTDDS)
   include(net/lib-fastdds)
   add_definitions(-DUSE_FASTDDS=1)
+endif()
+
+# Libreria cyclonedds (compatible con IDL en C++)
+option(USE_OPENDDS "Compilar con soporte para OpenDDS" OFF)
+if(USE_OPENDDS)
+  include(net/lib-opendds)
+  add_definitions(-DUSE_OPENDDS=1)
 endif()
     
 # ----------- Librerías no probadas aún:
