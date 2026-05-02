@@ -9,7 +9,7 @@ message(STATUS "Fetching nlohmann/json library...")
 
 # Version de json
 set(JSON_VERSION "v3.12.0")
-set(JSON_INSTALL_DIR "${EXTERNAL_LIB_PATH}/nlohmann_json")
+set(JSON_INSTALL_DIR "${EXTERNAL_LIB_PATH}/json_release")
 
 # Configurar FetchContent
 FetchContent_Declare(

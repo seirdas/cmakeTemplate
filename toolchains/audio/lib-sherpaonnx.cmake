@@ -11,25 +11,25 @@ option(USE_CUDA             "Sherpa con soporte CUDA"           OFF)     # Activ
 if(WIN32)
 
     # Directorio de descarga y libreria objetivo
-    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_win_bin")
+    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_win_release")  # Ojo, este "release" es el del github, no el de la configuración
     file(MAKE_DIRECTORY "${SHERPA_INSTALL_PATH}")
 
     # Nombre de carpeta/zip (aparentemente es igual que el paquete)
-    set(SHERPA_WIN_BIN_DEBUG            "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Debug" )
-    set(SHERPA_WIN_BIN_RELEASE          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Release" )
-    set(SHERPA_WIN_BIN_MINSIZEREL       "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-MinSizeRel" )
-    set(SHERPA_WIN_BIN_RELWITHDEBINFO   "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-RelWithDebInfo" )
+    set(SHERPA_WIN_DEBUG            "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Debug" )
+    set(SHERPA_WIN_RELEASE          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Release" )
+    set(SHERPA_WIN_MINSIZEREL       "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-MinSizeRel" )
+    set(SHERPA_WIN_RELWITHDEBINFO   "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-RelWithDebInfo" )
     # Urls
-    set(SHERPA_WIN_URL_DEBUG          "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_DEBUG}.tar.bz2")
-    set(SHERPA_WIN_URL_RELEASE        "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELEASE}.tar.bz2")
-    set(SHERPA_WIN_URL_MINSIZEREL     "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_MINSIZEREL}.tar.bz2")
-    set(SHERPA_WIN_URL_RELWITHDEBINFO "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELWITHDEBINFO}.tar.bz2")
+    set(SHERPA_WIN_URL_DEBUG          "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_DEBUG}.tar.bz2")
+    set(SHERPA_WIN_URL_RELEASE        "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_RELEASE}.tar.bz2")
+    set(SHERPA_WIN_URL_MINSIZEREL     "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_MINSIZEREL}.tar.bz2")
+    set(SHERPA_WIN_URL_RELWITHDEBINFO "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_RELWITHDEBINFO}.tar.bz2")
     set(SHERPA_CHECK_LIBS 
         sherpa-onnx-c-api.lib
         sherpa-onnx-cxx-api.lib
     )
 else()
-    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_linux_bin")
+    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_linux_release")
     # Nombre de carpeta/zip y paquete a descargar
     set(SHERPA_LINUX_BIN "sherpa-onnx-v${SHERPA_VERSION}-linux-x64-gpu" )
     set(SHERPA_LINUX_URL "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_LINUX_BIN}.tar.bz2")
@@ -119,36 +119,36 @@ if(WIN32)
         message(STATUS "Selected sherpa library limited to CPU compatibility")
 
         # Nombre de carpeta/zip (aparentemente es igual que el paquete)
-        set(SHERPA_WIN_BIN_DEBUG            "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Debug" )
-        set(SHERPA_WIN_BIN_RELEASE          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Release" )
-        set(SHERPA_WIN_BIN_MINSIZEREL       "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-MinSizeRel" )
-        set(SHERPA_WIN_BIN_RELWITHDEBINFO   "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-RelWithDebInfo" )
+        set(SHERPA_WIN_DEBUG            "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Debug" )
+        set(SHERPA_WIN_RELEASE          "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-Release" )
+        set(SHERPA_WIN_MINSIZEREL       "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-MinSizeRel" )
+        set(SHERPA_WIN_RELWITHDEBINFO   "sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-RelWithDebInfo" )
 
         # Urls
-        set(SHERPA_WIN_URL_DEBUG          "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_DEBUG}.tar.bz2")
-        set(SHERPA_WIN_URL_RELEASE        "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELEASE}.tar.bz2")
-        set(SHERPA_WIN_URL_MINSIZEREL     "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_MINSIZEREL}.tar.bz2")
-        set(SHERPA_WIN_URL_RELWITHDEBINFO "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_BIN_RELWITHDEBINFO}.tar.bz2")
+        set(SHERPA_WIN_URL_DEBUG          "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_DEBUG}.tar.bz2")
+        set(SHERPA_WIN_URL_RELEASE        "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_RELEASE}.tar.bz2")
+        set(SHERPA_WIN_URL_MINSIZEREL     "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_MINSIZEREL}.tar.bz2")
+        set(SHERPA_WIN_URL_RELWITHDEBINFO "https://github.com/k2-fsa/sherpa-onnx/releases/download/v${SHERPA_VERSION}/${SHERPA_WIN_RELWITHDEBINFO}.tar.bz2")
 
         # Aprovechamos y descargamos todas las configuraciones
-        download_sherpa(${SHERPA_WIN_BIN_DEBUG}          ${SHERPA_WIN_URL_DEBUG})
-        download_sherpa(${SHERPA_WIN_BIN_RELEASE}        ${SHERPA_WIN_URL_RELEASE})
-        download_sherpa(${SHERPA_WIN_BIN_MINSIZEREL}     ${SHERPA_WIN_URL_MINSIZEREL})
-        download_sherpa(${SHERPA_WIN_BIN_RELWITHDEBINFO} ${SHERPA_WIN_URL_RELWITHDEBINFO})
+        download_sherpa(${SHERPA_WIN_DEBUG}          ${SHERPA_WIN_URL_DEBUG})
+        download_sherpa(${SHERPA_WIN_RELEASE}        ${SHERPA_WIN_URL_RELEASE})
+        download_sherpa(${SHERPA_WIN_MINSIZEREL}     ${SHERPA_WIN_URL_MINSIZEREL})
+        download_sherpa(${SHERPA_WIN_RELWITHDEBINFO} ${SHERPA_WIN_URL_RELWITHDEBINFO})
         
         # Crear la librería de interfaz
         add_library(sherpa_lib INTERFACE)
 
         # Incluir headers (Todos son iguales, cualquier config vale)
-        target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELEASE}/include")
+        target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_RELEASE}/include")
 
         # Link de librerías (se va a elegir la de la configuración correspondiente)
         foreach(LIB_NAME ${SHERPA_CHECK_LIBS})
             target_link_libraries(sherpa_lib INTERFACE 
-                "$<$<CONFIG:Debug>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_DEBUG}/lib/${LIB_NAME}>"
-                "$<$<CONFIG:Release>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELEASE}/lib/${LIB_NAME}>"
-                "$<$<CONFIG:MinSizeRel>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_MINSIZEREL}/lib/${LIB_NAME}>"
-                "$<$<CONFIG:RelWithDebInfo>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_RELWITHDEBINFO}/lib/${LIB_NAME}>"
+                "$<$<CONFIG:Debug>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_DEBUG}/lib/${LIB_NAME}>"
+                "$<$<CONFIG:Release>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_RELEASE}/lib/${LIB_NAME}>"
+                "$<$<CONFIG:MinSizeRel>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_MINSIZEREL}/lib/${LIB_NAME}>"
+                "$<$<CONFIG:RelWithDebInfo>:${SHERPA_INSTALL_PATH}/${SHERPA_WIN_RELWITHDEBINFO}/lib/${LIB_NAME}>"
             )
         endforeach()
         target_link_libraries(sherpa_lib INTERFACE 
@@ -159,7 +159,6 @@ if(WIN32)
 
     
 else()
-    set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_linux_bin")
     file(MAKE_DIRECTORY "${SHERPA_INSTALL_PATH}")
 
     # Nombre de carpeta/zip y paquete a descargar
