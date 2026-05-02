@@ -41,10 +41,12 @@ set(OPENDDS_SRC_DIR         "${EXTERNAL_LIB_PATH}/opendds_src"  CACHE PATH "Fuen
 set(OPENDDS_BUILD_TESTS     OFF                 CACHE BOOL "No compilar tests de OpenDDS"        FORCE)
 set(OPENDDS_BUILD_EXAMPLES  OFF                 CACHE BOOL "No compilar ejemplos de OpenDDS"     FORCE)
 
-if(_opendds_present)
-    set(FETCHCONTENT_SOURCE_DIR_OPENDDS "${OPENDDS_SRC_DIR}" CACHE PATH "" FORCE)
+if (EXISTS "${OPENDDS_SRC_DIR}/.git")
+  message(STATUS "Library 'ace_tao' found locally at: '${ACETAO_SRC_DIR}'")
+  set(FETCHCONTENT_SOURCE_DIR_OPENDDS
+      "${OPENDDS_SRC_DIR}"
+      CACHE PATH "" FORCE)
 endif()
-
 FetchContent_Declare(
     opendds
     GIT_REPOSITORY   "https://github.com/OpenDDS/OpenDDS.git"
