@@ -54,7 +54,6 @@ endif()
 # --- Lógica de limpieza ---
 if(UNIX)
     message(STATUS "Cleaning up Doxygen extra folders...")
-    message(STATUS "DOXYGEN_INSTALL_DIR: " ${DOXYGEN_INSTALL_DIR})
 
     set(TO_REMOVE
         "${DOXYGEN_INSTALL_DIR}/examples"
