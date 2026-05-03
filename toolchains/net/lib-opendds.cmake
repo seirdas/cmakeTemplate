@@ -72,4 +72,56 @@ message(STATUS "[OpenDDS] Binary: ${OPENDDS_BINARY_DIR}")
 set(OPENDDS_IDL_SOURCE_DIR    "${CMAKE_SOURCE_DIR}/IDL")
 set(OPENDDS_IDL_GENERATED_DIR "${CMAKE_SOURCE_DIR}/IDL/generated_opendds")
 
-#todo
+file(GLOB OPENDDS_IDL_FILES "${OPENDDS_IDL_SOURCE_DIR}/*.idl")
+message(STATUS "OPENDDS_IDL_FILES:${OPENDDS_IDL_FILES}")
+
+# Solo si hay archivos IDL, creamos su librería
+if(OPENDDS_IDL_FILES)
+    # 1. Creamos una librería ESTÁTICA para compilar los .cpp generados
+    add_library(mis_mensajes_idl STATIC "") 
+    
+    # 2. La macro hace su magia: genera los .cpp/.hpp y los asigna a 'mis_mensajes_idl'
+    opendds_target_sources(mis_mensajes_idl ${OPENDDS_IDL_FILES})
+
+    # 3. La librería de mensajes necesita de OpenDDS para poder compilarse a sí misma
+    target_link_libraries(mis_mensajes_idl PUBLIC OpenDDS::Dcps)
+    
+    # 4. Exponemos la ruta donde se han generado los .hpp (por defecto CMAKE_CURRENT_BINARY_DIR)
+    # al target, para que quien use 'mis_mensajes_idl' sepa dónde encontrar los headers.
+    target_include_directories(mis_mensajes_idl PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+# Corregir rutas para el generador de código de OpenDDS
+set(ENV{DDS_ROOT} "${OPENDDS_SRC_DIR}")
+set(ENV{ACE_ROOT} "${ACETAO_SRC_DIR}/ACE")
+set(ENV{TAO_ROOT} "${ACETAO_SRC_DIR}/TAO")
+
+# Obligar a CMake a usar rutas absolutas para las plantillas
+set(opendds_idl_templates "${OPENDDS_SRC_DIR}/dds/idl")
+
+
+# -------------------------------
+# Creación de librería
+# -------------------------------
+
+add_library(opendds_lib INTERFACE)
+
+# Agrupamos las carpetas de inclusión
+target_include_directories(opendds_lib INTERFACE 
+    ${OPENDDS_IDL_GENERATED_DIR}  # Donde se generan los .h del IDL
+    ${OPENDDS_SRC_DIR}
+    ${ACETAO_SRC_DIR}
+    ${ACETAO_SRC_DIR}/TAO
+)
+
+# Agrupamos las dependencias core de OpenDDS
+target_link_libraries(opendds_lib INTERFACE 
+    OpenDDS::Dcps
+    OpenDDS::Rtps
+    OpenDDS::Rtps_Udp
+)
+
+# Si se generó la librería de los IDL, la enganchamos al paquete final
+if(OPENDDS_IDL_FILES)
+    target_link_libraries(opendds_lib INTERFACE mis_mensajes_idl)
+endif()
