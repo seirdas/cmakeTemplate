@@ -109,13 +109,6 @@ if(USE_STB)
   add_definitions(-DUSE_STB=1)
 endif()
 
-# Libreria cyclonedds (compatible con IDL en C)
-option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" OFF)
-if(USE_CYCLONEDDS)
-  include(net/lib-cyclonedds)
-  add_definitions(-DUSE_CYCLONEDDS=1)
-endif()
-
 # Libreria cyclonedds (compatible con IDL en C++)
 option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" ON)
 if(USE_CYCLONEDDSCXX)
