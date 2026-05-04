@@ -333,10 +333,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     CycloneDDS::ddsc          
     idl_generated_lib
   >
-  $<$<BOOL:${USE_CYCLONEDDSCXX}>:               # Librerías de Cyclone DDS CXX
-    CycloneDDS::ddscxx           
-    idl_generated_lib
-  >
+  $<$<BOOL:${USE_CYCLONEDDSCXX}>:cycloneddscxx_lib>  # Librerías de Cyclone DDS CXX
 )
 
 # Copiar librerías dinámicas de TTS
