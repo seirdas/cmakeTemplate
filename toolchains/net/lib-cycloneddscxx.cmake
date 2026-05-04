@@ -34,6 +34,11 @@ endif()
 # Core de CycloneDDS
 # ==============================================================================
 
+# Probar esto para descarga persistente:
+#    DOWNLOAD_COMMAND ""   # 👈 clave
+#    UPDATE_COMMAND ""     # opcional
+
+
 # Comprueba previamente si está instalado
 if(EXISTS "${_ddsc_lib}")
     message(STATUS "CycloneDDS core ya instalado en ${CYCLONE_TOTAL_INSTALL_DIR}, saltando build")
@@ -49,7 +54,7 @@ else()
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
-            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_BUILD_TYPE=$<CONFIG>"
             "-DBUILD_IDLC=ON"
             "-DENABLE_ICEORYX=OFF"
             "-DENABLE_SSL=OFF"
@@ -57,8 +62,8 @@ else()
             "-DBUILD_TESTING=OFF"
             "-DBUILD_DDSPERF=OFF"
             ${_generator_args}
-        BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release
-        INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release --target install
+        BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
+        INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target install
     )
 endif()
 
@@ -81,13 +86,13 @@ else()
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
-            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_BUILD_TYPE=$<CONFIG>"
             "-DCMAKE_PREFIX_PATH=${CYCLONE_TOTAL_INSTALL_DIR}"
             "-DBUILD_EXAMPLES=OFF"
             "-DBUILD_TESTING=OFF"
             ${_generator_args}
-        BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release
-        INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release --target install
+        BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
+        INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target install
     )
 endif()
 
@@ -177,6 +182,7 @@ add_library(cycloneddscxx_lib INTERFACE)
 target_link_libraries(cycloneddscxx_lib INTERFACE 
     idl_generated_lib
     CycloneDDS::ddsc
+    CycloneDDS::ddscxx
 )
 
 # Propagamos las rutas de inclusión para que el usuario final pueda hacer 
@@ -192,3 +198,28 @@ target_include_directories(cycloneddscxx_lib INTERFACE
 add_library(CycloneDDS::all ALIAS cycloneddscxx_lib)
 
 message(STATUS "Toolchain: Creado target agrupador 'cycloneddscxx_lib'")
+
+
+# ==============================================================================
+# Función para copiar DLLs al directorio de salida del ejecutable
+# Usar en cmakelists principal después de generar el ejecutable
+# ==========================================================
+function(configure_cyclonedds_dlls)
+    if(WIN32)
+        # Definimos las rutas de las DLLs en la carpeta install
+        set(DLL_LIST 
+            "${CYCLONE_TOTAL_INSTALL_DIR}/bin/ddsc.dll"
+            "${CYCLONE_TOTAL_INSTALL_DIR}/bin/ddscxx.dll"
+        )
+
+        foreach(DLL_PATH ${DLL_LIST})
+            add_custom_command(
+                TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${DLL_PATH}"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+                COMMENT "Copiando ${DLL_PATH} al directorio de salida..."
+            )
+        endforeach()
+    endif()
+endfunction()
