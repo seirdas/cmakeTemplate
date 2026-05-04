@@ -4,7 +4,10 @@
 #include "dds.hpp"
 
 int main(int argc, char** argv) {
-    if (argc > 0) std::filesystem::current_path(std::filesystem::path(argv[0]).parent_path());
+    // Asegurar directorio del exe (para archivos de entorno de desarrollo)
+    auto path = std::filesystem::absolute(argv[0]);
+    if (std::filesystem::exists(path))
+        std::filesystem::current_path(path.parent_path());
 
 
     /* Prueba cyclonedds */
