@@ -52,6 +52,9 @@ else()
         GIT_SHALLOW     TRUE
         SOURCE_DIR      "${CYCLONE_SRC_DIR}"
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
+
+        UPDATE_COMMAND  ""
+        
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
             "-DCMAKE_BUILD_TYPE=$<CONFIG>"
@@ -84,6 +87,9 @@ else()
         GIT_SHALLOW     TRUE
         SOURCE_DIR      "${CYCLONECPP_SRC_DIR}"
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
+
+        UPDATE_COMMAND  ""
+        
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
             "-DCMAKE_BUILD_TYPE=$<CONFIG>"
