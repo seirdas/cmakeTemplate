@@ -4,7 +4,7 @@
 
 
 # ==============================================================================
-# Configuración global
+# Rutas globales
 # ==============================================================================
 
 include(ExternalProject)
@@ -14,20 +14,49 @@ set(CYCLONE_SRC_DIR           "${EXTERNAL_LIB_PATH}/cyclonedds_src")
 set(CYCLONECPP_SRC_DIR        "${EXTERNAL_LIB_PATH}/cycloneddscpp_src")
 set(IDL_GENERATED_DIR         "${CMAKE_SOURCE_DIR}/IDL/cyclone_generated")
 
-# Detectar plataforma
-if(WIN32)
+# Detectar "formato" de librería
+if(WIN32 AND MSVC)
+    # Windows con compilador de Windows MSVC
     set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddsc.lib")
     set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddscxx.lib")
-    set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc.exe")
 else()
+    # MinGW/Clang descargan librerías '.a'
     set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.a")
     set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.a")
+endif()
+
+# Establecer ejecutable de idl generator
+if(WIN32)
+    set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc.exe")
+else()
     set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc")
 endif()
+
+
+# El configure necesita que la carpeta exista previamente
+file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include")
+file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx")
+
+# ==============================================================================
+# Configuración de generadores para ExternalProject_Add (generator_args)
+# ==============================================================================
 
 set(_generator_args -G "${CMAKE_GENERATOR}")
 if(CMAKE_TOOLCHAIN_FILE)
     list(APPEND _generator_args -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
+endif()
+
+if(NOT MSVC)
+    message(STATUS "Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
+    message(STATUS "Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
+
+    list(APPEND _generator_args
+        "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+        "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+        "-DCLANG_PATH=${CLANG_PATH}"   # variable CMake, no de entorno
+        "-DMINGW_PATH=${MINGW_PATH}"   # variable CMake, no de entorno
+    )
 endif()
 
 # ==============================================================================
@@ -65,6 +94,7 @@ else()
             "-DBUILD_TESTING=OFF"
             "-DBUILD_DDSPERF=OFF"
             ${_generator_args}
+
         BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
         INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target install
     )
@@ -96,36 +126,15 @@ else()
             "-DCMAKE_PREFIX_PATH=${CYCLONE_TOTAL_INSTALL_DIR}"
             "-DBUILD_EXAMPLES=OFF"
             "-DBUILD_TESTING=OFF"
+
+            "-DCycloneDDS_DIR=${CYCLONE_TOTAL_INSTALL_DIR}/lib/cmake/CycloneDDS"
+            "-DCMAKE_PREFIX_PATH=${CYCLONE_TOTAL_INSTALL_DIR}"
+            
             ${_generator_args}
         BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
         INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target install
     )
 endif()
-
-
-# ==============================================================================
-# Targets importados (siempre, independientemente de si se compiló ahora o antes)
-# ==============================================================================
-
-# El configure necesita que la carpeta exista previamente
-file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include")
-file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx")
-
-# Crea una librería con cyclonedds
-add_library(CycloneDDS::ddsc STATIC IMPORTED GLOBAL)
-set_target_properties(CycloneDDS::ddsc PROPERTIES
-    IMPORTED_LOCATION "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddsc.lib"
-    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
-)
-add_dependencies(CycloneDDS::ddsc cyclonedds_core)
-
-# Crea una librería con cyclonedds_cxx
-add_library(CycloneDDS::ddscxx STATIC IMPORTED GLOBAL)
-set_target_properties(CycloneDDS::ddscxx PROPERTIES
-    IMPORTED_LOCATION "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddscxx.lib"
-    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
-)
-add_dependencies(CycloneDDS::ddscxx cyclonedds_cpp_binding)
 
 
 # ==============================================================================
@@ -154,11 +163,31 @@ if(IDL_FILES)
         )
         list(APPEND IDL_GENERATED_SOURCES "${_out_cpp}")
     endforeach()
+endif()
 
-    # Asegurar que existe la carpeta para el configure
-    file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include")
-    file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx")
 
+# ==============================================================================
+# Creación de librerías intermedias 
+# ==============================================================================
+
+# Librería de cyclonedds -------------------------------------------------------
+add_library(CycloneDDS::ddsc STATIC IMPORTED GLOBAL)
+set_target_properties(CycloneDDS::ddsc PROPERTIES
+    IMPORTED_LOCATION "${_ddsc_lib}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
+)
+add_dependencies(CycloneDDS::ddsc cyclonedds_core)
+
+# Librería con cyclonedds_cxx --------------------------------------------------
+add_library(CycloneDDS::ddscxx STATIC IMPORTED GLOBAL)
+set_target_properties(CycloneDDS::ddscxx PROPERTIES
+    IMPORTED_LOCATION "${_ddscxx_lib}"
+    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
+)
+add_dependencies(CycloneDDS::ddscxx cyclonedds_cpp_binding)
+
+# Libreria con IDL's -----------------------------------------------------------
+if(IDL_FILES)
     add_library(idl_generated_lib STATIC ${IDL_GENERATED_SOURCES})
 
     # Forzar C++17 para el binding moderno
@@ -177,22 +206,21 @@ endif()
 
 
 # ==============================================================================
-# Interfaz cycloneddscxx con todo
+# Creación de librería global cycloneddscxx_lib con todo
 # ==============================================================================
+
 # Creamos una librería de interfaz
 add_library(cycloneddscxx_lib INTERFACE)
 
-# Enlazamos todas las partes: 
-# 1. idl_generated_lib (que ya trae el código de tus .idl y hereda CycloneDDS::ddscxx)
-# 2. CycloneDDS::ddsc (el core de C, necesario para los símbolos de ddsrt, ddsi, etc.)
+# Enlazamos todas las partes:
 target_link_libraries(cycloneddscxx_lib INTERFACE 
     idl_generated_lib
     CycloneDDS::ddsc
     CycloneDDS::ddscxx
 )
 
-# Propagamos las rutas de inclusión para que el usuario final pueda hacer 
-# #include <dds/dds.hpp> y #include "tu_idl.hpp" sin configurar nada más.
+# Propagación de las rutas de inclusión para poder hacer  
+# #include <dds/dds.hpp> , #include "tu_idl.hpp", etc.
 target_include_directories(cycloneddscxx_lib INTERFACE 
     "${IDL_GENERATED_DIR}"
     "${CYCLONE_TOTAL_INSTALL_DIR}/include"
@@ -209,7 +237,7 @@ message(STATUS "Toolchain: Creado target agrupador 'cycloneddscxx_lib'")
 # ==============================================================================
 # Función para copiar DLLs al directorio de salida del ejecutable
 # Usar en cmakelists principal después de generar el ejecutable
-# ==========================================================
+# ==============================================================================
 function(configure_cyclonedds_dlls)
     if(WIN32)
         # Definimos las rutas de las DLLs en la carpeta install
