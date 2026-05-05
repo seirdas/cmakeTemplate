@@ -16,20 +16,27 @@ set(IDL_GENERATED_DIR         "${CMAKE_SOURCE_DIR}/IDL/cyclone_generated")
 
 # Detectar "formato" de librería
 if(WIN32 AND MSVC)
-    # Windows con compilador de Windows MSVC
-    set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddsc.lib")
-    set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddscxx.lib")
-else()
-    # MinGW/Clang descargan librerías '.a'
-    set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.a")
-    set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.a")
-endif()
 
-# Establecer ejecutable de idl generator
-if(WIN32)
+    # Establecer ejecutable de idl generator
     set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc.exe")
-else()
-    set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc")
+
+    # Establecer librerías Windows (REVISAR)
+    if(MSVC)
+        # Windows con compilador de Windows MSVC
+        set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddsc.lib")
+        set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddscxx.lib")
+    else()
+        # MinGW/Clang descargan librerías '.a'
+        set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.a")
+        set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.a")
+    endif()
+elseif(UNIX)
+        # Establecer ejecutable de idl generator
+        set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc")
+
+        # Establecer librerías Linux
+        set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.so")
+        set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.so")
 endif()
 
 
@@ -57,6 +64,9 @@ if(NOT MSVC)
         "-DCLANG_PATH=${CLANG_PATH}"   # variable CMake, no de entorno
         "-DMINGW_PATH=${MINGW_PATH}"   # variable CMake, no de entorno
     )
+
+    # Silencia la advertencia restrictiva de plantillas en GCC 14/15 (Linux)
+    add_compile_options(-Wno-template-body)
 endif()
 
 # ==============================================================================
@@ -232,6 +242,19 @@ target_include_directories(cycloneddscxx_lib SYSTEM INTERFACE
 
 # Alias para que sea consistente con el uso de namespaces si se desea
 add_library(CycloneDDS::all ALIAS cycloneddscxx_lib)
+
+# Ajustes Linux
+if(UNIX)
+    # Buscar soporte de hilos en el sistema
+  find_package(Threads REQUIRED)
+  
+  # Linkado de dependencias base de Linux
+  target_link_libraries(cycloneddscxx_lib INTERFACE
+    Threads::Threads  # Reemplaza a winpthread de Windows
+    dl                # Necesario para ImGui/OpenGL/Carga dinámica
+    m                 # Librería matemática (Miniaudio, etc.)
+  )
+endif()
 
 message(STATUS "Toolchain: Creado target agrupador 'cycloneddscxx_lib'")
 
