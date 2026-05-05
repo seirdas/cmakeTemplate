@@ -109,17 +109,10 @@ if(USE_STB)
   add_definitions(-DUSE_STB=1)
 endif()
 
-# Libreria cyclonedds (compatible con IDL en C)
-option(USE_CYCLONEDDS "Compilar con soporte para cycloneDDS" OFF)
-if(USE_CYCLONEDDS)
-  include(lib-cyclonedds)
-  add_definitions(-DUSE_CYCLONEDDS=1)
-endif()
-
 # Libreria cyclonedds (compatible con IDL en C++)
-option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" OFF)
+option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" ON)
 if(USE_CYCLONEDDSCXX)
-  include(lib-cycloneddscxx)
+  include(net/lib-cycloneddscxx)
   add_definitions(-DUSE_CYCLONEDDSCXX=1)
 endif()
 
@@ -329,14 +322,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   $<$<BOOL:${USE_TTS}>:sherpa_lib>              # Librería creada con motor TTS (Sherpa)
   $<$<BOOL:${USE_FASTDDS}>:fastdds>             # Librería creada con FastDDS
   $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>         # Librería creada con DaisySP (DSP)
-  $<$<BOOL:${USE_CYCLONEDDS}>:                  # Librerías de Cyclone DDS
-    CycloneDDS::ddsc          
-    idl_generated_lib
-  >
-  $<$<BOOL:${USE_CYCLONEDDSCXX}>:               # Librerías de Cyclone DDS CXX
-    CycloneDDS::ddscxx           
-    idl_generated_lib
-  >
+  $<$<BOOL:${USE_CYCLONEDDSCXX}>:cycloneddscxx_lib>  # Librerías de Cyclone DDS CXX
 )
 
 # Copiar librerías dinámicas de TTS
@@ -344,6 +330,12 @@ if(USE_TTS)
   configure_sherpa_deps()
   link_tts_assets()
 endif()
+
+# Copiar librerías dinámicas de Cyclone DDSCXX
+if(USE_CYCLONEDDSCXX)
+  configure_cyclonedds_dlls()
+endif()
+
 
 # ===============================
 # Configuración post-build

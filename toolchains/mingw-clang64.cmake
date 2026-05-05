@@ -9,8 +9,10 @@ if(NOT WIN32)
   set(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
 
-# Buscar las rutas de Clang y Clang/bin
-set(CLANG_PATH "$ENV{CLANG_PATH}"   CACHE STRING "Clang installation path" FORCE)
+# Buscar las rutas de Clang y Clang/bin, no sobreescribir si ya lo obtuvo
+if(NOT CLANG_PATH)
+  set(CLANG_PATH "$ENV{CLANG_PATH}"   CACHE STRING "Clang installation path" FORCE)
+endif()
 set(CLANG_BIN  "${CLANG_PATH}/bin"  CACHE STRING "Clang binary path"       FORCE)
 
 # Añadir clang al path para poder usar sus dependencias
