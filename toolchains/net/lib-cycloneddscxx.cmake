@@ -25,9 +25,9 @@ else()
     set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc")
 endif()
 
-set(_generator_args "")
+set(_generator_args -G "${CMAKE_GENERATOR}")
 if(CMAKE_TOOLCHAIN_FILE)
-    list(APPEND _generator_args -DCMAKE_TOOLCHAIN_FILE="${CMAKE_TOOLCHAIN_FILE}")
+    list(APPEND _generator_args -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
 endif()
 
 # ==============================================================================

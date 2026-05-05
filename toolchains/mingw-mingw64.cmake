@@ -9,7 +9,10 @@ if(NOT WIN32)
   set(CMAKE_SYSTEM_PROCESSOR x86_64)
 endif()
 
-set(MINGW_PATH "$ENV{MINGW_PATH}" CACHE STRING "MinGW installation path" FORCE)
+# Buscar las rutas de MinGW y MinGW/bin, no sobreescribir si ya lo obtuvo
+if(NOT MINGW_PATH)
+  set(MINGW_PATH "$ENV{MINGW_PATH}" CACHE STRING "MinGW installation path" FORCE)
+endif()
 set(MINGW_BIN "${MINGW_PATH}/bin" CACHE STRING "MinGW binary path" FORCE)
 
 # Añadir mingw al path para poder usar sus dependencias
