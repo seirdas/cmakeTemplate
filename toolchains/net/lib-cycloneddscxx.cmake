@@ -30,6 +30,19 @@ if(CMAKE_TOOLCHAIN_FILE)
     list(APPEND _generator_args -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
 endif()
 
+if(NOT MSVC)
+    message(STATUS "Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
+    message(STATUS "Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
+
+    list(APPEND _generator_args
+        "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+        "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+        "-DCLANG_PATH=${CLANG_PATH}"   # variable CMake, no de entorno
+        "-DMINGW_PATH=${MINGW_PATH}"   # variable CMake, no de entorno
+    )
+endif()
+
 # ==============================================================================
 # Core de CycloneDDS
 # ==============================================================================
