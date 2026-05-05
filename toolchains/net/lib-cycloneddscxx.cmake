@@ -97,6 +97,7 @@ else()
 
         BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
         INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target install
+        BUILD_BYPRODUCTS "${_ddsc_lib}" "${_idlc_exe}"
     )
 endif()
 
@@ -133,6 +134,7 @@ else()
             ${_generator_args}
         BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
         INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target install
+        BUILD_BYPRODUCTS "${_ddscxx_lib}"
     )
 endif()
 
@@ -221,7 +223,7 @@ target_link_libraries(cycloneddscxx_lib INTERFACE
 
 # Propagación de las rutas de inclusión para poder hacer  
 # #include <dds/dds.hpp> , #include "tu_idl.hpp", etc.
-target_include_directories(cycloneddscxx_lib INTERFACE 
+target_include_directories(cycloneddscxx_lib SYSTEM INTERFACE 
     "${IDL_GENERATED_DIR}"
     "${CYCLONE_TOTAL_INSTALL_DIR}/include"
     "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx"
