@@ -121,10 +121,7 @@
             "name": "linux-base",
             "description": "Base para Linux",
             "hidden": true,
-            "binaryDir": "${sourceDir}/_build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-            }
+            "binaryDir": "${sourceDir}/_build/${presetName}"
         },
         {
             "name": "linux-gcc-debug",
