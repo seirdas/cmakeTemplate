@@ -227,7 +227,6 @@ add_library(cycloneddscxx_lib INTERFACE)
 # Enlazamos todas las partes:
 target_link_libraries(cycloneddscxx_lib INTERFACE 
     idl_generated_lib
-    CycloneDDS::ddsc
     CycloneDDS::ddscxx
 )
 
@@ -237,7 +236,6 @@ target_include_directories(cycloneddscxx_lib SYSTEM INTERFACE
     "${IDL_GENERATED_DIR}"
     "${CYCLONE_TOTAL_INSTALL_DIR}/include"
     "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx"
-    "${CYCLONE_TOTAL_INSTALL_DIR}/include/dds"
 )
 
 # Alias para que sea consistente con el uso de namespaces si se desea
