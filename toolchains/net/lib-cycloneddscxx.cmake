@@ -66,7 +66,10 @@ if(NOT MSVC)
     )
 
     # Silencia la advertencia restrictiva de plantillas en GCC 14/15 (Linux)
-    add_compile_options(-Wno-template-body)
+    add_compile_options(
+        -Wno-template-body
+        -Wno-enum-enum-conversion
+    )
 endif()
 
 # ==============================================================================
@@ -268,15 +271,26 @@ function(configure_cyclonedds_dlls)
             "${CYCLONE_TOTAL_INSTALL_DIR}/bin/ddsc.dll"
             "${CYCLONE_TOTAL_INSTALL_DIR}/bin/ddscxx.dll"
         )
-
-        foreach(DLL_PATH ${DLL_LIST})
-            add_custom_command(
-                TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${DLL_PATH}"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMENT "Copiando ${DLL_PATH} al directorio de salida..."
-            )
-        endforeach()
+    elseif(UNIX)
+        set(DLL_LIST 
+            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.so.11"
+            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.so.11"
+        )
     endif()
+
+    foreach(DLL_PATH ${DLL_LIST})
+        add_custom_command(
+            TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${DLL_PATH}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMENT "Copiando ${DLL_PATH} al directorio de salida..."
+        )
+    endforeach()
+
+    if (UNIX)
+        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+        set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+    endif()
+
 endfunction()
