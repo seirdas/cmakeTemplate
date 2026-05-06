@@ -231,6 +231,7 @@ add_library(cycloneddscxx_lib INTERFACE)
 target_link_libraries(cycloneddscxx_lib INTERFACE 
     idl_generated_lib
     CycloneDDS::ddscxx
+    CycloneDDS::ddsc
 )
 
 # Propagación de las rutas de inclusión para poder hacer  
