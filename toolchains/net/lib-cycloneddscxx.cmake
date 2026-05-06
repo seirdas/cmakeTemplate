@@ -65,6 +65,18 @@ if(NOT MSVC)
         "-DMINGW_PATH=${MINGW_PATH}"   # variable CMake, no de entorno
     )
 
+    # ------------------------------------------------------------------
+    # FIX: Forzar a CycloneDDS a compilar sin UNICODE en MinGW 
+    # para evitar el conflicto con FindFirstFileW vs FindFirstFileA
+    # ------------------------------------------------------------------
+    if(MINGW)
+        message(STATUS "MinGW detectado: Forzando -UUNICODE en el core de CycloneDDS")
+        list(APPEND _generator_args
+            "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -UUNICODE -U_UNICODE"
+            "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -UUNICODE -U_UNICODE"
+        )
+    endif()
+
     # Silencia la advertencia restrictiva de plantillas en GCC 14/15 (Linux)
     add_compile_options(
         -Wno-template-body
