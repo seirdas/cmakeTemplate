@@ -119,7 +119,7 @@ if(USE_STB)
 endif()
 
 # Libreria cyclonedds (compatible con IDL en C++)
-option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" ON)
+option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" OFF)
 if(USE_CYCLONEDDSCXX)
   include(net/lib-cycloneddscxx)
   add_definitions(-DUSE_CYCLONEDDSCXX=1)
@@ -352,6 +352,10 @@ endif()
 
 # Copia todo el contenido de la carpeta 'dependencies' a la carpeta del binario
 set(DEPS_DIR "dependencies")
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND @echo Copying files in ${DEPS_DIR} folder...
+)
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   "${CMAKE_CURRENT_SOURCE_DIR}/${DEPS_DIR}/"

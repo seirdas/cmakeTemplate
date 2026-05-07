@@ -130,7 +130,7 @@ function(download_sherpa SHERPA_BIN URL)
         message(STATUS "Deleting ${SHERPA_BIN_DIR} (not used)")
         file(REMOVE_RECURSE "${SHERPA_BIN_DIR}")
     endif()
-    
+
 endfunction()
 
 
@@ -276,6 +276,7 @@ function(configure_sherpa_deps)
             set(SRC_PATH "${SHERPA_LIB_PATH}/${DLL_NAME}")
             file(TO_NATIVE_PATH "${SRC_PATH}" SRC_PATH)
 
+            # Log en build de lo que va a hacer...
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND @echo ${SRC_PATH} ----- $<TARGET_FILE_DIR:${PROJECT_NAME}>
             )
