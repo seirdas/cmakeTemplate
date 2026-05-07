@@ -24,9 +24,11 @@ endif()
 # set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
 # Identificar arquitectura de compilación
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+    message(STATUS "Targeting 64-bit architecture.")
     set(ARCH_NAME "x64")
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)     
+elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
+    message(STATUS "Targeting 32-bit architecture.")
     set(ARCH_NAME "x86")
 endif()
 
@@ -354,7 +356,6 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   "${CMAKE_CURRENT_SOURCE_DIR}/${DEPS_DIR}/"
   "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-  COMMENT "Copying files in ${DEPS_DIR} folder..."
 )
 
 # Configurar carpetas de salida del ejecutable y librerías

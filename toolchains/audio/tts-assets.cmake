@@ -130,7 +130,6 @@ function(link_tts_assets)
             
             # Se ejecuta junction (unión)
             COMMAND cmd /c if not exist "${VOICES_DIR}" mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
-            COMMENT "Linking TTS assets..."
         )
     elseif(UNIX)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
