@@ -23,6 +23,13 @@ endif()
 # set(CMAKE_SYSTEM_NAME Windows)
 # set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
+# Identificar arquitectura de compilación
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(ARCH_NAME "x64")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)     
+    set(ARCH_NAME "x86")
+endif()
+
 # Establecer estándar C++
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -352,9 +359,9 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Configurar carpetas de salida del ejecutable y librerías
 set_target_properties(${PROJECT_NAME} PROPERTIES 
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
 
 # Generar Doxygen
