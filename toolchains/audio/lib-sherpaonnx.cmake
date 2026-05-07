@@ -247,24 +247,31 @@ function(configure_sherpa_deps)
     # Copiar DLLs necesarias
     if(WIN32)
 
-        # Obtener ruta de librería según CPU / GPU
-        if (USE_SHERPA_WIN_GPU AND CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-            set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib")
-        else()
-            set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/sherpa-onnx-v${SHERPA_VERSION}-win-x64-shared-MD-$<CONFIG>/lib")
-        endif()
-
         # Lista de DLLs
         set(DLL_LIST 
             "sherpa-onnx-c-api.dll" 
             "sherpa-onnx-cxx-api.dll" 
             "onnxruntime.dll" 
             "onnxruntime_providers_shared.dll" 
-            "onnxruntime_providers_tensorrt.dll"
         )
+
+        # Obtener ruta de librería según CPU / GPU
+        if (USE_SHERPA_WIN_GPU AND CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+            set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib")
+
+            # Añadir las dlls de GPU
+            list(APPEND DLL_LIST 
+                "onnxruntime_providers_cuda.dll"
+                "onnxruntime_providers_tensorrt.dll"
+            )
+        else()
+            set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/sherpa-onnx-v${SHERPA_VERSION}-win-${ARCH_NAME}-shared-MD-$<CONFIG>/lib")
+        endif()
+
+
         # Añadir dll de cuda si está activado
         if (USE_SHERPA_WIN_GPU AND USE_CUDA)
-            list(APPEND DLL_LIST "onnxruntime_providers_cuda.dll")
+            
         endif()
 
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
