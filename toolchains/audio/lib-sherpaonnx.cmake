@@ -1,5 +1,5 @@
 include(FetchContent)
-message(STATUS "Fetching sherpa onnx tts...")
+message(STATUS "[Sherpa] Fetching sherpa onnx tts...")
 cmake_policy(SET CMP0135 NEW)
 
 # ----------------------------------------------------------------------------
@@ -105,13 +105,13 @@ function(download_sherpa SHERPA_BIN URL)
     endforeach()
 
     if (ALL_LIBS_EXIST)
-        message(STATUS "Sherpa-ONNX ${SHERPA_BIN}: All libs found locally.")
+        message(STATUS "[Sherpa] Sherpa-ONNX ${SHERPA_BIN}: All libs found locally.")
     else()
-        message(STATUS "Sherpa-ONNX ${SHERPA_BIN} missing components. Downloading...")
+        message(STATUS "[Sherpa] Sherpa-ONNX ${SHERPA_BIN} missing components. Downloading...")
         # Descarga y descomprimir
         set(TEMP_ARCHIVE "${CMAKE_CURRENT_SOURCE_DIR}/${SHERPA_BIN}.tar.bz2")
         file(DOWNLOAD "${URL}" "${TEMP_ARCHIVE}" SHOW_PROGRESS)
-        message(STATUS "Extracting ${TEMP_ARCHIVE}...")
+        message(STATUS "[Sherpa] Extracting ${TEMP_ARCHIVE}...")
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E tar xf "${TEMP_ARCHIVE}"
             WORKING_DIRECTORY "${SHERPA_INSTALL_PATH}"
@@ -127,7 +127,7 @@ function(download_sherpa SHERPA_BIN URL)
     # Borrar carpeta bin (no se usa)
     set (SHERPA_BIN_DIR "${SHERPA_INSTALL_PATH}/${SHERPA_BIN}/bin")
     if(EXISTS "${SHERPA_BIN_DIR}")
-        message(STATUS "Deleting ${SHERPA_BIN_DIR} (not used)")
+        message(STATUS "[Sherpa] Deleting ${SHERPA_BIN_DIR} (not used)")
         file(REMOVE_RECURSE "${SHERPA_BIN_DIR}")
     endif()
 
@@ -160,7 +160,7 @@ if(WIN32)
         )
 
     else()
-        message(STATUS "Selected sherpa library limited to CPU compatibility")
+        message(STATUS "[Sherpa] Selected sherpa library limited to CPU compatibility")
 
         # Aprovechamos y descargamos todas las configuraciones
         download_sherpa(${SHERPA_WIN_DEBUG}          ${SHERPA_WIN_URL_DEBUG})
