@@ -2,14 +2,14 @@
 # Librería de Miniaudio (Audio)
 # -------------------------------
 
-message(STATUS "Fetching Miniaudio library...")
+message(STATUS "[miniaudio] Fetching Miniaudio library...")
 set(MA_ENABLE_VORBIS  OFF CACHE BOOL "" FORCE)  # No construir soporte para Vorbis
 set(MA_ENABLE_OPUS    OFF CACHE BOOL "" FORCE)  # No construir soporte para Opus
 set(MA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)  # No construir ejemplos
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/miniaudio_src/.git")
-  message(STATUS "Source of 'miniaudio' found locally at '${EXTERNAL_LIB_PATH}/miniaudio_src'")
+  message(STATUS "[miniaudio] Source of 'miniaudio' found locally at '${EXTERNAL_LIB_PATH}/miniaudio_src'")
   set(FETCHCONTENT_SOURCE_DIR_MINIAUDIO
       "${EXTERNAL_LIB_PATH}/miniaudio_src"
       CACHE PATH "" FORCE)

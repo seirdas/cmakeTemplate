@@ -5,11 +5,11 @@
 
 include(FetchContent)
 
-message(STATUS "Fetching tinyxml2 library...")
+message(STATUS "[tinyxml2] Fetching tinyxml2 library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/tinyxml2_src/.git")
-  message(STATUS "Library 'tinyxml2' found locally at: '${EXTERNAL_LIB_PATH}/tinyxml2_src'")
+  message(STATUS "[tinyxml2] Library 'tinyxml2' found locally at: '${EXTERNAL_LIB_PATH}/tinyxml2_src'")
   set(FETCHCONTENT_SOURCE_DIR_TINYXML2
       "${EXTERNAL_LIB_PATH}/tinyxml2_src"
       CACHE PATH "" FORCE)

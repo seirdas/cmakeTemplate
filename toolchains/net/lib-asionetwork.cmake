@@ -5,11 +5,11 @@
 
 include(FetchContent)
 
-message(STATUS "Fetching asio-network library...")
+message(STATUS "[asio] Fetching asio-network library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.git")
-  message(STATUS "Library 'asio-network' found locally at: '${EXTERNAL_LIB_PATH}/asio_src'")
+  message(STATUS "[asio] Library 'asio-network' found locally at: '${EXTERNAL_LIB_PATH}/asio_src'")
   set(FETCHCONTENT_SOURCE_DIR_ASIO_NETWORK
       "${EXTERNAL_LIB_PATH}/asio_src"
       CACHE PATH "" FORCE)

@@ -28,7 +28,7 @@ function(download_voice NAME URL)
 
     # Si ya existe el modelo, no hacer nada
     if(EXISTS "${MODEL_DIR}")
-        message(STATUS "Using local TTS Model: ${NAME}...")
+        message(STATUS "[Sherpa] Using local TTS Model: ${NAME}...")
 
         # Borrar archivo comprimido si existe
         if(EXISTS "${ARCHIVE_PATH}")
@@ -38,7 +38,7 @@ function(download_voice NAME URL)
         return()
     endif()
 
-    message(STATUS "Downloading TTS Model: ${NAME}...")
+    message(STATUS "[Sherpa] Downloading TTS Model: ${NAME}...")
 
     # Asegurar carpeta base
     file(MAKE_DIRECTORY "${DOWNLOAD_TTS_ASSETS_DIR}")
@@ -50,7 +50,7 @@ function(download_voice NAME URL)
         SHOW_PROGRESS
     )
     # Extraer archivo (tar.bz2 compatible)
-    message(STATUS "Extracting ${NAME}...")
+    message(STATUS "[Sherpa] Extracting ${NAME}...")
     file(MAKE_DIRECTORY "${MODEL_DIR}")
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E tar xvf "${ARCHIVE_PATH}"
@@ -66,7 +66,7 @@ function(download_voice NAME URL)
         file(REMOVE "${ARCHIVE_PATH}")
     endif()
 
-    message(STATUS "TTS Model ${NAME} extracted in ${ARCHIVE_PATH}")
+    message(STATUS "[Sherpa] TTS Model ${NAME} extracted in ${ARCHIVE_PATH}")
 endfunction()
 
 # Añadir aquí las descarga de voces para Sherpa:

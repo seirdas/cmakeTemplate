@@ -20,9 +20,9 @@ set(DOXYGEN_TEMP_ARCHIVE "${CMAKE_CURRENT_SOURCE_DIR}/doxygen.zip") # Ruta tempo
 
 # Comprobar si ya existe
 if (EXISTS "${DOXYGEN_BIN}")
-    message(STATUS "Doxygen found locally at: ${DOXYGEN_BIN}")
+    message(STATUS "[Doxygen] Doxygen found locally at: ${DOXYGEN_BIN}")
 else()
-    message(STATUS "Doxygen not found. Downloading from ${DOXYGEN_URL}...")
+    message(STATUS "[Doxygen] Doxygen not found. Downloading from ${DOXYGEN_URL}...")
 
     # Crear directorio
     file(MAKE_DIRECTORY "${DOXYGEN_INSTALL_DIR}") 
@@ -34,7 +34,7 @@ else()
     )
 
     # Extraer el archivo
-    message(STATUS "Extracting Doxygen...")
+    message(STATUS "[Doxygen] Extracting Doxygen...")
     file(ARCHIVE_EXTRACT
         INPUT "${DOXYGEN_TEMP_ARCHIVE}"
         DESTINATION "${DOXYGEN_INSTALL_DIR}"
@@ -53,7 +53,7 @@ endif()
 
 # --- Lógica de limpieza ---
 if(UNIX)
-    message(STATUS "Cleaning up Doxygen extra folders...")
+    message(STATUS "[Doxygen] Cleaning up Doxygen extra folders...")
 
     set(TO_REMOVE
         "${DOXYGEN_INSTALL_DIR}/examples"

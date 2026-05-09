@@ -19,9 +19,9 @@ set(NINJA_ZIP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ninja_${NINJA_OS_SUFFIX}.zip") #
 
 # Comprobar si ya existe para no descargar
 if (EXISTS "${NINJA_INSTALL_DIR}/${NINJA_BIN}")
-    message(STATUS "Ninja found locally at: ${NINJA_INSTALL_DIR}")
+    message(STATUS "[Ninja] Ninja found locally at: ${NINJA_INSTALL_DIR}")
 else()
-    message(STATUS "${NINJA_BIN} not found. Downloading...")
+    message(STATUS "[Ninja] ${NINJA_BIN} not found. Downloading...")
 
     # Crear directorio
     file(MAKE_DIRECTORY "${NINJA_INSTALL_DIR}") 
@@ -32,13 +32,13 @@ else()
         STATUS DOWNLOAD_STATUS
     )
     # Extraer el archivo
-    message(STATUS "Extracting...")
+    message(STATUS "[Ninja] Extracting...")
     file(ARCHIVE_EXTRACT
         INPUT "${NINJA_ZIP_PATH}"
         DESTINATION "${NINJA_INSTALL_DIR}"
     )
 
-    message(STATUS "NINJA_ZIP_PATH: " ${NINJA_ZIP_PATH})
+    message(STATUS "[Ninja] NINJA_ZIP_PATH: " ${NINJA_ZIP_PATH})
     # Borrar el ZIP descargado
     file(REMOVE "${NINJA_ZIP_PATH}")
 
@@ -50,7 +50,7 @@ endif()
 
 # Asegurar permisos de ejecución en linux
 if(UNIX AND EXISTS "${NINJA_INSTALL_DIR}/${NINJA_BIN}")
-    message(STATUS "Setting execution permissions for Ninja...")
+    message(STATUS "[Ninja] Setting execution permissions for Ninja...")
     execute_process(COMMAND chmod +x "${NINJA_INSTALL_DIR}/ninja")
 endif()
 

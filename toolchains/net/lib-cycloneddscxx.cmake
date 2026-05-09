@@ -54,8 +54,8 @@ if(CMAKE_TOOLCHAIN_FILE)
 endif()
 
 if(NOT MSVC)
-    message(STATUS "Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
-    message(STATUS "Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
+    message(STATUS "[Cyclone] Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
+    message(STATUS "[Cyclone] Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
 
     list(APPEND _generator_args
         "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
@@ -70,7 +70,7 @@ if(NOT MSVC)
     # para evitar el conflicto con FindFirstFileW vs FindFirstFileA
     # ------------------------------------------------------------------
     if(MINGW)
-        message(STATUS "MinGW detectado: Forzando -UUNICODE en el core de CycloneDDS")
+        message(STATUS "[Cyclone] MinGW detectado: Forzando -UUNICODE en el core de CycloneDDS")
         list(APPEND _generator_args
             "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -UUNICODE -U_UNICODE"
             "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -UUNICODE -U_UNICODE"
@@ -95,10 +95,10 @@ endif()
 
 # Comprueba previamente si está instalado
 if(EXISTS "${_ddsc_lib}")
-    message(STATUS "CycloneDDS core ya instalado en ${CYCLONE_TOTAL_INSTALL_DIR}, saltando build")
+    message(STATUS "[Cyclone] Library 'cyclonedds' found locally at: '${CYCLONE_TOTAL_INSTALL_DIR}'")
     add_custom_target(cyclonedds_core)
 else()
-    message(STATUS "CycloneDDS core no encontrado, se compilará en el primer build")
+    message(STATUS "[Cyclone] CycloneDDS core not found, it will be built at first build.")
 
     ExternalProject_Add(cyclonedds_core
         GIT_REPOSITORY  https://github.com/eclipse-cyclonedds/cyclonedds.git
@@ -134,9 +134,10 @@ endif()
 
 # Comprueba previamente si está instalado
 if(EXISTS "${_ddscxx_lib}")
-    message(STATUS "CycloneDDS C++ binding ya instalado, saltando build")
+    message(STATUS "[Cyclone] Library 'cyclonedds c++ binding' found locally at: '${CYCLONE_TOTAL_INSTALL_DIR}'")
     add_custom_target(cyclonedds_cpp_binding)
 else()
+    message(STATUS "[Cyclone] CycloneDDS C++ binding not found, it will be built at first build.")
     ExternalProject_Add(cyclonedds_cpp_binding
         DEPENDS         cyclonedds_core
         GIT_REPOSITORY  https://github.com/eclipse-cyclonedds/cyclonedds-cxx.git
@@ -272,7 +273,7 @@ if(UNIX)
   )
 endif()
 
-message(STATUS "Toolchain: Creado target agrupador 'cycloneddscxx_lib'")
+message(STATUS "[Cyclone] Cyclone: All targets grouped into 'cycloneddscxx_lib'")
 
 
 # ==============================================================================

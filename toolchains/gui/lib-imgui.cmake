@@ -13,7 +13,7 @@ if(LINUX)
 endif()
 
 # GLFW (Ventanas) ___________________________
-message(STATUS "Fetching GLFW library...")
+message(STATUS "[ImGui] Fetching GLFW library...")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # No construir ejemplos
 set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)    # No construir tests
 set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)    # No construir documentación
@@ -24,7 +24,7 @@ endif()
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/.git")
-  message(STATUS "Source of 'GLFW' found locally at: '${EXTERNAL_LIB_PATH}/glfw_src'")
+  message(STATUS "[ImGui] Source of 'GLFW' found locally at: '${EXTERNAL_LIB_PATH}/glfw_src'")
   set(FETCHCONTENT_SOURCE_DIR_GLFW
       "${EXTERNAL_LIB_PATH}/glfw_src"
       CACHE PATH "" FORCE)
@@ -48,11 +48,11 @@ find_package(OpenGL REQUIRED)   # Necesita librería de OpenGL (GLFW la usa para
 
 
 # IMGUI (Interfaz) ___________________________
-message(STATUS "Fetching ImGui library...")
+message(STATUS "[ImGui] Fetching ImGui library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_src/.git")
-  message(STATUS "Source of 'ImGui' found locally at: '${EXTERNAL_LIB_PATH}/imgui_src'")
+  message(STATUS "[ImGui] Source of 'ImGui' found locally at: '${EXTERNAL_LIB_PATH}/imgui_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI
       "${EXTERNAL_LIB_PATH}/imgui_src"
       CACHE PATH "" FORCE)
@@ -75,11 +75,11 @@ file(GLOB IMGUI_SOURCES
 )
 
 # IMPLOT (Gráficos) ___________________________
-message(STATUS "Fetching Implot library...")
+message(STATUS "[ImGui] Fetching Implot library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/implot_src/.git")
-  message(STATUS "Source of 'ImPlot' found locally at: '${EXTERNAL_LIB_PATH}/implot_src'")
+  message(STATUS "[ImGui] Source of 'ImPlot' found locally at: '${EXTERNAL_LIB_PATH}/implot_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMPLOT
       "${EXTERNAL_LIB_PATH}/implot_src"
       CACHE PATH "" FORCE)
@@ -101,11 +101,11 @@ file(GLOB IMPLOT_SOURCES
 )
 
 # IMGUI-KNOBS (Controles circulares) ___________________________
-message(STATUS "Fetching ImGui-Knobs library...")
+message(STATUS "[ImGui] Fetching ImGui-Knobs library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_knobs_src/README.md")
-  message(STATUS "Source of 'imgui_knobs' found locally at: '${EXTERNAL_LIB_PATH}/imgui_knobs_src'")
+  message(STATUS "[ImGui] Source of 'imgui_knobs' found locally at: '${EXTERNAL_LIB_PATH}/imgui_knobs_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI_KNOBS
       "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
       CACHE PATH "" FORCE)
@@ -129,11 +129,11 @@ file(GLOB IMGUI_KNOBS_SOURCES
 )
 
 # IMSPINNER (Indicadores de carga) ___________________________
-message(STATUS "Fetching ImSpinner library...")
+message(STATUS "[ImGui] Fetching ImSpinner library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imspinner_src/.git")
-  message(STATUS "Source of 'imspinner' found locally at: '${EXTERNAL_LIB_PATH}/imspinner_src'")
+  message(STATUS "[ImGui] Source of 'imspinner' found locally at: '${EXTERNAL_LIB_PATH}/imspinner_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMSPINNER
       "${EXTERNAL_LIB_PATH}/imspinner_src"
       CACHE PATH "" FORCE)
