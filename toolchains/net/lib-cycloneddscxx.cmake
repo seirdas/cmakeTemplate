@@ -292,16 +292,24 @@ function(configure_cyclonedds_dlls)
             "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.so.11"
         )
     endif()
-
-    foreach(DLL_PATH ${DLL_LIST})
-        add_custom_command(
-            TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${DLL_PATH}"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMENT "Copiando ${DLL_PATH} al directorio de salida..."
+    
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND @echo ---- Linking Cyclone dlls to output folder...
         )
-    endforeach()
+
+        foreach(DLL_PATH ${DLL_LIST})
+            # Log en build de lo que va a hacer...
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND @echo ${DLL_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>
+            )
+
+            add_custom_command(
+                TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${DLL_PATH}"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            )
+        endforeach()
 
     if (UNIX)
         set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")

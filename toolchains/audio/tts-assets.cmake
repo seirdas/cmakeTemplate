@@ -122,7 +122,7 @@ function(link_tts_assets)
 
     if(WIN32)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND @echo Linking tts-assets to output folder...
+            COMMAND @echo ---- Linking tts-assets to output folder...
             COMMAND @echo ${SRC_NATIVE} --- "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
         )
 
