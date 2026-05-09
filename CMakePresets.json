@@ -124,6 +124,17 @@
             "binaryDir": "${sourceDir}/_build/${presetName}"
         },
         {
+            "name": "linux-x86-base",
+            "description": "Base para Linux x86 (32 bits)",
+            "hidden": true,
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_C_FLAGS": "-m32",
+                "CMAKE_CXX_FLAGS": "-m32",
+                "CMAKE_EXE_LINKER_FLAGS": "-m32"
+            }
+        },
+        {
             "name": "linux-gcc-debug",
             "displayName": "🐧 Linux GCC Debug",
             "description": "Compilación Linux con GCC/G++ en Debug.",
@@ -140,6 +151,30 @@
             "displayName": "🐧 Linux GCC Release",
             "description": "Compilación Linux con GCC/G++ en Release.",
             "inherits": "linux-base",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "linux-gcc-x86-debug",
+            "displayName": "🐧 Linux GCC Debug (x86)",
+            "description": "Compilación Linux x86 con GCC en Debug.",
+            "inherits": "linux-x86-base",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "linux-gcc-x86-release",
+            "displayName": "🐧 Linux GCC Release (x86)",
+            "description": "Compilación Linux x86 con GCC en Release.",
+            "inherits": "linux-x86-base",
             "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
