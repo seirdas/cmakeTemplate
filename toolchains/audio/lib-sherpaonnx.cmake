@@ -17,12 +17,12 @@ option(USE_CUDA             "Sherpa con soporte CUDA"           OFF)     # Activ
 
 # Identificar arquitectura de compilación
 if(NOT DEFINED ARCH_NAME)
-    if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-        message(STATUS "Targeting 64-bit architecture.")
-        set(ARCH_NAME "x64")
-    elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
-        message(STATUS "Targeting 32-bit architecture.")
-        set(ARCH_NAME "x86")
+    if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64" OR CMAKE_SIZEOF_VOID_P EQUAL 8)
+        message(STATUS "[Sherpa] Targeting 64-bit architecture.")
+        set(ARCH_NAME "x64" CACHE STRING "Target Architecture")
+    elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_SIZEOF_VOID_P EQUAL 4)
+        message(STATUS "[Sherpa] Targeting 32-bit architecture.")
+        set(ARCH_NAME "x86" CACHE STRING "Target Architecture")
     endif()
 endif()
 
@@ -138,8 +138,8 @@ endfunction()
 if(WIN32)
 
     # Utilizar librería de GPU si está activado y si es x64
-    if (USE_SHERPA_WIN_GPU AND CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-        message(STATUS "Selected sherpa library with GPU compatibility")
+    if (USE_SHERPA_WIN_GPU AND ARCH_NAME STREQUAL "x64")
+        message(STATUS "[Sherpa] Selected sherpa library with GPU compatibility")
 
         # Descargar y desplegar el paquete
         download_sherpa(${SHERPA_WIN_BIN_GPU}          ${SHERPA_WIN_URL_GPU})
@@ -256,7 +256,7 @@ function(configure_sherpa_deps)
         )
 
         # Obtener ruta de librería según CPU / GPU
-        if (USE_SHERPA_WIN_GPU AND CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+        if (USE_SHERPA_WIN_GPU AND ARCH_NAME STREQUAL "x64")
             set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib")
 
             # Añadir las dlls de GPU
