@@ -108,6 +108,7 @@ else()
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
 
         UPDATE_COMMAND  ""
+        DOWNLOAD_COMMAND ""
         
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
@@ -145,6 +146,7 @@ else()
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
 
         UPDATE_COMMAND  ""
+        DOWNLOAD_COMMAND ""
         
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
