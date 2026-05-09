@@ -52,12 +52,15 @@ file(GLOB_RECURSE RESOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resou
 # ===============================
 # Librerías externas
 # ===============================
+
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)                                             # menos salida en consola
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "")                 # Evitar que FetchContent vuelva a actualizar el repositorio cada vez
 set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establece donde descargar las librerías externas
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/
 
+# Macro para gestionar la importación de librerías externas
+set(EXTERNAL_LIBS "")
 
 # Librería TTS
 option(USE_TTS "Compilar con soporte para TTS" ON)
@@ -65,6 +68,7 @@ if(USE_TTS)
   include(audio/lib-sherpaonnx)       # Motor de Inferencia ONNX
   include(audio/tts-assets)           # Assets TTS (Voces)
   add_definitions(-DUSE_TTS=1) 
+  list(APPEND EXTERNAL_LIBS sherpa_lib) # Añade librería generada a la lista de importación
 endif()
 
 # Libreria asio network ( incluir ANTES DE windows.h )
@@ -72,6 +76,7 @@ option(USE_ASIO "Compilar con soporte para asio" ON)         # Activar/desactiva
 if(USE_ASIO)
   include(net/lib-asionetwork)                               # Ejecuta el toolchain
   add_definitions(-DUSE_ASIO=1)                              # Definición para usar en el código C++
+  list(APPEND EXTERNAL_LIBS asio_lib)                        # Añade librería generada a la lista de importación
 endif()
 
 # Librería miniaudio
@@ -79,6 +84,7 @@ option(USE_MINIAUDIO "Compilar con soporte para Miniaudio" ON)
 if(USE_MINIAUDIO)
   include(audio/lib-miniaudio)
   add_definitions(-DUSE_MINIAUDIO=1)
+  list(APPEND EXTERNAL_LIBS miniaudio_lib)
 endif()
 
 # Librería de IMGUI (gráficos, ventanas)
@@ -86,6 +92,7 @@ option(USE_IMGUI "Compilar con soporte para IMGUI" ON)
 if(USE_IMGUI)
   include(gui/lib-imgui)
   add_definitions(-DUSE_IMGUI=1)
+  list(APPEND EXTERNAL_LIBS imgui_lib)
 endif()
 
 # Libreria json
@@ -93,6 +100,7 @@ option(USE_JSON "Compilar con soporte para JSON" ON)
 if(USE_JSON)
   include(file/lib-json)
   add_definitions(-DUSE_JSON=1)
+  list(APPEND EXTERNAL_LIBS nlohmann_json)
 endif()
 
 # Libreria xml
@@ -100,6 +108,7 @@ option(USE_XML "Compilar con soporte para XML" ON)
 if(USE_XML)
   include(file/lib-xml)
   add_definitions(-DUSE_XML=1)
+  list(APPEND EXTERNAL_LIBS tinyxml2_lib)
 endif()
 
 # Libreria stb
@@ -107,6 +116,7 @@ option(USE_STB "Compilar con soporte para STB" ON)
 if(USE_STB)
   include(gui/lib-stb)
   add_definitions(-DUSE_STB=1)
+  list(APPEND EXTERNAL_LIBS stb_lib)
 endif()
 
 # Libreria cyclonedds (compatible con IDL en C++)
@@ -114,6 +124,7 @@ option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" ON)
 if(USE_CYCLONEDDSCXX)
   include(net/lib-cycloneddscxx)
   add_definitions(-DUSE_CYCLONEDDSCXX=1)
+  list(APPEND EXTERNAL_LIBS cycloneddscxx_lib)
 endif()
 
 # Libreria fastdds
@@ -121,6 +132,7 @@ option(USE_FASTDDS "Compilar con soporte para FASTDDS" OFF)
 if(USE_FASTDDS)
   include(net/lib-fastdds)
   add_definitions(-DUSE_FASTDDS=1)
+  list(APPEND EXTERNAL_LIBS fastdds)
 endif()
 
 # Libreria cyclonedds (compatible con IDL en C++)
@@ -128,6 +140,7 @@ option(USE_OPENDDS "Compilar con soporte para OpenDDS" OFF)
 if(USE_OPENDDS)
   include(net/lib-opendds)
   add_definitions(-DUSE_OPENDDS=1)
+  list(APPEND EXTERNAL_LIBS opendds-lib)
 endif()
     
 # ----------- Librerías no probadas aún:
@@ -137,6 +150,7 @@ option(USE_DAISYSP "Compilar con soporte para daisySP" OFF)
 if(USE_DAISYSP)
   include(audio/lib-daisysp)
   add_definitions(-DUSE_DAISYSP=1)
+  list(APPEND EXTERNAL_LIBS daisysp_lib)
 endif()
 
 
@@ -145,18 +159,19 @@ endif()
 # ===============================
 
 # Herramienta de compilación Ninja (Necesita al menos una configuración correcta previa)
-option(USE_NINJA "Utilizar Ninja" ON)      # Activar/desactivar herramienta
+option(USE_NINJA "Utilizar Ninja" ON)
 if(USE_NINJA)
-  include(tools/utils-ninja)                          # Ejecuta el archivo toolchains/utils-ninja.cmake
-  add_definitions(-DUSE_NINJA=1)                # Definición para activar herramienta
+  include(tools/utils-ninja)
+  add_definitions(-DUSE_NINJA=1)
 endif()
 
 # Documentación doxygen
-option(USE_DOXYGEN "Utilizar Doxygen" ON)      # Activar/desactivar herramienta
+option(USE_DOXYGEN "Utilizar Doxygen" ON)
 if(USE_DOXYGEN)
-  include(tools/utils-doxygen)                          # Ejecuta el archivo toolchains/utils-doxygen.cmake
-  add_definitions(-DUSE_DOXYGEN=1)                # Definición para activar herramienta
+  include(tools/utils-doxygen)
+  add_definitions(-DUSE_DOXYGEN=1)
 endif()
+
 
 
 # ===============================
@@ -313,17 +328,8 @@ endif()
 
 # Se enlazan automáticamente si están activas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-  $<$<BOOL:${USE_ASIO}>:asio_lib>               # Librería creada con Asio + Winsock2 (Windows) 
-  $<$<BOOL:${USE_IMGUI}>:imgui_lib>             # Librería creada con ImGui + GLFW + OpenGL
-  $<$<BOOL:${USE_JSON}>:nlohmann_json>          # Librería creada con nlohmann/json
-  $<$<BOOL:${USE_XML}>:tinyxml2_lib>            # Librería creada con tinyxml
-  $<$<BOOL:${USE_MINIAUDIO}>:miniaudio_lib>     # Librería creada con Miniaudio + winmm (Windows)
-  $<$<BOOL:${USE_STB}>:stb_lib>                 # Librería creada con STB
-  $<$<BOOL:${USE_TTS}>:sherpa_lib>              # Librería creada con motor TTS (Sherpa)
-  $<$<BOOL:${USE_FASTDDS}>:fastdds>             # Librería creada con FastDDS
-  $<$<BOOL:${USE_DAISYSP}>:daisysp_lib>         # Librería creada con DaisySP (DSP)
-  $<$<BOOL:${USE_CYCLONEDDSCXX}>:cycloneddscxx_lib>  # Librerías de Cyclone DDS CXX
-)
+  ${EXTERNAL_LIBS}
+  )
 
 # Copiar librerías dinámicas de TTS
 if(USE_TTS)
