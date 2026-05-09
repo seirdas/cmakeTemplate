@@ -23,6 +23,15 @@ endif()
 # set(CMAKE_SYSTEM_NAME Windows)
 # set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
+# Identificar arquitectura de compilación
+if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+    message(STATUS "Targeting 64-bit architecture.")
+    set(ARCH_NAME "x64")
+elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
+    message(STATUS "Targeting 32-bit architecture.")
+    set(ARCH_NAME "x86")
+endif()
+
 # Establecer estándar C++
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -120,7 +129,7 @@ if(USE_STB)
 endif()
 
 # Libreria cyclonedds (compatible con IDL en C++)
-option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" ON)
+option(USE_CYCLONEDDSCXX "Compilar con soporte para cycloneDDSCXX" OFF)
 if(USE_CYCLONEDDSCXX)
   include(net/lib-cycloneddscxx)
   add_definitions(-DUSE_CYCLONEDDSCXX=1)
@@ -349,18 +358,21 @@ endif()
 
 # Copia todo el contenido de la carpeta 'dependencies' a la carpeta del binario
 set(DEPS_DIR "dependencies")
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND @echo Copying files in ${DEPS_DIR} folder...
+)
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   "${CMAKE_CURRENT_SOURCE_DIR}/${DEPS_DIR}/"
   "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-  COMMENT "Copying files in ${DEPS_DIR} folder..."
 )
 
 # Configurar carpetas de salida del ejecutable y librerías
 set_target_properties(${PROJECT_NAME} PROPERTIES 
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-x64,Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
 
 # Generar Doxygen

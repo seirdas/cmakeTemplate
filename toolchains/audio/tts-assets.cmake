@@ -122,6 +122,11 @@ function(link_tts_assets)
 
     if(WIN32)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND @echo Linking tts-assets to output folder...
+            COMMAND @echo ${SRC_NATIVE} --- "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        )
+
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             # cd para evitar problemas de "/"
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             
@@ -130,7 +135,6 @@ function(link_tts_assets)
             
             # Se ejecuta junction (unión)
             COMMAND cmd /c if not exist "${VOICES_DIR}" mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
-            COMMENT "Linking TTS assets..."
         )
     elseif(UNIX)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
