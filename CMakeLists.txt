@@ -23,14 +23,6 @@ endif()
 # set(CMAKE_SYSTEM_NAME Windows)
 # set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
-# Identificar arquitectura de compilación
-if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-    message(STATUS "Targeting 64-bit architecture.")
-    set(ARCH_NAME "x64")
-elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
-    message(STATUS "Targeting 32-bit architecture.")
-    set(ARCH_NAME "x86")
-endif()
 
 # Establecer estándar C++
 set(CMAKE_CXX_STANDARD 20)
@@ -39,6 +31,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Establecer nombre del exe igual que el nombre de la carpeta del proyecto
 get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME CACHE)
 project(${PROJECT_NAME})
+
+# Identificar arquitectura de compilación (después de project() )
+if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64" OR CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(STATUS "Targeting 64-bit architecture.")
+    set(ARCH_NAME "x64" CACHE STRING "Target Architecture")
+elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32" OR CMAKE_SIZEOF_VOID_P EQUAL 4)
+    message(STATUS "Targeting 32-bit architecture.")
+    set(ARCH_NAME "x86" CACHE STRING "Target Architecture")
+endif()
 
 # Activa la salida de los comandos de depuración durante la generación
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
