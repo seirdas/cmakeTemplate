@@ -1,4 +1,70 @@
+
 struct HelloWorld {
     long id;
     string message;
+};
+
+@annotation BreakerId 
+{
+	uint16 value;
+};
+
+@annotation BreakerPanelId
+{
+	uint8 value;
+};
+
+
+module CABINA_IDL
+{
+    @topic
+    struct st_CircuitBreakersSystems1
+    {
+        boolean bkrTrimARTCU;
+        boolean bkrTrimAil;	
+        boolean bkrTrimStbyRud;		 	 
+    };
+
+    @topic
+    struct st_BreakerChangeEvent
+    {
+        unsigned short id;      // Usamos tipos estándar: uint16 -> unsigned short
+        octet panelId;          // uint8 -> octet
+        boolean breakerValue;
+    };
+
+    @bit_bound(8)
+    bitmask bt_AvionicsSwitchesIn
+    {
+        swMHF,  // Bit 0
+        swVUHF  // Bit 1
+    };
+
+    @topic
+    struct st_AvionicsSwitchesIn
+    {
+        bt_AvionicsSwitchesIn data;
+    };
+
+    @bit_bound(8)
+    bitmask bt_SystemTestResetIn
+    {
+        pbSWRSTest,
+        pbGMeterReset,
+        pbLdgGrTest
+    };
+
+    @bit_bound(8)
+    bitmask bt_SystemTestResetOut
+    {
+        ltSMKDetTest,
+        ltBUBatTest1,
+        ltBUBatTest2
+    };
+
+    @topic
+    struct st_SystemTestResetIn
+    {
+        bt_SystemTestResetIn data;
+    };
 };
