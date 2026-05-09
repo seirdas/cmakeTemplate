@@ -2,12 +2,13 @@
 # Toolchain CycloneDDS + C++ Binding
 # ------------------------------------------------------------------------------
 
+include(ExternalProject)
+cmake_policy(SET CMP0111 NEW) # Permite apuntar a targets que aún no existen
+
 
 # ==============================================================================
 # Rutas globales
 # ==============================================================================
-
-include(ExternalProject)
 
 set(CYCLONE_TOTAL_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/cyclonedds-install")
 set(CYCLONE_SRC_DIR           "${EXTERNAL_LIB_PATH}/cyclonedds_src")
@@ -15,8 +16,7 @@ set(CYCLONECPP_SRC_DIR        "${EXTERNAL_LIB_PATH}/cycloneddscpp_src")
 set(IDL_GENERATED_DIR         "${CMAKE_SOURCE_DIR}/IDL/cyclone_generated")
 
 # Detectar "formato" de librería
-if(WIN32 AND MSVC)
-
+if(WIN32)
     # Establecer ejecutable de idl generator
     set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc.exe")
 
@@ -44,6 +44,7 @@ endif()
 file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include")
 file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx")
 
+
 # ==============================================================================
 # Configuración de generadores para ExternalProject_Add (generator_args)
 # ==============================================================================
@@ -65,12 +66,8 @@ if(NOT MSVC)
         "-DMINGW_PATH=${MINGW_PATH}"   # variable CMake, no de entorno
     )
 
-    # ------------------------------------------------------------------
-    # FIX: Forzar a CycloneDDS a compilar sin UNICODE en MinGW 
-    # para evitar el conflicto con FindFirstFileW vs FindFirstFileA
-    # ------------------------------------------------------------------
+    # Parámetros específicos para compilación en MinGW
     if(MINGW)
-        message(STATUS "[Cyclone] MinGW detectado: Forzando -UUNICODE en el core de CycloneDDS")
         list(APPEND _generator_args
             "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -UUNICODE -U_UNICODE"
             "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -UUNICODE -U_UNICODE"
@@ -88,14 +85,9 @@ endif()
 # Core de CycloneDDS
 # ==============================================================================
 
-# Probar esto para descarga persistente:
-#    DOWNLOAD_COMMAND ""   # 👈 clave
-#    UPDATE_COMMAND ""     # opcional
-
-
 # Comprueba previamente si está instalado
 if(EXISTS "${_ddsc_lib}")
-    message(STATUS "[Cyclone] Library 'cyclonedds' found locally at: '${CYCLONE_TOTAL_INSTALL_DIR}'")
+    message(STATUS "[Cyclone] Cyclone core lib found locally at: '${_ddsc_lib}'")
     add_custom_target(cyclonedds_core)
 else()
     message(STATUS "[Cyclone] CycloneDDS core not found, it will be built at first build.")
@@ -110,6 +102,7 @@ else()
         UPDATE_COMMAND  ""
         DOWNLOAD_COMMAND ""
         
+        # Ver documentación en el readme de la URL de github
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
             "-DCMAKE_BUILD_TYPE=$<CONFIG>"
@@ -134,7 +127,7 @@ endif()
 
 # Comprueba previamente si está instalado
 if(EXISTS "${_ddscxx_lib}")
-    message(STATUS "[Cyclone] Library 'cyclonedds c++ binding' found locally at: '${CYCLONE_TOTAL_INSTALL_DIR}'")
+    message(STATUS "[Cyclone] Cyclone c++ binding lib found locally at: '${_ddscxx_lib}'")
     add_custom_target(cyclonedds_cpp_binding)
 else()
     message(STATUS "[Cyclone] CycloneDDS C++ binding not found, it will be built at first build.")
@@ -208,6 +201,7 @@ set_target_properties(CycloneDDS::ddsc PROPERTIES
 )
 add_dependencies(CycloneDDS::ddsc cyclonedds_core)
 
+
 # Librería con cyclonedds_cxx --------------------------------------------------
 add_library(CycloneDDS::ddscxx STATIC IMPORTED GLOBAL)
 set_target_properties(CycloneDDS::ddscxx PROPERTIES
@@ -215,6 +209,7 @@ set_target_properties(CycloneDDS::ddscxx PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
 )
 add_dependencies(CycloneDDS::ddscxx cyclonedds_cpp_binding)
+
 
 # Libreria con IDL's -----------------------------------------------------------
 if(IDL_FILES)
