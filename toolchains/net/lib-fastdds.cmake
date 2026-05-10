@@ -6,67 +6,62 @@
 # Configuración de Rutas para Fast-DDS Instalado
 # =========================================================
 
-# 1. Definimos la ruta base (ajusta la versión si cambia)
+# Ruta base (ajusta la versión si cambia)
 set(EPROSIMA_INSTALL_DIR "C:/Program Files/eProsima/fastdds 3.2.2")
+set(FASTDDSGEN_JAVA "${EPROSIMA_INSTALL_DIR}/share/fastddsgen/java/fastddsgen.jar")
 
-# Dependencia openSSL (hay que instalarla)
+# Dependencia openSSL (hay que instalarla previamente)
+# https://slproweb.com/products/Win32OpenSSL.html
 set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
 find_package(OpenSSL REQUIRED)
 
-# 2. Añadimos las rutas de los archivos .cmake al path de búsqueda
+# Rutas de archivos .cmake al path de búsqueda
 list(APPEND CMAKE_PREFIX_PATH 
     "${EPROSIMA_INSTALL_DIR}"
     "${EPROSIMA_INSTALL_DIR}/lib/cmake/fastcdr"
     "${EPROSIMA_INSTALL_DIR}/lib/cmake/fastdds"
 )
 
-# 3. Buscamos los paquetes
+# Buscamos los paquetes
 find_package(fastcdr REQUIRED)
 find_package(fastdds REQUIRED)
-find_package(foonathan_memory REQUIRED) # Suele venir incluido en la instalación
+find_package(foonathan_memory REQUIRED)
 
 message(STATUS "[DDS] Fast-DDS encontrado en: ${fastdds_DIR}")
 
+
 # =========================================================
-# Compilador IDL
+# fastddsgen — Localizar ejecutable
 # =========================================================
 
-# Localizar el ejecutable del generador instalado
 find_program(FASTDDSGEN_BIN 
     NAMES fastddsgen.bat fastddsgen 
     PATHS "${EPROSIMA_INSTALL_DIR}/bin"
     NO_DEFAULT_PATH
 )
-
 if(NOT FASTDDSGEN_BIN)
     message(FATAL_ERROR "No se encontró fastddsgen en la ruta de instalación.")
 endif()
+
 
 # =========================================================
 # Generar hpp y cpp de idl's de la carpeta IDL
 # =========================================================
 
-
-set(FASTDDSGEN_JAVA "${EPROSIMA_INSTALL_DIR}/share/fastddsgen/java/fastddsgen.jar")
-
-file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
-
 # Carpeta de salida de cpp/hpp generado de .idl's
 set(IDL_GENERATED_DIR         "${CMAKE_SOURCE_DIR}/IDL/fastdds_generated")
 file(MAKE_DIRECTORY "${IDL_GENERATED_DIR}")
 
-message(STATUS "EPROSIMA_INSTALL_DIR: ${EPROSIMA_INSTALL_DIR}/share/fastddsgen/java/fastddsgen.jar")
+# Guardar todos los archivos IDL
+file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
 
-# java -jar "C:\Program Files\eProsima\fastdds 3.2.2\share\fastddsgen\java\fastddsgen.jar" -d . -replace "${IDL_FILE}" 
+set(IDL_GENERATED_SOURCES  "")
 
 if(IDL_FILES)
-    set(GENERATED_SOURCES "")
-
     foreach(IDL_FILE ${IDL_FILES})
         get_filename_component(IDL_NAME ${IDL_FILE} NAME_WE)
         
-        # IMPORTANTE: Definir exactamente lo que FastDDS-Gen escupe
-        # Normalmente es ${IDL_NAME}.cxx y ${IDL_NAME}PubSubTypes.cxx
+        # Salida de FastDDS
         set(OUTPUTS
             "${IDL_GENERATED_DIR}/${IDL_NAME}.cxx"
             "${IDL_GENERATED_DIR}/${IDL_NAME}.h"
@@ -76,29 +71,58 @@ if(IDL_FILES)
             "${IDL_GENERATED_DIR}/${IDL_NAME}TypeObjectSupport.h"  
         )
 
-
+        # java -jar "C:\Program Files\eProsima\fastdds 3.2.2\share\fastddsgen\java\fastddsgen.jar" -d . -replace "idl_data.idl" 
         add_custom_command(
             OUTPUT ${OUTPUTS}
-            # Añadimos -pp (pre-processor) si es necesario y nos aseguramos del directorio
+            WORKING_DIRECTORY "${IDL_GENERATED_DIR}" 
             COMMAND java -jar ${FASTDDSGEN_JAVA} -d "${IDL_GENERATED_DIR}" -replace "${IDL_FILE}"
             DEPENDS ${IDL_FILE}
             COMMENT "Generando código DDS para ${IDL_NAME}..."
             VERBATIM
         )
-        list(APPEND GENERATED_SOURCES ${OUTPUTS})
+        list(APPEND IDL_GENERATED_SOURCES  ${OUTPUTS})
     endforeach()
-
-# Fix para evitar errores de archivos no encontrados durante la compilación paralela
-set_source_files_properties(${GENERATED_SOURCES} PROPERTIES GENERATED TRUE)
-
-    add_library(idl_generated_lib STATIC ${GENERATED_SOURCES})
     
-    # Enlazamos con los targets oficiales de la instalación
-    target_link_libraries(idl_generated_lib PUBLIC fastdds fastcdr)
-    
-    target_include_directories(idl_generated_lib PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
-
-    if(MSVC)
-        target_compile_options(idl_generated_lib PRIVATE /wd5286 /wd5287 /W0)
-    endif()
 endif()
+
+
+# =========================================================
+# Librería interna con el código generado
+# =========================================================
+
+add_library(fastdds_idl_lib STATIC ${IDL_GENERATED_SOURCES})
+
+target_link_libraries(fastdds_idl_lib PUBLIC
+    fastdds
+    fastcdr
+)
+target_include_directories(fastdds_idl_lib PUBLIC
+        "${IDL_GENERATED_DIR}"
+)
+if(MSVC)
+    target_compile_options(fastdds_idl_lib PRIVATE /W0 /wd5286 /wd5287)
+endif()
+
+
+# =========================================================
+# fastdds_lib — librería de interfaz pública
+# Agrupa: runtime FastDDS + OpenSSL + código IDL generado
+# =========================================================
+add_library(fastdds_lib INTERFACE)
+
+target_link_libraries(fastdds_lib INTERFACE
+    fastdds              # runtime + headers de eProsima
+    fastcdr
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    fastdds_idl_lib      # código generado desde los IDL
+)
+target_include_directories(fastdds_lib INTERFACE
+    "${EPROSIMA_INSTALL_DIR}/include"   # <fastdds/dds/...>
+    "${IDL_GENERATED_DIR}"              # headers generados
+)
+target_compile_definitions(fastdds_lib INTERFACE
+    USE_FASTDDS=1
+)
+
+message(STATUS "[FastDDS] fastdds_lib lista — IDL generados en: ${IDL_GENERATED_DIR}")
