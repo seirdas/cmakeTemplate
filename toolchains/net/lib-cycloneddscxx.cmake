@@ -46,7 +46,7 @@ file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx")
 
 
 # ==============================================================================
-# Configuración de generadores para ExternalProject_Add (generator_args)
+# Configuración por compilador de generadores para ExternalProject_Add (generator_args)
 # ==============================================================================
 
 set(_generator_args -G "${CMAKE_GENERATOR}")
@@ -54,32 +54,47 @@ if(CMAKE_TOOLCHAIN_FILE)
     list(APPEND _generator_args -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE})
 endif()
 
-if(NOT MSVC)
-    message(STATUS "[Cyclone] Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
-    message(STATUS "[Cyclone] Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
+# Detectar "formato" de librería
+if(WIN32)
+    # Windows
 
-    list(APPEND _generator_args
-        "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-        "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-        "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
-        "-DCLANG_PATH=${CLANG_PATH}"   # variable CMake, no de entorno
-        "-DMINGW_PATH=${MINGW_PATH}"   # variable CMake, no de entorno
-    )
+    if(MSVC)
+        # Windows con compilador de Windows MSVC
 
-    # Parámetros específicos para compilación en MinGW
-    if(MINGW)
+    elseif(MINGW)
+        # MinGW/Clang 
+
+        message(STATUS "[Cyclone] Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
+        message(STATUS "[Cyclone] Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
+        list(APPEND _generator_args
+            "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+            "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+            "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+        )
+
+        # Fix para UNICODE
         list(APPEND _generator_args
             "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -UUNICODE -U_UNICODE"
             "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -UUNICODE -U_UNICODE"
         )
-    endif()
 
-    # Silencia la advertencia restrictiva de plantillas en GCC 14/15 (Linux)
-    add_compile_options(
-        -Wno-template-body
-        -Wno-enum-enum-conversion
-    )
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            # Solo Windows Clang
+
+            list(APPEND _generator_args "-DCLANG_PATH=${CLANG_PATH}" )
+
+        else()
+            # Solo Windows MinGW
+
+            list(APPEND _generator_args "-DMINGW_PATH=${MINGW_PATH}" )
+
+        endif()
+    endif()
+elseif(UNIX)
+    # Linux
+
 endif()
+
 
 # ==============================================================================
 # Core de CycloneDDS
@@ -106,12 +121,28 @@ else()
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
             "-DCMAKE_BUILD_TYPE=$<CONFIG>"
-            "-DBUILD_IDLC=ON"
-            "-DENABLE_ICEORYX=OFF"
-            "-DENABLE_SSL=OFF"
+
             "-DBUILD_EXAMPLES=OFF"
             "-DBUILD_TESTING=OFF"
-            "-DBUILD_DDSPERF=OFF"
+            
+            "-DBUILD_IDLC=ON"
+            "-DBUILD_DDSPERF=OFF"          
+            
+            "-DENABLE_SSL=OFF"
+            "-DENABLE_ICEORYX=OFF"
+            # "-DENABLE_SECURITY=NO"
+            # "-DENABLE_LIFESPAN=NO"
+            # "-DENABLE_DEADLINE_MISSED=NO"
+            # "-DENABLE_TYPELIB=ON"           # disabled requires also disabling type and topic discovery
+            # "-DENABLE_TYPE_DISCOVERY=NO"
+            # "-DENABLE_TOPIC_DISCOVERY=NO"
+            # "-DENABLE_SOURCE_SPECIFIC_MULTICAST=NO"
+            # "-DENABLE_IPV6=NO"
+            # "-DBUILD_IDLC_XTESTS=NO"
+            # "-DENABLE_QOS_PROVIDER=NO"
+
+            # "-DCMAKE_DISABLE_FIND_PACKAGE_CUnit=TRUE"     # No existe esto  
+            # "-DBUILD_XTESTS=OFF"                          # No existe esto
             ${_generator_args}
 
         BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
