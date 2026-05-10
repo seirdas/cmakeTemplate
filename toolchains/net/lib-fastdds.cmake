@@ -1,9 +1,9 @@
 # =======================
 # Dependencia: FastCDR
 # =======================
-message(STATUS "[DDS] Fetching fastcdr library...")
+message(STATUS "[FastDDS] Fetching fastcdr library...")
 if(EXISTS "${EXTERNAL_LIB_PATH}/fastcdr_src/.git")
-    message(STATUS "[DDS] Library 'fastcdr' found locally at: '${EXTERNAL_LIB_PATH}/fastcdr_src'")
+    message(STATUS "[FastDDS] Library 'fastcdr' found locally at: '${EXTERNAL_LIB_PATH}/fastcdr_src'")
     set(FETCHCONTENT_SOURCE_DIR_FASTCDR "${EXTERNAL_LIB_PATH}/fastcdr_src" CACHE PATH "" FORCE)
 endif()
 
@@ -36,9 +36,9 @@ set(FOONATHAN_MEMORY_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(FOONATHAN_MEMORY_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 set(FOONATHAN_MEMORY_BUILD_TOOLS    OFF CACHE BOOL "" FORCE)
 
-message(STATUS "[DDS] Fetching foonathan_memory library...")
+message(STATUS "[FastDDS] Fetching foonathan_memory library...")
 if(EXISTS "${EXTERNAL_LIB_PATH}/foonathan_memory_src/.git")
-    message(STATUS "[DDS] Library 'foonathan_memory' found locally at: '${EXTERNAL_LIB_PATH}/foonathan_memory_src'")
+    message(STATUS "[FastDDS] Library 'foonathan_memory' found locally at: '${EXTERNAL_LIB_PATH}/foonathan_memory_src'")
     set(FETCHCONTENT_SOURCE_DIR_FOONATHAN_MEMORY "${EXTERNAL_LIB_PATH}/foonathan_memory_src" CACHE PATH "" FORCE)
 endif()
 
@@ -187,9 +187,9 @@ set(THIRDPARTY         OFF CACHE STRING "" FORCE)
 set(THIRDPARTY_fastcdr OFF CACHE STRING "" FORCE)
 set(THIRDPARTY_asio OFF CACHE STRING "" FORCE)
 
-message(STATUS "[DDS] Fetching fastdds library...")
+message(STATUS "[FastDDS] Fetching fastdds library...")
 if(EXISTS "${EXTERNAL_LIB_PATH}/fastdds_src/.git")
-    message(STATUS "[DDS] Library 'fastdds' found locally at: '${EXTERNAL_LIB_PATH}/fastdds_src'")
+    message(STATUS "[FastDDS] Library 'fastdds' found locally at: '${EXTERNAL_LIB_PATH}/fastdds_src'")
     set(FETCHCONTENT_SOURCE_DIR_FASTDDS "${EXTERNAL_LIB_PATH}/fastdds_src" CACHE PATH "" FORCE)
 endif()
 
@@ -226,13 +226,13 @@ endforeach()
 
 # --- 1. Java (requisito de fastddsgen) ---
 find_package(Java 11 REQUIRED COMPONENTS Runtime)
-message(STATUS "[DDS-Gen] Java runtime found at: '${Java_JAVA_EXECUTABLE}'")
+message(STATUS "[FastDDS-Gen] Java runtime found at: '${Java_JAVA_EXECUTABLE}'")
 
 # --- 2. Descargar / localizar Fast-DDS-Gen ---
 set(FASTDDSGEN_SRC "${EXTERNAL_LIB_PATH}/fastddsgen_src")
 
 if(EXISTS "${FASTDDSGEN_SRC}/.git")
-    message(STATUS "[DDS-Gen] Fast-DDS-Gen found locally at: '${FASTDDSGEN_SRC}'")
+    message(STATUS "[FastDDS-Gen] Fast-DDS-Gen found locally at: '${FASTDDSGEN_SRC}'")
     set(FETCHCONTENT_SOURCE_DIR_FASTDDSGEN "${FASTDDSGEN_SRC}" CACHE PATH "" FORCE)
 endif()
 
@@ -263,7 +263,7 @@ if(NOT EXISTS "${FASTDDSGEN_BIN}")
         execute_process(COMMAND chmod +x "${GRADLEW}")
     endif()
 
-    message(STATUS "[DDS-Gen] Compiling Fast-DDS-Gen (Gradle assemble)...")
+    message(STATUS "[FastDDS-Gen] Compiling Fast-DDS-Gen (Gradle assemble)...")
     execute_process(
         COMMAND             "${GRADLEW}" assemble
         WORKING_DIRECTORY   "${FASTDDSGEN_SRC}"
@@ -272,11 +272,11 @@ if(NOT EXISTS "${FASTDDSGEN_BIN}")
         ERROR_VARIABLE      GRADLE_OUTPUT
     )
     if(NOT GRADLE_RESULT EQUAL 0)
-        message(FATAL_ERROR "[DDS-Gen] Gradle assemble falló:\n${GRADLE_OUTPUT}")
+        message(FATAL_ERROR "[FastDDS-Gen] Gradle assemble falló:\n${GRADLE_OUTPUT}")
     endif()
-    message(STATUS "[DDS-Gen] Fast-DDS-Gen compiled successfuly.")
+    message(STATUS "[FastDDS-Gen] Fast-DDS-Gen compiled successfuly.")
 else()
-    message(STATUS "[DDS-Gen] Fast-DDS-Gen already compiled at: '${FASTDDSGEN_BIN}'")
+    message(STATUS "[FastDDS-Gen] Fast-DDS-Gen already compiled at: '${FASTDDSGEN_BIN}'")
 endif()
 
 # --- 4. Localizar todos los ficheros .idl ---
@@ -287,7 +287,7 @@ file(MAKE_DIRECTORY "${IDL_OUTPUT_DIR}")
 file(GLOB_RECURSE IDL_FILES "${IDL_INPUT_DIR}/*.idl")
 
 if(NOT IDL_FILES)
-    message(WARNING "[DDS-Gen] No se encontraron ficheros .idl en '${IDL_INPUT_DIR}'")
+    message(WARNING "[FastDDS-Gen] No se encontraron ficheros .idl en '${IDL_INPUT_DIR}'")
 endif()
 
 # --- 5. Regla de generación por cada .idl ---
@@ -318,7 +318,7 @@ foreach(IDL_FILE ${IDL_FILES})
                             -d "${IDL_OUTPUT_DIR}"
                             "${IDL_ABS}"
         DEPENDS         "${IDL_ABS}"
-        COMMENT         "[DDS-Gen] Generando código para ${IDL_NAME}.idl"
+        COMMENT         "[FastDDS-Gen] Generando código para ${IDL_NAME}.idl"
         VERBATIM
     )
 
@@ -328,7 +328,7 @@ endforeach()
 # --- 6. Target que agrupa toda la generación ---
 add_custom_target(dds_idl_generate ALL
     DEPENDS ${IDL_GENERATED_SOURCES}
-    COMMENT "[DDS-Gen] Todos los IDL generados."
+    COMMENT "[FastDDS-Gen] Todos los IDL generados."
 )
 
 # --- 7. Librería con el código generado (lista para linkear) ---
