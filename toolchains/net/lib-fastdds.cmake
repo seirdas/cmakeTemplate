@@ -17,6 +17,7 @@ endif()
 
 # Dependencia openSSL (hay que instalarla previamente, y definir la ruta)
 # https://slproweb.com/products/Win32OpenSSL.html
+set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
 find_package(OpenSSL REQUIRED)
 
 # Rutas de archivos .cmake al path de búsqueda
