@@ -10,7 +10,7 @@
 set(EPROSIMA_INSTALL_DIR "C:/Program Files/eProsima/fastdds 3.2.2")
 set(FASTDDSGEN_JAVA "${EPROSIMA_INSTALL_DIR}/share/fastddsgen/java/fastddsgen.jar")
 
-# Dependencia openSSL (hay que instalarla previamente)
+# Dependencia openSSL (hay que instalarla previamente, y definir la ruta)
 # https://slproweb.com/products/Win32OpenSSL.html
 set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
 find_package(OpenSSL REQUIRED)
@@ -52,23 +52,26 @@ endif()
 set(IDL_GENERATED_DIR         "${CMAKE_SOURCE_DIR}/IDL/fastdds_generated")
 file(MAKE_DIRECTORY "${IDL_GENERATED_DIR}")
 
-# Guardar todos los archivos IDL
+# Guardar todos los archivos IDL en IDL_FILES
 file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
 
+# Crear la variable donde se almacenará los archivos de salida de fastddsgen
 set(IDL_GENERATED_SOURCES  "")
 
+# Generar cxx, hpp... de todos los idl's de la carpeta IDL
 if(IDL_FILES)
     foreach(IDL_FILE ${IDL_FILES})
         get_filename_component(IDL_NAME ${IDL_FILE} NAME_WE)
         
         # Salida de FastDDS
         set(OUTPUTS
-            "${IDL_GENERATED_DIR}/${IDL_NAME}.cxx"
-            "${IDL_GENERATED_DIR}/${IDL_NAME}.h"
+            "${IDL_GENERATED_DIR}/${IDL_NAME}.hpp"
+            "${IDL_GENERATED_DIR}/${IDL_NAME}CdrAux.hpp"
+            "${IDL_GENERATED_DIR}/${IDL_NAME}CdrAux.ipp"
             "${IDL_GENERATED_DIR}/${IDL_NAME}PubSubTypes.cxx"
-            "${IDL_GENERATED_DIR}/${IDL_NAME}PubSubTypes.h"
+            "${IDL_GENERATED_DIR}/${IDL_NAME}PubSubTypes.hpp"
             "${IDL_GENERATED_DIR}/${IDL_NAME}TypeObjectSupport.cxx"  
-            "${IDL_GENERATED_DIR}/${IDL_NAME}TypeObjectSupport.h"  
+            "${IDL_GENERATED_DIR}/${IDL_NAME}TypeObjectSupport.hpp"  
         )
 
         # java -jar "C:\Program Files\eProsima\fastdds 3.2.2\share\fastddsgen\java\fastddsgen.jar" -d . -replace "idl_data.idl" 
@@ -82,7 +85,7 @@ if(IDL_FILES)
         )
         list(APPEND IDL_GENERATED_SOURCES  ${OUTPUTS})
     endforeach()
-    
+
 endif()
 
 
@@ -97,7 +100,7 @@ target_link_libraries(fastdds_idl_lib PUBLIC
     fastcdr
 )
 target_include_directories(fastdds_idl_lib PUBLIC
-        "${IDL_GENERATED_DIR}"
+    "${IDL_GENERATED_DIR}"
 )
 if(MSVC)
     target_compile_options(fastdds_idl_lib PRIVATE /W0 /wd5286 /wd5287)
@@ -108,6 +111,7 @@ endif()
 # fastdds_lib — librería de interfaz pública
 # Agrupa: runtime FastDDS + OpenSSL + código IDL generado
 # =========================================================
+
 add_library(fastdds_lib INTERFACE)
 
 target_link_libraries(fastdds_lib INTERFACE
