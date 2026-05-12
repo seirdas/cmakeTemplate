@@ -142,7 +142,7 @@ option(USE_FASTDDS "Compilar con soporte para FASTDDS" OFF)
 if(USE_FASTDDS)
   include(net/lib-fastdds)
   add_definitions(-DUSE_FASTDDS=1)
-  list(APPEND EXTERNAL_LIBS fastdds)
+  list(APPEND EXTERNAL_LIBS fastdds_lib)
 endif()
 
 # Libreria cyclonedds (compatible con IDL en C++)
