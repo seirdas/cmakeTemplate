@@ -41,3 +41,4 @@ executable/*/voices*
 *so
 executable/*/tts-voices/*
 executable/*/*.dll
+*generated
