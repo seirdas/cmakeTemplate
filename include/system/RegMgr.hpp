@@ -12,6 +12,12 @@
 #define REG_SET_QWORD(root, path, clave, val) 	RegMgr::instance().Set_QWORD(root, path, clave, val)
 #define REG_SET_STR(root, path, clave, val)   	RegMgr::instance().Set_STR(root, path, clave, val)
 
+// Macros de conveniencia para ruta raíz (root) de parámetro de funciones
+#define HKCU	L"HKEY_CURRENT_USER"
+#define HKLM 	L"HKEY_LOCAL_MACHINE"
+#define HKCR 	L"HKEY_CLASSES_ROOT"
+#define HKU 	L"HKEY_USERS"
+
 
 /**
  * @class RegMgr
