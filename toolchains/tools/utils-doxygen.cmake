@@ -75,10 +75,18 @@ endif()
 function(generate_doxygen)
     add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND $<$<CONFIG:Release>:${DOXYGEN_BIN}> $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile>
-        $<$<NOT:$<CONFIG:Release>>:${CMAKE_COMMAND}> $<$<NOT:$<CONFIG:Release>>:-E> $<$<NOT:$<CONFIG:Release>>:true>
+        
+        COMMAND $<$<CONFIG:Release>:${CMAKE_COMMAND}> 
+                $<$<CONFIG:Release>:-E> 
+                $<$<CONFIG:Release>:echo> 
+                $<$<CONFIG:Release>:"---- Generating Doxygen documentation...">
+        
+        # Ejecución silenciosa: añadimos QUIET=YES para mutear el log
+        COMMAND $<$<CONFIG:Release>:${DOXYGEN_EXECUTABLE}> 
+                $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile>
+                $<$<CONFIG:Release>:QUIET=YES>
+        
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        COMMENT "$<$<CONFIG:Release>:Generating Doxygen documentation...>"
         VERBATIM
     )
 endfunction()

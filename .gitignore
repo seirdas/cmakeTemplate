@@ -42,3 +42,4 @@ executable/*/voices*
 executable/*/tts-voices/*
 executable/*/*.dll
 *generated
+*_doxygen
