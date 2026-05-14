@@ -71,6 +71,7 @@ public:
 	 */
 	std::wstring Get_SZ(std::wstring const& root,std::wstring const& path, std::wstring const& clave);
 
+
 // Setters ------------------------------------------------------------------------------
 
 	/**
@@ -109,6 +110,7 @@ public:
 	 */
 	bool Set_STR(std::wstring const& root, std::wstring const& path, std::wstring const& clave, std::wstring const& valor);
 	
+
 // Otros --------------------------------------------------------------------------------
 
 	/**
@@ -138,7 +140,8 @@ private:
 	RegMgr(const RegMgr&)            = delete;
     RegMgr& operator=(const RegMgr&) = delete;
 
-// Otros --------------------------------------------------------------------------------
+
+// Otros (privado) ----------------------------------------------------------------------
 
 	/**
 	 * @brief Obtiene el prefijo de ruta de registro a partir de un wstring

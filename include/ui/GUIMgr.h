@@ -45,9 +45,9 @@ public:
      * @brief Establece el controlador que usa para manejar otras clases.
      */
     void setController(IAppControl* controller);
+    
 
-
-// Estados ------------------------------------------------------------------------------
+// Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.

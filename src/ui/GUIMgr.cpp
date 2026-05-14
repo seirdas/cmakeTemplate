@@ -15,7 +15,6 @@
 #include <stb_image.h>          // Implementación para soporte de imágenes.
 #include "imgui-knobs.h"		// Soporte de knobs
 #include "imspinner.h"			// Soporte de spinners de carga
-#include <iostream>
 
 // GLFW / OpenGL
 #include <GLFW/glfw3.h>
@@ -45,6 +44,8 @@
 // Se puede evitar poner "ImGui::" para simplificar
 using namespace ImGui;
 
+
+
 // General ------------------------------------------------------------------------------
 
 GUiMgr::GUiMgr(IAppControl* controller) : ctrl_(controller) {
@@ -60,8 +61,7 @@ void GUiMgr::setController(IAppControl* controller){
 	ctrl_ = controller;
 }
 
-
-// Estados ------------------------------------------------------------------------------
+// Ejecución ----------------------------------------------------------------------------
 
 bool GUiMgr::init() {
 
