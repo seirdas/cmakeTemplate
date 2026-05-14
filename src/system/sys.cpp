@@ -10,6 +10,8 @@
 #endif
 
 
+// General ------------------------------------------------------------------------------
+
 Sys& Sys::instance() {
     static Sys instance;
     return instance;
@@ -109,7 +111,6 @@ inline std::string wstringToString(std::wstring const& ws) {
         return strTo;
     #endif
 }
-
 
 
 // Pop-ups ------------------------------------------------------------------------------
