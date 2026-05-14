@@ -3,6 +3,8 @@
 #   Assets Sherpa (voices)
 # =================================
 
+# Voices downloaded from https://k2-fsa.github.io/sherpa/onnx/tts/all/index.html
+
 # Directorio de descarga de assets-tts/modelos de voz
 set(ASSETS_CMAKE_FOLDER "tts-assets")
 set(VOICES_DIR "tts-voices")
