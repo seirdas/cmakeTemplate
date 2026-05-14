@@ -41,7 +41,7 @@ class UdpReceiver : public std::enable_shared_from_this<UdpReceiver> {
 
 public:
 
-// General ------------------------------------------------------------
+// General ------------------------------------------------------------------------------
 
     /**
      * @brief Constructor. 
@@ -53,6 +53,9 @@ public:
      * @brief Destructor. Detiene la recepción de datos y cierra el socket.
      */
     ~UdpReceiver();
+
+    
+// Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Inicializa el socket: Configura el socket UDP para recibir datos en la IP y puerto especificados.
@@ -77,6 +80,9 @@ public:
      * @brief Si está en ejecución, detiene la recepción de datos UDP, cierra el socket y finaliza el hilo de trabajo.
      */
     void stop();
+
+
+// Datos de socket ----------------------------------------------------------------------
 
     /**
      * @brief Devuelve el puerto local al que está enlazado el socket.
@@ -103,7 +109,7 @@ public:
     bool isOpen() const;
 
 
-// Gestión de la cola de datos recibidos ------------------------------------------------------------
+// Gestión de la cola de datos recibidos ------------------------------------------------
 
     /**
      * @brief Devuelve el primer paquete recibido de la cola. Si la cola está vacía, espera hasta que llegue un nuevo paquete.
@@ -141,7 +147,7 @@ public:
 
 private:
     
-// Socket ------------------------------------------------------------
+// Socket -------------------------------------------------------------------------------
 
     /**
      * @brief Crear endpoint local con IP+puerto en variable miembro local_endpoint
@@ -166,12 +172,12 @@ private:
     void handle_received_packet(std::size_t bytes_recvd);
 
 
-// Gestión de la cola de datos recibidos ------------------------------------------------------------
+// Gestión de la cola de datos recibidos ------------------------------------------------
 
     /**
      * @brief Añade un paquete recibido a la cola de datos. 
      */
-    void savePacket(std::vector<char> data);
+    void saveToQueue(std::vector<char> data);
 
     /**
      * @brief Devuelve si la cola de datos recibidos está vacía.

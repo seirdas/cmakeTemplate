@@ -5,8 +5,8 @@ constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paqu
 
 // General ------------------------------------------------------------------------------
 
-UdpReceiver::UdpReceiver(std::string name, asio::io_context& io)
-    : name_(name), 
+UdpReceiver::UdpReceiver(std::string name, asio::io_context& io) :
+    name_(name), 
     strand_(asio::make_strand(io)), 
     socket_(io), 
     rcv_packet_size_(0), 
@@ -21,6 +21,8 @@ UdpReceiver::~UdpReceiver() {
     stop();
     clearQueue();
 }
+
+// Ejecución ----------------------------------------------------------------------------
 
 bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, unsigned int rcv_packet_size) {
     
@@ -74,26 +76,21 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
     return true;
 }
 
-bool UdpReceiver::createLocalEndpoint(unsigned short local_port, const std::string& local_ip) {
-
-    // Variable para almacenar errores de asio
-    asio::error_code ec;
-
-    // Si la ip local es vacía, se enlaza a todas las interfaces
-    if (local_ip.empty()) {
-        local_endpoint_ = asio::ip::udp::endpoint(asio::ip::udp::v4(), local_port);
+void UdpReceiver::start() {
+    if (running_)           return;
+    if (!socket_.is_open() && !openSocket()) {
+        SYS_WARN("UdpReceiver","Cannot open socket" + name_ + ":" + std::to_string(local_endpoint_.port()));
+        return;
     }
-    // Si se especifica una IP local, se enlaza a esa IP
-    else {
-        // Convertir la cadena a asio::ip::address
-        asio::ip::address localIP = asio::ip::make_address(local_ip, ec);
-        if (ec) {
-            SYS_WARN("UdpReceiver","Invalid IP: " + local_ip + " - " + ec.message());
-            return false;
-        } 
-        local_endpoint_ = asio::ip::udp::endpoint(localIP, local_port);
+    if (!initialized_) {
+        SYS_WARN("UdpReceiver","Socket " + name_ + ":" + std::to_string(local_endpoint_.port()) + " not initialized.");
+        return;
     }
-    return true;
+
+    start_receive();
+
+    SYS_INFO("UdpReceiver", "Socket " + name_ + ":" + std::to_string(local_endpoint_.port()) + " started successfully");
+    running_ = true;
 }
 
 void UdpReceiver::stop() {
@@ -119,6 +116,8 @@ void UdpReceiver::stop() {
     running_ = false;
 }
 
+// Datos de socket ----------------------------------------------------------------------
+
 short UdpReceiver::port() const {
     if (socket_.is_open())  return socket_.local_endpoint().port();
     else                    return -1; // Indica que el socket no está abierto
@@ -136,6 +135,61 @@ bool UdpReceiver::isOpen() const {
     return socket_.is_open();
 }
 
+// Gestión de la cola de datos recibidos ------------------------------------------------
+
+std::vector<char> UdpReceiver::getFirstPacket() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    // Se BLOQUEA aquí hasta que la cola no esté vacía
+    condition_.wait(lock, 
+        [this] { 
+            return !queue_.empty() || !socket_.is_open(); 
+        }
+    );
+
+    // En parada del socket devolvemos vector vacío
+    if (queue_.empty()) return {};
+
+    std::vector<char> data = std::move(queue_.front());
+    queue_.pop();
+    return data;
+}
+
+void UdpReceiver::discardOnDupe(bool enable){
+    ignore_dupe_ = enable;
+}
+
+void UdpReceiver::clearCache() {
+    clearQueue();
+}
+
+bool UdpReceiver::hasData() {
+	return !isQueueEmpty();
+}
+
+
+// Socket -------------------------------------------------------------------------------
+
+bool UdpReceiver::createLocalEndpoint(unsigned short local_port, const std::string& local_ip) {
+
+    // Variable para almacenar errores de asio
+    asio::error_code ec;
+
+    // Si la ip local es vacía, se enlaza a todas las interfaces
+    if (local_ip.empty()) {
+        local_endpoint_ = asio::ip::udp::endpoint(asio::ip::udp::v4(), local_port);
+    }
+    // Si se especifica una IP local, se enlaza a esa IP
+    else {
+        // Convertir la cadena a asio::ip::address
+        asio::ip::address localIP = asio::ip::make_address(local_ip, ec);
+        if (ec) {
+            SYS_WARN("UdpReceiver","Invalid IP: " + local_ip + " - " + ec.message());
+            return false;
+        } 
+        local_endpoint_ = asio::ip::udp::endpoint(localIP, local_port);
+    }
+    return true;
+}
 
 bool UdpReceiver::openSocket() {
 
@@ -167,23 +221,6 @@ bool UdpReceiver::openSocket() {
 
     initialized_ = true;
     return true;
-}
-
-void UdpReceiver::start() {
-    if (running_)           return;
-    if (!socket_.is_open() && !openSocket()) {
-        SYS_WARN("UdpReceiver","Cannot open socket" + name_ + ":" + std::to_string(local_endpoint_.port()));
-        return;
-    }
-    if (!initialized_) {
-        SYS_WARN("UdpReceiver","Socket " + name_ + ":" + std::to_string(local_endpoint_.port()) + " not initialized.");
-        return;
-    }
-
-    start_receive();
-
-    SYS_INFO("UdpReceiver", "Socket " + name_ + ":" + std::to_string(local_endpoint_.port()) + " started successfully");
-    running_ = true;
 }
 
 void UdpReceiver::start_receive() {
@@ -251,43 +288,12 @@ void UdpReceiver::handle_received_packet(std::size_t bytes_recvd) {
     }
 
     // Añade el paquete recibido a la cola listo para gestionar
-    savePacket(std::move( data ) ); 
+    saveToQueue(std::move( data ) ); 
 }
 
+// Gestión de cola de datos recibidos ---------------------------------------------------
 
-// Gestión de cola de datos ------------------------------------------------------------
-
-std::vector<char> UdpReceiver::getFirstPacket() {
-    std::unique_lock<std::mutex> lock(mutex_);
-    // Se BLOQUEA aquí hasta que la cola no esté vacía
-    condition_.wait(lock, 
-        [this] { 
-            return !queue_.empty() || !socket_.is_open(); 
-        }
-    );
-
-    // En parada del socket devolvemos vector vacío
-    if (queue_.empty()) return {};
-
-    std::vector<char> data = std::move(queue_.front());
-    queue_.pop();
-    return data;
-}
-
-void UdpReceiver::discardOnDupe(bool enable){
-    ignore_dupe_ = enable;
-}
-
-void UdpReceiver::clearCache() {
-    clearQueue();
-}
-
-bool UdpReceiver::hasData() {
-	return !isQueueEmpty();
-}
-
-
-void UdpReceiver::savePacket(std::vector<char> data) {
+void UdpReceiver::saveToQueue(std::vector<char> data) {
     std::lock_guard<std::mutex> lock(mutex_);
     queue_.push(std::move(data));
     condition_.notify_one(); // Avisa que hay datos

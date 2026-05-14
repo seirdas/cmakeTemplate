@@ -58,6 +58,7 @@ public:
      */
     void printReceivers();
 
+
 // Gestión de sockets -------------------------------------------------------------------
 
     /**
@@ -94,7 +95,7 @@ public:
      */
     std::vector<char> getDataFromSocket(unsigned int index);
 
-
+    
 // Ejecución ----------------------------------------------------------------------------
 
     /**
