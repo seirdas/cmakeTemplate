@@ -27,6 +27,9 @@ list(APPEND CMAKE_PREFIX_PATH
     "${EPROSIMA_INSTALL_DIR}/lib/cmake/fastdds"
 )
 
+# Build en shared, dll
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
+
 # Buscamos los paquetes
 find_package(fastcdr REQUIRED)
 message(STATUS "[FastDDS] Fast-DDS found in: ${fastdds_DIR}")

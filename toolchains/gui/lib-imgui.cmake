@@ -12,6 +12,9 @@ if(LINUX)
     find_package(X11 REQUIRED)
 endif()
 
+# Build en static
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
 # GLFW (Ventanas) ___________________________
 message(STATUS "[ImGui] Fetching GLFW library...")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # No construir ejemplos
