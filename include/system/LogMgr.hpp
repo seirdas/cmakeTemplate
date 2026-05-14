@@ -9,10 +9,12 @@
  * @class LogMgr
  * @brief Clase para escribir en archivos de log
  */
-class LogMgr
-{
+class LogMgr {
 
 public:
+
+// General ------------------------------------------------------------------------------
+
     /**
      * @brief Constructor de la clase LogMgr.
      * @param filepath Ruta completa o relativa del archivo de log.
@@ -25,6 +27,9 @@ public:
      * Se asegura de cerrar correctamente el flujo del archivo si estaba abierto.
      */
     ~LogMgr();
+
+
+// Log ----------------------------------------------------------------------------------
 
     /**
      * @brief Activa o desactiva la escritura en el archivo de log.
@@ -46,6 +51,8 @@ public:
      */
     void clear();
 
+// Propiedades de archivo ---------------------------------------------------------------
+
     /**
      * @brief Obtiene la ruta del archivo de log actual.
      * @return std::string con la ruta del archivo.
@@ -59,6 +66,8 @@ public:
     std::string getName() const;
 
 private:
+
+// Utilidades ---------------------------------------------------------------------------
 
     /**
      * @brief Genera una cadena de texto con la fecha y hora actual.
@@ -74,6 +83,5 @@ private:
 	std::string 			name_;			// Nombre del archivo
 	bool 					enabled_;		// Flag para activar/desactivar la escritura
 	bool					keep_open_;		// Mantiene el archivo abierto durante la ejecución
-
 	std::mutex 				mtx_;			// Mutex de operaciones sobre archivo
 };

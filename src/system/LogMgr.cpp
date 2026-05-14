@@ -4,7 +4,8 @@
 namespace fs = std::filesystem;
 
 
-// General ______________________________________________________________________________
+// General ------------------------------------------------------------------------------
+
 LogMgr::LogMgr(std::string const& filepath) :
 	filepath_(std::move(filepath)), 
 	enabled_(true), 
@@ -21,6 +22,7 @@ LogMgr::~LogMgr() {
 	if (file_.is_open()) file_.close();
 }
 
+// Log ----------------------------------------------------------------------------------
 
 void LogMgr::enable(bool sel) {
 	enabled_ = sel;
@@ -36,8 +38,7 @@ void LogMgr::enable(bool sel) {
 		file_.close();
 }
 
-void LogMgr::write(std::string const& txt)
-{
+void LogMgr::write(std::string const& txt) {
 	if (!enabled_) return;
 
 	// Bloqueo para evitar problemas con hilos (Thread-safe)
@@ -59,7 +60,6 @@ void LogMgr::write(std::string const& txt)
 	if(!keep_open_) file_.close();
 }
 
-
 void LogMgr::clear() {
 
     std::lock_guard<std::mutex> lock(mtx_);
@@ -71,6 +71,8 @@ void LogMgr::clear() {
 	}
 }
 
+// Propiedades de archivo ---------------------------------------------------------------
+
 std::string LogMgr::getFilePath() const {
 	return filepath_.string();
 }
@@ -79,8 +81,10 @@ std::string LogMgr::getName() const {
 	return name_;
 }
 
-std::string LogMgr::getTimestamp()
-{
+
+// Utilidades ---------------------------------------------------------------------------
+
+std::string LogMgr::getTimestamp() {
 	// Obtener fecha y hora del sistema
     std::time_t now_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     
