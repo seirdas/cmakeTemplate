@@ -1,6 +1,5 @@
 #include "AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
-#include <miniaudio.h>
 #include "system/sys.hpp"
 
 // General ------------------------------------------------------------------------------
@@ -110,6 +109,11 @@ void AppController::TWorker() {
 
 // IAppControl methods ------------------------------------------------------------
     
+    /* 
+    * Aquí solo deberían ir acciones que se ejecuten sobre otros módulos
+    * Para la "solicitud" de datos, se debería hacer un patrón observador
+    */
+
     // Aplicación -----------------------------------------------------------------------
 
     std::string AppController::getVersion() const noexcept { 
