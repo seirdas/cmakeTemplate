@@ -44,6 +44,8 @@ void NetMgr::printReceivers() {
 
 }
 
+// Gestión de sockets -------------------------------------------------------------------
+
 bool NetMgr::addReceiver(
     std::string         name,
     short               local_port, 
@@ -119,6 +121,8 @@ bool NetMgr::removeReceiver(unsigned int index) {
     return true;
 }
 
+// Datos de sockets ---------------------------------------------------------------------
+
 int NetMgr::getSocketIndex(short port) const {
     for (unsigned int i = 0; i < receivers_.size(); i++)
         if (receivers_[i]->port() == port) return i;
@@ -140,6 +144,8 @@ std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
 
     return receivers_[index]->getFirstPacket();   // <-- BLOQUEANTE 
 }
+
+// Ejecución ----------------------------------------------------------------------------
 
 bool NetMgr::start() {
     // Evitar lanzar hilos si ya están corriendo

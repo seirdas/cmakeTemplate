@@ -31,6 +31,9 @@ public:
      */
     ~TTSMgr();
 
+    
+// Ejecución ----------------------------------------------------------------------------
+
     /**
      * @brief Inicializa los módulos TTS cargando los modelos de voz.
      * @details Carga todos los modelos compatibles de ./VOICES_PATH

@@ -9,7 +9,6 @@
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
-#include "system/LogMgr.hpp"    // Clase para gestionar logs
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 #define VERSION 0.8

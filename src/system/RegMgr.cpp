@@ -23,7 +23,6 @@
 
 	}
 
-	
 	// Getters ------------------------------------------------------------------------------
 
 	uint32_t RegMgr::Get_DWORD(std::wstring const& root,std::wstring const& path, std::wstring const& clave) {
@@ -152,7 +151,6 @@
 		return resultado;
 	}
 
-
 	// Setters ------------------------------------------------------------------------------
 
 	bool RegMgr::Set_DWORD(std::wstring const& root, std::wstring const& path, std::wstring const& clave, uint32_t valor) {
@@ -224,7 +222,6 @@
 		return true;
 	}
 
-
 	// Otros --------------------------------------------------------------------------------
 
 	bool RegMgr::WaitUntilChange(std::wstring const& root, std::wstring const& path, std::wstring const& clave) {
@@ -257,12 +254,12 @@
 		return nullptr;
 	}
 
-uint32_t RegMgr::queryType(void* hRoot, const std::wstring& path, const std::wstring& clave) {
-    DWORD type = REG_NONE;
-    DWORD size = 0;
-    RegGetValueW(static_cast<HKEY>(hRoot), path.c_str(), clave.c_str(), RRF_RT_ANY, &type, nullptr, &size);
-    return type;
-}
+	uint32_t RegMgr::queryType(void* hRoot, const std::wstring& path, const std::wstring& clave) {
+		DWORD type = REG_NONE;
+		DWORD size = 0;
+		RegGetValueW(static_cast<HKEY>(hRoot), path.c_str(), clave.c_str(), RRF_RT_ANY, &type, nullptr, &size);
+		return type;
+	}
 
 	const char* RegMgr::regTypeName(uint32_t type) {
 		switch (type) {
@@ -295,6 +292,8 @@ uint32_t RegMgr::queryType(void* hRoot, const std::wstring& path, const std::wst
 	const char* RegMgr::regTypeName(uint32_t)															{ unsupported(); return 0; }
 
 #endif
+
+// Comunes por SO -----------------------------------------------------------------------
 
 std::string RegMgr::toStr(std::wstring const& ws) {
 	// Forma de conversión rápida (probablemente se vean mal carácteres especiales)

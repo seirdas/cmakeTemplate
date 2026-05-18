@@ -13,6 +13,8 @@
 
 namespace fs = std::filesystem;
 
+// General ------------------------------------------------------------------------------
+
 TTSMgr::TTSMgr(std::size_t const& num_threads_) :
     num_threads_(num_threads_ == 0 ? 1 : num_threads_),
     concurrent_init_(true),
@@ -25,6 +27,8 @@ TTSMgr::TTSMgr(std::size_t const& num_threads_) :
 TTSMgr::~TTSMgr() {
     cerrar();
 };
+
+// Ejecución ----------------------------------------------------------------------------
 
 bool TTSMgr::init() {
     // Marcar como corriendo por si se destruye entre las generaciones
@@ -98,7 +102,7 @@ void TTSMgr::loadRemaining() {
     /* la idea es cargar los que falten cuando el init "falle" con los que falle*/
 }
 
-// Datos generales ----------------------------------------------------------------------
+// Datos del módulo TTS -----------------------------------------------------------------
 
 std::vector<std::string> TTSMgr::getAvailableModels() {
     std::vector<std::string> available_models;
@@ -140,7 +144,7 @@ bool TTSMgr::isWorking() const {
     return active_tasks_>0;
 }
 
-// Control de modelos -----------------------------------------------------------------
+// Datos y control de modelos -----------------------------------------------------------
 
 bool TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname){
     if (!running_) return false;
@@ -240,6 +244,9 @@ std::string TTSMgr::getProccesingText(std::string const& modelName) const{
     }
     return ""; // Retorna vacío si el modelo no está procesando nada
 }
+
+
+// Inicialización de modelos ------------------------------------------------------------
 
 bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
     // No inicializar si se está cerrando
