@@ -31,6 +31,7 @@
 class AppController : public IAppControl {
 
 public:
+
 // General ------------------------------------------------------------------------------
 
     /**

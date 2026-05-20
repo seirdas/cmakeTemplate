@@ -339,7 +339,7 @@ endif()
 # Se enlazan automáticamente si están activas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
   ${EXTERNAL_LIBS}
-  )
+)
 
 # Copiar librerías dinámicas de TTS
 if(USE_TTS)
@@ -361,7 +361,7 @@ endif()
 set(DEPS_DIR "dependencies")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND @echo ---- Copying files from ${DEPS_DIR} folder...
+    COMMAND ${CMAKE_COMMAND} -E echo "---- Copying files from ${DEPS_DIR} folder..."
 )
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory

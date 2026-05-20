@@ -275,7 +275,7 @@ function(configure_sherpa_deps)
         endif()
 
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND @echo ---- Linking Sherpa dlls to output folder...
+            COMMAND ${CMAKE_COMMAND} -E echo "---- Linking Sherpa dlls to output folder..."
         )
         
         # Copiar las dlls al lado del ejecutable
@@ -285,7 +285,7 @@ function(configure_sherpa_deps)
 
             # Log en build de lo que va a hacer...
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND @echo ${SRC_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>"
             )
             
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
