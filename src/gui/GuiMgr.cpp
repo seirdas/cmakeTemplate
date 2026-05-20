@@ -39,7 +39,7 @@
 #endif
 #include "resources.h"  // icono
 #include "ttf_archive-medium.h"
-#include <system/sys.hpp>
+#include <system/SystemMgr.hpp>
 
 // Se puede evitar poner "ImGui::" para simplificar
 using namespace ImGui;
