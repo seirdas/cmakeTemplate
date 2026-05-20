@@ -20,7 +20,7 @@
 
     TTSMgr::TTSMgr(std::size_t const& num_threads_) :
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
-        concurrent_init_(true),
+        concurrent_init_(false),
         models_path_(VOICES_PATH),
         num_available_models_(0),
         num_loaded_models_(0),
@@ -266,7 +266,7 @@
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(processing_mtx_);
         auto it = processing_texts_.find(modelName);
-        if (it != processing_texts_.end()) {
+        if (it == processing_texts_.end()) {
             SYS_WARN("TTSMgr","Cannot get proccesing text: Model '" + modelName + "' not found.");
             return "";
         }

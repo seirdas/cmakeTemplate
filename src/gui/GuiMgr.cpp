@@ -520,8 +520,13 @@ void GuiMgr::ventanaPrincipal() {
 				// --- CONFIGURACIÓN PREVIA ---
 				static int selected_idx = 0;
 				std::string current_model = (!tts.loaded_models.empty()) ? tts.loaded_models[selected_idx] : "";
-				std::string proc_text = ctrl_->getTTSProcessingText(current_model);
-				bool is_busy = !proc_text.empty();
+
+				static std::string proc_text;
+
+				/* De momento esto no se usa, comento porque sino logea todo el rato cannot process text*/
+				// proc_text = ctrl_->getTTSProcessingText(current_model);
+				// bool is_busy = !proc_text.empty();
+				
 
 				static char manual_buffer[2048] = ""; 
 
@@ -540,7 +545,7 @@ void GuiMgr::ventanaPrincipal() {
 				BeginGroup(); // Agrupamos el input para que Sameline funcione con el bloque siguiente
 
 					ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_WordWrap;
-					if (ctrl_->isOnlineMode() || is_busy) {
+					if (ctrl_->isOnlineMode()) {
 						flags |= ImGuiInputTextFlags_ReadOnly;
 						PushStyleColor(ImGuiCol_Text, GetStyle().Colors[ImGuiCol_TextDisabled]);
 						InputTextMultiline("##ttstext_v", const_cast<char*>(proc_text.c_str()), proc_text.size(), 
@@ -579,9 +584,6 @@ void GuiMgr::ventanaPrincipal() {
 						ctrl_->TTSgenerate(current_model, manual_buffer, current_model);
 					}
 					if (is_online) EndDisabled(); // Cerramos el bloque de deshabilitado
-
-					if (is_busy) 
-						ImSpinner::SpinnerDotsToBar(      "tobar",   16, 2, ImColor(1.0f,1.0f,1.0f),4);
 
 				EndChild();
 
