@@ -11,7 +11,7 @@
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
-#define VERSION 0.8
+#define VERSION 0.9
 
 /**
   *  @class AppController

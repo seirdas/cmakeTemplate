@@ -3,7 +3,7 @@
 #include <string>
 #include <cstdint>              // uintptr_t
 #include <unordered_map>
-#include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
+#include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 // Para evitar añadir el include, declarar las estructuras indicando que existen
 

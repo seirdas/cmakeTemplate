@@ -1,5 +1,5 @@
 #include <filesystem>           // Controla directorios, rutas, etc.
-#include "AppController.hpp"    // Clase controladora de aplicación
+#include "app/AppController.hpp"    // Clase controladora de aplicación
 
 int main(int argc, char** argv) {
     // Asegurar directorio del exe (para archivos de entorno de desarrollo)
