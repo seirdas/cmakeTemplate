@@ -46,8 +46,10 @@ public:
 
     /**
      * @brief Inicializa los miembros de la aplicación
+     * @param argc Número de parámetros de entrada del programa
+     * @param argv Array de nombres de parámetros de entrada
      */
-    bool init();
+    bool init(int argc, char** argv);
 
     /**
      * @brief Ejecuta la aplicación. Inicia el receptor UDP y la ventana UI.

@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
 
     // Instancia controladora de la aplicación
     AppController App;
-    if (App.init())
+    if (App.init(argc, argv))
         return App.run();
     /*else*/ return -1;
 }

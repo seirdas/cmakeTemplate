@@ -35,7 +35,7 @@ AppController::~AppController() {
     tts_.cerrar();
 }
 
-bool AppController::init() {
+bool AppController::init(int argc, char** argv) {
 
     // Iniciar GUI, salir si no se carga bien
     gui_initialized_ = gui_.init();
