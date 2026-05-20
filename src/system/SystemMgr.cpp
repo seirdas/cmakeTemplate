@@ -1,4 +1,4 @@
-#include "system/sys.hpp"
+#include "system/SystemMgr.hpp"
 #include <iostream>
 
 #ifdef _WIN32
@@ -12,23 +12,23 @@
 
 // General ------------------------------------------------------------------------------
 
-Sys& Sys::instance() {
-    static Sys instance;
+SystemMgr& SystemMgr::instance() {
+    static SystemMgr instance;
     return instance;
 }
 
-Sys::Sys() :
-    log_("system.log")
+SystemMgr::SystemMgr() :
+    log_("systemmgrtem.log")
 {}
 
-Sys::~Sys() {
+SystemMgr::~SystemMgr() {
     
 }
 
 
 // Log ----------------------------------------------------------------------------------
 
-void Sys::error(std::string const& module, std::string const& msg) {
+void SystemMgr::error(std::string const& module, std::string const& msg) {
     std::string prefix = "[ERROR]   ";
 
     log_.write(prefix+"["+module+"] "+msg);
@@ -36,14 +36,14 @@ void Sys::error(std::string const& module, std::string const& msg) {
     showPopup(msg, "ERROR");            // <- !! Bloqueante
 }
 
-void Sys::warning(std::string const& module, std::string const& msg) {
+void SystemMgr::warning(std::string const& module, std::string const& msg) {
     std::string prefix = "[WARN]   ";
 
     log_.write(prefix+"["+module+"] "+msg);
     std::cerr << prefix << "[" << module << "]  " <<" "<< msg << std::endl;
 }
 
-void Sys::info(std::string const& module, std::string const& msg) {
+void SystemMgr::info(std::string const& module, std::string const& msg) {
     std::string prefix = "[INFO]   ";
 
     log_.write(prefix+"["+module+"] "+msg);
@@ -115,7 +115,7 @@ inline std::string wstringToString(std::wstring const& ws) {
 
 // Pop-ups ------------------------------------------------------------------------------
 
-void Sys::showPopup(const std::string& msg, const std::string& title) {
+void SystemMgr::showPopup(const std::string& msg, const std::string& title) {
     #ifdef _WIN32
         MessageBoxA(NULL, msg.c_str(), title.c_str(), MB_ICONERROR | MB_OK);
     #else

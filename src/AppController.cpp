@@ -1,6 +1,6 @@
 #include "AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
-#include "system/sys.hpp"
+#include "system/SystemMgr.hpp"
 
 // General ------------------------------------------------------------------------------
 

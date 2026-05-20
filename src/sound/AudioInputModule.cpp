@@ -1,6 +1,6 @@
 
 #include "sound/AudioInputModule.hpp"
-#include <system/sys.hpp>
+#include <system/SystemMgr.hpp>
 
 // General ------------------------------------------------------------------------------
 

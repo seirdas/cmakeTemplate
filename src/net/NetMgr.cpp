@@ -1,7 +1,7 @@
 #include <iostream>             // Entrada/Salida estándar
 #include "net/NetMgr.hpp"
 #include "net/UdpReceiver.hpp"
-#include "system/sys.hpp"
+#include "system/SystemMgr.hpp"
 
 // General ------------------------------------------------------------------------------
 

@@ -1,21 +1,21 @@
 #pragma once
 
 #include <string>
-#include "system/LogMgr.hpp"
+#include "files/LogMgr.hpp"
 
 
 // Macros simplificados para escribir mensajes:
-#define SYS_ERROR(module, msg) Sys::instance().error(module, msg)
-#define SYS_WARN(module, msg)  Sys::instance().warning(module, msg)
-#define SYS_INFO(module, msg)  Sys::instance().info(module, msg)
+#define SYS_ERROR(module, msg) SystemMgr::instance().error(module, msg)
+#define SYS_WARN(module, msg)  SystemMgr::instance().warning(module, msg)
+#define SYS_INFO(module, msg)  SystemMgr::instance().info(module, msg)
 
 
 /**
- * @class Sys
+ * @class SystemMgr
  * @brief Clase Singleton, para obtener/modificar configuraciones de aplicación
  *      escribir en registro, etc..
  */
-class Sys {
+class SystemMgr {
 
 public:
 
@@ -24,7 +24,7 @@ public:
     /**
      * @brief Declara la instancia estática de la clase
      */
-    static Sys& instance();
+    static SystemMgr& instance();
 
 
 // Log ----------------------------------------------------------------------------------
@@ -71,18 +71,18 @@ private:
     /**
      * @brief Constructor privado en singleton
      */
-    Sys();
+    SystemMgr();
 
     /**
      * @brief Destructor privado en singleton 
      */
-    ~Sys();
+    ~SystemMgr();
 
     /**
      * @brief Evitar copias
      */
-    Sys(const Sys&)             = delete;
-    Sys& operator=(const Sys&)  = delete;
+    SystemMgr(const SystemMgr&)             = delete;
+    SystemMgr& operator=(const SystemMgr&)  = delete;
 
 
 // Pop-ups ------------------------------------------------------------------------------

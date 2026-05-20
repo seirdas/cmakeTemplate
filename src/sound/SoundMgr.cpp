@@ -7,7 +7,7 @@
 #include <iostream>
 #include <chrono>               // Controla tiempos de espera
 #include <thread>
-#include <system/sys.hpp>
+#include <system/SystemMgr.hpp>
 
 // General ------------------------------------------------------------------------------
 
