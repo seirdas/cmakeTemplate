@@ -1,4 +1,4 @@
-#include "net/CycloneDDS.hpp"
+#include "dds/CycloneDDS.hpp"
 
 #ifdef USE_CYCLONEDDSCXX
 
