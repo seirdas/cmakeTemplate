@@ -12,7 +12,7 @@ struct ImGuiStyle;
 struct ImGuiIO;
 
 /**
-  * @class GUiMgr
+  * @class GuiMgr
   * @brief Gestor de ventana y loop principal usando GLFW, OpenGL e ImGui.
   *  Comunica con el resto de la aplicación mediante la interfaz IAppControl suministrada.
   * @note El destructor virtual garantiza la limpieza correcta en clases derivadas.
@@ -23,7 +23,7 @@ struct ImGuiIO;
   * @see IAppControl
   * @date March 2, 2026 
   */
-class GUiMgr {
+class GuiMgr {
 
 public:
 
@@ -33,13 +33,13 @@ public:
      * @brief Constructor por defecto.
      * @param ctrl_ Controlador para pedir datos a AppController
      */
-    GUiMgr(IAppControl* ctrl_ = nullptr);
+    GuiMgr(IAppControl* ctrl_ = nullptr);
     
     /**
      * @brief Destructor. Llama a cerrar() para liberar recursos.
      * @note Virtual para evitar comportamientos inesperados en clases derivadas.
      */
-    virtual ~GUiMgr();
+    virtual ~GuiMgr();
     
     /**
      * @brief Establece el controlador que usa para manejar otras clases.

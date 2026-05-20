@@ -10,7 +10,7 @@
 //		https://traineq.org/imgui_bundle_explorer/
 // ---------------------------------------------------------------------------------
 
-#include "ui/GUIMgr.h"			// Clase de gestión de UI
+#include "gui/GuiMgr.hpp"			// Clase de gestión de UI
 #include <cstring>
 #include <stb_image.h>          // Implementación para soporte de imágenes.
 #include "imgui-knobs.h"		// Soporte de knobs
@@ -48,39 +48,39 @@ using namespace ImGui;
 
 // General ------------------------------------------------------------------------------
 
-GUiMgr::GUiMgr(IAppControl* controller) : ctrl_(controller) {
+GuiMgr::GuiMgr(IAppControl* controller) : ctrl_(controller) {
 	if (ctrl_==nullptr)
-		SYS_WARN("GUiMgr","Cannot handle any controller.");
+		SYS_WARN("GuiMgr","Cannot handle any controller.");
 }
 
-GUiMgr::~GUiMgr() {
+GuiMgr::~GuiMgr() {
 	cerrar();
 }
 
-void GUiMgr::setController(IAppControl* controller){
+void GuiMgr::setController(IAppControl* controller){
 	ctrl_ = controller;
 }
 
 // Ejecución ----------------------------------------------------------------------------
 
-bool GUiMgr::init() {
+bool GuiMgr::init() {
 
-	SYS_INFO("GUiMgr", "Initializating UI...");
+	SYS_INFO("GuiMgr", "Initializating UI...");
 
 	// Identificación de posibles errores de inicialización
 	glfwSetErrorCallback([](int error, const char* description) {
-		SYS_ERROR("GUIMgr", "GLFW Error (" + std::to_string(error) + "): " + std::string(description));
+		SYS_ERROR("GuiMgr", "GLFW Error (" + std::to_string(error) + "): " + std::string(description));
 	});
 
 	// Check si está vinculado con la App
 	if (ctrl_!=nullptr)
-		SYS_INFO("GUiMgr", "Linked with IAppController");
+		SYS_INFO("GuiMgr", "Linked with IAppController");
 	else
-		SYS_ERROR("GUiMgr","No controller linked.");
+		SYS_ERROR("GuiMgr","No controller linked.");
 
 	// Inicializar GLFW
     if (!glfwInit()) {
-		SYS_ERROR("GUiMgr","glfwInit error.");
+		SYS_ERROR("GuiMgr","glfwInit error.");
 		return false;
 	}
 
@@ -93,7 +93,7 @@ bool GUiMgr::init() {
     window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
     if(!window_) {
         glfwTerminate();
-        SYS_ERROR("GUiMgr","glfwCreateWindow error.");
+        SYS_ERROR("GuiMgr","glfwCreateWindow error.");
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -143,9 +143,9 @@ bool GUiMgr::init() {
 			icon_image.pixels = pixels;
 			glfwSetWindowIcon(window_, 1, &icon_image);
 			stbi_image_free(pixels);
-			SYS_INFO("GUiMgr", "Linux window icon loaded from file.");
+			SYS_INFO("GuiMgr", "Linux window icon loaded from file.");
 		} else {
-			SYS_WARN("GUiMgr","Could not load icon.png for Linux window.");
+			SYS_WARN("GuiMgr","Could not load icon.png for Linux window.");
 		}
 	#endif
 
@@ -157,7 +157,7 @@ bool GUiMgr::init() {
     return true;
 }
 
-void GUiMgr::run() {
+void GuiMgr::run() {
 
 	while (isRunning())
 		BuclePrincipal();		// <-- Se queda aqui hasta cerrar
@@ -165,16 +165,16 @@ void GUiMgr::run() {
 	cerrar();
 }
 
-bool GUiMgr::isRunning() const {
+bool GuiMgr::isRunning() const {
     return window_ && !glfwWindowShouldClose(window_);
 }
 
-void GUiMgr::cerrar() {
+void GuiMgr::cerrar() {
 	// No intentar cerrar de nuevo (excepción)
 	if(!running_) 
 		return;
 
-	SYS_INFO("GUiMgr", "Closing UI...");
+	SYS_INFO("GuiMgr", "Closing UI...");
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -189,14 +189,14 @@ void GUiMgr::cerrar() {
 	// Liberar recursos de imágenes cargadas
 	unloadImages();
 
-	SYS_INFO("GUiMgr", "UI closed.");
+	SYS_INFO("GuiMgr", "UI closed.");
 	running_ = false;
 }
 
 
 // Bucle principal ----------------------------------------------------------------------
 
-void GUiMgr::initCuadro() {
+void GuiMgr::initCuadro() {
     glfwPollEvents();
     
     ImGui_ImplOpenGL3_NewFrame();
@@ -204,7 +204,7 @@ void GUiMgr::initCuadro() {
     NewFrame();
 }
 
-void GUiMgr::endCuadro() {
+void GuiMgr::endCuadro() {
     // Renderiza
     Render();
     glClear(GL_COLOR_BUFFER_BIT);
@@ -212,7 +212,7 @@ void GUiMgr::endCuadro() {
     glfwSwapBuffers(window_);
 }
 
-void GUiMgr::captureKeys() {
+void GuiMgr::captureKeys() {
 
 	// Modo debug de detección de teclas
 	if (captureKeys_)
@@ -230,7 +230,7 @@ void GUiMgr::captureKeys() {
 
 }
 
-void GUiMgr::BuclePrincipal() {
+void GuiMgr::BuclePrincipal() {
     initCuadro();
 	captureKeys();
 
@@ -274,7 +274,7 @@ void GUiMgr::BuclePrincipal() {
 
 // Elementos de interfaz ----------------------------------------------------------------
 
-void GUiMgr::crearMainMenuBar() {
+void GuiMgr::crearMainMenuBar() {
 	if (BeginMainMenuBar()) {
 		if (BeginMenu("File")) {
 			if (MenuItem("New", "Ctrl+N")) { /* Acción */ }
@@ -300,7 +300,7 @@ void GUiMgr::crearMainMenuBar() {
 	MainMenuBar_Height_ = GetFrameHeight();
 }
 
-void GUiMgr::ventanaPrincipal() {
+void GuiMgr::ventanaPrincipal() {
 	// Variables estáticas (solo se crean una vez) para guardar datos
 	static float heightRightTop = 0.5f; 
 	static float totalHeight = GetContentRegionAvail().y;
@@ -600,7 +600,7 @@ void GUiMgr::ventanaPrincipal() {
 
 // Carga de imágenes --------------------------------------------------------------------
    
-uintptr_t GUiMgr::getImage(std::string path) {
+uintptr_t GuiMgr::getImage(std::string path) {
 	// Si la imagen no está precacheada, se añade
 	if (images_.find(path) == images_.end())
 		addTextureFromFile(path);
@@ -608,15 +608,15 @@ uintptr_t GUiMgr::getImage(std::string path) {
 	return images_[path].tex;
 }
 
-void GUiMgr::unloadImages() {
-	SYS_INFO("GUiMgr", "Unloading images...");
+void GuiMgr::unloadImages() {
+	SYS_INFO("GuiMgr", "Unloading images...");
 
 	GLuint glTex;
 
 	// Descargar todas las imágenes guardadas
 	for (auto & img : images_) {
         if (img.second.tex != 0) {
-            SYS_INFO("GUiMgr", "Unloading cached texture: " + img.first);
+            SYS_INFO("GuiMgr", "Unloading cached texture: " + img.first);
             
             // Convertimos el uintptr_t de vuelta a GLuint para OpenGL
             glTex = (GLuint)img.second.tex;
@@ -628,7 +628,7 @@ void GUiMgr::unloadImages() {
 	images_.clear();	// Por si se vuelve a usar
 }
 
-void GUiMgr::addTextureFromFile(std::string filename) {
+void GuiMgr::addTextureFromFile(std::string filename) {
 
 	imageData img_data;		// Variable temporal para almacenar datos de la imagen cargada
 	img_data.tex 	  = 0;	// Textura por defecto
@@ -649,11 +649,11 @@ void GUiMgr::addTextureFromFile(std::string filename) {
 		img_data.tex = (uintptr_t)texture;				// Guardar la textura generada
 		stbi_image_free(data);	// Liberar memoria de datos de imagen temportales
 		
-		SYS_INFO("GUiMgr", "Loaded image " + filename);
+		SYS_INFO("GuiMgr", "Loaded image " + filename);
 	} else {
 		if (defaultTexture_ == 0) generateDefaultTexture();
 		img_data.tex = defaultTexture_;
-		SYS_WARN("GUiMgr","Error loading image: " + filename);
+		SYS_WARN("GuiMgr","Error loading image: " + filename);
 	}
 
 	// Guardar la imagen en el mapa de imágenes
@@ -662,7 +662,7 @@ void GUiMgr::addTextureFromFile(std::string filename) {
     return;
 };
 
-void GUiMgr::generateDefaultTexture() {
+void GuiMgr::generateDefaultTexture() {
     const int width = 64;
     const int height = 64;
     const int checkSize = 32; // Tamaño de cada cuadro del mosaico
@@ -704,16 +704,16 @@ void GUiMgr::generateDefaultTexture() {
 
 // Aspecto y temas ----------------------------------------------------------------------
 
-void GUiMgr::updateDensity(int delta) {
+void GuiMgr::updateDensity(int delta) {
 
     int new_size = (int)style_->FontSizeBase + delta;
 
     if (new_size > (int)MAX_FONT_SIZE_) {
-        SYS_WARN("GUiMgr","Font size bigger than max allowed.");
+        SYS_WARN("GuiMgr","Font size bigger than max allowed.");
         return;
     }
     if (new_size < (int)MIN_FONT_SIZE_) {
-        SYS_WARN("GUiMgr","Font size smaller than min allowed.");
+        SYS_WARN("GuiMgr","Font size smaller than min allowed.");
         return;
     }
 
@@ -734,19 +734,19 @@ void GUiMgr::updateDensity(int delta) {
     style_->FrameRounding = style_->FrameRounding * scale;
     style_->GrabRounding = style_->GrabRounding * scale;
 
-    SYS_INFO("GUiMgr", "Density adjusted to font size: " + std::to_string(style_->FontSizeBase));
+    SYS_INFO("GuiMgr", "Density adjusted to font size: " + std::to_string(style_->FontSizeBase));
 };
 
-void GUiMgr::titleBarDarkMode(bool useDarkMode) {
+void GuiMgr::titleBarDarkMode(bool useDarkMode) {
 	#ifdef _WIN32
 		std::string st_darkmode=(useDarkMode ? "Dark" : "Light");
 		BOOL useDarkMode_ = useDarkMode ? TRUE : FALSE;
 		DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode_, sizeof(useDarkMode_));
-		SYS_INFO("GUiMgr",  st_darkmode + " window title set");
+		SYS_INFO("GuiMgr",  st_darkmode + " window title set");
 	#endif
 }
 
-void GUiMgr::Style_Confy() {
+void GuiMgr::Style_Confy() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -835,10 +835,10 @@ void GUiMgr::Style_Confy() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
-	SYS_INFO("GUiMgr", "'Confy' theme applied.");
+	SYS_INFO("GuiMgr", "'Confy' theme applied.");
 }
 
-void GUiMgr::Style_FutureDark() {
+void GuiMgr::Style_FutureDark() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -927,10 +927,10 @@ void GUiMgr::Style_FutureDark() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 
-	SYS_INFO("GUiMgr", "'FutureDark' theme applied.");
+	SYS_INFO("GuiMgr", "'FutureDark' theme applied.");
 }
 
-void GUiMgr::Style_Moonlight() {
+void GuiMgr::Style_Moonlight() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -1019,10 +1019,10 @@ void GUiMgr::Style_Moonlight() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 
-	SYS_INFO("GUiMgr", "'Moonlight' theme applied.");
+	SYS_INFO("GuiMgr", "'Moonlight' theme applied.");
 }
 
-void GUiMgr::Style_VisualStudio() {
+void GuiMgr::Style_VisualStudio() {
 	
 	StyleColorsDark();
 	titleBarDarkMode(true);
@@ -1111,10 +1111,10 @@ void GUiMgr::Style_VisualStudio() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.1451f, 0.1451f, 0.1490f, 1.0000f);
 
-	SYS_INFO("GUiMgr", "'Visual Studio' theme applied.");
+	SYS_INFO("GuiMgr", "'Visual Studio' theme applied.");
 }
 
-void GUiMgr::Style_Microfrost() {
+void GuiMgr::Style_Microfrost() {
 	
 	StyleColorsLight();
 	titleBarDarkMode(false);
@@ -1203,5 +1203,5 @@ void GUiMgr::Style_Microfrost() {
 	style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
 	style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
-	SYS_INFO("GUiMgr", "'Microfrost' theme applied.");
+	SYS_INFO("GuiMgr", "'Microfrost' theme applied.");
 }
