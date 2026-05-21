@@ -17,7 +17,7 @@ endif()
 FetchContent_Declare(
     tinyxml2
     GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
-    GIT_TAG        10.0.0      # Versión estable más reciente
+    GIT_TAG        11.0.0      # Versión estable más reciente
     GIT_SHALLOW    TRUE        # habilita --depth 1
     SOURCE_DIR     "${EXTERNAL_LIB_PATH}/tinyxml2_src"
     EXCLUDE_FROM_ALL TRUE
