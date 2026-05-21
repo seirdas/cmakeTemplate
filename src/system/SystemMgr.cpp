@@ -18,7 +18,7 @@ SystemMgr& SystemMgr::instance() {
 }
 
 SystemMgr::SystemMgr() :
-    log_("systemmgrtem.log")
+    log_("system.log")
 {}
 
 SystemMgr::~SystemMgr() {
