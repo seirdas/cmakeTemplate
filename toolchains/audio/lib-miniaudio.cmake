@@ -16,16 +16,16 @@ if (EXISTS "${EXTERNAL_LIB_PATH}/miniaudio_src/.git")
 endif()
 
 # declara el recurso externo que CMake descargará
-FetchContent_Declare(
+fetchcontent_declare(
   miniaudio
   GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-  GIT_TAG        0.11.23          # o la versión que necesites
+  GIT_TAG        0.11.25          # o la versión que necesites
   GIT_SHALLOW    TRUE            # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/miniaudio_src"
   EXCLUDE_FROM_ALL TRUE
 )
 # Hace disponible el recurso
-FetchContent_MakeAvailable(miniaudio)
+fetchcontent_makeavailable(miniaudio)
 
 # Crear una librería estática con Miniaudio
 add_library(miniaudio_lib STATIC
