@@ -122,12 +122,12 @@ function(link_tts_assets)
     set(SRC_DIR "${EXTERNAL_LIB_PATH}/tts-assets/tts-voices")
     file(TO_NATIVE_PATH "${SRC_DIR}" SRC_NATIVE)
 
-    if(WIN32)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND @echo ---- Linking tts-assets to output folder...
-            COMMAND @echo ${SRC_NATIVE} --- "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-        )
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "---- Linking tts-assets to output folder..."
+        COMMAND ${CMAKE_COMMAND} -E echo "${SRC_NATIVE} --- $<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    )
 
+    if(WIN32)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             # cd para evitar problemas de "/"
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"

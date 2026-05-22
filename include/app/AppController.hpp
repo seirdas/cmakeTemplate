@@ -5,13 +5,13 @@
 
 #include <nlohmann/json.hpp>    // Manipula archivos .json
 
-#include "ui/GUIMgr.h"          // Clase de gestión de ventana UI
+#include "gui/GuiMgr.hpp"          // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
-#define VERSION 0.8
+#define VERSION 0.9
 
 /**
   *  @class AppController
@@ -31,6 +31,7 @@
 class AppController : public IAppControl {
 
 public:
+
 // General ------------------------------------------------------------------------------
 
     /**
@@ -45,8 +46,10 @@ public:
 
     /**
      * @brief Inicializa los miembros de la aplicación
+     * @param argc Número de parámetros de entrada del programa
+     * @param argv Array de nombres de parámetros de entrada
      */
-    bool init();
+    bool init(int argc, char** argv);
 
     /**
      * @brief Ejecuta la aplicación. Inicia el receptor UDP y la ventana UI.
@@ -149,7 +152,7 @@ private:
 
     // Módulos
     NetMgr      net_;                           // Gestor de sockets de red
-    GUiMgr      gui_;                           // Gestor de ventanas para la interfaz gráfica
+    GuiMgr      gui_;                           // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                           // Gestor de audio
     TTSMgr      tts_;                           // Gestor módulo TTS
 

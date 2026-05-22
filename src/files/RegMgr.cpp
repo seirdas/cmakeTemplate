@@ -1,5 +1,5 @@
-#include "system/RegMgr.hpp"
-#include "system/sys.hpp"
+#include "files/RegMgr.hpp"
+#include "system/SystemMgr.hpp"
 
 #ifdef _WIN32
 // ============================================================

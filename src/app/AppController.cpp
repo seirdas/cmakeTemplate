@@ -1,6 +1,6 @@
-#include "AppController.hpp"
+#include "app/AppController.hpp"
+#include "system/SystemMgr.hpp"
 #include <chrono>               // Controla tiempos de espera
-#include "system/sys.hpp"
 
 // General ------------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ AppController::~AppController() {
     tts_.cerrar();
 }
 
-bool AppController::init() {
+bool AppController::init(int argc, char** argv) {
 
     // Iniciar GUI, salir si no se carga bien
     gui_initialized_ = gui_.init();

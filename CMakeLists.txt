@@ -339,7 +339,7 @@ endif()
 # Se enlazan automáticamente si están activas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
   ${EXTERNAL_LIBS}
-  )
+)
 
 # Copiar librerías dinámicas de TTS
 if(USE_TTS)
@@ -361,7 +361,7 @@ endif()
 set(DEPS_DIR "dependencies")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND @echo ---- Copying files from ${DEPS_DIR} folder...
+    COMMAND ${CMAKE_COMMAND} -E echo "---- Copying files from ${DEPS_DIR} folder..."
 )
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -371,9 +371,9 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Configurar carpetas de salida del ejecutable y librerías
 set_target_properties(${PROJECT_NAME} PROPERTIES 
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida del ejecutable
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida de librerías estáticas
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win-${ARCH_NAME},Linux>-$<CONFIG>" # Carpeta de salida de librerías dinámicas
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-${ARCH_NAME}-$<CONFIG>" # Carpeta de salida del ejecutable
+  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-${ARCH_NAME}-$<CONFIG>" # Carpeta de salida de librerías estáticas
+  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-${ARCH_NAME}-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
 
 # Generar Doxygen

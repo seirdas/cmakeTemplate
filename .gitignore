@@ -36,9 +36,8 @@
 *build
 *external
 doxygen*
-dependencies/voices*
-executable/*/voices*
 *so
+executable/*/voices*
 executable/*/tts-voices/*
 executable/*/*.dll
 *generated

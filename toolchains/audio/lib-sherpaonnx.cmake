@@ -6,7 +6,7 @@ cmake_policy(SET CMP0135 NEW)
 # Selección de librería sherpa
 # ----------------------------------------------------------------------------
 
-set(SHERPA_VERSION "1.12.34")
+set(SHERPA_VERSION "1.13.0")
 option(USE_SHERPA_WIN_GPU   "Compilar con soporte Windows GPU"  ON)      # Activar/desactivar librería compatible con GPU (Windows)
 option(USE_CUDA             "Sherpa con soporte CUDA"           OFF)     # Activar/desactivar copiar la dll pesada de CUDA
 
@@ -206,9 +206,18 @@ else()
         "${SHERPA_LIB_PATH}/libsherpa-onnx-c-api.so"
         "${SHERPA_LIB_PATH}/libsherpa-onnx-cxx-api.so"
         "${SHERPA_LIB_PATH}/libonnxruntime.so"
+        "${SHERPA_LIB_PATH}/libonnxruntime_providers_shared.so"
         pthread
         dl
     )
+
+    # Link de librerías GPU solo si se requiere
+    if(USE_CUDA)
+        target_link_libraries(sherpa_lib INTERFACE
+            "${SHERPA_LIB_PATH}/libonnxruntime_providers_tensorrt.so"
+            "${SHERPA_LIB_PATH}/libonnxruntime_providers_cuda.so"
+        )
+    endif()
 
 endif()
 
@@ -275,7 +284,7 @@ function(configure_sherpa_deps)
         endif()
 
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND @echo ---- Linking Sherpa dlls to output folder...
+            COMMAND ${CMAKE_COMMAND} -E echo "---- Linking Sherpa dlls to output folder..."
         )
         
         # Copiar las dlls al lado del ejecutable
@@ -285,7 +294,7 @@ function(configure_sherpa_deps)
 
             # Log en build de lo que va a hacer...
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND @echo ${SRC_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>"
             )
             
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -303,12 +312,15 @@ function(configure_sherpa_deps)
             "libsherpa-onnx-c-api.so" 
             "libsherpa-onnx-cxx-api.so" 
             "libonnxruntime.so" 
-            "libonnxruntime_providers_shared.so" 
-            "libonnxruntime_providers_tensorrt.so"
+            "libonnxruntime_providers_shared.so"
         )
-        # Añadir dll de cuda si está activado
+
+        # Añadir dependencias de GPU si está activado
         if (USE_CUDA)
-            list(APPEND DLL_LIST "libonnxruntime_providers_cuda.so")
+            list(APPEND DLL_LIST 
+                "libonnxruntime_providers_cuda.so"
+                "libonnxruntime_providers_tensorrt.so"
+            )
         endif()
 
         foreach(DLL_NAME ${DLL_LIST})

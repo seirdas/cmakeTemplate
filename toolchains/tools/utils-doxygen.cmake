@@ -81,8 +81,8 @@ function(generate_doxygen)
                 $<$<CONFIG:Release>:echo> 
                 $<$<CONFIG:Release>:"---- Generating Doxygen documentation...">
         
-        # Ejecución silenciosa: añadimos QUIET=YES para mutear el log
-        COMMAND $<$<CONFIG:Release>:${DOXYGEN_EXECUTABLE}> 
+        # Ejecución silenciosa
+        COMMAND $<$<CONFIG:Release>:${DOXYGEN_BIN}> 
                 $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile>
                 $<$<CONFIG:Release>:QUIET=YES>
         

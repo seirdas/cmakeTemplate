@@ -14,15 +14,15 @@ if (EXISTS "${EXTERNAL_LIB_PATH}/tinyxml2_src/.git")
       "${EXTERNAL_LIB_PATH}/tinyxml2_src"
       CACHE PATH "" FORCE)
 endif()
-FetchContent_Declare(
+fetchcontent_declare(
     tinyxml2
     GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
-    GIT_TAG        10.0.0      # Versión estable más reciente
+    GIT_TAG        11.0.0      # Versión estable más reciente
     GIT_SHALLOW    TRUE        # habilita --depth 1
     SOURCE_DIR     "${EXTERNAL_LIB_PATH}/tinyxml2_src"
     EXCLUDE_FROM_ALL TRUE
 )
-FetchContent_MakeAvailable(tinyxml2)
+fetchcontent_makeavailable(tinyxml2)
 
 # Crear la librería estática
 add_library(tinyxml2_lib STATIC "${tinyxml2_SOURCE_DIR}/tinyxml2.cpp")

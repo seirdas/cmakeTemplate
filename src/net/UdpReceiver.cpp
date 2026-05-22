@@ -1,5 +1,5 @@
 #include "net/UdpReceiver.hpp"
-#include <system/sys.hpp>
+#include <system/SystemMgr.hpp>
 
 constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paquete UDP (64 KB)
 
