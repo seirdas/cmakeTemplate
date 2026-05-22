@@ -1,15 +1,17 @@
-# ------------------------------------------------------------------------------
+# ==============================================================================
 # Toolchain CycloneDDS + C++ Binding
-# ------------------------------------------------------------------------------
-
+# ==============================================================================
 include(ExternalProject)
 cmake_policy(SET CMP0111 NEW) # Permite apuntar a targets que aún no existen
+cmake_policy(SET CMP0169 OLD) # Permite "usar" FetchContent_Populate
+
+# Versión de cyclone
+set(CYCLONE_VERSION 11.0.1)
 
 
 # ==============================================================================
 # Rutas globales
 # ==============================================================================
-
 set(CYCLONE_TOTAL_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/cyclonedds-install")
 set(CYCLONE_SRC_DIR           "${EXTERNAL_LIB_PATH}/cyclonedds_src")
 set(CYCLONECPP_SRC_DIR        "${EXTERNAL_LIB_PATH}/cycloneddscpp_src")
@@ -57,13 +59,11 @@ endif()
 # Detectar "formato" de librería
 if(WIN32)
     # Windows
-
     if(MSVC)
         # Windows con compilador de Windows MSVC
 
     elseif(MINGW)
         # MinGW/Clang 
-
         message(STATUS "[Cyclone] Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
         message(STATUS "[Cyclone] Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
         list(APPEND _generator_args
@@ -80,12 +80,10 @@ if(WIN32)
 
         if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
             # Solo Windows Clang
-
             list(APPEND _generator_args "-DCLANG_PATH=${CLANG_PATH}" )
 
         else()
             # Solo Windows MinGW
-
             list(APPEND _generator_args "-DMINGW_PATH=${MINGW_PATH}" )
 
         endif()
@@ -97,10 +95,31 @@ endif()
 
 
 # ==============================================================================
-# Core de CycloneDDS
+# CycloneDDS Core
 # ==============================================================================
 
-# Comprueba previamente si está instalado
+# ---------------------------------------------
+# Descargar previamente el código fuente en src
+# ---------------------------------------------
+if (EXISTS "${CYCLONE_SRC_DIR}/.github")
+  message(STATUS "[Cyclone] CycloneDDS source found locally at: '${CYCLONE_SRC_DIR}'")
+  set(FETCHCONTENT_SOURCE_DIR_CYCLONEDDS_FETCH
+      "${CYCLONE_SRC_DIR}"
+      CACHE PATH "" FORCE)
+endif()
+FetchContent_Declare(
+    cyclonedds_fetch
+    GIT_REPOSITORY  https://github.com/eclipse-cyclonedds/cyclonedds
+    GIT_TAG         ${CYCLONE_VERSION}
+    GIT_SHALLOW     TRUE
+    SOURCE_DIR      "${CYCLONE_SRC_DIR}"
+    GIT_PROGRESS    TRUE
+)
+FetchContent_Populate(cyclonedds_fetch)
+
+# ---------------------------------------------
+# Instrucciones de compilación e instalación de librería
+# ---------------------------------------------
 if(EXISTS "${_ddsc_lib}")
     message(STATUS "[Cyclone] Cyclone core lib found locally at: '${_ddsc_lib}'")
     add_custom_target(cyclonedds_core)
@@ -108,14 +127,12 @@ else()
     message(STATUS "[Cyclone] CycloneDDS core not found, it will be built at first build.")
 
     ExternalProject_Add(cyclonedds_core
-        GIT_REPOSITORY  https://github.com/eclipse-cyclonedds/cyclonedds.git
-        GIT_TAG         11.0.1
-        GIT_SHALLOW     TRUE
         SOURCE_DIR      "${CYCLONE_SRC_DIR}"
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
 
-        UPDATE_COMMAND  ""
+        # Fase de descarga anulada (ya lo hizo el Populate)
         DOWNLOAD_COMMAND ""
+        UPDATE_COMMAND  ""
         
         # Ver documentación en el readme de la URL de github
         CMAKE_ARGS
@@ -153,10 +170,31 @@ endif()
 
 
 # ==============================================================================
-# Binding C++
+# CycloneDDS C++ Binding
 # ==============================================================================
 
-# Comprueba previamente si está instalado
+# ---------------------------------------------
+# Descargar previamente el código fuente en src
+# ---------------------------------------------
+if (EXISTS "${CYCLONECPP_SRC_DIR}/.github")
+  message(STATUS "[Cyclone] CycloneDDS C++ Binding source found locally at: '${CYCLONECPP_SRC_DIR}'")
+  set(FETCHCONTENT_SOURCE_DIR_CYCLONEDDS_CXX_FETCH
+      "${CYCLONECPP_SRC_DIR}"
+      CACHE PATH "" FORCE)
+endif()
+FetchContent_Declare(
+    cyclonedds_cxx_fetch
+    GIT_REPOSITORY  https://github.com/eclipse-cyclonedds/cyclonedds-cxx
+    GIT_TAG         ${CYCLONE_VERSION}
+    GIT_SHALLOW     TRUE
+    SOURCE_DIR      "${CYCLONECPP_SRC_DIR}"
+    GIT_PROGRESS    TRUE
+)
+FetchContent_Populate(cyclonedds_cxx_fetch)
+
+# ---------------------------------------------
+# Instrucciones de compilación e instalación de librería
+# ---------------------------------------------
 if(EXISTS "${_ddscxx_lib}")
     message(STATUS "[Cyclone] Cyclone c++ binding lib found locally at: '${_ddscxx_lib}'")
     add_custom_target(cyclonedds_cpp_binding)
@@ -164,14 +202,12 @@ else()
     message(STATUS "[Cyclone] CycloneDDS C++ binding not found, it will be built at first build.")
     ExternalProject_Add(cyclonedds_cpp_binding
         DEPENDS         cyclonedds_core
-        GIT_REPOSITORY  https://github.com/eclipse-cyclonedds/cyclonedds-cxx.git
-        GIT_TAG         11.0.1
-        GIT_SHALLOW     TRUE
         SOURCE_DIR      "${CYCLONECPP_SRC_DIR}"
         INSTALL_DIR     "${CYCLONE_TOTAL_INSTALL_DIR}"
 
-        UPDATE_COMMAND  ""
+        # Fase de descarga anulada (ya lo hizo el Populate)
         DOWNLOAD_COMMAND ""
+        UPDATE_COMMAND  ""
         
         CMAKE_ARGS
             "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
