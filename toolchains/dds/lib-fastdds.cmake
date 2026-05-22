@@ -48,8 +48,9 @@ message(STATUS "[FastDDS] foonathan_memory found in: ${foonathan_memory_DIR}")
 
 # Carpeta de salida de cpp/hpp generado de .idl's
 set(IDL_DIR         "${CMAKE_SOURCE_DIR}/IDL")
-set(IDL_GENERATED_DIR         "${IDL_DIR}/fastdds_generated")
-file(MAKE_DIRECTORY "${IDL_GENERATED_DIR}")
+set(IDL_GENERATED_FOLDER       "fastdds_generated")
+set(IDL_GENERATED_PATH         "${IDL_DIR}/${IDL_GENERATED_FOLDER}")
+file(MAKE_DIRECTORY "${IDL_GENERATED_PATH}")
 
 # Guardar todos los archivos IDL en IDL_FILES
 file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
@@ -64,26 +65,54 @@ if(IDL_FILES)
         
         # Salida de FastDDS
         set(OUTPUTS
-            "${IDL_GENERATED_DIR}/${IDL_NAME}.hpp"
-            "${IDL_GENERATED_DIR}/${IDL_NAME}CdrAux.hpp"
-            "${IDL_GENERATED_DIR}/${IDL_NAME}CdrAux.ipp"
-            "${IDL_GENERATED_DIR}/${IDL_NAME}PubSubTypes.cxx"
-            "${IDL_GENERATED_DIR}/${IDL_NAME}PubSubTypes.hpp"
-            "${IDL_GENERATED_DIR}/${IDL_NAME}TypeObjectSupport.cxx"  
-            "${IDL_GENERATED_DIR}/${IDL_NAME}TypeObjectSupport.hpp"  
+            "${IDL_GENERATED_PATH}/${IDL_NAME}.hpp"
+            "${IDL_GENERATED_PATH}/${IDL_NAME}CdrAux.hpp"
+            "${IDL_GENERATED_PATH}/${IDL_NAME}CdrAux.ipp"
+            "${IDL_GENERATED_PATH}/${IDL_NAME}PubSubTypes.cxx"
+            "${IDL_GENERATED_PATH}/${IDL_NAME}PubSubTypes.hpp"
+            "${IDL_GENERATED_PATH}/${IDL_NAME}TypeObjectSupport.cxx"  
+            "${IDL_GENERATED_PATH}/${IDL_NAME}TypeObjectSupport.hpp"  
         )
 
         # java -jar "C:\Program Files\eProsima\fastdds 3.2.2\share\fastddsgen\java\fastddsgen.jar" -d . -replace "idl_data.idl" 
         add_custom_command(
             OUTPUT ${OUTPUTS}
-            WORKING_DIRECTORY "${IDL_GENERATED_DIR}" 
-            COMMAND java -jar ${FASTDDSGEN_JAVA} -d "${IDL_GENERATED_DIR}" -replace "${IDL_FILE}"
+            WORKING_DIRECTORY "${IDL_GENERATED_PATH}" 
+            COMMAND java -jar ${FASTDDSGEN_JAVA} -d "${IDL_GENERATED_PATH}" -replace "${IDL_FILE}"
             DEPENDS ${IDL_FILE}
             COMMENT "[FastDDSGen] Generating DDS files for ${IDL_NAME}..."
             VERBATIM
         )
         list(APPEND IDL_GENERATED_SOURCES  ${OUTPUTS})
     endforeach()
+
+
+    # -----------------------------------
+    # Generar archivo hpp genérico que incluya todos los generados
+    # -----------------------------------
+    # Buscar todos los .hpp de la carpeta
+    file(GLOB_RECURSE GENERATED_HEADERS CONFIGURE_DEPENDS "${IDL_GENERATED_PATH}/*.hpp")
+    set(UMBRELLA_FILE_NAME "_ALL.hpp")
+    set(UMBRELLA_FILE "${IDL_GENERATED_PATH}/${UMBRELLA_FILE_NAME}")
+    
+    # Borrar el anterior si existe
+    if (EXISTS ${UMBRELLA_FILE})
+        file(REMOVE ${UMBRELLA_FILE})
+    endif()
+    
+    # Primera línea del archivo
+    set(UMBRELLA_CONTENT "// --- Archivo auto-generado desde CMake FastDDS toolchain ---\n#pragma once\n\n")
+
+    # Iterar y añadir cada include
+    foreach(HEADER_PATH ${GENERATED_HEADERS})
+        get_filename_component(HEADER_NAME ${HEADER_PATH} NAME)
+        if(NOT ${HEADER_NAME} STREQUAL ${UMBRELLA_FILE_NAME})
+            string(APPEND UMBRELLA_CONTENT "#include \"${IDL_GENERATED_FOLDER}/${HEADER_NAME}\"\n")
+        endif()
+    endforeach()
+    
+    # Escribir todo en el archivo
+    file(WRITE ${UMBRELLA_FILE} ${UMBRELLA_CONTENT})
 
 endif()
 
@@ -128,7 +157,5 @@ target_link_libraries(fastdds_lib INTERFACE
 )
 target_include_directories(fastdds_lib INTERFACE
     "${EPROSIMA_INSTALL_DIR}/include"   # <fastdds/dds/...>
-)
-target_compile_definitions(fastdds_lib INTERFACE
-    USE_FASTDDS=1
+    "${IDL_DIR}"
 )
