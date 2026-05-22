@@ -20,6 +20,7 @@ fetchcontent_declare(
     GIT_TAG        11.0.0      # Versión estable más reciente
     GIT_SHALLOW    TRUE        # habilita --depth 1
     SOURCE_DIR     "${EXTERNAL_LIB_PATH}/tinyxml2_src"
+    GIT_PROGRESS   TRUE
     EXCLUDE_FROM_ALL TRUE
 )
 fetchcontent_makeavailable(tinyxml2)
