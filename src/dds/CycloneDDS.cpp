@@ -2,9 +2,16 @@
 
 #ifdef USE_CYCLONEDDSCXX
 
+    /* ---- ES NORMAL QUE SALGAN ERRORES: */
+    // Se necesita al menos compilar una vez para CYCLONEDDS se instale 
+    // en el proyecto y no aparezcan los errores en los componentes de cyclonedds
+    // Si aun así salen errores, borrar la carpeta '_build' y reconfigurar de nuevo
+
     #include <iostream>
     #include "dds/dds.h"
-    #include "cyclone_generated/idl_data.h"
+
+    // Include de los archivos .idl en formato .hpp generados por cyclone
+    #include "cyclone_generated/idl_data.hpp"
 
     // General ------------------------------------------------------------------------------
 
