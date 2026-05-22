@@ -60,5 +60,5 @@ target_link_libraries(miniaudio_lib PUBLIC
 
 # Silencia todos los warnings de este target
 if(MSVC)
-    target_compile_options(miniaudio_lib PRIVATE /w)
+    target_compile_options(miniaudio_lib PRIVATE /W0)
 endif()
