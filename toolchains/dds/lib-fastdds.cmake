@@ -2,6 +2,9 @@
 # Toolchain FastDDS
 # ------------------------------------------------------------------------------
 
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION 3.2.2)
+
 # =========================================================
 # Configuración de rutas para Fast-DDS Instalado
 # =========================================================

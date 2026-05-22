@@ -2,10 +2,15 @@
 # Librería de asio-network con dependencias
 # genera la librería asio_lib
 # -------------------------------
-
 include(FetchContent)
-
 message(STATUS "[asio] Fetching asio-network library...")
+
+# Versiones de librerías
+set(ASIO_VERSION         asio-1-36-0)       # No hay un tag específico
+
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${ASIO_VERSION})
+
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.git")
@@ -18,7 +23,7 @@ endif()
 FetchContent_Declare(
   asio_network
   GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-  GIT_TAG asio-1-36-0
+  GIT_TAG        ${ASIO_VERSION}
   GIT_SHALLOW    TRUE        # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/asio_src"
   GIT_PROGRESS   TRUE

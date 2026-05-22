@@ -2,6 +2,12 @@
 # Librería de Miniaudio (Audio)
 # -------------------------------
 
+# Versión de librería
+set(MINIAUDIO_VERSION 0.11.25)
+
+# Versión para devolver al cmakelists principal
+set(LIB_VERSION ${MINIAUDIO_VERSION})
+
 message(STATUS "[miniaudio] Fetching Miniaudio library...")
 set(MA_ENABLE_VORBIS  OFF CACHE BOOL "" FORCE)  # No construir soporte para Vorbis
 set(MA_ENABLE_OPUS    OFF CACHE BOOL "" FORCE)  # No construir soporte para Opus
@@ -19,7 +25,7 @@ endif()
 fetchcontent_declare(
   miniaudio
   GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-  GIT_TAG        0.11.25          # o la versión que necesites
+  GIT_TAG        ${MINIAUDIO_VERSION}
   GIT_SHALLOW    TRUE            # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/miniaudio_src"
   GIT_PROGRESS   TRUE

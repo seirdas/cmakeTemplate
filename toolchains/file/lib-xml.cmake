@@ -2,10 +2,15 @@
 # Librería de tinyxml2
 # genera la librería tinyxml2_lib
 # -------------------------------
-
 include(FetchContent)
-
 message(STATUS "[tinyxml2] Fetching tinyxml2 library...")
+
+# Versión de tinyxml
+set(XML_VERSION 11.0.0)
+
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${JSON_VERSION})
+
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/tinyxml2_src/.git")
@@ -17,7 +22,7 @@ endif()
 fetchcontent_declare(
     tinyxml2
     GIT_REPOSITORY https://github.com/leethomason/tinyxml2.git
-    GIT_TAG        11.0.0      # Versión estable más reciente
+    GIT_TAG        ${XML_VERSION}
     GIT_SHALLOW    TRUE        # habilita --depth 1
     SOURCE_DIR     "${EXTERNAL_LIB_PATH}/tinyxml2_src"
     GIT_PROGRESS   TRUE

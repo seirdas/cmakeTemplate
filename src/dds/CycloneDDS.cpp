@@ -1,6 +1,6 @@
 #include "dds/CycloneDDS.hpp"
 
-#ifdef USE_CYCLONEDDSCXX
+#ifdef CYCLONEDDSCXX
 
     /* ---- ES NORMAL QUE SALGAN ERRORES: */
     // Se necesita al menos compilar una vez para CYCLONEDDS se instale 

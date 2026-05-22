@@ -1,17 +1,20 @@
 # -------------------------------
 # Librería de nlohmann/json (JSON) 
 # -------------------------------
-
 include(FetchContent)
-cmake_policy(SET CMP0135 NEW) 
-
 message(STATUS "[json] Fetching nlohmann/json library...")
 
-# Version de json
+# Versión de json
 set(JSON_VERSION "v3.12.0")
+
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${JSON_VERSION})
+
+# Ruta externa
 set(JSON_INSTALL_DIR "${EXTERNAL_LIB_PATH}/json_release")
 
 # Configurar FetchContent
+cmake_policy(SET CMP0135 NEW) 
 fetchcontent_declare(
     nlohmann_json
     URL "https://github.com/nlohmann/json/releases/download/${JSON_VERSION}/include.zip"

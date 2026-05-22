@@ -6,7 +6,12 @@ cmake_policy(SET CMP0135 NEW)
 # Selección de librería sherpa
 # ----------------------------------------------------------------------------
 
+# Versión de Sherpa
 set(SHERPA_VERSION "1.13.0")
+
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${SHERPA_VERSION})
+
 option(USE_SHERPA_WIN_GPU   "Compilar con soporte Windows GPU"  ON)      # Activar/desactivar librería compatible con GPU (Windows)
 option(USE_CUDA             "Sherpa con soporte CUDA"           OFF)     # Activar/desactivar copiar la dll pesada de CUDA
 

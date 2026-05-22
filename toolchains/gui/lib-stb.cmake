@@ -2,10 +2,15 @@
 # Librería de stb con dependencias
 # genera la librería stb-lib
 # -------------------------------
-
 include(FetchContent)
-
 message(STATUS "[stb] Fetching stb library...")
+
+# Versiones de librerías
+set(STB_VERSION         master)       # No hay un tag específico
+
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${STB_VERSION})
+
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/stb_src/.git")
@@ -19,7 +24,7 @@ endif()
 FetchContent_Declare(
     stb
     GIT_REPOSITORY   https://github.com/nothings/stb
-    GIT_TAG          master      # No hay un tag específico
+    GIT_TAG          ${STB_VERSION}    
     GIT_SHALLOW      TRUE        # habilita --depth 1
     SOURCE_DIR       "${EXTERNAL_LIB_PATH}/stb_src"
     GIT_PROGRESS   TRUE

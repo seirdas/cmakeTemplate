@@ -7,6 +7,9 @@ set(DOXYGEN_TAG "Release_1_16_0")
 set(DOXYGEN_VERSION "1.16.0")
 set(DOXYGEN_INSTALL_DIR "${EXTERNAL_LIB_PATH}/utils-doxygen")
 
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${DOXYGEN_VERSION})
+
 if(WIN32)
     set(DOXYGEN_BIN "${DOXYGEN_INSTALL_DIR}/doxygen.exe")
     set(DOXYGEN_ZIP "doxygen-${DOXYGEN_VERSION}.x64.bin.zip")

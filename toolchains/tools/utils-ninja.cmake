@@ -6,6 +6,9 @@ cmake_policy(SET CMP0135 NEW)
 set(NINJA_TAG "v1.13.2")
 set(NINJA_INSTALL_DIR "${EXTERNAL_LIB_PATH}/utils-ninja")
 
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${NINJA_TAG})
+
 if(WIN32)
     set(NINJA_OS_SUFFIX "win")
     set(NINJA_BIN "ninja.exe")

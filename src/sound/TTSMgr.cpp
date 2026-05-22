@@ -1,6 +1,6 @@
 #include "sound/TTSMgr.hpp"
 
-#ifdef USE_TTS  // Macro de cmake al activar la librería
+#ifdef SHERPA  // Macro de cmake al activar la librería
 
     #include "system/SystemMgr.hpp"
     #include <vector>

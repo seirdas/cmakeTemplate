@@ -1,11 +1,20 @@
-
 # ------------------------------
 # LIBRERÍA GRÁFICA CON GLFW + IMGUI + OTRAS DEPENDENCIAS
 # Usa OpenGL
 # Genera la librería imgui_lib
 # ------------------------------
-
 include(FetchContent)
+
+# Versiones de librerías
+set(GLFW_VERSION         3.4)
+set(IMGUI_VERSION        v1.92.5-docking)
+set(IMPLOT_VERSION       v0.17)
+set(IMGUI_KNOBS_VERSION  main)    # No hay otra más concreta
+set(IMSPINNER_VERSION    master)  # No hay otra más concreta
+
+
+# Versión para devolver al CMakeLists principal (se devuelve imgui)
+set(LIB_VERSION ${IMGUI_VERSION})
 
 # Para Linux necesita mínimo X11
 if(LINUX)
@@ -37,7 +46,7 @@ endif()
 FetchContent_Declare(
   glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG 3.4
+  GIT_TAG        ${GLFW_VERSION}
   GIT_SHALLOW    TRUE         # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/glfw_src"
   GIT_PROGRESS   TRUE
@@ -65,7 +74,7 @@ endif()
 FetchContent_Declare(
   imgui
   GIT_REPOSITORY https://github.com/ocornut/imgui.git
-  GIT_TAG v1.92.5-docking      # o la versión que necesites
+  GIT_TAG        ${IMGUI_VERSION}
   GIT_SHALLOW    TRUE          # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imgui_src"
   GIT_PROGRESS   TRUE
@@ -93,7 +102,7 @@ endif()
 FetchContent_Declare(
   implot
   GIT_REPOSITORY https://github.com/epezent/implot.git
-  GIT_TAG v0.17   # o la versión que necesites
+  GIT_TAG        ${IMPLOT_VERSION}
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/implot_src"
   GIT_SHALLOW    TRUE
   GIT_PROGRESS   TRUE
@@ -120,7 +129,7 @@ endif()
 FetchContent_Declare(
   imgui_knobs
   GIT_REPOSITORY https://github.com/altschuler/imgui-knobs.git
-  GIT_TAG main  # o la versión que necesites
+  GIT_TAG        ${IMGUI_KNOBS_VERSION}
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
   GIT_SHALLOW    TRUE
   GIT_PROGRESS   TRUE
@@ -149,7 +158,7 @@ endif()
 FetchContent_Declare(
   imspinner
   GIT_REPOSITORY https://github.com/dalerank/imspinner
-  GIT_TAG master
+  GIT_TAG        ${IMSPINNER_VERSION}
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imspinner_src"
   GIT_SHALLOW    TRUE
   GIT_PROGRESS   TRUE

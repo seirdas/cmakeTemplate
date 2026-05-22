@@ -77,6 +77,9 @@ set(LIB_DEFINITIONS "")   # Variable para almacenar definiciones para usar en el
 #   - ${ARGN}:    Lista de archivos a incluir mediante include()
 macro(import_dependency DEF_NAME ENABLE_LIB LINK_LIB)
     if(${ENABLE_LIB})   # Variable que activa/desactiva (ON/OFF)
+
+        set(LIB_VERSION 0.0.0)  # Esperamos que la complete el toolchain de la librería
+
         # Incluye todos los argumentos extra (los toolchain)
         foreach(TOOLCHAIN_FILE ${ARGN})
             include(${TOOLCHAIN_FILE})
@@ -87,27 +90,28 @@ macro(import_dependency DEF_NAME ENABLE_LIB LINK_LIB)
             list(APPEND EXTERNAL_LIBS ${LINK_LIB})
         endif()
         
-        # Añade definición para usar en código C++
-        list(APPEND LIB_DEFINITIONS ${DEF_NAME}=1)
+        # Añade definiciones para usar en código C++
+        list(APPEND LIB_DEFINITIONS ${DEF_NAME}=1)                        # Librería activa     (e.g. #ifdef ASIO)
+        list(APPEND LIB_DEFINITIONS ${DEF_NAME}_VERSION=${LIB_VERSION})   # Versión de librería (e.g. #ifdef ASIO_VERSION)
     endif()
 endmacro()
 
 # Librerías externas
-import_dependency( USE_TTS              ON     sherpa_lib         audio/lib-sherpaonnx audio/tts-assets) # Tiene 2 toolchains
-import_dependency( USE_MINIAUDIO        ON     miniaudio_lib      audio/lib-miniaudio)
-import_dependency( USE_DAISYSP          OFF    daisysp_lib        audio/lib-daisysp)
-import_dependency( USE_ASIO             ON     asio_lib           net/lib-asionetwork)
-import_dependency( USE_IMGUI            ON     imgui_lib          gui/lib-imgui)
-import_dependency( USE_STB              ON     stb_lib            gui/lib-stb)
-import_dependency( USE_JSON             ON     nlohmann_json      file/lib-json)
-import_dependency( USE_XML              ON     tinyxml2_lib       file/lib-xml)
-import_dependency( USE_FASTDDS          ON     fastdds_lib        net/lib-fastdds)
-import_dependency( USE_CYCLONEDDSCXX    ON     cycloneddscxx_lib  net/lib-cycloneddscxx)
-import_dependency( USE_OPENDDS          OFF    opendds-lib        net/lib-opendds)
+import_dependency( SHERPA           ON     sherpa_lib         audio/lib-sherpaonnx audio/tts-assets) # Tiene 2 toolchains
+import_dependency( MINIAUDIO        ON     miniaudio_lib      audio/lib-miniaudio)
+import_dependency( DAISYSP          OFF    daisysp_lib        audio/lib-daisysp)
+import_dependency( ASIO             ON     asio_lib           net/lib-asionetwork)
+import_dependency( IMGUI            ON     imgui_lib          gui/lib-imgui)
+import_dependency( STB              ON     stb_lib            gui/lib-stb)
+import_dependency( JSON             ON     nlohmann_json      file/lib-json)
+import_dependency( XML              ON     tinyxml2_lib       file/lib-xml)
+import_dependency( FASTDDS          ON     fastdds_lib        dds/lib-fastdds)
+import_dependency( CYCLONEDDSCXX    ON     cycloneddscxx_lib  dds/lib-cycloneddscxx)
+import_dependency( OPENDDS          OFF    opendds_lib        dds/lib-opendds)
 
 # Utilidades
-import_dependency( USE_NINJA            ON     ""                 tools/utils-ninja)    # Necesita al menos una configuración correcta previa
-import_dependency( USE_DOXYGEN          ON     ""                 tools/utils-doxygen)
+import_dependency( NINJA            ON     ""                 tools/utils-ninja)    # Necesita al menos una configuración correcta previa
+import_dependency( DOXYGEN          ON     ""                 tools/utils-doxygen)
 
 
 

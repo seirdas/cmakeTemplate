@@ -8,6 +8,9 @@ cmake_policy(SET CMP0169 OLD) # Permite "usar" FetchContent_Populate
 # Versión de cyclone
 set(CYCLONE_VERSION 11.0.1)
 
+# Versión para devolver al CMakeLists principal
+set(LIB_VERSION ${CYCLONE_VERSION})
+
 
 # ==============================================================================
 # Rutas globales
