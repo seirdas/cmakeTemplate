@@ -157,5 +157,4 @@ target_link_libraries(fastdds_lib INTERFACE
 )
 target_include_directories(fastdds_lib INTERFACE
     "${EPROSIMA_INSTALL_DIR}/include"   # <fastdds/dds/...>
-    "${IDL_DIR}"
 )
