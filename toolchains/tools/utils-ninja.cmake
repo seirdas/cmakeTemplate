@@ -38,7 +38,6 @@ else()
         DESTINATION "${NINJA_INSTALL_DIR}"
     )
 
-    message(STATUS "[Ninja] NINJA_ZIP_PATH: " ${NINJA_ZIP_PATH})
     # Borrar el ZIP descargado
     file(REMOVE "${NINJA_ZIP_PATH}")
 
