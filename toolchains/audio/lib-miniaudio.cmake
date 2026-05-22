@@ -35,7 +35,7 @@ fetchcontent_declare(
 fetchcontent_makeavailable(miniaudio)
 
 # Crear una librería estática con Miniaudio
-add_library(miniaudio_lib STATIC
+add_library(miniaudio_lib STATIC 
   ${miniaudio_SOURCE_DIR}/miniaudio.c
 )
 target_include_directories(miniaudio_lib PUBLIC ${miniaudio_SOURCE_DIR})
@@ -57,3 +57,8 @@ target_link_libraries(miniaudio_lib PUBLIC
     "-framework AudioUnit"                # Marco de unidades de audio
   >
 )
+
+# Silencia todos los warnings de este target
+if(MSVC)
+    target_compile_options(miniaudio_lib PRIVATE /w)
+endif()
