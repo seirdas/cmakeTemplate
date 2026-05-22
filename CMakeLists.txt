@@ -12,9 +12,6 @@ if (MSVC)
   set(CMAKE_SYSTEM_VERSION ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION} CACHE STRING "Windows SDK version" FORCE)
   set(CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION "10.0")
 
-  # Flag para mejorar la compatibilidad de headers antiguos
-  target_compile_options(${PROJECT_NAME} PRIVATE /volatile:iso /Zc:__cplusplus)
-
   message(STATUS "Using MSVC dynamic runtime (/MD, /MDd)")
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
@@ -22,7 +19,6 @@ endif()
 # Sistema objetivo (Solo usar cuando se vaya a hacer cross-compiling)
 # set(CMAKE_SYSTEM_NAME Windows)
 # set(CMAKE_SYSTEM_PROCESSOR x86_64)
-
 
 # Establecer estándar C++
 set(CMAKE_CXX_STANDARD 20)
@@ -185,8 +181,9 @@ endif()
 
 
 # ===============================
-# Crear el ejecutable
+# CREAR EL EJECUTABLE
 # ===============================
+# ¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡
 
 # Crear el ejecutable principal
 add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
@@ -269,6 +266,9 @@ if(MSVC)
     $<$<CONFIG:Release>:/O2>  # Optimización para velocidad en Release
   )
 
+  # Flag para mejorar la compatibilidad de headers antiguos
+  target_compile_options(${PROJECT_NAME} PRIVATE /volatile:iso /Zc:__cplusplus)
+
   # Usar main normal, subsistema windows
   target_link_options(${PROJECT_NAME} PRIVATE 
     $<$<CONFIG:Release>:/SUBSYSTEM:WINDOWS>
@@ -336,7 +336,7 @@ endif()
 # Enlazar con las librerías externas
 # ==============================
 
-# Se enlazan automáticamente si están activas
+# Enlazar las librerías externas activas creadas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
   ${EXTERNAL_LIBS}
 )
