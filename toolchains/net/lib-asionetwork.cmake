@@ -16,12 +16,13 @@ if (EXISTS "${EXTERNAL_LIB_PATH}/asio_src/.git")
 endif()
 
 FetchContent_Declare(
-    asio_network
-    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-    GIT_TAG asio-1-36-0
-    GIT_SHALLOW    TRUE        # habilita --depth 1
-    SOURCE_DIR     "${EXTERNAL_LIB_PATH}/asio_src"
-    EXCLUDE_FROM_ALL TRUE
+  asio_network
+  GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+  GIT_TAG asio-1-36-0
+  GIT_SHALLOW    TRUE        # habilita --depth 1
+  SOURCE_DIR     "${EXTERNAL_LIB_PATH}/asio_src"
+  GIT_PROGRESS   TRUE
+  EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(asio_network)
 

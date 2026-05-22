@@ -27,6 +27,7 @@ FetchContent_Declare(
     GIT_TAG        "ACE+TAO-8_0_5"
     SOURCE_DIR     "${ACETAO_SRC_DIR}"
     GIT_SHALLOW      TRUE        # habilita --depth 1
+    GIT_PROGRESS   TRUE
     EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(ace_tao)
@@ -53,6 +54,7 @@ FetchContent_Declare(
     GIT_TAG          v3.33.0
     SOURCE_DIR       "${OPENDDS_SRC_DIR}"   # ← persistente en _external/opendds_src/
     GIT_SHALLOW      TRUE
+    GIT_PROGRESS   TRUE
     EXCLUDE_FROM_ALL TRUE
 )
 

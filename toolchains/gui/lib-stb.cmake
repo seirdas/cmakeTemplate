@@ -22,6 +22,7 @@ FetchContent_Declare(
     GIT_TAG          master      # No hay un tag específico
     GIT_SHALLOW      TRUE        # habilita --depth 1
     SOURCE_DIR       "${EXTERNAL_LIB_PATH}/stb_src"
+    GIT_PROGRESS   TRUE
     EXCLUDE_FROM_ALL TRUE
 )
 # Hacerla disponible

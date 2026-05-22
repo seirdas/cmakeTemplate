@@ -22,6 +22,7 @@ fetchcontent_declare(
   GIT_TAG        0.11.25          # o la versión que necesites
   GIT_SHALLOW    TRUE            # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/miniaudio_src"
+  GIT_PROGRESS   TRUE
   EXCLUDE_FROM_ALL TRUE
 )
 # Hace disponible el recurso

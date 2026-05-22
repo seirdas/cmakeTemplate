@@ -40,6 +40,7 @@ FetchContent_Declare(
   GIT_TAG 3.4
   GIT_SHALLOW    TRUE         # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/glfw_src"
+  GIT_PROGRESS   TRUE
   EXCLUDE_FROM_ALL TRUE
 )
 # Hace disponible el recurso
@@ -67,6 +68,7 @@ FetchContent_Declare(
   GIT_TAG v1.92.5-docking      # o la versión que necesites
   GIT_SHALLOW    TRUE          # habilita --depth 1
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imgui_src"
+  GIT_PROGRESS   TRUE
   EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(imgui)
@@ -94,6 +96,7 @@ FetchContent_Declare(
   GIT_TAG v0.17   # o la versión que necesites
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/implot_src"
   GIT_SHALLOW    TRUE
+  GIT_PROGRESS   TRUE
   EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(implot)
@@ -120,6 +123,7 @@ FetchContent_Declare(
   GIT_TAG main  # o la versión que necesites
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
   GIT_SHALLOW    TRUE
+  GIT_PROGRESS   TRUE
   EXCLUDE_FROM_ALL TRUE
 )
 
@@ -148,6 +152,7 @@ FetchContent_Declare(
   GIT_TAG master
   SOURCE_DIR     "${EXTERNAL_LIB_PATH}/imspinner_src"
   GIT_SHALLOW    TRUE
+  GIT_PROGRESS   TRUE
   EXCLUDE_FROM_ALL TRUE
 )
 FetchContent_MakeAvailable(imspinner)
