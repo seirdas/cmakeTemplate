@@ -60,58 +60,60 @@ set(IDL_GENERATED_SOURCES  "")
 
 # Generar cxx, hpp... de todos los idl's de la carpeta IDL
 if(IDL_FILES)
+
+    # Archivo hpp que contiene todos los demás
+    set(UMBRELLA_FILE_NAME "_ALL.hpp")
+    set(UMBRELLA_FILE "${IDL_GENERATED_PATH}/${UMBRELLA_FILE_NAME}")
+    if (EXISTS ${UMBRELLA_FILE})
+        file(REMOVE ${UMBRELLA_FILE})
+    endif()
+    set(UMBRELLA_CONTENT "// --- Archivo auto-generado desde CMake FastDDS toolchain ---\n#pragma once\n\n")
+
     foreach(IDL_FILE ${IDL_FILES})
         get_filename_component(IDL_NAME ${IDL_FILE} NAME_WE)
         
         # Salida de FastDDS
         set(OUTPUTS
-            "${IDL_GENERATED_PATH}/${IDL_NAME}.hpp"
-            "${IDL_GENERATED_PATH}/${IDL_NAME}CdrAux.hpp"
-            "${IDL_GENERATED_PATH}/${IDL_NAME}CdrAux.ipp"
-            "${IDL_GENERATED_PATH}/${IDL_NAME}PubSubTypes.cxx"
-            "${IDL_GENERATED_PATH}/${IDL_NAME}PubSubTypes.hpp"
-            "${IDL_GENERATED_PATH}/${IDL_NAME}TypeObjectSupport.cxx"  
-            "${IDL_GENERATED_PATH}/${IDL_NAME}TypeObjectSupport.hpp"  
+            "${IDL_NAME}.hpp"
+            "${IDL_NAME}CdrAux.hpp"
+            "${IDL_NAME}CdrAux.ipp"
+            "${IDL_NAME}PubSubTypes.cxx"
+            "${IDL_NAME}PubSubTypes.hpp"
+            "${IDL_NAME}TypeObjectSupport.cxx"  
+            "${IDL_NAME}TypeObjectSupport.hpp"  
         )
+
+        # Añade ruta absoluta "C:/.../IDL/fastdds_generated/" al principio de cada elemento
+        set(OUTPUTS_ABSOLUTE_PATH ${OUTPUTS})
+        list(TRANSFORM OUTPUTS_ABSOLUTE_PATH PREPEND "${IDL_GENERATED_PATH}/")
+
+        # Guardar ruta relativa para el archivo de hpps globales
+        set(OUTPUTS_RELATIVE_PATH ${OUTPUTS})
+        list(TRANSFORM OUTPUTS_RELATIVE_PATH PREPEND "${IDL_GENERATED_FOLDER}/")
 
         # java -jar "C:\Program Files\eProsima\fastdds 3.2.2\share\fastddsgen\java\fastddsgen.jar" -d . -replace "idl_data.idl" 
         add_custom_command(
-            OUTPUT ${OUTPUTS}
+            OUTPUT ${OUTPUTS_ABSOLUTE_PATH}
             WORKING_DIRECTORY "${IDL_GENERATED_PATH}" 
             COMMAND java -jar ${FASTDDSGEN_JAVA} -d "${IDL_GENERATED_PATH}" -replace "${IDL_FILE}"
             DEPENDS ${IDL_FILE}
             COMMENT "[FastDDSGen] Generating DDS files for ${IDL_NAME}..."
             VERBATIM
         )
-        list(APPEND IDL_GENERATED_SOURCES  ${OUTPUTS})
-    endforeach()
 
+        # Guardar los cpp's generados
+        set(COMPILE_SOURCES ${OUTPUTS_ABSOLUTE_PATH})
+        list(FILTER COMPILE_SOURCES EXCLUDE REGEX "\\.ipp$")
+        list(APPEND IDL_GENERATED_SOURCES ${COMPILE_SOURCES})
 
-    # -----------------------------------
-    # Generar archivo hpp genérico que incluya todos los generados
-    # -----------------------------------
-    # Buscar todos los .hpp de la carpeta
-    file(GLOB_RECURSE GENERATED_HEADERS CONFIGURE_DEPENDS "${IDL_GENERATED_PATH}/*.hpp")
-    set(UMBRELLA_FILE_NAME "_ALL.hpp")
-    set(UMBRELLA_FILE "${IDL_GENERATED_PATH}/${UMBRELLA_FILE_NAME}")
-    
-    # Borrar el anterior si existe
-    if (EXISTS ${UMBRELLA_FILE})
-        file(REMOVE ${UMBRELLA_FILE})
-    endif()
-    
-    # Primera línea del archivo
-    set(UMBRELLA_CONTENT "// --- Archivo auto-generado desde CMake FastDDS toolchain ---\n#pragma once\n\n")
-
-    # Iterar y añadir cada include
-    foreach(HEADER_PATH ${GENERATED_HEADERS})
-        get_filename_component(HEADER_NAME ${HEADER_PATH} NAME)
-        if(NOT ${HEADER_NAME} STREQUAL ${UMBRELLA_FILE_NAME})
+        # Escribir en el archivo de hpps globales
+        list(FILTER OUTPUTS_RELATIVE_PATH INCLUDE REGEX "\\.hpp$")
+        foreach(HEADER_NAME ${OUTPUTS})
             string(APPEND UMBRELLA_CONTENT "#include \"${IDL_GENERATED_FOLDER}/${HEADER_NAME}\"\n")
-        endif()
+        endforeach()
+
     endforeach()
     
-    # Escribir todo en el archivo
     file(WRITE ${UMBRELLA_FILE} ${UMBRELLA_CONTENT})
 
 endif()
