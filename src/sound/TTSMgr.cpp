@@ -1,6 +1,7 @@
 #include "sound/TTSMgr.hpp"
 
-#ifdef SHERPA  // Macro de cmake al activar la librería
+// Macro de cmake al activar la librería
+#if defined SHERPA || defined SHERPA_VERSION
 
     #include "system/SystemMgr.hpp"
     #include <vector>
