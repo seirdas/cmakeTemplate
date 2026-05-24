@@ -24,9 +24,14 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Variable para almacenar definiciones para usar en el código C++
+set(CXX_DEFINITIONS "")
+
 # Establecer nombre del exe igual que el nombre de la carpeta del proyecto
 get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME CACHE)
 project(${PROJECT_NAME})
+list(APPEND CXX_DEFINITIONS APP_NAME="${PROJECT_NAME}")
+
 
 # Identificar arquitectura de compilación (después de project() )
 if(CMAKE_GENERATOR_PLATFORM STREQUAL "x64" OR CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -66,8 +71,6 @@ set(EXTERNAL_LIB_PATH "${CMAKE_SOURCE_DIR}/_external")                  # Establ
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/toolchains") # Añadir la carpeta toolchains/ de librerías externas
 
 set(EXTERNAL_LIBS "")     # Variable para almacenar las librerías activas
-set(LIB_DEFINITIONS "")   # Variable para almacenar definiciones para usar en el código C++
-
 
 # -----------------
 # Activación de librerías (activar según convenga)
@@ -92,8 +95,8 @@ macro(import_dependency DEF_NAME ENABLE LINK_LIB)
         
         # Añade definiciones para usar en código C++ y cmake
         set(${DEF_NAME} 1)
-        list(APPEND LIB_DEFINITIONS ${DEF_NAME}=1)                        # Librería activa     (e.g. #ifdef ASIO)
-        list(APPEND LIB_DEFINITIONS ${DEF_NAME}_VERSION=${LIB_VERSION})   # Versión de librería (e.g. #ifdef ASIO_VERSION)
+        list(APPEND CXX_DEFINITIONS ${DEF_NAME}=1)                        # Librería activa     (e.g. #ifdef ASIO)
+        list(APPEND CXX_DEFINITIONS ${DEF_NAME}_VERSION=${LIB_VERSION})   # Versión de librería (e.g. #ifdef ASIO_VERSION)
 
     endif()
 endmacro()
@@ -284,7 +287,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 # Inyectar las definiciones acumuladas de librerías a C++
 target_compile_definitions(${PROJECT_NAME} PRIVATE 
-  ${LIB_DEFINITIONS}
+  ${CXX_DEFINITIONS}
 )
 
 # Copiar librerías dinámicas de TTS

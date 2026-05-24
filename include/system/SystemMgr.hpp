@@ -3,7 +3,6 @@
 #include <string>
 #include "files/LogMgr.hpp"
 
-
 // Macros simplificados para escribir mensajes:
 #define SYS_ERROR(module, msg) SystemMgr::instance().error(module, msg)
 #define SYS_WARN(module, msg)  SystemMgr::instance().warning(module, msg)
@@ -90,7 +89,7 @@ private:
     /** 
      * @brief Muestra una ventana de error según el SO
      */
-    void showPopup(const std::string& msg, const std::string& title);
+    void showPopup(std::string const& msg, std::string const& title, bool bloq = true);
 
 
 /************ Variables ****************************************************************/

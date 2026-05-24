@@ -9,6 +9,16 @@
     #include <clocale>
 #endif
 
+// APP_NAME debería haber sido inyectado desde CMakeLists
+#ifndef APP_NAME
+    #define APP_NAME "app"
+#endif
+
+// Definición de códigos de escape ANSI para colores
+const std::string ANSI_RED    = "\033[31m";
+const std::string ANSI_YELLOW = "\033[33m";
+const std::string ANSI_RESET  = "\033[0m";
+
 
 // General ------------------------------------------------------------------------------
 
@@ -18,7 +28,7 @@ SystemMgr& SystemMgr::instance() {
 }
 
 SystemMgr::SystemMgr() :
-    log_("system.log")
+    log_(std::string(APP_NAME) + (".log"))
 {}
 
 SystemMgr::~SystemMgr() {
@@ -30,24 +40,53 @@ SystemMgr::~SystemMgr() {
 
 void SystemMgr::error(std::string const& module, std::string const& msg) {
     std::string prefix = "[ERROR]   ";
+    std::string module_brackets = "[" + module + "]";
+    const int width = 20; // Ancho estandarizado
 
-    log_.write(prefix+"["+module+"] "+msg);
-    std::cerr << prefix << "[" << module << "]  " <<" "<< msg << std::endl;
-    showPopup(msg, "ERROR");            // <- !! Bloqueante
+    // Para el archivo de log (usando un stringstream para aplicar el ancho)
+    std::ostringstream ss;
+    ss << prefix << std::left << std::setw(width) << module_brackets << msg;
+    log_.write(ss.str());
+    
+    // Para la consola
+    std::cerr << ANSI_RED << prefix 
+              << std::left << std::setw(width) << module_brackets 
+              << msg << ANSI_RESET << std::endl;
+
+    // Mostrar también ventana de error
+    showPopup(msg, APP_NAME);            // <- !! Bloqueante
 }
 
 void SystemMgr::warning(std::string const& module, std::string const& msg) {
     std::string prefix = "[WARN]   ";
+    std::string module_brackets = "[" + module + "]";
+    const int width = 20; // Ancho estandarizado
 
-    log_.write(prefix+"["+module+"] "+msg);
-    std::cerr << prefix << "[" << module << "]  " <<" "<< msg << std::endl;
+    // Para el archivo de log (usando un stringstream para aplicar el ancho)
+    std::ostringstream ss;
+    ss << prefix << std::left << std::setw(width) << module_brackets << msg;
+    log_.write(ss.str());
+    
+    // Para la consola
+    std::cerr << ANSI_YELLOW << prefix 
+              << std::left << std::setw(width) << module_brackets 
+              << msg << ANSI_RESET << std::endl;
 }
 
 void SystemMgr::info(std::string const& module, std::string const& msg) {
     std::string prefix = "[INFO]   ";
+    std::string module_brackets = "[" + module + "]";
+    const int width = 20; // Ancho estandarizado
 
-    log_.write(prefix+"["+module+"] "+msg);
-    std::cout << prefix << "[" << module << "]  " <<" "<< msg << std::endl;
+    // Para el archivo de log (usando un stringstream para aplicar el ancho)
+    std::ostringstream ss;
+    ss << prefix << std::left << std::setw(width) << module_brackets << msg;
+    log_.write(ss.str());
+    
+    // Para la consola
+    std::cerr << prefix 
+              << std::left << std::setw(width) << module_brackets 
+              << msg << std::endl;
 }
 
 
@@ -115,9 +154,16 @@ inline std::string wstringToString(std::wstring const& ws) {
 
 // Pop-ups ------------------------------------------------------------------------------
 
-void SystemMgr::showPopup(const std::string& msg, const std::string& title) {
+void SystemMgr::showPopup(std::string const& msg, std::string const& title, bool bloq) {
     #ifdef _WIN32
-        MessageBoxA(NULL, msg.c_str(), title.c_str(), MB_ICONERROR | MB_OK);
+
+        if(bloq)
+            MessageBoxA(NULL, msg.c_str(), title.c_str(), MB_ICONERROR | MB_OK);
+        else {
+            std::thread([msg, title]() {
+                MessageBoxA(NULL, msg.c_str(), title.c_str(), MB_ICONERROR | MB_OK);
+            }).detach();
+        }
     #else
         pid_t pid = fork();
 
