@@ -4,6 +4,7 @@
 
 message(STATUS "Init Clang toolchain")
 
+# Compilación forzada a .exe de Windows, independientemente del SO donde se compile
 if(NOT WIN32)
   set(CMAKE_SYSTEM_NAME Windows)
   set(CMAKE_SYSTEM_PROCESSOR x86_64)
@@ -37,8 +38,8 @@ endif()
 # Mostrar mensajes de información
 if(NOT CMAKE_TOOLCHAIN_FILE_PROCESSED)
   set(CMAKE_TOOLCHAIN_FILE_PROCESSED TRUE CACHE INTERNAL "Evitar doble mensaje")
-  if (EXISTS "${CMAKE_C_COMPILER}")
-  message(STATUS "C Compiler found at ${CMAKE_C_COMPILER}")
+  if ( EXISTS "${CMAKE_C_COMPILER}")
+  message(STATUS "C Compiler found at ${CMAKE_C_COMPILER}.")
   endif()
   if (EXISTS "${CMAKE_CXX_COMPILER}")
   message(STATUS "CXX Compiler found at ${CMAKE_CXX_COMPILER}")
@@ -73,5 +74,3 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # Definiciones comunes
 add_definitions(-DUNICODE -D_UNICODE)
 
-# Descomentar esto para pararse y debugear este archivo.
-# message(FATAL_ERROR debugStop)

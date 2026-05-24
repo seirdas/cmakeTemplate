@@ -35,7 +35,7 @@ fetchcontent_declare(
 fetchcontent_makeavailable(miniaudio)
 
 # Crear una librería estática con Miniaudio
-add_library(miniaudio_lib STATIC 
+add_library(miniaudio_lib STATIC
   ${miniaudio_SOURCE_DIR}/miniaudio.c
 )
 target_include_directories(miniaudio_lib PUBLIC ${miniaudio_SOURCE_DIR})

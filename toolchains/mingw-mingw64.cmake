@@ -4,6 +4,7 @@
 
 message(STATUS "Init MinGW toolchain")
 
+# Compilación forzada a .exe de Windows, independientemente del SO donde se compile
 if(NOT WIN32)
   set(CMAKE_SYSTEM_NAME Windows)
   set(CMAKE_SYSTEM_PROCESSOR x86_64)
@@ -70,6 +71,3 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # Definiciones comunes
 add_definitions(-DUNICODE -D_UNICODE)
-
-# Descomentar esto para pararse y debugear este archivo.
-# message(FATAL_ERROR debugStop)

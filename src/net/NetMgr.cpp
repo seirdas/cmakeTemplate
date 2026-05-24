@@ -1,4 +1,3 @@
-#include <iostream>             // Entrada/Salida estándar
 #include "net/NetMgr.hpp"
 #include "net/UdpReceiver.hpp"
 #include "system/SystemMgr.hpp"
@@ -36,11 +35,11 @@ NetMgr::~NetMgr() {
 
 void NetMgr::printReceivers() {
 
-    std::cout << "\n--- SOCKETS ACTIVOS ---" << std::endl;
-    for (unsigned int i = 0; i<receivers_.size(); i++) {
-        std::cout << "[" << i << "] Socket '" << receivers_[i]->name() << "'    | port:" << receivers_[i]->port() << std::endl;
+    SYS_INFO("NetMgr", "--- SOCKETS ACTIVOS ---");
+    for (unsigned int i = 0; i < receivers_.size(); i++) {
+        // SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + receivers_[i]->name() + "'    | port:" + receivers_[i]->port() );
+        SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + receivers_[i]->name() + ":" + std::to_string(receivers_[i]->port() ) + "'");
     }
-    std::cout << std::endl;
 
 }
 
@@ -80,7 +79,7 @@ bool NetMgr::addReceiver(
     // Insertar en el vector
     std::lock_guard<std::mutex> lock(mtx_receivers_);
     receivers_.push_back(receiver);
-    SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );;
+    SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );
 
     // "encender" el socket si estaban los demás corriendo
     if (running_)

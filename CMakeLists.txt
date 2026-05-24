@@ -193,12 +193,12 @@ endif()
 # ===============================
 # Configuración específica del compilador
 # ===============================
+
 if(MSVC)
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
     /W3                       # Nivel de advertencia 3
     /EHsc                     # Manejo de excepciones en C++
-    /permissive
     $<$<CONFIG:Debug>:
       /ZI                     # Información de depuración
       /Od                     # Desactivar optimizaciones en Debug
@@ -240,6 +240,7 @@ elseif (MINGW)
     -Wshadow                   # Advertir sobre variables que ocultan otras
     -Wuninitialized            # Advertir sobre variables no inicializadas
     -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
+    -Wshadow                   # Advertir de variables re-declaradas
     -Wunused-parameter         # Advertir de variables que no se usan
 
     # Depuración y optimización según la configuración
@@ -302,7 +303,9 @@ endif()
 # Configuración post-build
 # ===============================
 
-# Copia todo el contenido de la carpeta 'dependencies' a la carpeta del binario
+# -----------------
+# Copiar archivos puestos manualmente a la carpeta del binario
+# -----------------
 set(DEPS_DIR "dependencies")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -325,3 +328,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 if (USE_DOXYGEN)
     generate_doxygen()
 endif()
+
+
+# =======================================================================================
+# Descomentar esto para pararse y debugear este archivo.
+# message(FATAL_ERROR debugStop)

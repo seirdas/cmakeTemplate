@@ -5,11 +5,11 @@ constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paqu
 
 // General ------------------------------------------------------------------------------
 
-UdpReceiver::UdpReceiver(std::string name, asio::io_context& io) :
+UdpReceiver::UdpReceiver(std::string const& name, asio::io_context& io) :
     name_(name), 
     strand_(asio::make_strand(io)), 
-    socket_(io), 
-    rcv_packet_size_(0), 
+    socket_(io),
+    rcv_packet_size_(0),
     initialized_(false), 
     running_(false),
     ignore_dupe_(true)
@@ -304,9 +304,9 @@ bool UdpReceiver::isQueueEmpty() const {
     return queue_.empty();
 }
 
-bool UdpReceiver::isQueueFull() const{
+bool UdpReceiver::isQueueFull() const {
     std::lock_guard<std::mutex> lock(mutex_);
-    return (queue_.size()>=MAX_QUEUE_ELEMENTS);
+    return (queue_.size() >= MAX_QUEUE_ELEMENTS);
 }
 
 size_t UdpReceiver::getQueueSize() const{
@@ -314,7 +314,7 @@ size_t UdpReceiver::getQueueSize() const{
     return queue_.size();
 }
 
-void UdpReceiver::clearQueue(){
+void UdpReceiver::clearQueue() {
     std::lock_guard<std::mutex> lock(mutex_);
     queue_ = std::queue<std::vector<char>>{};
 }

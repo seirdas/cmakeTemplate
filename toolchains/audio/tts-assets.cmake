@@ -77,9 +77,9 @@ download_voice(
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-low.tar.bz2
 )
 download_voice(
-    vits-piper-en_GB-southern_english_female-low 
+    vits-piper-en_GB-southern_english_female-low
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-low.tar.bz2
-    )
+)
 download_voice(
     vits-piper-en_US-amy-low
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
@@ -112,7 +112,30 @@ download_voice(
     vits-piper-en_GB-alan-medium
     https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-medium.tar.bz2
 )
-
+download_voice(
+    vits-piper-es_ES-carlfm-x_low
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-carlfm-x_low.tar.bz2
+)
+download_voice(
+    vits-piper-es_ES-miro-high
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-miro-high.tar.bz2
+)
+download_voice(
+    vits-piper-es_ES-davefx-medium
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-davefx-medium.tar.bz2
+)
+download_voice(
+    vits-piper-es_ES-sharvard-medium
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-sharvard-medium.tar.bz2
+)
+download_voice(
+    vits-piper-es_MX-claude-high
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_MX-claude-high.tar.bz2
+)
+download_voice(
+    vits-piper-es_AR-daniela-high
+    https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_AR-daniela-high.tar.bz2
+)
 
 # =================================
 #   Funcion de copia a la salida
@@ -146,7 +169,7 @@ function(link_tts_assets)
         )
     endif()
 
-    # Translado la ruta de las voces como #define de código c++
+    # Traslado la ruta de las voces como #define de código c++
     target_compile_definitions(${PROJECT_NAME} PRIVATE VOICES_PATH="${DEFINE_VOICE_DEST_DIR}")
 
 endfunction()

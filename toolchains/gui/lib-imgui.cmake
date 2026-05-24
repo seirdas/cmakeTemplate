@@ -24,7 +24,9 @@ endif()
 # Build en static
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-# GLFW (Ventanas) ___________________________
+# ------------------------------
+# GLFW (Ventanas)
+# ------------------------------
 message(STATUS "[ImGui] Fetching GLFW library...")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # No construir ejemplos
 set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)    # No construir tests
@@ -60,7 +62,9 @@ set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL REQUIRED)   # Necesita librería de OpenGL (GLFW la usa para renderizar)
 
 
-# IMGUI (Interfaz) ___________________________
+# ------------------------------
+# IMGUI (Interfaz)
+# ------------------------------
 message(STATUS "[ImGui] Fetching ImGui library...")
 
 # Usa la librería ya descargada en external/ si existe
@@ -88,7 +92,10 @@ file(GLOB IMGUI_SOURCES
   "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp" 
 )
 
-# IMPLOT (Gráficos) ___________________________
+
+# ------------------------------
+# IMPLOT (Dibujar gráficas)
+# ------------------------------
 message(STATUS "[ImGui] Fetching Implot library...")
 
 # Usa la librería ya descargada en external/ si existe
@@ -115,7 +122,10 @@ file(GLOB IMPLOT_SOURCES
   "${IMPLOT_DIR}/*.cpp"
 )
 
-# IMGUI-KNOBS (Controles circulares) ___________________________
+
+# ------------------------------
+# IMGUI-KNOBS (Controles circulares)
+# ------------------------------
 message(STATUS "[ImGui] Fetching ImGui-Knobs library...")
 
 # Usa la librería ya descargada en external/ si existe
@@ -144,7 +154,10 @@ file(GLOB IMGUI_KNOBS_SOURCES
   "${IMGUI_KNOBS_DIR}/imgui-knobs.cpp"
 )
 
-# IMSPINNER (Indicadores de carga) ___________________________
+
+# ------------------------------
+# IMSPINNER (Indicadores de carga)
+# ------------------------------
 message(STATUS "[ImGui] Fetching ImSpinner library...")
 
 # Usa la librería ya descargada en external/ si existe
@@ -169,7 +182,10 @@ FetchContent_MakeAvailable(imspinner)
 # Obtener rutas para añadirlo a la librería imgui
 FetchContent_GetProperties(imspinner SOURCE_DIR IMSPINNER_DIR)
 
-# Crear librería estática con GLFW + ImGui + dependencias _________________
+
+# ------------------------------
+# Crear librería estática agrupando todo
+# ------------------------------
 
 add_library(imgui_lib STATIC 
   ${IMGUI_SOURCES}
@@ -179,7 +195,7 @@ add_library(imgui_lib STATIC
 
 target_link_libraries(imgui_lib PUBLIC 
   glfw                # GLFW
-  OpenGL::GL          # OpenGL 
+  OpenGL::GL          # OpenGL
 
   $<$<PLATFORM_ID:Windows>:
     user32    # Ventanas y controles básicos de Windows
@@ -206,7 +222,8 @@ target_include_directories(imgui_lib SYSTEM PUBLIC
   ${IMGUI_KNOBS_DIR}      # imgui knobs
   ${IMSPINNER_DIR}        # imgui spinners
   $<$<PLATFORM_ID:Linux>:${X11_INCLUDE_DIR}> # Librerías X11 (Linux)
-) 
+)
+# target_compile_definitions(imgui_lib PUBLIC IMGUI_IMPL_OPENGL_LOADER_GLAD)      # Usar GLAD como cargador de OpenGL
 
 target_compile_definitions(imgui_lib PUBLIC
     $<$<PLATFORM_ID:Windows>:
