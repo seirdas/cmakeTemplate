@@ -28,8 +28,12 @@ SystemMgr& SystemMgr::instance() {
 }
 
 SystemMgr::SystemMgr() :
-    log_(std::string(APP_NAME) + (".log"))
-{}
+    log_(std::string(APP_NAME) + (".log")),
+    errlog_("errors.log")
+{
+    // Se limpia solo el log de ejecución
+    log_.clear();
+}
 
 SystemMgr::~SystemMgr() {
     
@@ -47,6 +51,7 @@ void SystemMgr::error(std::string const& module, std::string const& msg) {
     std::ostringstream ss;
     ss << prefix << std::left << std::setw(width) << module_brackets << msg;
     log_.write(ss.str());
+    errlog_.write(ss.str());
     
     // Para la consola
     std::cerr << ANSI_RED << prefix 
@@ -66,6 +71,7 @@ void SystemMgr::warning(std::string const& module, std::string const& msg) {
     std::ostringstream ss;
     ss << prefix << std::left << std::setw(width) << module_brackets << msg;
     log_.write(ss.str());
+    errlog_.write(ss.str());
     
     // Para la consola
     std::cerr << ANSI_YELLOW << prefix 
