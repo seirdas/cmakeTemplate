@@ -273,11 +273,13 @@ function(configure_sherpa_deps)
         if (USE_SHERPA_WIN_GPU AND ARCH_NAME STREQUAL "x64")
             set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/lib")
 
-            # Añadir las dlls de GPU
-            list(APPEND DLL_LIST 
-                "onnxruntime_providers_cuda.dll"
-                "onnxruntime_providers_tensorrt.dll"
-            )
+            # Añadir dependencias de GPU CUDA si está activado
+            if (USE_CUDA)
+                list(APPEND DLL_LIST 
+                    "onnxruntime_providers_cuda.dll"
+                    "onnxruntime_providers_tensorrt.dll"
+                )
+            endif()
         else()
             set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/sherpa-onnx-v${SHERPA_VERSION}-win-${ARCH_NAME}-shared-MD-$<CONFIG>/lib")
         endif()
@@ -320,7 +322,7 @@ function(configure_sherpa_deps)
             "libonnxruntime_providers_shared.so"
         )
 
-        # Añadir dependencias de GPU si está activado
+        # Añadir dependencias de GPU CUDA si está activado
         if (USE_CUDA)
             list(APPEND DLL_LIST 
                 "libonnxruntime_providers_cuda.so"
