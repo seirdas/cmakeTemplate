@@ -1,19 +1,17 @@
 #pragma once
 
-#include <miniaudio.h>
 #include <atomic>
 #include <string>
 #include <vector>
 #include <memory>                       // unique_ptr
 
-// Evita los includes:
-
-class AudioInputModule;
-class AudioPlaybackModule;
+// Evita los includes de los módulos:
+class AudioInputModule;         // Evita el include de AudioInputModule
+class AudioPlaybackModule;      // Evita el include de AudioPlaybackModule
 
 /**
   * @class SoundMgr
-  * @brief Gestor de Audio Inputs y Playbacks de audio.
+  * @brief Gestor de Inputs y Playbacks de audio.
   */
 class SoundMgr {
 
@@ -39,12 +37,12 @@ public:
 
     /**
     * @brief Para el motor de audio.
-    * @returns True Si la parada ha sido correcta, false en caso contrario. 
+    * @returns True si la parada ha sido correcta, false en caso contrario. 
     */
     bool stop();
 
     /**
-     * @brief Actualiza la información de los dispositivos Playback/Capture
+     * @brief Actualiza la información de los dispositivos Playback/Capture disponibles
      */
     bool updateDevices();
 
@@ -53,7 +51,9 @@ public:
 
     std::vector<std::string> getAvailableInputs() const;
 
-    void listAvailableInputs() const;
+    std::string getDefaultInputDevice() const;
+
+    void listAvailableInputs();
 
     bool addCaptureDevice(std::string const& name, unsigned short index);
 
@@ -61,7 +61,9 @@ public:
 
     std::vector<std::string> getAvailablePlaybacks() const;
 
-    void listAvailablePlaybacks() const;
+    std::string getDefaultPlaybackDevice() const;
+
+    void listAvailablePlaybacks();
 
     bool addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
 
@@ -73,16 +75,18 @@ private:
 
 /************ Variables ****************************************************************/
 
-    // Motor de audio
-    ma_context snd_context_;                        // Contexto de audio
-    std::atomic<bool> ctx_initialized_;             // Flag para saber si el motor de audio está inicializado.
+    using PlaybacksVector = std::vector<std::unique_ptr<AudioPlaybackModule>>;
+    using InputsVector = std::vector<std::unique_ptr<AudioInputModule>>;
 
-    ma_device_info* pPlaybackDevInfos_   = nullptr;     // Información de dispositivos Playback
-    ma_uint32       PlaybackDevCount_    = 0;           // Número de playbacks disponibles
-    ma_device_info* pCaptureDeviceInfos_ = nullptr;     // Información de dispositivos de captura (Input)
-    ma_uint32       captureDeviceCount_  = 0;           // Número de inputs disponibles
+    // Estructura PIMPL para no depender de miniaudio en el header
+    struct Impl;
+    std::unique_ptr<Impl> pimpl_;       // Miembros dependientes de <miniaudio>
 
-    // Modulos de audio 
-    std::vector<std::unique_ptr<AudioInputModule>>      inputs_;        // Módulos de entrada
-    std::vector<std::unique_ptr<AudioPlaybackModule>>   playbacks_;     // Módulos Playback
+    // Módulos de audio
+    InputsVector    inputs_;            // Vector con dispositivos inicializados de captura
+    PlaybacksVector playbacks_;         // Vector con dispositivos inicializados de playback
+
+    // Estado del módulo
+    std::atomic<bool> ctx_initialized_; // Flag para saber si el motor de audio está inicializado.
+
 };

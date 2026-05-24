@@ -3,19 +3,31 @@
 // Macro de cmake al activar la librería
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
+    #include <miniaudio.h>
     #include "sound/AudioInputModule.hpp"
     #include "sound/AudioPlaybackModule.hpp"
-    #include <miniaudio.h>
-
     #include <memory>
-    #include <iostream>
-    #include <chrono>               // Controla tiempos de espera
+    #include <chrono>
     #include <thread>
-    #include <system/SystemMgr.hpp>
+    #include "system/SystemMgr.hpp"
+
+    // Implementación de miembros de la clase de miniaudio (pimpl_)
+    struct SoundMgr::Impl {
+        ma_context snd_context_;                            // Contexto (motor) de audio
+
+        ma_device_info* pPlaybackDevInfos_   = nullptr;     // Información de dispositivos playback
+        ma_uint32       PlaybackDevCount_    = 0;           // Número de dispositivos playback
+        ma_device_info* pCaptureDevInfos_ = nullptr;        // Información de dispositivos de captura
+        ma_uint32       captureDevCount_  = 0;              // Número de dispositivos de captura
+    };
+
 
     // General ------------------------------------------------------------------------------
 
-    SoundMgr::SoundMgr() : ctx_initialized_(false) {
+    SoundMgr::SoundMgr() : 
+        pimpl_(std::make_unique<Impl>()),
+        ctx_initialized_(false)
+    {
 
     }
 
@@ -30,7 +42,7 @@
         SYS_INFO("SoundMgr", "Initializating sound context...");
 
         // Inicializar sistema de audio
-        ma_result res = ma_context_init(NULL, 0, NULL, &snd_context_);
+        ma_result res = ma_context_init(NULL, 0, NULL, &pimpl_->snd_context_);
         ctx_initialized_ = (res == MA_SUCCESS) ? true : false;
         if (!ctx_initialized_) {
             SYS_ERROR("SoundMgr","Cannot initialize audio system (ma_context_init).");
@@ -54,17 +66,24 @@
         playbacks_.clear();
 
         // Desinicializar el contexto global
-        ma_context_uninit(&snd_context_);
+        ma_context_uninit(&pimpl_->snd_context_);
         ctx_initialized_ = false;
 
+        // Notificar y salir
         SYS_INFO("SoundMgr", "Sound system stopped successfully.");
         return true;
     }
 
     bool SoundMgr::updateDevices() {
-        ma_result res = ma_context_get_devices(&snd_context_,
-            &pPlaybackDevInfos_, &PlaybackDevCount_, 
-            &pCaptureDeviceInfos_, &captureDeviceCount_);
+        // Comprobar que el contexto está inicializado
+        if (!ctx_initialized_) return false;
+
+        // Obtener los dispositivos de reproducción y captura
+        ma_result res = ma_context_get_devices(&pimpl_->snd_context_,
+            &pimpl_->pPlaybackDevInfos_, &pimpl_->PlaybackDevCount_, 
+            &pimpl_->pCaptureDevInfos_, &pimpl_->captureDevCount_);
+
+        // Devolver true/false en función del resultado
         return (res==MA_SUCCESS) ? true : false;
     }
 
@@ -75,18 +94,40 @@
         // Si no está inicializado no se puede hacer nada
         if (!ctx_initialized_) return {};
 
+        // Popular vector con dispositivos disponibles
         std::vector<std::string> devlist;
-        for (ma_uint32 i = 0; i < captureDeviceCount_; ++i) 
-            devlist.push_back(pCaptureDeviceInfos_[i].name);
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) 
+            devlist.push_back(pimpl_->pCaptureDevInfos_[i].name);
+
+        // Devolver la lista de dispositivos
         return devlist;
     }
 
-    void SoundMgr::listAvailableInputs() const {
-        std::cout << "\n--- DISPOSITIVOS DE ENTRADA (CAPTURE) ---" << std::endl;
-        for (ma_uint32 i = 0; i < captureDeviceCount_; ++i) {
-            std::cout << "[" << i << "] " << pCaptureDeviceInfos_[i].name;
-            if (pCaptureDeviceInfos_[i].isDefault) std::cout << " (Predeterminado)";
-            std::cout << std::endl;
+    std::string SoundMgr::getDefaultInputDevice() const {
+        // Si no está inicializado no se puede hacer nada
+        if (!ctx_initialized_) return {};
+
+        // Popular vector con dispositivos disponibles
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
+            if (pimpl_->pCaptureDevInfos_[i].isDefault)
+                return pimpl_->pCaptureDevInfos_[i].name;
+
+        /*else*/ return "";
+    }
+    
+    void SoundMgr::listAvailableInputs() {
+
+        // Primero actualizar la lista dse dispositivos disponibles
+        updateDevices();
+
+        SYS_INFO("SoundMgr","--- CAPTURE DEVICES ---");
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {
+            SYS_INFO(
+                "SoundMgr",
+                "[" + std::to_string(i) + "] " 
+                + pimpl_->pCaptureDevInfos_[i].name
+                + ( (pimpl_->pCaptureDevInfos_[i].isDefault) ? " (Default)" : "" )
+            );
         }
     }
 
@@ -103,35 +144,54 @@
         if (!ctx_initialized_) return {};
 
         std::vector<std::string> devlist;
-        for (ma_uint32 i = 0; i < PlaybackDevCount_; ++i) 
-            devlist.push_back(pPlaybackDevInfos_[i].name);
+        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) 
+            devlist.push_back(pimpl_->pPlaybackDevInfos_[i].name);
         return devlist;
     }
 
-    void SoundMgr::listAvailablePlaybacks() const {
-        std::cout << "\n--- DISPOSITIVOS DE REPRODUCCIÓN (PLAYBACK) ---" << std::endl;
-        for (ma_uint32 i = 0; i < PlaybackDevCount_; ++i) {
-            std::cout << "[" << i << "] " << pPlaybackDevInfos_[i].name;
-            if (pPlaybackDevInfos_[i].isDefault) std::cout << " (Predeterminado)";
-            std::cout << std::endl;
+    std::string SoundMgr::getDefaultPlaybackDevice() const {
+        // Si no está inicializado no se puede hacer nada
+        if (!ctx_initialized_) return {};
+
+        // Popular vector con dispositivos disponibles
+        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i)
+            if (pimpl_->pPlaybackDevInfos_[i].isDefault)
+                return pimpl_->pPlaybackDevInfos_[i].name;
+
+        /*else*/ return "";
+    }
+
+    void SoundMgr::listAvailablePlaybacks() {
+        
+        // Primero actualizar la lista dse dispositivos disponibles
+        updateDevices();
+
+        SYS_INFO("SoundMgr","--- PLAYBACK DEVICES ---");
+        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) {
+            SYS_INFO(
+                "SoundMgr",
+                "[" + std::to_string(i) + "] " 
+                + pimpl_->pPlaybackDevInfos_[i].name
+                + ( (pimpl_->pPlaybackDevInfos_[i].isDefault) ? " (Default)" : "" )
+            );
         }
     }
 
     bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) {
+        // Comprobar que el contexto está inicializado
         if (!ctx_initialized_) {
             SYS_WARN("SoundMgr","Audio context not initialized.");
             return false;
         }
 
-        ma_device_info* selectedDeviceInfo = nullptr;
-
         // Refrescar la lista de dispositivos disponibles
         updateDevices();
 
         // bucle para encontrar el ma_device_info por el nombre
-        for (ma_uint32 i = 0; i < PlaybackDevCount_; ++i) {
-            if (deviceName == pPlaybackDevInfos_[i].name) {
-                selectedDeviceInfo = &pPlaybackDevInfos_[i];
+        ma_device_info* selectedDeviceInfo = nullptr;
+        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) {
+            if (deviceName == pimpl_->pPlaybackDevInfos_[i].name) {
+                selectedDeviceInfo = &pimpl_->pPlaybackDevInfos_[i];
                 break;
             }
         }
@@ -144,7 +204,10 @@
         SYS_INFO("SoundMgr", "Using playback device: " + deviceName);
 
         // Crear receiver (aún no registrado) #TODO AÑADIR AudioFilesFolder
-        std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(&snd_context_, *selectedDeviceInfo);
+        std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(
+            &pimpl_->snd_context_, 
+            *selectedDeviceInfo
+        );
 
         // Intentar inicializar
         SYS_INFO("SoundMgr", "Initializing playback...");
@@ -171,13 +234,16 @@
             return false;
         }
         
+        // Obtener el módulo de reproducción
         AudioPlaybackModule* apm = playbacks_[index].get();
 
+        // Detener las operaciones del módulo de reproducción
         apm->stop();
 
         // Borrar el elemento del vector usando iterator
         playbacks_.erase(playbacks_.begin() + index);
 
+        // Notificar y salir
         SYS_INFO("SoundMgr", "Deleted Playback.");
         return true;
     }
@@ -196,7 +262,10 @@
         std::vector<std::string> list = getAvailablePlaybacks();
         if (list.empty())
             return false;
-        addPlaybackDevice(list[0], "audio");        // <-- Aquí se hace también start()
+        //addPlaybackDevice(list[0], "audio");        // <-- Aquí se hace también start()
+
+        // Voy a probar tomando el dispositivo de audio predeterminado
+        addPlaybackDevice(getDefaultPlaybackDevice(), "audioTest");
 
         // puntero al APM que acabamos de meter
         if (playbacks_.empty()) 
@@ -249,21 +318,22 @@
     // General ------------------------------------------------------------------------------
     SoundMgr() {}
     ~SoundMgr() {}
-
     bool SoundMgr::init()            { return false; }
     bool SoundMgr::stop();           { return false; }
     bool SoundMgr::updateDevices();  { return false; }
 
     // Capture Input ------------------------------------------------------------------------
-    std::vector<std::string> SoundMgr::getAvailableInputs() const;                  { return {}; }
-    void SoundMgr::listAvailableInputs() const;                                     { return; }
-    bool SoundMgr::addCaptureDevice(std::string const& name, unsigned short index); { return false; }
+    std::vector<std::string> SoundMgr::getAvailableInputs() const;                         { return {}; }
+    std::string SoundMgr::getDefaultInputDevice() const                                    { return {}; }
+    void        SoundMgr::listAvailableInputs() const                                      { return; }
+    bool        SoundMgr::addCaptureDevice(std::string const& name, unsigned short index); { return false; }
 
     // Playbacks ----------------------------------------------------------------------------
-    std::vector<std::string> SoundMgr::getAvailablePlaybacks() const;   { return false; }
-    void SoundMgr::listAvailablePlaybacks() const;                      { return false; }
-    bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder); { return false; }
-    bool SoundMgr::removePlaybackDevice(unsigned short index);          { return false; }
-    bool SoundMgr::playbackTest();                                      { return false; }
+    std::vector<std::string> SoundMgr::getAvailablePlaybacks() const;   { return {}; }
+    std::string SoundMgr::getDefaultPlaybackDevice() const              { return {}; }
+    void        SoundMgr::listAvailablePlaybacks() const                { return; }
+    bool        SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) { return false; }
+    bool        SoundMgr::removePlaybackDevice(unsigned short index)    { return false; }
+    bool        SoundMgr::playbackTest()                                { return false; }
 
 #endif
