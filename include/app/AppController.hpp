@@ -150,6 +150,10 @@ private:
 
     /************ Variables ********************************************************/
 
+    // Parámetros de entrada (igual que main)
+    int         argc_;                          // Número de parámetros de entrada
+    char**      argv_;                          // Texto de parámetro de entrada
+
     // Módulos
     NetMgr      net_;                           // Gestor de sockets de red
     GuiMgr      gui_;                           // Gestor de ventanas para la interfaz gráfica

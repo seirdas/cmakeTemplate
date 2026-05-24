@@ -5,6 +5,8 @@
 // General ------------------------------------------------------------------------------
 
 AppController::AppController() :
+    argc_(0),
+    argv_(nullptr),
     gui_(this),
     net_initialized_(false),
     gui_initialized_(false),
@@ -40,6 +42,10 @@ AppController::~AppController() {
 bool AppController::init(int argc, char** argv) {
 
     SYS_INFO("AppController","init()    START");
+    
+    // Obtiene los parámetros de entrada
+    this->argc_ = argc;
+    this->argv_ = argv;
 
     // Iniciar GUI, salir si no se carga bien
     SYS_INFO("AppController","gui_.init()");
