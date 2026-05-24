@@ -14,7 +14,6 @@ LogMgr::LogMgr(std::string const& filepath) :
 	if (filepath_.has_parent_path()) {
         fs::create_directories(filepath_.parent_path());
     }
-	write("--- Log Init ---");
 }
 
 LogMgr::~LogMgr() {
@@ -63,10 +62,17 @@ void LogMgr::write(std::string const& txt) {
 void LogMgr::clear() {
 
     std::lock_guard<std::mutex> lock(mtx_);
+
+	// Cerrar el archivo si está abierto
+    if (file_.is_open()) {
+        file_.close();
+    }
+
+	// Abrir con trunc para borrar
 	file_.open(filepath_, std::ios_base::out | std::ios_base::trunc);
 
 	if (file_.is_open()) {
-		write("");
+		file_.flush(); // Asegura que se escriba en el disco de inmediato
 		file_.close();
 	}
 }
