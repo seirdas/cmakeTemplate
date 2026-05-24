@@ -8,6 +8,7 @@ int main(int argc, char** argv) {
     if (std::filesystem::exists(path))
         std::filesystem::current_path(path.parent_path());
 
+    SYS_INFO("main","Hi!");
     SYS_INFO("main","Initializing AppController...");
 
     // Instancia controladora de la aplicación
@@ -18,4 +19,5 @@ int main(int argc, char** argv) {
         SYS_ERROR("main", "The application could not be initialized.\nThe program cannot continue and will now close.");
         return -1;
     }
+    SYS_INFO("main","Bye!");
 }

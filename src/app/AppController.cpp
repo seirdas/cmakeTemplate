@@ -34,7 +34,7 @@ AppController::~AppController() {
     gui_.cerrar();
     tts_.cerrar();
 
-    SYS_INFO("AppController","Bye!");
+    SYS_INFO("AppController","AppController closed successfuly.");
 }
 
 bool AppController::init(int argc, char** argv) {
