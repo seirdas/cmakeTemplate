@@ -37,16 +37,37 @@ AppController::~AppController() {
 
 bool AppController::init(int argc, char** argv) {
 
-    // Iniciar GUI, salir si no se carga bien
-    gui_initialized_ = gui_.init();
-    if (!gui_initialized_) return false;
+    SYS_INFO("AppController","init()    START");
 
-    // Iniciar módulos
+    // Iniciar GUI, salir si no se carga bien
+    SYS_INFO("AppController","gui_.init()");
+    gui_initialized_ = gui_.init();
+    if (!gui_initialized_) {
+        SYS_WARN("AppController","gui_.init()   FAIL");
+        return false;   // Está diseñado para salir directamente si no hay GUI
+    }
+    SYS_INFO("AppController","gui_.init()   OK");
+
+
+    // Iniciar gestor de red
+    SYS_INFO("AppController","net_.init()");
     net_initialized_ = net_.start();
+    if(!net_initialized_)
+        SYS_INFO("AppController","net_.init()   FAIL");
+    SYS_INFO("AppController","net_.init()   OK");
+    
+
+    // Iniciar gestor de sonidos
+    SYS_INFO("AppController","snd_.init()");
     snd_initialized_ = snd_.init();
+    if(!snd_initialized_)
+            SYS_INFO("AppController","snd_.init()   FAIL");
+    SYS_INFO("AppController","snd_.init()   OK");
+    
 
     // Inicialización de TTS (en hilo para no bloquear)
     std::thread tLoadTTS([this]() {
+            SYS_INFO("AppController","tts_.init() in thread...");
             tts_initialized_ = tts_.init();
         }
     );
@@ -55,12 +76,13 @@ bool AppController::init(int argc, char** argv) {
     // Hilo consumidor de paquetes online
     worker_ = std::thread(&AppController::TWorker, this);
 
+    SYS_INFO("AppController","init()    OK");
     return true;
 }
 
 int AppController::run() {
     running_ = true;
-    gui_.run(); // Bloquea hasta cerrar
+    gui_.run(); // ← Bloquea hasta cerrar
     return 0;
 }
 
