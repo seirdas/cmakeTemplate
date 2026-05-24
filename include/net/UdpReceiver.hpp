@@ -47,7 +47,7 @@ public:
      * @brief Constructor. 
      * @param io Referencia a contexto de operaciones asíncronas.
      */
-    UdpReceiver(std::string name, asio::io_context& io);
+    UdpReceiver(std::string const& name, asio::io_context& io);
 
     /**
      * @brief Destructor. Detiene la recepción de datos y cierra el socket.
