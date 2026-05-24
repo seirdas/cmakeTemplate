@@ -94,5 +94,6 @@ private:
 
 /************ Variables ****************************************************************/
 
-    LogMgr log_;    // Clase para gestión de archivo de log interno
+    LogMgr log_;        // Log de ejecución de aplicación
+    LogMgr errlog_;     // Log de errores de las ejecuciones (persistente)
 };
