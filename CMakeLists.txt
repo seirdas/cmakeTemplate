@@ -75,8 +75,8 @@ set(LIB_DEFINITIONS "")   # Variable para almacenar definiciones para usar en el
 
 # Macro de factorización
 #   - ${ARGN}:    Lista de archivos a incluir mediante include()
-macro(import_dependency DEF_NAME ENABLE_LIB LINK_LIB)
-    if(${ENABLE_LIB})   # Variable que activa/desactiva (ON/OFF)
+macro(import_dependency DEF_NAME ENABLE LINK_LIB)
+    if(${ENABLE})   # Variable que activa/desactiva (ON/OFF)
 
         set(LIB_VERSION 0.0.0)  # Esperamos que la complete el toolchain de la librería
 
@@ -90,9 +90,11 @@ macro(import_dependency DEF_NAME ENABLE_LIB LINK_LIB)
             list(APPEND EXTERNAL_LIBS ${LINK_LIB})
         endif()
         
-        # Añade definiciones para usar en código C++
+        # Añade definiciones para usar en código C++ y cmake
+        set(${DEF_NAME} 1)
         list(APPEND LIB_DEFINITIONS ${DEF_NAME}=1)                        # Librería activa     (e.g. #ifdef ASIO)
         list(APPEND LIB_DEFINITIONS ${DEF_NAME}_VERSION=${LIB_VERSION})   # Versión de librería (e.g. #ifdef ASIO_VERSION)
+
     endif()
 endmacro()
 
@@ -105,8 +107,8 @@ import_dependency( IMGUI            ON     imgui_lib          gui/lib-imgui)
 import_dependency( STB              ON     stb_lib            gui/lib-stb)
 import_dependency( JSON             ON     nlohmann_json      file/lib-json)
 import_dependency( XML              ON     tinyxml2_lib       file/lib-xml)
-import_dependency( FASTDDS          ON     fastdds_lib        dds/lib-fastdds)
-import_dependency( CYCLONEDDSCXX    ON     cycloneddscxx_lib  dds/lib-cycloneddscxx)
+import_dependency( FASTDDS          OFF    fastdds_lib        dds/lib-fastdds)    # Necesita instalar Fastdds 3.2.2, OpenSSL y Java JDK
+import_dependency( CYCLONEDDSCXX    OFF    cycloneddscxx_lib  dds/lib-cycloneddscxx)
 import_dependency( OPENDDS          OFF    opendds_lib        dds/lib-opendds)
 
 # Utilidades
@@ -125,7 +127,7 @@ import_dependency( DOXYGEN          ON     ""                 tools/utils-doxyge
 add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
 
 # Rutas de archivos de cabecera del proyecto (archivos .h propios)
-target_include_directories(${PROJECT_NAME} PRIVATE 
+target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/resources
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
@@ -144,7 +146,9 @@ if (WIN32)
     uuid        # Soporte para GUIDs y UUIDs
     version     # Información de versión de archivos ejecutables
     dwmapi      # Integración con el gestor de ventanas DWM
-   )
+    ws2_32      # Winsock2: sockets UDP (TotalMix OSC, Symetrix)
+    user32      # MessageBoxA
+  )
 
   # Propiedades para sistema Windows
   set_target_properties(${PROJECT_NAME} PROPERTIES 
@@ -283,13 +287,13 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 
 # Copiar librerías dinámicas de TTS
-if(USE_TTS)
+if(SHERPA)
   configure_sherpa_deps()
   link_tts_assets()
 endif()
 
 # Copiar librerías dinámicas de Cyclone DDSCXX
-if(USE_CYCLONEDDSCXX)
+if(CYCLONEDDSCXX)
   configure_cyclonedds_dlls()
 endif()
 
