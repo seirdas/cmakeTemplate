@@ -6,18 +6,11 @@
 
 NetMgr::NetMgr(std::size_t const& thread_count) :
     work_guard_(asio::make_work_guard(io_context_)),
-    running_(false),
+    io_running_(false),
+    sockets_running_(false),
     thread_count_(thread_count == 0 ? 1 : thread_count)
 {
-    // Inicializar el io_context con varios hilos de recepción
-    io_context_.restart();
-    SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(thread_count_) + " threads...");
-    for (std::size_t i = 0; i < thread_count_; ++i) {
-        threads_.emplace_back([this]() {
-            io_context_.run();
-        });
-    }
-    SYS_INFO("NetMgr","Network (io_context) running...");
+
 }
 
 NetMgr::~NetMgr() {
@@ -26,10 +19,11 @@ NetMgr::~NetMgr() {
     // Quitar protector para que los hilos pueden salir de run()
     work_guard_.reset();
 
-    // (Opcional) Fuerza la parada de cualquier handler pendiente
+    // (Opcional) Fuerza la parada de cualquier handler pendiente del io_context
     io_context_.stop();  
     for (auto& t : threads_)
         if (t.joinable()) t.join(); // Esperar a los hilos de io_context
+    io_running_ = false;
     threads_.clear();
 }
 
@@ -82,7 +76,7 @@ bool NetMgr::addReceiver(
     SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );
 
     // "encender" el socket si estaban los demás corriendo
-    if (running_)
+    if (sockets_running_)
         asio::post(receiver->getStrand(), [receiver]{ 
             receiver->start(); 
         });
@@ -148,9 +142,22 @@ std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
 
 bool NetMgr::start() {
     // Evitar lanzar hilos si ya están corriendo
-    if (running_) {
+    if (sockets_running_) {
         SYS_WARN("NetMgr","Commanded start() when is already running");
         return true;
+    }
+
+    // Inicializar el io_context con varios hilos de recepción
+    if (!io_running_) {
+        io_context_.restart();
+        SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(thread_count_) + " threads...");
+        for (std::size_t i = 0; i < thread_count_; ++i) {
+            threads_.emplace_back([this]() {
+                io_context_.run();
+            });
+        }
+        SYS_INFO("NetMgr","Network (io_context) running...");
+        io_running_=true;
     }
 
     // Iniciar (de nuevo si aplica) los sockets
@@ -161,13 +168,13 @@ bool NetMgr::start() {
     }
 
     SYS_INFO("NetMgr","Sockets running");
-    running_ = true;
+    sockets_running_ = true;
     return true;
 }
 
 void NetMgr::stop() {
 
-    if (!running_) return;
+    if (!sockets_running_) return;
 
     SYS_INFO("NetMgr","Stopping sockets...");
 
@@ -178,10 +185,10 @@ void NetMgr::stop() {
         });
     }
 
-    running_ = false;
+    sockets_running_ = false;
     SYS_INFO("NetMgr","All receivers stopped");
 }
 
 bool NetMgr::isRunning() const {
-    return running_;
+    return sockets_running_;
 }

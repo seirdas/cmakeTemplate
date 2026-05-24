@@ -125,13 +125,14 @@ private:
     using RcvVector = std::vector<std::shared_ptr<UdpReceiver>>;
 
     // Contexto de operaciones asíncronas
-    asio::io_context    io_context_;    // UN ÚNICO contexto de operaciones asíncronas para todo.
-    WorkGuard           work_guard_;    // RAII para mantener vivo el io
-    std::atomic<bool>   running_;       // Flag para saber si la red (io_context) está en funcionamiento
-
+    asio::io_context    io_context_;       // UN ÚNICO contexto de operaciones asíncronas para todo.
+    WorkGuard           work_guard_;       // RAII para mantener vivo el io
+    std::atomic<bool>   io_running_;       // Flag para saber si la red (io_context) está en funcionamiento
+    
     // Sockets
-    RcvVector           receivers_;     // Lista de receptores UDP registrados
-    std::mutex          mtx_receivers_; // Mutex para gestion del vector de sockets
+    RcvVector           receivers_;        // Lista de receptores UDP registrados
+    std::mutex          mtx_receivers_;    // Mutex para gestion del vector de sockets
+    std::atomic<bool>   sockets_running_;  // Flag para saber si la red (io_context) está en funcionamiento
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.
