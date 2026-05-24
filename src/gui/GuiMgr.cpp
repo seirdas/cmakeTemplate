@@ -46,7 +46,7 @@
 		namespace fs = std::filesystem;
 	#endif
 	#include "resources.h"  // icono
-	#include "ttf_archive-medium.h"
+	#include "fonts.h"		// Fuentes generadas en resources/
 
 
 	// Se puede evitar poner "ImGui::" para simplificar
