@@ -33,6 +33,8 @@ AppController::~AppController() {
     snd_.stop();
     gui_.cerrar();
     tts_.cerrar();
+
+    SYS_INFO("AppController","Bye!");
 }
 
 bool AppController::init(int argc, char** argv) {
@@ -81,6 +83,7 @@ bool AppController::init(int argc, char** argv) {
 }
 
 int AppController::run() {
+    SYS_INFO("AppController","run()    START");
     running_ = true;
     gui_.run(); // ← Bloquea hasta cerrar
     return 0;

@@ -401,6 +401,13 @@
 			static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
 			if (BeginTabBar("MyTabBar", tab_bar_flags)) {
 
+				if (BeginTabItem("Playground")) {
+
+					Text("Espacio preparado para duplicar o probar funciones");
+
+					EndTabItem();
+				}
+
 				if (BeginTabItem("Demo1")) {
 					// Test imagen
 					if (BeginTable("demo1tab", 3))
@@ -647,6 +654,8 @@
 
 	void GuiMgr::addTextureFromFile(std::string filename) {
 
+		SYS_INFO("GuiMgr","Saving '" + filename + "' image texture to cache...");
+
 		imageData img_data;		// Variable temporal para almacenar datos de la imagen cargada
 		img_data.tex 	  = 0;	// Textura por defecto
 
@@ -689,6 +698,8 @@
 	};
 
 	void GuiMgr::generateDefaultTexture() {
+		SYS_INFO("GuiMgr", "Generating default texture image...");
+
 		const int width = 64;
 		const int height = 64;
 		const int checkSize = 32; // Tamaño de cada cuadro del mosaico
