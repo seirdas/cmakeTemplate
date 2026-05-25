@@ -258,7 +258,7 @@ endif()
 # función para el cmakelists, para copiar las dlls y assets en la ruta del exe
 function(configure_sherpa_deps)
 
-    # Copiar DLLs necesarias
+    # Identificar DLLs a copiar
     if(WIN32)
 
         # Lista de DLLs
@@ -285,36 +285,9 @@ function(configure_sherpa_deps)
         endif()
 
 
-        # Añadir dll de cuda si está activado
-        if (USE_SHERPA_WIN_GPU AND USE_CUDA)
-            
-        endif()
-
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E echo "---- Linking Sherpa dlls to output folder..."
-        )
-        
-        # Copiar las dlls al lado del ejecutable
-        foreach(DLL_NAME ${DLL_LIST})
-            set(SRC_PATH "${SHERPA_LIB_PATH}/${DLL_NAME}")
-            file(TO_NATIVE_PATH "${SRC_PATH}" SRC_PATH)
-
-            # Log en build de lo que va a hacer...
-            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            )
-            
-            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
-                WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMAND cmd /c if not exist "${DLL_NAME}" mklink /H "${DLL_NAME}" "${SRC_PATH}"
-                VERBATIM
-            )
-        endforeach()
-
     elseif(UNIX)
 
-        # Lista de DLLs
+        # Lista de DLLs (.so)
         set(DLL_LIST 
             "libsherpa-onnx-c-api.so" 
             "libsherpa-onnx-cxx-api.so" 
@@ -330,18 +303,30 @@ function(configure_sherpa_deps)
             )
         endif()
 
-        foreach(DLL_NAME ${DLL_LIST})
-
-            # Copiar Las dlls al lado del ejecutable
-            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMAND ln -sf "${SHERPA_LIB_PATH}/${DLL_NAME}" "${DLL_NAME}"
-                COMMENT "ln -sf ${SHERPA_LIB_PATH}/${DLL_NAME} ${DLL_NAME}"
-                VERBATIM
-            )
-        endforeach()
-
     endif()
+
+    
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "---- Linking Sherpa dlls to output folder..."
+    )
+
+    # Copiar las dlls al lado del ejecutable
+    foreach(DLL_NAME ${DLL_LIST})
+        set(SRC_PATH "${SHERPA_LIB_PATH}/${DLL_NAME}")
+        file(TO_NATIVE_PATH "${SRC_PATH}" SRC_PATH)
+
+        # Log en build de lo que va a hacer...
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        )
+        
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMAND ${CMAKE_COMMAND} -E create_hardlink "${SRC_PATH}" "${DLL_NAME}"
+            VERBATIM
+        )
+    endforeach()
 
     # Los siguientes target_properties hay que hacerlos cuando el proyecto esté creado:
 
