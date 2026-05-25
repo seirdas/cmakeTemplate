@@ -151,20 +151,25 @@ function(link_tts_assets)
     )
 
     if(WIN32)
+        # Convertimos la ruta a formato Windows (con barras invertidas \) para que mklink no tenga problemas
+        string(REPLACE "/" "\\" SRC_DIR_WIN "${SRC_DIR}")
+
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             # cd para evitar problemas de "/"
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             
-            # Borramos el link si ya existía (usando el nombre relativo)
-            COMMAND ${CMAKE_COMMAND} -E remove_directory "${VOICES_DIR}"
+            # Eliminamos el directorio o junction si ya existe para evitar conflictos
+            COMMAND ${CMAKE_COMMAND} -E rm -rf "${VOICES_DIR}"
             
             # Se ejecuta junction (unión)
-            COMMAND cmd /c if not exist "${VOICES_DIR}" mklink /J "${VOICES_DIR}" "${SRC_NATIVE}"
+            COMMAND cmd /c mklink /J "${VOICES_DIR}" "${SRC_DIR_WIN}"
+            VERBATIM
         )
     elseif(UNIX)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-            COMMAND ln -sf "${SRC_DIR}" "${VOICES_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E rm -rf "${VOICES_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E create_symlink "${SRC_DIR}" "${VOICES_DIR}"
             VERBATIM
         )
     endif()
