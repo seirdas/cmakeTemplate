@@ -76,6 +76,7 @@
 		ctrl_ = controller;
 	}
 
+
 	// Ejecución ----------------------------------------------------------------------------
 
 	bool GuiMgr::init() {
@@ -105,7 +106,7 @@
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
 		// Creación de ventana
-		window_ = glfwCreateWindow(sizeX_, sizeY_, AppName_.c_str(), NULL, NULL);
+		window_ = glfwCreateWindow(windowSizeX_, windowSizeY_, AppName_.c_str(), NULL, NULL);
 		if(!window_) {
 			glfwTerminate();
 			SYS_ERROR("GuiMgr","glfwCreateWindow error.");
@@ -209,23 +210,7 @@
 	}
 
 
-	// Bucle principal ----------------------------------------------------------------------
-
-	void GuiMgr::initCuadro() {
-		glfwPollEvents();
-		
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		NewFrame();
-	}
-
-	void GuiMgr::endCuadro() {
-		// Renderiza
-		Render();
-		glClear(GL_COLOR_BUFFER_BIT);
-		ImGui_ImplOpenGL3_RenderDrawData(GetDrawData());
-		glfwSwapBuffers(window_);
-	}
+	// Captura de teclas --------------------------------------------------------------------
 
 	void GuiMgr::captureKeys() {
 
@@ -243,6 +228,29 @@
 		if (io_->KeyCtrl && (IsKeyPressed(ImGuiKey_Minus) || IsKeyPressed((ImGuiKey)625)) )
 			updateDensity(-1);
 
+		// Alternar modo pantalla completa F11 / Alt+Enter
+		if ( IsKeyPressed((ImGuiKey)582) || (io_->KeyAlt && IsKeyPressed((ImGuiKey)525))  )
+			setFullscreenMode(!fullscreen_);
+
+	}
+
+
+	// Bucle principal ----------------------------------------------------------------------
+
+	void GuiMgr::initCuadro() {
+		glfwPollEvents();
+		
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		NewFrame();
+	}
+
+	void GuiMgr::endCuadro() {
+		// Renderiza
+		Render();
+		glClear(GL_COLOR_BUFFER_BIT);
+		ImGui_ImplOpenGL3_RenderDrawData(GetDrawData());
+		glfwSwapBuffers(window_);
 	}
 
 	void GuiMgr::BuclePrincipal() {
@@ -740,6 +748,35 @@
 
 
 	// Aspecto y temas ----------------------------------------------------------------------
+
+	bool GuiMgr::setFullscreenMode(bool enabled) {
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		if (monitor == nullptr) {
+			SYS_WARN("GuiMgr", "Primary monitor not detected. Cannot set fullscreen mode");
+			return false;
+		}
+
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		if (mode == nullptr) {
+			SYS_WARN("GuiMgr", "Monitor mode not detected. Cannot set fullscreen mode");
+			return false;
+		}
+
+		if (enabled) {
+			// Guardamos las dimensiones actuales antes de cambiar
+			glfwGetWindowPos(window_, (int*)&windowPosX_, (int*)&windowPosY_);
+			glfwGetWindowSize(window_, (int*)&windowSizeX_, (int*)&windowSizeY_);
+
+			// Cambiar a pantalla completa (Full Screen)
+			glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+		} else {
+			// Volver a modo ventana usando las dimensiones guardadas
+			glfwSetWindowMonitor(window_, NULL, windowPosX_, windowPosY_, windowSizeX_, windowSizeY_, 0);
+		}
+
+		fullscreen_ = enabled;
+		return true;
+	}
 
 	void GuiMgr::updateDensity(int delta) {
 
