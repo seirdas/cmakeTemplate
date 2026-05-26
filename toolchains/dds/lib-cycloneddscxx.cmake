@@ -305,8 +305,11 @@ if(IDL_FILES)
     target_compile_features(idl_generated_lib PUBLIC cxx_std_17)
 
     # Añadir rutas de inclusión de la instalación de Cyclone
+    # Añado la carpeta superior para evitar conflictos con los archivos generados por otras librerías (fastdds)
+    # Para incluir los archivos generados por cyclone, hay que añadir la carpeta, por ejemplo:
+    # #include "cyclone_generated/idl_data.hpp"
     target_include_directories(idl_generated_lib PUBLIC 
-        "${IDL_GENERATED_PATH}"
+        "${IDL_DIR}"
         "${CYCLONE_TOTAL_INSTALL_DIR}/include"
         "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx"
     )
@@ -387,7 +390,7 @@ function(configure_cyclonedds_dlls)
 
             add_custom_command(
                 TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                COMMAND ${CMAKE_COMMAND} -E create_hardlink
                 "${DLL_PATH}"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
             )
