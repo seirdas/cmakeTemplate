@@ -34,6 +34,9 @@ SystemMgr::SystemMgr() :
 {
     // Se limpia solo el log de ejecución
     log_.clear();
+
+    // indica nueva ejecución en log de errores
+    errlog_.write("-- init --")
 }
 
 SystemMgr::~SystemMgr() {
