@@ -1,6 +1,8 @@
 #include "dds/CycloneDDS.hpp"
+#include "system/SystemMgr.hpp"
+#include <thread>
 
-#ifdef CYCLONEDDSCXX
+#if defined CYCLONEDDSCXX || defined CYCLONEDDSCXX_VERSION
 
     /* ---- ES NORMAL QUE SALGAN ERRORES: */
     // Se necesita al menos compilar una vez para CYCLONEDDS se instale 
@@ -8,10 +10,10 @@
     // Si aun así salen errores, borrar la carpeta '_build' y reconfigurar de nuevo
 
     #include <iostream>
-    #include "dds/dds.h"
+    #include "dds/dds.hpp"
 
     // Include de los archivos .idl en formato .hpp generados por cyclone
-    #include "cyclone_generated/idl_data.hpp"
+    #include "cyclone_generated/_ALL.hpp"
 
     // General ------------------------------------------------------------------------------
 
@@ -24,45 +26,30 @@
     }
 
     void CycloneDDS::test() {
-        dds_entity_t participant;
-        dds_entity_t topic;
-        dds_entity_t writer;
-        dds_return_t rc;
         
-        HelloWorld msg; // Nuestra estructura definida en el IDL
-        void *samples[1];
-
-        std::cout << "--- Iniciando Nodo CycloneDDS ---" << std::endl;
+        SYS_INFO("CycloneDDS","Start CycloneDDS node");
 
         // 1. Crear el Participante (Se une al dominio por defecto 0)
-        participant = dds_create_participant(DDS_DOMAIN_DEFAULT, NULL, NULL);
-        if (participant < 0) {
-            DDS_FATAL("dds_create_participant: %s\n", dds_strretcode(-participant));
-        }
+        dds::domain::DomainParticipant participant(0);
 
-        // 2. Crear el Tópico
-        // 'HelloWorld_desc' es una estructura generada por el IDL que describe el tipo
-        topic = dds_create_topic(participant, &HelloWorld_desc, "HolaMundoTopic", NULL, NULL);
+        // 2. Crear el Tópico usando    las clases generadas por C++
+        dds::topic::Topic<HelloWorld> topic(participant, "HolaMundoTopic");
 
-        // 3. Crear el Publisher/Writer (Para enviar datos)
-        writer = dds_create_writer(participant, topic, NULL, NULL);
+        // 3. Crear el Publisher y el DataWriter
+        dds::pub::Publisher publisher(participant);
+        dds::pub::DataWriter<HelloWorld> writer(publisher, topic);
 
         std::cout << "--- Nodo listo. Enviando datos... ---" << std::endl;
 
-        // 4. Preparar y enviar un mensaje
-        msg.id = 1;
-        msg.message = (char*)"Hola desde CycloneDDS!";
-        samples[0] = &msg;
+        // 4. Preparar y enviar un mensaje usando los Setters de C++
+        HelloWorld msg;
+        msg.id(1);
+        msg.message("Hola desde CycloneDDS (C++ API)!");
 
-        // El envío es asíncrono y automático para cualquier "Subscriber" en la red
-        rc = dds_write(writer, samples[0]);
+        // El envío es asíncrono
+        writer.write(msg);
 
-        if (rc >= 0) {
-            std::cout << "[DDS] Mensaje enviado correctamente." << std::endl;
-        }
-
-        // 5. Limpieza
-        rc = dds_delete(participant);
+        std::cout << "[DDS] Mensaje de test enviado correctamente." << std::endl;
         
         return;
     }
