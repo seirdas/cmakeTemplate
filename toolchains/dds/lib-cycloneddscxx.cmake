@@ -25,25 +25,30 @@ if(WIN32)
     # Establecer ejecutable de idl generator
     set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc.exe")
 
-    # Establecer librerías Windows (REVISAR)
-    if(MSVC)
-        # Windows con compilador de Windows MSVC
-        set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddsc.lib")
-        set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/ddscxx.lib")
+    # Establecer librerías (REVISAR)
+    if(MSVC)  # Windows con compilador de Windows MSVC
+        # Nombre de la librería
+        set(_ddsc_lib_name   ddsc.lib)
+        set(_ddscxx_lib_name ddscxx.lib)
     else()
         # MinGW/Clang descargan librerías '.a'
-        set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.a")
-        set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.a")
+        set(_ddsc_lib_name   libddsc.a)
+        set(_ddscxx_lib_name libddscxx.a)
     endif()
 elseif(UNIX)
         # Establecer ejecutable de idl generator
         set(_idlc_exe   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/idlc")
 
-        # Establecer librerías Linux
-        set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.so")
-        set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.so")
+        # Nombre de la librería
+        set(_ddsc_lib_name   libddsc.so.${CYCLONE_VERSION})
+        set(_ddscxx_lib_name libddscxx.so.${CYCLONE_VERSION})
+
 endif()
 
+
+# Ruta de librería
+set(_ddsc_lib   "${CYCLONE_TOTAL_INSTALL_DIR}/lib/${_ddsc_lib_name}")
+set(_ddscxx_lib "${CYCLONE_TOTAL_INSTALL_DIR}/lib/${_ddscxx_lib_name}")
 
 # El configure necesita que la carpeta exista previamente
 file(MAKE_DIRECTORY "${CYCLONE_TOTAL_INSTALL_DIR}/include")
@@ -235,13 +240,17 @@ endif()
 # ==============================================================================
 
 # Carpeta de salida de cpp/hpp generado de .idl's
+set(IDL_DIR         "${CMAKE_SOURCE_DIR}/IDL")
 set(IDL_GENERATED_FOLDER       "cyclone_generated")
-set(IDL_GENERATED_PATH         "${CMAKE_SOURCE_DIR}/IDL/${IDL_GENERATED_FOLDER}")
+set(IDL_GENERATED_PATH         "${IDL_DIR}/${IDL_GENERATED_FOLDER}")
 file(MAKE_DIRECTORY "${IDL_GENERATED_PATH}")
 
 file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
+
+# Generar cxx, hpp... de todos los idl's de la carpeta IDL
 if(IDL_FILES)
 
+    # Crear la variable donde se almacenará los archivos de salida de fastddsgen
     set(IDL_GENERATED_SOURCES "")
     
     # Archivo hpp que contiene todos los demás
@@ -254,9 +263,12 @@ if(IDL_FILES)
 
     foreach(IDL_FILE ${IDL_FILES})
         get_filename_component(IDL_NAME "${IDL_FILE}" NAME_WE)
+
+        # Salida de CycloneDDS
         set(_out_cpp "${IDL_GENERATED_PATH}/${IDL_NAME}.cpp")
         set(_out_hpp "${IDL_GENERATED_PATH}/${IDL_NAME}.hpp")
 
+        # Procesar IDL
         add_custom_command(
             OUTPUT  "${_out_cpp}" "${_out_hpp}"
             COMMAND "${_idlc_exe}" -l cxx -o "${IDL_GENERATED_PATH}" "${IDL_FILE}"
@@ -266,6 +278,8 @@ if(IDL_FILES)
             VERBATIM
         )
         list(APPEND IDL_GENERATED_SOURCES "${_out_cpp}")
+
+        # Escribir en el archivo de hpp's globales
         string(APPEND UMBRELLA_CONTENT "#include \"${IDL_GENERATED_FOLDER}/${IDL_NAME}.hpp\"\n")
     endforeach()
 
@@ -280,7 +294,7 @@ endif()
 # ==============================================================================
 
 # Librería de cyclonedds -------------------------------------------------------
-add_library(CycloneDDS::ddsc STATIC IMPORTED GLOBAL)
+add_library(CycloneDDS::ddsc SHARED IMPORTED GLOBAL)
 set_target_properties(CycloneDDS::ddsc PROPERTIES
     IMPORTED_LOCATION "${_ddsc_lib}"
     INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
@@ -289,7 +303,7 @@ add_dependencies(CycloneDDS::ddsc cyclonedds_core)
 
 
 # Librería con cyclonedds_cxx --------------------------------------------------
-add_library(CycloneDDS::ddscxx STATIC IMPORTED GLOBAL)
+add_library(CycloneDDS::ddscxx SHARED IMPORTED GLOBAL)
 set_target_properties(CycloneDDS::ddscxx PROPERTIES
     IMPORTED_LOCATION "${_ddscxx_lib}"
     INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
@@ -372,9 +386,10 @@ function(configure_cyclonedds_dlls)
             "${CYCLONE_TOTAL_INSTALL_DIR}/bin/ddscxx.dll"
         )
     elseif(UNIX)
-        set(DLL_LIST 
-            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx.so.11"
-            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddsc.so.11"
+        set(DLL_LIST "")
+        file(GLOB_RECURSE DLL_LIST            
+            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libdds*"
+            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx*"
         )
     endif()
     
@@ -383,6 +398,9 @@ function(configure_cyclonedds_dlls)
         )
 
         foreach(DLL_PATH ${DLL_LIST})
+            # Obtener solo el nombre del archivo (ej: libddscxx.so o ddscxx.dll)
+            get_filename_component(DLL_NAME "${DLL_PATH}" NAME)
+
             # Log en build de lo que va a hacer...
             add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND @echo ${DLL_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>
@@ -390,9 +408,10 @@ function(configure_cyclonedds_dlls)
 
             add_custom_command(
                 TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E create_hardlink
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${DLL_PATH}"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${DLL_NAME}"
+                VERBATIM
             )
         endforeach()
 
