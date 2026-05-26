@@ -11,6 +11,10 @@ set(XML_VERSION 11.0.0)
 # Versión para devolver al CMakeLists principal
 set(LIB_VERSION ${JSON_VERSION})
 
+# Desactivar cosas innecesarias de librería
+set(BUILD_TESTING OFF CACHE BOOL "Disable tests" FORCE)
+set(tinyxml2_BUILD_TESTING OFF CACHE BOOL "Disable tinyxml2 tests" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "Disable examples" FORCE)
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/tinyxml2_src/.git")
