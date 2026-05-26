@@ -116,6 +116,12 @@ void UdpReceiver::stop() {
     running_ = false;
 }
 
+bool UdpReceiver::sendPacket(const std::vector<char>& data, const std::string& ip, unsigned short port)
+{
+    // TODO
+    return false;
+}
+
 // Datos de socket ----------------------------------------------------------------------
 
 short UdpReceiver::port() const {

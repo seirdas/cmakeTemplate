@@ -116,6 +116,27 @@ bool NetMgr::removeReceiver(unsigned int index) {
 
 // Datos de sockets ---------------------------------------------------------------------
 
+void NetMgr::sendData(
+    std::string socketname, 
+    const std::vector<char>& data,
+    const std::string& dest_ip,
+    unsigned short dest_port
+) 
+{
+    // Si hay un socket con ese nombre, manda los datos
+    bool exist = false;
+    for (const auto& rcv : receivers_) {
+        if (rcv->name() == socketname) {
+            rcv->sendPacket(data, dest_ip, dest_port);
+            exist = true;
+            return;
+        }
+    }
+
+    // Llegará aquí si no encuentra socket
+    SYS_WARN("NetMgr","Socket not exists with name " + socketname);
+}
+
 int NetMgr::getSocketIndex(short port) const {
     for (unsigned int i = 0; i < receivers_.size(); i++)
         if (receivers_[i]->port() == port) return i;

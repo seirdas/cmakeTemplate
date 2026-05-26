@@ -99,6 +99,16 @@ public:
 // Ejecución ----------------------------------------------------------------------------
 
     /**
+     * @brief Manda datos por un socket
+     */
+    void sendData(
+        std::string socketname, 
+        const std::vector<char>& data,
+        const std::string& dest_ip,
+        unsigned short dest_port
+    );
+
+    /**
      * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
      * @details Toma por defecto el número máximo permitido por el sistema.
      * Esto no significa que no se puedan hacer más hilos, porque se quedan "idle" 

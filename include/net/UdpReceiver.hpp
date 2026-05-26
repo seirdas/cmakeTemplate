@@ -81,6 +81,14 @@ public:
      */
     void stop();
 
+    /**
+     * @brief Manda un paquete a un socket
+     * @param data  Datos a mandar
+     * @param dest_ip    IP destino
+     * @param dest_port  Puerto destino
+     * @return true si envío correcto, false en caso contrario
+     */
+    bool sendPacket(const std::vector<char>& data, const std::string& ip, unsigned short port);
 
 // Datos de socket ----------------------------------------------------------------------
 
