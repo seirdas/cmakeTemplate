@@ -55,11 +55,11 @@ file(MAKE_DIRECTORY "${IDL_GENERATED_PATH}")
 # Guardar todos los archivos IDL en IDL_FILES
 file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
 
-# Crear la variable donde se almacenará los archivos de salida de fastddsgen
-set(IDL_GENERATED_SOURCES  "")
-
 # Generar cxx, hpp... de todos los idl's de la carpeta IDL
 if(IDL_FILES)
+
+    # Crear la variable donde se almacenará los archivos de salida de fastddsgen
+    set(IDL_GENERATED_SOURCES  "")
 
     # Archivo hpp que contiene todos los demás
     set(UMBRELLA_FILE_NAME "_ALL.hpp")
@@ -91,6 +91,7 @@ if(IDL_FILES)
         set(OUTPUTS_RELATIVE_PATH ${OUTPUTS})
         list(TRANSFORM OUTPUTS_RELATIVE_PATH PREPEND "${IDL_GENERATED_FOLDER}/")
 
+        # Procesar IDL
         # java -jar "C:\Program Files\eProsima\fastdds 3.2.2\share\fastddsgen\java\fastddsgen.jar" -d . -replace "idl_data.idl" 
         add_custom_command(
             OUTPUT ${OUTPUTS_ABSOLUTE_PATH}
@@ -106,7 +107,7 @@ if(IDL_FILES)
         list(FILTER COMPILE_SOURCES EXCLUDE REGEX "\\.ipp$")
         list(APPEND IDL_GENERATED_SOURCES ${COMPILE_SOURCES})
 
-        # Escribir en el archivo de hpps globales
+        # Escribir en el archivo de hpp's globales
         list(FILTER OUTPUTS_RELATIVE_PATH INCLUDE REGEX "\\.hpp$")
         foreach(HEADER_NAME ${OUTPUTS})
             string(APPEND UMBRELLA_CONTENT "#include \"${IDL_GENERATED_FOLDER}/${HEADER_NAME}\"\n")
@@ -148,8 +149,10 @@ endif()
 # Agrupa: runtime FastDDS + OpenSSL + código IDL generado
 # =========================================================
 
+# Creamos una librería de interfaz
 add_library(fastdds_lib INTERFACE)
 
+# Enlazamos todas las partes:
 target_link_libraries(fastdds_lib INTERFACE
     fastdds              # runtime + headers de eProsima
     fastcdr
@@ -157,6 +160,8 @@ target_link_libraries(fastdds_lib INTERFACE
     OpenSSL::Crypto
     fastdds_idl_lib      # código generado desde los IDL
 )
+
+# Propagación de las rutas de inclusión
 target_include_directories(fastdds_lib INTERFACE
     "${EPROSIMA_INSTALL_DIR}/include"   # <fastdds/dds/...>
 )
