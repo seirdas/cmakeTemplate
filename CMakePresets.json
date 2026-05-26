@@ -108,8 +108,8 @@
         {
             "name": "clang64-ninja",
             "displayName": "🔵 Clang-x64 Ninja",
-            "generator": "Ninja Multi-Config",
             "description": "Compilación Ninja Multi-Config Clang (Necesita Ninja)",
+            "generator": "Ninja Multi-Config",
             "inherits": "clang64",
             "environment": {
                 "NINJA_PATH":"${sourceDir}/_external/utils-ninja/"
@@ -209,9 +209,9 @@
         {
             "name": "linux-gcc-ninja",
             "displayName": "🐧 Linux GCC Ninja",
-            "description": "Compilación Linux Ninja Multi-config GCC/G++.",
-            "inherits": "linux-base",
+            "description": "Compilación Linux Ninja Multi-Config GCC/G++.",
             "generator": "Ninja Multi-Config",
+            "inherits": "linux-base",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
                 "CMAKE_CXX_COMPILER": "g++",
@@ -242,11 +242,34 @@
         },
 
         {
+            "name": "linux-clang-x86-debug",
+            "displayName": "🤖 Linux Clang Debug (x86)",
+            "description": "Compilación Linux con Clang en Debug.",
+            "inherits": "linux-x86-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "linux-clang-x86-release",
+            "displayName": "🤖 Linux Clang Release (x86)",
+            "description": "Compilación Linux con Clang en Release.",
+            "inherits": "linux-x86-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+
+        {
             "name": "linux-clang-ninja",
             "displayName": "🤖 Linux Clang Ninja",
             "description": "Compilación Linux Ninja Multi-Config clang.",
-            "inherits": "linux-base",
             "generator": "Ninja Multi-Config",
+            "inherits": "linux-base",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++",
@@ -564,6 +587,19 @@
         },
 
         {
+            "name": "linux-gcc-x86-debug",
+            "displayName": "🐧 Linux GCC Debug (x86)",
+            "configurePreset": "linux-gcc-x86-debug",
+            "jobs": 4
+        },
+        {
+            "name": "linux-gcc-x86-release",
+            "displayName": "🐧 Linux GCC Release (x86)",
+            "configurePreset": "linux-gcc-x86-release",
+            "jobs": 4
+        },
+
+        {
             "name": "linux-gcc-ninja-release",
             "displayName": "🚀 Linux Ninja GCC Release",
             "description": "Build Release GCC para Linux",
@@ -607,6 +643,20 @@
             "configurePreset": "linux-clang-release",
             "jobs": 4
         },
+
+        {
+            "name": "linux-clang-x86-debug",
+            "displayName": "🤖 Clang Debug Build (x86)",
+            "configurePreset": "linux-clang-debug",
+            "jobs": 4
+        },
+        {
+            "name": "linux-clang-x86-release",
+            "displayName": "🤖 Clang Release Build (x86)",
+            "configurePreset": "linux-clang-x86-release",
+            "jobs": 4
+        },
+
         {
             "name": "linux-clang-ninja-release",
             "displayName": "🚀 Linux Ninja Clang Release",
