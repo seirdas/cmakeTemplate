@@ -1,6 +1,6 @@
 #pragma once
 
-#include <asio.hpp>             // asio external lib
+#include <mutex>
 #include <string>               // std::string
 #include <vector>               // Vectores
 #include <thread>               // Hilos
@@ -163,18 +163,16 @@ private:
 
 /************ Variables ****************************************************************/
 
-    using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
-    using RcvVector = std::vector<std::shared_ptr<UdpSocket>>;
+    // Estructura PIMPL para no depender de la librería en el header
+    struct Impl;
+    std::unique_ptr<Impl> pimpl_;       // Miembros dependientes de la librería externa
 
     // Contexto de operaciones asíncronas
-    asio::io_context    io_context_;       // UN ÚNICO contexto de operaciones asíncronas para todo.
-    WorkGuard           work_guard_;       // RAII para mantener vivo el io
     std::atomic<bool>   io_running_;       // Flag para saber si la red (io_context) está en funcionamiento
     
     // Sockets
-    RcvVector           udp_sockets_;        // Lista de receptores UDP registrados
     std::mutex          mtx_udp_sockets_;    // Mutex para gestion del vector de sockets
-    std::atomic<bool>   sockets_running_;  // Flag para saber si la red (io_context) está en funcionamiento
+    std::atomic<bool>   sockets_running_;    // Flag para saber si la red (io_context) está en funcionamiento
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.

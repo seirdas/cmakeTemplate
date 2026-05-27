@@ -1,6 +1,5 @@
 #pragma once
 
-#include <asio.hpp>             // asio external lib
 #include <queue>                // Colas
 #include <mutex>                // Mutex (Cerrojos) para concurrencia
 #include <condition_variable>   // Variable condicional para concurrencia
@@ -45,9 +44,9 @@ public:
 
     /**
      * @brief Constructor. 
-     * @param io Referencia a contexto de operaciones asíncronas.
+     * @param io (asio::io_context&) Referencia a contexto de operaciones asíncronas.
      */
-    UdpSocket(std::string const& name, asio::io_context& io);
+    UdpSocket(std::string const& name, void* io);
 
     /**
      * @brief Destructor. Detiene la recepción de datos y cierra el socket.
@@ -121,13 +120,15 @@ public:
      * @brief Obtiene una referencia al strand que coordina las operaciones del receptor.
      * * El strand garantiza que todos los handlers (lectura, inicio, parada) se ejecuten
      * de forma secuencial, incluso si el io_context dispone de un pool de múltiples hilos.
-     * * @note Utilice esta referencia para postear tareas externas que deban interactuar 
+     * @note Devuelve 'asio::strand<asio::io_context::executor_type>&', pero está como void* para
+     * evitar la inclusión de la librería externa en el hpp.
+     * @note Utilice esta referencia para postear tareas externas que deban interactuar 
      * de forma segura con el socket o los buffers internos (ej. @ref stop o @ref start).
-     * * @warning No capture esta referencia en lambdas que puedan sobrevivir al objeto UdpSocket;
+     * @warning No capture esta referencia en lambdas que puedan sobrevivir al objeto UdpSocket;
      * asegúrese siempre de que la vida del objeto está garantizada (ej. mediante shared_from_this).
-     * * @return Referencia al asio::strand asociado a este receptor.
+     * @return Referencia al asio::strand asociado a este receptor.
      */
-    asio::strand<asio::io_context::executor_type>& getStrand() { return strand_; }
+    void* getStrandNative();
 
 
 // Datos de socket ----------------------------------------------------------------------
@@ -227,15 +228,13 @@ private:
 
 
 /************ Variables ****************************************************************/
-    using CStrand = asio::strand<asio::io_context::executor_type>;
-    using CSocket = asio::basic_datagram_socket<asio::ip::udp, asio::io_context::executor_type>;
+
+    // Estructura PIMPL para no depender de la librería en el header
+    struct Impl;
+    std::unique_ptr<Impl>       pimpl_;       // Miembros dependientes de la librería externa
 
     // Configuración y estado del receptor UDP
     std::string                 name_;              // Nombre dado al socket para identificarlo
-    CStrand                     strand_;            // Protección del buffer asíncrono de recepción
-    CSocket                     socket_;            // Socket asio
-    asio::ip::udp::endpoint     local_endpoint_;    // Endpoint local (ip+puerto local)
-    asio::ip::udp::endpoint     remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
     std::vector<char>           recv_buffer_;       // Buffer para almacenar los datos recibidos
     unsigned int                rcv_packet_size_;   // Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
 
