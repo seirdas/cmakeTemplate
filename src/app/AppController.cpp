@@ -41,41 +41,41 @@ AppController::~AppController() {
 
 bool AppController::init(int argc, char** argv) {
 
-    SYS_INFO("AppController","init()    START");
+    SYS_INFO("AppController","Initializating application...");
     
     // Obtiene los parámetros de entrada
     this->argc_ = argc;
     this->argv_ = argv;
 
     // Iniciar GUI, salir si no se carga bien
-    SYS_INFO("AppController","gui_.init()");
+    SYS_INFO("AppController","GUI subsystem loading...");
     gui_initialized_ = gui_.init();
     if (!gui_initialized_) {
-        SYS_WARN("AppController","gui_.init()   FAIL");
+        SYS_WARN("AppController","GUI subsystem FAIL");
         return false;   // Está diseñado para salir directamente si no hay GUI
     }
-    SYS_INFO("AppController","gui_.init()   OK");
+    SYS_INFO("AppController","GUI subsystem OK");
 
 
     // Iniciar gestor de red
-    SYS_INFO("AppController","net_.init()");
+    SYS_INFO("AppController","Network subsystem loading...");
     net_initialized_ = net_.start();
     if(!net_initialized_)
-        SYS_INFO("AppController","net_.init()   FAIL");
-    SYS_INFO("AppController","net_.init()   OK");
+        SYS_INFO("AppController","Network subsystem FAIL");
+    SYS_INFO("AppController","Network subsystem OK");
     
 
     // Iniciar gestor de sonidos
-    SYS_INFO("AppController","snd_.init()");
+    SYS_INFO("AppController","Sound subsystem loading...");
     snd_initialized_ = snd_.init();
     if(!snd_initialized_)
-            SYS_INFO("AppController","snd_.init()   FAIL");
-    SYS_INFO("AppController","snd_.init()   OK");
+            SYS_INFO("AppController","Sound subsystem FAIL");
+    SYS_INFO("AppController","Sound subsystem OK");
     
 
     // Inicialización de TTS (en hilo para no bloquear)
     std::thread tLoadTTS([this]() {
-            SYS_INFO("AppController","tts_.init() in thread...");
+            SYS_INFO("AppController","TTS subsystem loading...");
             tts_initialized_ = tts_.init();
         }
     );
@@ -84,12 +84,12 @@ bool AppController::init(int argc, char** argv) {
     // Hilo consumidor de paquetes online
     worker_ = std::thread(&AppController::TWorker, this);
 
-    SYS_INFO("AppController","init()    OK");
+    SYS_INFO("AppController","App initialized OK.");
     return true;
 }
 
 int AppController::run() {
-    SYS_INFO("AppController","run()    START");
+    SYS_INFO("AppController","Running app...");
     running_ = true;
     gui_.run(); // ← Bloquea hasta cerrar
     return 0;
