@@ -7,9 +7,9 @@
 #include <vector>               // Vectores
 
 /**
-  * @class UdpReceiver
+  * @class UdpSocket
   * @brief Receptor UDP asíncrono ejecutado por el io_context de NetMgr.
-  * @details UdpReceiver gestiona la recepción de paquetes UDP usando un
+  * @details UdpSocket gestiona la recepción de paquetes UDP usando un
   * asio::io_context proporcionado externamente. 
   * Proporciona:
   *     Inicialización y enlace del socket a una IP/puerto locales.
@@ -37,7 +37,7 @@
   * limpieza correcta.
   * @see NetMgr, asio::io_context
   */
-class UdpReceiver : public std::enable_shared_from_this<UdpReceiver> {
+class UdpSocket : public std::enable_shared_from_this<UdpSocket> {
 
 public:
 
@@ -47,12 +47,12 @@ public:
      * @brief Constructor. 
      * @param io Referencia a contexto de operaciones asíncronas.
      */
-    UdpReceiver(std::string const& name, asio::io_context& io);
+    UdpSocket(std::string const& name, asio::io_context& io);
 
     /**
      * @brief Destructor. Detiene la recepción de datos y cierra el socket.
      */
-    ~UdpReceiver();
+    ~UdpSocket();
 
     
 // Ejecución ----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ public:
      * de forma secuencial, incluso si el io_context dispone de un pool de múltiples hilos.
      * * @note Utilice esta referencia para postear tareas externas que deban interactuar 
      * de forma segura con el socket o los buffers internos (ej. @ref stop o @ref start).
-     * * @warning No capture esta referencia en lambdas que puedan sobrevivir al objeto UdpReceiver;
+     * * @warning No capture esta referencia en lambdas que puedan sobrevivir al objeto UdpSocket;
      * asegúrese siempre de que la vida del objeto está garantizada (ej. mediante shared_from_this).
      * * @return Referencia al asio::strand asociado a este receptor.
      */

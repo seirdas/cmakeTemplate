@@ -1,5 +1,5 @@
 #include "net/NetMgr.hpp"
-#include "net/UdpReceiver.hpp"
+#include "net/UdpSocket.hpp"
 #include "system/SystemMgr.hpp"
 
 // General ------------------------------------------------------------------------------
@@ -30,9 +30,9 @@ NetMgr::~NetMgr() {
 void NetMgr::printReceivers() {
 
     SYS_INFO("NetMgr", "--- SOCKETS ACTIVOS ---");
-    for (unsigned int i = 0; i < receivers_.size(); i++) {
-        // SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + receivers_[i]->name() + "'    | port:" + receivers_[i]->port() );
-        SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + receivers_[i]->name() + ":" + std::to_string(receivers_[i]->port() ) + "'");
+    for (unsigned int i = 0; i < udp_sockets_.size(); i++) {
+        // SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + udp_sockets_[i]->name() + "'    | port:" + udp_sockets_[i]->port() );
+        SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + udp_sockets_[i]->name() + ":" + std::to_string(udp_sockets_[i]->port() ) + "'");
     }
 
 }
@@ -47,7 +47,7 @@ bool NetMgr::addReceiver(
 ) 
 {
     // Evitar duplicados por nombre y puerto
-    for (const auto& rcv : receivers_) {
+    for (const auto& rcv : udp_sockets_) {
         if (rcv->name() == name) {
             SYS_WARN("NetMgr","Socket already exists with name " + name);;
             return false;
@@ -59,7 +59,7 @@ bool NetMgr::addReceiver(
     }
 
     // Crear receiver (aún no registrado)
-    std::shared_ptr<UdpReceiver> receiver = std::make_shared<UdpReceiver>(name, io_context_);
+    std::shared_ptr<UdpSocket> receiver = std::make_shared<UdpSocket>(name, io_context_);
 
     // Intentar inicializar
     SYS_INFO("NetMgr","Opening new socket...");
@@ -71,8 +71,8 @@ bool NetMgr::addReceiver(
     }
 
     // Insertar en el vector
-    std::lock_guard<std::mutex> lock(mtx_receivers_);
-    receivers_.push_back(receiver);
+    std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+    udp_sockets_.push_back(receiver);
     SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );
 
     // "encender" el socket si estaban los demás corriendo
@@ -86,16 +86,16 @@ bool NetMgr::addReceiver(
 }
 
 bool NetMgr::removeReceiver(unsigned int index) {
-    std::lock_guard<std::mutex> lock(mtx_receivers_);
+    std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
 
-    if (index >= receivers_.size()) {
+    if (index >= udp_sockets_.size()) {
         SYS_WARN("NetMgr","Selected index " + std::to_string(index) 
-            + " out of bounds (" + std::to_string(receivers_.size()) +")");
+            + " out of bounds (" + std::to_string(udp_sockets_.size()) +")");
         return false;
     }
 
     // Copiamos el shared_ptr para mantenerlo vivo durante esta función
-    std::shared_ptr<UdpReceiver> rcv = receivers_[index];
+    std::shared_ptr<UdpSocket> rcv = udp_sockets_[index];
     
     SYS_INFO("NetMgr",
         "Deleting socket '" + rcv->name()
@@ -108,7 +108,7 @@ bool NetMgr::removeReceiver(unsigned int index) {
     });
 
     // Borrar el elemento del vector usando iterator
-    receivers_.erase(receivers_.begin() + index);
+    udp_sockets_.erase(udp_sockets_.begin() + index);
 
     SYS_INFO("NetMgr","Socket deleted");
     return true;
@@ -125,7 +125,7 @@ void NetMgr::sendData(
 {
     // Si hay un socket con ese nombre, manda los datos
     bool exist = false;
-    for (const auto& rcv : receivers_) {
+    for (const auto& rcv : udp_sockets_) {
         if (rcv->name() == socketname) {
             rcv->sendPacket(data, dest_ip, dest_port);
             exist = true;
@@ -138,25 +138,25 @@ void NetMgr::sendData(
 }
 
 int NetMgr::getSocketIndex(short port) const {
-    for (unsigned int i = 0; i < receivers_.size(); i++)
-        if (receivers_[i]->port() == port) return i;
+    for (unsigned int i = 0; i < udp_sockets_.size(); i++)
+        if (udp_sockets_[i]->port() == port) return i;
     /*else*/ return -1;
 }
 
 int NetMgr::getSocketIndex(std::string const& name) const {
-    for (unsigned int i = 0; i < receivers_.size(); i++)
-        if (receivers_[i]->name() == name) return i;
+    for (unsigned int i = 0; i < udp_sockets_.size(); i++)
+        if (udp_sockets_[i]->name() == name) return i;
     /*else*/ return -1;
 }
 
 std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
 
-    if (index >= receivers_.size()) {
+    if (index >= udp_sockets_.size()) {
         SYS_WARN("NetMgr","Selected index out of limits");
         return {};
     }
 
-    return receivers_[index]->getFirstPacket();   // <-- BLOQUEANTE 
+    return udp_sockets_[index]->getFirstPacket();   // <-- BLOQUEANTE 
 }
 
 // Ejecución ----------------------------------------------------------------------------
@@ -182,7 +182,7 @@ bool NetMgr::start() {
     }
 
     // Iniciar (de nuevo si aplica) los sockets
-    for (auto& rcv : receivers_) {
+    for (auto& rcv : udp_sockets_) {
         asio::post(rcv->getStrand(), [rcv]{ 
             rcv->start(); 
         });
@@ -200,7 +200,7 @@ void NetMgr::stop() {
     SYS_INFO("NetMgr","Stopping sockets...");
 
     // Parar la recepción de los sockets
-    for (auto& rcv : receivers_) {
+    for (auto& rcv : udp_sockets_) {
         asio::post(rcv->getStrand(), [rcv]{ 
             rcv->stop(); 
         });
