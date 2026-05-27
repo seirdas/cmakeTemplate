@@ -1,9 +1,9 @@
 #include "sound/TTSMgr.hpp"
+#include "system/SystemMgr.hpp"
 
 // Macro de cmake al activar la librería
 #if defined SHERPA || defined SHERPA_VERSION
 
-    #include "system/SystemMgr.hpp"
     #include <vector>
     #include <cstring>
     #include <mutex>
@@ -348,7 +348,9 @@
 // ============================================================
 
     // General ------------------------------------------------------------------------------
-    TTSMgr::TTSMgr(std::size_t const& num_threads_) {};
+    TTSMgr::TTSMgr(std::size_t const& num_threads_) {
+		SYS_WARN("TTSMgr", "Sherpa TTS library has not been implemented.");
+    };
     TTSMgr::~TTSMgr() {};
 
     // Ejecución ----------------------------------------------------------------------------
