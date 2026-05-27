@@ -135,8 +135,8 @@
 //  (Stubs)
 // ============================================================
 
-    CycloneDDS::CycloneDDS()    = default;
-    CycloneDDS::~CycloneDDS()   = default;
+    CycloneDDS::CycloneDDS()    {};
+    CycloneDDS::~CycloneDDS()   {};
 
     void CycloneDDS::test()     { return; };
 

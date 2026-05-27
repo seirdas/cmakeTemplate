@@ -31,7 +31,7 @@ AppController::~AppController() {
     if (worker_.joinable())
         worker_.join();
 
-    // Cerrar módulos (opcional)
+    // Cerrar módulos (opcional, recomendado)
     snd_.stop();
     gui_.cerrar();
     tts_.cerrar();
@@ -51,31 +51,31 @@ bool AppController::init(int argc, char** argv) {
     SYS_INFO("AppController","GUI subsystem loading...");
     gui_initialized_ = gui_.init();
     if (!gui_initialized_) {
-        SYS_WARN("AppController","GUI subsystem FAIL");
+        SYS_ERROR("AppController","GUI subsystem FAIL");
         return false;   // Está diseñado para salir directamente si no hay GUI
     }
-    SYS_INFO("AppController","GUI subsystem OK");
+    else SYS_INFO("AppController","GUI subsystem OK");
 
 
     // Iniciar gestor de red
     SYS_INFO("AppController","Network subsystem loading...");
     net_initialized_ = net_.start();
     if(!net_initialized_)
-        SYS_INFO("AppController","Network subsystem FAIL");
-    SYS_INFO("AppController","Network subsystem OK");
+        SYS_ERROR("AppController","Network subsystem FAIL");
+    else SYS_INFO("AppController","Network subsystem OK");
     
 
     // Iniciar gestor de sonidos
     SYS_INFO("AppController","Sound subsystem loading...");
     snd_initialized_ = snd_.init();
     if(!snd_initialized_)
-            SYS_INFO("AppController","Sound subsystem FAIL");
-    SYS_INFO("AppController","Sound subsystem OK");
+        SYS_ERROR("AppController","Sound subsystem FAIL");
+    else SYS_INFO("AppController","Sound subsystem OK");
     
 
     // Inicialización de TTS (en hilo para no bloquear)
     std::thread tLoadTTS([this]() {
-            SYS_INFO("AppController","TTS subsystem loading...");
+            SYS_INFO("AppController","Starting TTS subsystem async load...");
             tts_initialized_ = tts_.init();
         }
     );
@@ -84,7 +84,7 @@ bool AppController::init(int argc, char** argv) {
     // Hilo consumidor de paquetes online
     worker_ = std::thread(&AppController::TWorker, this);
 
-    SYS_INFO("AppController","App initialized OK.");
+    SYS_INFO("AppController","App initialized.");
     return true;
 }
 

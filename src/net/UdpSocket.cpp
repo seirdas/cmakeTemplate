@@ -433,6 +433,7 @@
 // Definición del struct de pimpl vacío
 struct UdpSocket::Impl {};
 
+
 // General ------------------------------------------------------------------------------
     UdpSocket::UdpSocket(std::string const& name, void* io) : name_(name) {
 		SYS_WARN("UdpSocket", "Network library has not been implemented.");
