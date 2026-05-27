@@ -198,7 +198,6 @@ bool NetMgr::sendData(
 ) 
 {
     // Si hay un socket con ese nombre, manda los datos
-    bool exist = false;
     for (const auto& rcv : udp_sockets_) 
         if (rcv->name() == socketname)
             return rcv->sendPacket(data, dest_ip, dest_port);
@@ -227,14 +226,27 @@ bool NetMgr::sendData(
 
 // Recepción ----------------------------------------------------------------------------
 
-std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
+std::vector<char> NetMgr::getDataFromSocket(std::string const& socketname) {
+    // Si hay un socket con ese nombre, pide los datos
+    for (const auto& rcv : udp_sockets_) 
+        if (rcv->name() == socketname)
+            return rcv->getFirstPacket();   // <-- BLOQUEANTE 
 
-    if (index >= udp_sockets_.size()) {
-        SYS_WARN("NetMgr","Selected index out of limits");
-        return {};
-    }
+    // Llegará aquí si no encuentra socket
+    SYS_WARN("NetMgr","Socket not exists with name " + socketname);
+    return {};
+}
 
-    return udp_sockets_[index]->getFirstPacket();   // <-- BLOQUEANTE 
+std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port) {
+
+    // Si hay un socket con ese nombre, manda los datos
+    for (const auto& rcv : udp_sockets_)
+        if (rcv->port() == local_port) 
+            return rcv->getFirstPacket();   // <-- BLOQUEANTE 
+
+    // Llegará aquí si no encuentra socket
+    SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
+    return {};
 }
 
 

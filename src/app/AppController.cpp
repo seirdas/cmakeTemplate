@@ -114,14 +114,7 @@ void AppController::TWorker() {
         lock.unlock();  // Libera el lock de aquí en adelante
 
         // Pide datos al socket para procesar
-        int index = net_.getSocketIndex("Host");
-
-        if (index == -1) {
-            SYS_WARN("TWorker", "'Host' Socket undefined");
-            return; // <- TODO reiniciar o hacer algo para recuperarse de esto si pasa
-        }
-
-        data = net_.getDataFromSocket(index);
+        data = net_.getDataFromSocket("Host");
 
         if (data.empty()) {
             SYS_WARN("TWorker","Empty data received");
@@ -175,12 +168,12 @@ void AppController::TWorker() {
     
     bool AppController::addReceiver() const noexcept {
         // TODO
-        return true;
+        return false;
     }
 
     bool AppController::removeReceiver() const noexcept {
         // TODO
-        return true;
+        return false;
     }
 
 

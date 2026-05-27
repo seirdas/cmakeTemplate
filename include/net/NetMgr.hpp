@@ -134,8 +134,15 @@ public:
 
     /**
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
+     * @warning BLOQUEANTE
      */
-    std::vector<char> getDataFromSocket(unsigned int index);
+    std::vector<char> getDataFromSocket(std::string const& socketname);
+
+    /**
+     * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
+     * @warning BLOQUEANTE
+     */
+    std::vector<char> getDataFromSocket(unsigned short local_port);
 
 
 private:
