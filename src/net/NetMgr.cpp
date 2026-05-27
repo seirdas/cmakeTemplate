@@ -1,6 +1,7 @@
 #include "net/NetMgr.hpp"
 #include "net/UdpSocket.hpp"
 #include "system/SystemMgr.hpp"
+#include <string>
 
 // General ------------------------------------------------------------------------------
 
@@ -27,15 +28,6 @@ NetMgr::~NetMgr() {
     threads_.clear();
 }
 
-void NetMgr::printReceivers() {
-
-    SYS_INFO("NetMgr", "--- SOCKETS ACTIVOS ---");
-    for (unsigned int i = 0; i < udp_sockets_.size(); i++) {
-        // SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + udp_sockets_[i]->name() + "'    | port:" + udp_sockets_[i]->port() );
-        SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + udp_sockets_[i]->name() + ":" + std::to_string(udp_sockets_[i]->port() ) + "'");
-    }
-
-}
 
 // Gestión de sockets -------------------------------------------------------------------
 
@@ -85,18 +77,33 @@ bool NetMgr::addReceiver(
     return true;
 }
 
-bool NetMgr::removeReceiver(unsigned int index) {
-    std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+bool NetMgr::removeReceiver(std::string const& name) {
 
-    if (index >= udp_sockets_.size()) {
-        SYS_WARN("NetMgr","Selected index " + std::to_string(index) 
-            + " out of bounds (" + std::to_string(udp_sockets_.size()) +")");
+    // Buscar el socket por puerto y llamar a la otra función
+    unsigned int port;
+    for(auto& it : udp_sockets_)
+        if (it->name() == name) 
+            return removeReceiver(it->port());
+
+    /* else */
+    SYS_WARN("NetMgr","Cannot delete selected UDP socket: Name "+name+" not found.");
+    return false;
+}
+
+bool NetMgr::removeReceiver(unsigned int port) {
+    std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+    
+    // Busca el índice del socket en el vector, -1 si falla
+    unsigned int index = getSocketIndex(port);
+    if (index == -1) {
+        SYS_WARN("NetMgr","Cannot delete selected UDP socket: Port "+std::to_string(port)+" not found.");
         return false;
     }
 
     // Copiamos el shared_ptr para mantenerlo vivo durante esta función
     std::shared_ptr<UdpSocket> rcv = udp_sockets_[index];
     
+    // info
     SYS_INFO("NetMgr",
         "Deleting socket '" + rcv->name()
         + "' with port " + std::to_string(rcv->port() )
@@ -110,54 +117,21 @@ bool NetMgr::removeReceiver(unsigned int index) {
     // Borrar el elemento del vector usando iterator
     udp_sockets_.erase(udp_sockets_.begin() + index);
 
+    // info y salir
     SYS_INFO("NetMgr","Socket deleted");
     return true;
 }
 
-// Datos de sockets ---------------------------------------------------------------------
+void NetMgr::printReceivers() {
 
-void NetMgr::sendData(
-    std::string socketname, 
-    const std::vector<char>& data,
-    const std::string& dest_ip,
-    unsigned short dest_port
-) 
-{
-    // Si hay un socket con ese nombre, manda los datos
-    bool exist = false;
-    for (const auto& rcv : udp_sockets_) {
-        if (rcv->name() == socketname) {
-            rcv->sendPacket(data, dest_ip, dest_port);
-            exist = true;
-            return;
-        }
+    SYS_INFO("NetMgr", "--- SOCKETS ACTIVOS ---");
+    for (unsigned int i = 0; i < udp_sockets_.size(); i++) {
+        // SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + udp_sockets_[i]->name() + "'    | port:" + udp_sockets_[i]->port() );
+        SYS_INFO("NetMgr", "[" + std::to_string(i) + "] Socket '" + udp_sockets_[i]->name() + ":" + std::to_string(udp_sockets_[i]->port() ) + "'");
     }
 
-    // Llegará aquí si no encuentra socket
-    SYS_WARN("NetMgr","Socket not exists with name " + socketname);
 }
 
-int NetMgr::getSocketIndex(short port) const {
-    for (unsigned int i = 0; i < udp_sockets_.size(); i++)
-        if (udp_sockets_[i]->port() == port) return i;
-    /*else*/ return -1;
-}
-
-int NetMgr::getSocketIndex(std::string const& name) const {
-    for (unsigned int i = 0; i < udp_sockets_.size(); i++)
-        if (udp_sockets_[i]->name() == name) return i;
-    /*else*/ return -1;
-}
-
-std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
-
-    if (index >= udp_sockets_.size()) {
-        SYS_WARN("NetMgr","Selected index out of limits");
-        return {};
-    }
-
-    return udp_sockets_[index]->getFirstPacket();   // <-- BLOQUEANTE 
-}
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -212,4 +186,68 @@ void NetMgr::stop() {
 
 bool NetMgr::isRunning() const {
     return sockets_running_;
+}
+
+// Envío --------------------------------------------------------------------------------
+
+bool NetMgr::sendData(
+    std::string socketname, 
+    const std::vector<char>& data,
+    const std::string& dest_ip,
+    unsigned short dest_port
+) 
+{
+    // Si hay un socket con ese nombre, manda los datos
+    bool exist = false;
+    for (const auto& rcv : udp_sockets_) 
+        if (rcv->name() == socketname)
+            return rcv->sendPacket(data, dest_ip, dest_port);
+
+    // Llegará aquí si no encuentra socket
+    SYS_WARN("NetMgr","Socket not exists with name " + socketname);
+    return false;
+}
+
+bool NetMgr::sendData(
+    unsigned short           local_port, 
+    const std::vector<char>& data,
+    const std::string&       dest_ip,
+    unsigned short           dest_port
+) 
+{
+    // Si hay un socket con ese nombre, manda los datos
+    for (const auto& rcv : udp_sockets_)
+        if (rcv->port() == local_port) 
+            return rcv->sendPacket(data, dest_ip, dest_port);
+
+    // Llegará aquí si no encuentra socket
+    SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
+    return false;
+}
+
+// Recepción ----------------------------------------------------------------------------
+
+std::vector<char> NetMgr::getDataFromSocket(unsigned int index) {
+
+    if (index >= udp_sockets_.size()) {
+        SYS_WARN("NetMgr","Selected index out of limits");
+        return {};
+    }
+
+    return udp_sockets_[index]->getFirstPacket();   // <-- BLOQUEANTE 
+}
+
+
+// Datos de los sockets guardados -------------------------------------------------------
+
+int NetMgr::getSocketIndex(short port) const {
+    for (unsigned int i = 0; i < udp_sockets_.size(); i++)
+        if (udp_sockets_[i]->port() == port) return i;
+    /*else*/ return -1;
+}
+
+int NetMgr::getSocketIndex(std::string const& name) const {
+    for (unsigned int i = 0; i < udp_sockets_.size(); i++)
+        if (udp_sockets_[i]->name() == name) return i;
+    /*else*/ return -1;
 }

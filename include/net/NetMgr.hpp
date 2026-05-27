@@ -14,26 +14,20 @@ class UdpSocket;
   *  La gestión de los sockets de asio necesita un único io_context.
   * @class NetMgr
   * @brief Gestor de sockets UDP y del contexto de operaciones asíncronas (asio::io_context).
-  * @details NetMgr centraliza la gestión de varios receptores UDP (UdpReceiver)
+  * @details NetMgr centraliza la gestión de varios sockets UDP
   *   usando un único asio::io_context y un conjunto de hilos de trabajo. Permite
-  *   añadir y eliminar receptores, así como iniciar y detener el grupo de hilos
-  *   que procesan las operaciones asíncronas.
+  *   añadir y eliminar sockets UDP.
   *  Comportamiento:
-  *      El io_context_ es único para todos los receptores y se mantiene vivo mediante
-  *   work_guard_ para evitar que el contexto termine mientras haya hilos en espera.
-  *      addReceiver() crea y registra un UdpReceiver asociado a un puerto local.
-  *      removeReceiver() detiene y elimina el receptor asociado a un puerto.
-  *      start() crea hasta thread_count_ hilos que ejecutan io_context_.run().
-  *      stop() detiene todos los receptores y libera los hilos de trabajo.
-  *  Uso típico:
-  *      Instanciar NetMgr.
-  *      Llamar addReceiver() según sea necesario.
-  *      Llamar start() para iniciar el procesamiento en hilos.
-  *      Cuando se termine, llamar stop() o destruir la instancia para limpiar recursos.
+  *   * El io_context_ es único para todos los receptores y se mantiene vivo mediante
+  *         work_guard_ para evitar que el contexto termine mientras haya hilos en espera.
+  *   * addReceiver() crea y registra un UdpReceiver asociado a un puerto local.
+  *   * removeReceiver() detiene y elimina el receptor asociado a un puerto.
+  *   * start() crea hasta thread_count_ hilos que ejecutan io_context_.run().
+  *   * stop() detiene todos los receptores y libera los hilos de trabajo.
   * @note thread_count_ determina el número máximo de hilos de trabajo (por defecto std::thread::hardware_concurrency()).
   * @note Los receptores se almacenan en receivers_ usando unique_ptr para gestión RAII.
   * @note El constructor es explicit para evitar conversiones implícitas en thread_count.
-  * @see UdpReceiver
+  * @see UdpSocket
   */
 class NetMgr {
 
@@ -53,11 +47,6 @@ public:
      */
     ~NetMgr();
 
-    /**
-     * @brief Imprime por cout los sockets creados.
-     */
-    void printReceivers();
-
 
 // Gestión de sockets -------------------------------------------------------------------
 
@@ -72,41 +61,24 @@ public:
     );
 
     /**
-     * @brief Detener y desvincular un socket activo por index.
-     * @param index Índice de socket (en el orden en el que se crearon)
+     * @brief Detener y desvincular un socket activo por nombre
+     * @param name Nombre del socket UDP gestionado
      */
-    bool removeReceiver(unsigned int index);
-
-
-// Datos de sockets -------------------------------------------------------------------
+    bool removeReceiver(std::string const& name);
 
     /**
-     * @brief Obtener el ID/index del socket por puerto.
+     * @brief Detener y desvincular un socket activo por puerto
+     * @param port Puerto del socket UDP gestionado
      */
-    int getSocketIndex(short port) const;
+    bool removeReceiver(unsigned int port);
 
     /**
-     * @brief Obtener el ID/index del socket por nombre
+     * @brief Imprime por cout los sockets creados.
      */
-    int getSocketIndex(std::string const& name) const;
+    void printReceivers();
 
-    /**
-     * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
-     */
-    std::vector<char> getDataFromSocket(unsigned int index);
 
-    
 // Ejecución ----------------------------------------------------------------------------
-
-    /**
-     * @brief Manda datos por un socket
-     */
-    void sendData(
-        std::string socketname, 
-        const std::vector<char>& data,
-        const std::string& dest_ip,
-        unsigned short dest_port
-    );
 
     /**
      * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
@@ -126,8 +98,61 @@ public:
      * @brief Devuelve si la red está activa (los sockets están activos)
      */
     bool isRunning() const;
+    
+
+// Envío --------------------------------------------------------------------------------
+
+    /**
+     * @brief Manda datos por un socket
+     * @param socketname Nombre del socket por el que se van a mandar los datos
+     * @param data vector de bytes de datos a mandar
+     * @param dest_ip IP destino
+     * @param dest_port Puerto destino
+     */
+    bool sendData(
+        std::string              socketname, 
+        const std::vector<char>& data,
+        const std::string&       dest_ip,
+        unsigned short           dest_port
+    );
+
+        /**
+     * @brief Manda datos por un socket por puerto
+     * @param local_port Puerto del socket por el que se van a mandar los datos
+     * @param data vector de bytes de datos a mandar
+     * @param dest_ip IP destino
+     * @param dest_port Puerto destino
+     */
+    bool sendData(
+        unsigned short           local_port, 
+        const std::vector<char>& data,
+        const std::string&       dest_ip,
+        unsigned short           dest_port
+    );
+
+// Recepción ----------------------------------------------------------------------------
+
+    /**
+     * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
+     */
+    std::vector<char> getDataFromSocket(unsigned int index);
+
 
 private:
+
+// Datos de los sockets guardados -------------------------------------------------------
+
+    /**
+     * @brief Obtener el ID/index del socket por puerto.
+     */
+    int getSocketIndex(short port) const;
+
+    /**
+     * @brief Obtener el ID/index del socket por nombre
+     */
+    int getSocketIndex(std::string const& name) const;
+
+
 
 /************ Variables ****************************************************************/
 
