@@ -78,9 +78,9 @@ private:
     using PlaybacksVector = std::vector<std::unique_ptr<AudioPlaybackModule>>;
     using InputsVector = std::vector<std::unique_ptr<AudioInputModule>>;
 
-    // Estructura PIMPL para no depender de miniaudio en el header
+    // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl> pimpl_;       // Miembros dependientes de <miniaudio>
+    std::unique_ptr<Impl> pimpl_;       // Miembros dependientes de la librería externa
 
     // Módulos de audio
     InputsVector    inputs_;            // Vector con dispositivos inicializados de captura
