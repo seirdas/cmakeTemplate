@@ -64,10 +64,12 @@ bool UdpReceiver::init(unsigned short local_port, const std::string& local_ip, u
     }
 
     // Abrir (bind) el socket
-    if (!openSocket() && socket_.is_open()) {
-        SYS_WARN("UdpReceiver","Socket is not open after bind.");
-        if (!socket_.close(ec)) 
-            SYS_WARN("UdpReceiver","Error closing socket after failure: " + ec.message());;
+    if (!openSocket()) {
+        if (socket_.is_open()) {
+            socket_.close(ec);
+            if (ec)
+                SYS_WARN("UdpReceiver","Error closing socket after failure: " + ec.message());
+        }
         return false;
     }
 
@@ -99,11 +101,13 @@ void UdpReceiver::stop() {
     // Cerrar el socket si está abierto
     if (socket_.is_open()) {
         // Cancelar cualquier operación pendiente
-        if(!socket_.cancel(ec))
+        socket_.cancel(ec);
+        if (ec)
             SYS_WARN("UdpReceiver","Failed to cancel remaining operations");
 
         // Cerrar completamente
-        if(!socket_.close(ec))
+        socket_.close(ec);
+        if (ec)
             SYS_WARN("UdpReceiver","Failed to close socket");
     }
 
@@ -203,22 +207,28 @@ bool UdpReceiver::openSocket() {
     asio::error_code ec;
 
     // Abrir el socket 
-    if (!socket_.open(local_endpoint_.protocol(), ec)) {
-        SYS_WARN("UdpReceiver","Failed opening socket: " + ec.message());
+    ec.clear();
+    socket_.open(local_endpoint_.protocol(), ec);
+    if (ec) {
+        SYS_WARN("UdpReceiver", "Failed opening socket: " + ec.message());
         return false;
     }
-    
-    // Confirgurar el socket para permitir reutilizar la dirección local 
-    if (!socket_.set_option(asio::socket_base::reuse_address(true), ec)) {
+
+    // Confirgurar el socket para permitir reutilizar la dirección local
+    ec.clear();
+    socket_.set_option(asio::socket_base::reuse_address(true), ec);
+    if (ec) {
         SYS_WARN("UdpReceiver","Error setting socket option: " + ec.message());
         return false;
     }
 
     // Enlazar el socket al endpoint local
-    if (!socket_.bind(local_endpoint_, ec)) {
-        if (ec == asio::error::access_denied) 
+    ec.clear();
+    socket_.bind(local_endpoint_, ec);
+    if (ec) {
+        if (ec == asio::error::access_denied)
             SYS_WARN("UdpReceiver","Access denied binding socket. Check firewall rules and try again.");
-        else if (ec == asio::error::address_in_use) 
+        else if (ec == asio::error::address_in_use)
             SYS_WARN("UdpReceiver","Port " + std::to_string(local_endpoint_.port()) + " already in use.");
         else
             SYS_WARN("UdpReceiver","Unhandled error: " + ec.message());
