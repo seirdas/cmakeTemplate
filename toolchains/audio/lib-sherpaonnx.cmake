@@ -65,7 +65,7 @@ if(WIN32)
         sherpa-onnx-cxx-api.lib
     )
 
-else()
+elseif(UNIX)      # Linux x64. (NO ES COMPATIBLE CON x86)
     # Directorio de descarga y libreria objetivo
     set(SHERPA_INSTALL_PATH "${EXTERNAL_LIB_PATH}/sherpa_linux_release")
 
