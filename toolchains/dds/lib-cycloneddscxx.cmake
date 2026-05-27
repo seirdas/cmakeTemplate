@@ -316,29 +316,41 @@ endif()
 
 # Librería de cyclonedds -------------------------------------------------------
 add_library(CycloneDDS::ddsc SHARED IMPORTED GLOBAL)
-set_target_properties(CycloneDDS::ddsc PROPERTIES
-    IMPORTED_LOCATION "${_ddsc_dll}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
-)
 if(WIN32 AND MSVC)
     set_target_properties(CycloneDDS::ddsc PROPERTIES
+        IMPORTED_LOCATION "${_ddsc_dll}"
         IMPORTED_IMPLIB "${_ddsc_lib}"
     )
+else()
+    # Linux / MinGW / Clang usan la ruta directa al .so o .a
+    set_target_properties(CycloneDDS::ddsc PROPERTIES
+        IMPORTED_LOCATION "${_ddsc_lib}"
+    )
 endif()
+
+set_target_properties(CycloneDDS::ddsc PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
+)
 add_dependencies(CycloneDDS::ddsc cyclonedds_core)
 
 
 # Librería con cyclonedds_cxx --------------------------------------------------
 add_library(CycloneDDS::ddscxx SHARED IMPORTED GLOBAL)
-set_target_properties(CycloneDDS::ddscxx PROPERTIES
-    IMPORTED_LOCATION "${_ddscxx_dll}"
-    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
-)
 if(WIN32 AND MSVC)
     set_target_properties(CycloneDDS::ddscxx PROPERTIES
+        IMPORTED_LOCATION "${_ddscxx_dll}"
         IMPORTED_IMPLIB "${_ddscxx_lib}"
     )
+else()
+    # Linux / MinGW / Clang usan la ruta directa al .so o .a
+    set_target_properties(CycloneDDS::ddscxx PROPERTIES
+        IMPORTED_LOCATION "${_ddscxx_lib}"
+    )
 endif()
+
+set_target_properties(CycloneDDS::ddscxx PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
+)
 add_dependencies(CycloneDDS::ddscxx cyclonedds_cpp_binding)
 
 
