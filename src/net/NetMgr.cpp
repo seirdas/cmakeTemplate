@@ -74,7 +74,7 @@
         }
 
         // Crear receiver (aún no registrado)
-        std::shared_ptr<UdpSocket> receiver = std::make_shared<UdpSocket>(name, pimpl_->io_context_);
+        std::shared_ptr<UdpSocket> receiver = std::make_shared<UdpSocket>(name, &pimpl_->io_context_);
 
         // Intentar inicializar
         SYS_INFO("NetMgr","Opening new socket...");
