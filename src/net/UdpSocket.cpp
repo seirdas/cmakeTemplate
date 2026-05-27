@@ -7,11 +7,11 @@ constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paqu
 
 UdpSocket::UdpSocket(std::string const& name, asio::io_context& io) :
     name_(name), 
-    strand_(asio::make_strand(io)), 
-    socket_(io),
+    strand_     (asio::make_strand(io)), 
+    socket_     (io),
     rcv_packet_size_(0),
     initialized_(false), 
-    running_(false),
+    running_    (false),
     ignore_dupe_(true)
 {
 	
@@ -27,12 +27,14 @@ UdpSocket::~UdpSocket() {
 bool UdpSocket::init(unsigned short local_port, const std::string& local_ip, unsigned int rcv_packet_size) {
     
     std::string st_local_ip = ((local_ip.empty()) ? "all" : local_ip );
-    std::string st_rcv_packet_size = std::to_string((rcv_packet_size==0) ? MAX_UDP_PACKET_SIZE : rcv_packet_size);
+    std::string st_rcv_packet_size = (rcv_packet_size==0) ? "any" : std::to_string(rcv_packet_size);
 
-    SYS_INFO("UdpSocket", "Creating new socket...");
-    SYS_INFO("UdpSocket", "port: " + std::to_string(local_port));
-    SYS_INFO("UdpSocket", "IP: " + st_local_ip);
-    SYS_INFO("UdpSocket", "rcv_size: " + st_rcv_packet_size);
+    SYS_INFO("UdpSocket", 
+        "Creating new socket: port: " + 
+        std::to_string(local_port) +
+        ", IP: " + st_local_ip + 
+        ", rcv_size: " + st_rcv_packet_size
+    );
 
     // No hacer nada si ya estaba inicializado 
     if (initialized_) 
@@ -53,7 +55,7 @@ bool UdpSocket::init(unsigned short local_port, const std::string& local_ip, uns
     // Variable para almacenar errores de asio
     asio::error_code ec;
     
-    // Redimensionar el buffer de recepción al tamaño esperado de los paquetes
+    // Redimensionar el buffer de recepción al tamaño esperado de los paquetes, máximo cuando no se especifica
     this->rcv_packet_size_ = rcv_packet_size;
     recv_buffer_.resize(rcv_packet_size_ > 0 ? rcv_packet_size_ : MAX_UDP_PACKET_SIZE);
 
@@ -66,7 +68,7 @@ bool UdpSocket::init(unsigned short local_port, const std::string& local_ip, uns
     // Abrir (bind) el socket
     if (!openSocket()) {
         if (socket_.is_open()) {
-            socket_.close(ec);
+            ec = socket_.close(ec);
             if (ec)
                 SYS_WARN("UdpSocket","Error closing socket after failure: " + ec.message());
         }
@@ -79,7 +81,7 @@ bool UdpSocket::init(unsigned short local_port, const std::string& local_ip, uns
 }
 
 void UdpSocket::start() {
-    if (running_)           return;
+    if (running_) return;
     if (!socket_.is_open() && !openSocket()) {
         SYS_WARN("UdpSocket","Cannot open socket" + name_ + ":" + std::to_string(local_endpoint_.port()));
         return;
@@ -89,6 +91,7 @@ void UdpSocket::start() {
         return;
     }
 
+    // Vincular el socket al callback de recepción
     start_receive();
 
     SYS_INFO("UdpSocket", "Socket " + name_ + ":" + std::to_string(local_endpoint_.port()) + " started successfully");
@@ -101,12 +104,12 @@ void UdpSocket::stop() {
     // Cerrar el socket si está abierto
     if (socket_.is_open()) {
         // Cancelar cualquier operación pendiente
-        socket_.cancel(ec);
+        ec = socket_.cancel(ec);
         if (ec)
             SYS_WARN("UdpSocket","Failed to cancel remaining operations");
 
         // Cerrar completamente
-        socket_.close(ec);
+        ec = socket_.close(ec);
         if (ec)
             SYS_WARN("UdpSocket","Failed to close socket");
     }
@@ -120,8 +123,9 @@ void UdpSocket::stop() {
     running_ = false;
 }
 
-bool UdpSocket::sendPacket(const std::vector<char>& data, const std::string& ip, unsigned short port)
-{
+// Envío --------------------------------------------------------------------------------
+
+bool UdpSocket::sendPacket(const std::vector<char>& data, const std::string& ip, unsigned short port) {
     // Socket inválido
     if (!socket_.is_open())
     {
@@ -133,6 +137,12 @@ bool UdpSocket::sendPacket(const std::vector<char>& data, const std::string& ip,
     if (data.empty())
     {
         SYS_WARN("UdpSocket","[" + name_ + "] sendPacket() -> empty packet");
+        return false;
+    }
+
+    // Si está en stop/offline, no deja mandar nada
+    if(!running_) {
+        SYS_WARN("UdpSocket","Cannot send anything. Socket is not running.");
         return false;
     }
 
@@ -155,36 +165,17 @@ bool UdpSocket::sendPacket(const std::vector<char>& data, const std::string& ip,
             return false;
         }
 
+        SYS_INFO("UdpSocket","[" + name_ + "] sendPacket() -> " + std::to_string(bytes_sent) + " bytes sent successfuly.");
         return true;
     }
     catch (const std::exception& e)
     {
         SYS_WARN("UdpSocket","[" + name_ + "] sendPacket() exception: " + e.what());
-
         return false;
     }
 }
 
-// Datos de socket ----------------------------------------------------------------------
-
-short UdpSocket::port() const {
-    if (socket_.is_open())  return socket_.local_endpoint().port();
-    else                    return -1; // Indica que el socket no está abierto
-}
-
-std::string const& UdpSocket::name() const {
-    return name_;
-}
-
-bool UdpSocket::isRunning() const {
-    return running_;
-}
-
-bool UdpSocket::isOpen() const {
-    return socket_.is_open();
-}
-
-// Gestión de la cola de datos recibidos ------------------------------------------------
+// Recepción ----------------------------------------------------------------------------
 
 std::vector<char> UdpSocket::getFirstPacket() {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -215,8 +206,27 @@ bool UdpSocket::hasData() {
 	return !isQueueEmpty();
 }
 
+// Datos de socket ----------------------------------------------------------------------
 
-// Socket -------------------------------------------------------------------------------
+short UdpSocket::port() const {
+    if (socket_.is_open())  return socket_.local_endpoint().port();
+    else                    return -1; // Indica que el socket no está abierto
+}
+
+std::string const& UdpSocket::name() const {
+    return name_;
+}
+
+bool UdpSocket::isRunning() const {
+    return running_;
+}
+
+bool UdpSocket::isOpen() const {
+    return socket_.is_open();
+}
+
+
+// Creación de socket -------------------------------------------------------------------
 
 bool UdpSocket::createLocalEndpoint(unsigned short local_port, const std::string& local_ip) {
 
@@ -234,7 +244,9 @@ bool UdpSocket::createLocalEndpoint(unsigned short local_port, const std::string
         if (ec) {
             SYS_WARN("UdpSocket","Invalid IP: " + local_ip + " - " + ec.message());
             return false;
-        } 
+        }
+        SYS_INFO("UdpSocket",ec.message());
+        SYS_INFO("UdpSocket","Creating socket " + local_ip + ":" + std::to_string(local_port));
         local_endpoint_ = asio::ip::udp::endpoint(localIP, local_port);
     }
     return true;
@@ -247,7 +259,7 @@ bool UdpSocket::openSocket() {
 
     // Abrir el socket 
     ec.clear();
-    socket_.open(local_endpoint_.protocol(), ec);
+    ec = socket_.open(local_endpoint_.protocol(), ec);
     if (ec) {
         SYS_WARN("UdpSocket", "Failed opening socket: " + ec.message());
         return false;
@@ -255,7 +267,7 @@ bool UdpSocket::openSocket() {
 
     // Confirgurar el socket para permitir reutilizar la dirección local
     ec.clear();
-    socket_.set_option(asio::socket_base::reuse_address(true), ec);
+    ec = socket_.set_option(asio::socket_base::reuse_address(true), ec);
     if (ec) {
         SYS_WARN("UdpSocket","Error setting socket option: " + ec.message());
         return false;
@@ -263,7 +275,7 @@ bool UdpSocket::openSocket() {
 
     // Enlazar el socket al endpoint local
     ec.clear();
-    socket_.bind(local_endpoint_, ec);
+    ec = socket_.bind(local_endpoint_, ec);
     if (ec) {
         if (ec == asio::error::access_denied)
             SYS_WARN("UdpSocket","Access denied binding socket. Check firewall rules and try again.");
@@ -277,6 +289,9 @@ bool UdpSocket::openSocket() {
     initialized_ = true;
     return true;
 }
+
+
+// Callback de recepción ----------------------------------------------------------------
 
 void UdpSocket::start_receive() {
     std::shared_ptr<UdpSocket> self(shared_from_this());  // Mantiene el objeto vivo si se destruye antes

@@ -81,6 +81,9 @@ public:
      */
     void stop();
 
+
+// Envío --------------------------------------------------------------------------------
+
     /**
      * @brief Manda un paquete a un socket
      * @param data  Datos a mandar
@@ -90,34 +93,8 @@ public:
      */
     bool sendPacket(const std::vector<char>& data, const std::string& ip, unsigned short port);
 
-// Datos de socket ----------------------------------------------------------------------
 
-    /**
-     * @brief Devuelve el puerto local al que está enlazado el socket.
-     * @return El puerto local del socket UDP. Si el receptor no está en ejecución, devuelve -1.
-     */
-    short port() const;
-
-    /**
-     * @brief Devuelve el nombre dado al socket
-     * @return Nombre del socket
-     */
-    std::string const& name() const;
-
-    /**
-     * @brief Devuelve si el receptor UDP está en ejecución
-     * @return true si el receptor UDP está en ejecución, false en caso contrario.
-     */
-    bool isRunning() const;
-
-    /**
-     * @brief Devuelve si el socket está abierto
-     * @return true si el socket está abierto, false en caso contrario.
-     */
-    bool isOpen() const;
-
-
-// Gestión de la cola de datos recibidos ------------------------------------------------
+// Recepción ----------------------------------------------------------------------------
 
     /**
      * @brief Devuelve el primer paquete recibido de la cola. Si la cola está vacía, espera hasta que llegue un nuevo paquete.
@@ -153,9 +130,37 @@ public:
     asio::strand<asio::io_context::executor_type>& getStrand() { return strand_; }
 
 
+// Datos de socket ----------------------------------------------------------------------
+
+    /**
+     * @brief Devuelve el puerto local al que está enlazado el socket.
+     * @return El puerto local del socket UDP. Si el receptor no está en ejecución, devuelve -1.
+     */
+    short port() const;
+
+    /**
+     * @brief Devuelve el nombre dado al socket
+     * @return Nombre del socket
+     */
+    std::string const& name() const;
+
+    /**
+     * @brief Devuelve si el receptor UDP está en ejecución
+     * @return true si el receptor UDP está en ejecución, false en caso contrario.
+     */
+    bool isRunning() const;
+
+    /**
+     * @brief Devuelve si el socket está abierto
+     * @return true si el socket está abierto, false en caso contrario.
+     */
+    bool isOpen() const;
+
+
+
 private:
     
-// Socket -------------------------------------------------------------------------------
+// Creación de socket -------------------------------------------------------------------
 
     /**
      * @brief Crear endpoint local con IP+puerto en variable miembro local_endpoint
@@ -168,6 +173,9 @@ private:
      * @returns true si se ha creado el socket correctamente, false en caso contrario.
      */
     bool openSocket();
+
+
+// Callback de recepción ----------------------------------------------------------------
 
     /**
      * @brief Callback cuando recibe un paquete de datos
