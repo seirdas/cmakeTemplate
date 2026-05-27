@@ -30,6 +30,20 @@ if(WIN32)
         # Nombre de la librería
         set(_ddsc_lib_name   ddsc.lib)
         set(_ddscxx_lib_name ddscxx.lib)
+
+        # Nombre y rutas de las dlls
+        set(_ddsc_dll_name       ddsc.dll)
+        set(_ddscxx_dll_name     ddscxx.dll)
+        if(WIN32 AND MSVC)
+            set(_ddsc_dll   "${CYCLONE_TOTAL_INSTALL_DIR}/bin/${_ddsc_dll_name}")
+            set(_ddscxx_dll "${CYCLONE_TOTAL_INSTALL_DIR}/bin/${_ddscxx_dll_name}")
+        endif()
+
+        # Definimos las rutas de las DLLs
+        set(DLL_LIST 
+            "${_ddsc_dll}"
+            "${_ddscxx_dll}"
+        )
     else()
         # MinGW/Clang descargan librerías '.a'
         set(_ddsc_lib_name   libddsc.a)
@@ -43,6 +57,11 @@ elseif(UNIX)
         set(_ddsc_lib_name   libddsc.so.${CYCLONE_VERSION})
         set(_ddscxx_lib_name libddscxx.so.${CYCLONE_VERSION})
 
+        set(DLL_LIST "")
+        file(GLOB_RECURSE DLL_LIST            
+            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libdds*"
+            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx*"
+        )
 endif()
 
 
@@ -296,18 +315,28 @@ endif()
 # Librería de cyclonedds -------------------------------------------------------
 add_library(CycloneDDS::ddsc SHARED IMPORTED GLOBAL)
 set_target_properties(CycloneDDS::ddsc PROPERTIES
-    IMPORTED_LOCATION "${_ddsc_lib}"
+    IMPORTED_LOCATION "${_ddsc_dll}"
     INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
 )
+if(WIN32 AND MSVC)
+    set_target_properties(CycloneDDS::ddsc PROPERTIES
+        IMPORTED_IMPLIB "${_ddsc_lib}"
+    )
+endif()
 add_dependencies(CycloneDDS::ddsc cyclonedds_core)
 
 
 # Librería con cyclonedds_cxx --------------------------------------------------
 add_library(CycloneDDS::ddscxx SHARED IMPORTED GLOBAL)
 set_target_properties(CycloneDDS::ddscxx PROPERTIES
-    IMPORTED_LOCATION "${_ddscxx_lib}"
+    IMPORTED_LOCATION "${_ddscxx_dll}"
     INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
 )
+if(WIN32 AND MSVC)
+    set_target_properties(CycloneDDS::ddscxx PROPERTIES
+        IMPORTED_IMPLIB "${_ddscxx_lib}"
+    )
+endif()
 add_dependencies(CycloneDDS::ddscxx cyclonedds_cpp_binding)
 
 
@@ -379,19 +408,6 @@ message(STATUS "[Cyclone] Cyclone: All targets grouped into 'cycloneddscxx_lib'"
 # Usar en cmakelists principal después de generar el ejecutable
 # ==============================================================================
 function(configure_cyclonedds_dlls)
-    if(WIN32)
-        # Definimos las rutas de las DLLs en la carpeta install
-        set(DLL_LIST 
-            "${CYCLONE_TOTAL_INSTALL_DIR}/bin/ddsc.dll"
-            "${CYCLONE_TOTAL_INSTALL_DIR}/bin/ddscxx.dll"
-        )
-    elseif(UNIX)
-        set(DLL_LIST "")
-        file(GLOB_RECURSE DLL_LIST            
-            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libdds*"
-            "${CYCLONE_TOTAL_INSTALL_DIR}/lib/libddscxx*"
-        )
-    endif()
     
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND @echo ---- Linking Cyclone dlls to output folder...
