@@ -7,7 +7,7 @@
 #include <memory>               // unique_ptr
 
 // Para no mezclar includes, declaración implícita
-class UdpReceiver;
+class UdpSocket;
 
 /**
   * @brief Gestiona varios sockets a partir de un único contexto de operaciones asíncronas (io_context)
@@ -132,7 +132,7 @@ private:
 /************ Variables ****************************************************************/
 
     using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
-    using RcvVector = std::vector<std::shared_ptr<UdpReceiver>>;
+    using RcvVector = std::vector<std::shared_ptr<UdpSocket>>;
 
     // Contexto de operaciones asíncronas
     asio::io_context    io_context_;       // UN ÚNICO contexto de operaciones asíncronas para todo.
@@ -140,8 +140,8 @@ private:
     std::atomic<bool>   io_running_;       // Flag para saber si la red (io_context) está en funcionamiento
     
     // Sockets
-    RcvVector           receivers_;        // Lista de receptores UDP registrados
-    std::mutex          mtx_receivers_;    // Mutex para gestion del vector de sockets
+    RcvVector           udp_sockets_;        // Lista de receptores UDP registrados
+    std::mutex          mtx_udp_sockets_;    // Mutex para gestion del vector de sockets
     std::atomic<bool>   sockets_running_;  // Flag para saber si la red (io_context) está en funcionamiento
 
     // Hilos de trabajo
