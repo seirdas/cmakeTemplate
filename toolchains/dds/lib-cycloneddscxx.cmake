@@ -65,13 +65,12 @@ if(CMAKE_TOOLCHAIN_FILE)
 endif()
 
 # Detectar "formato" de librería
-if(WIN32)
-    # Windows
-    if(MSVC)
-        # Windows con compilador de Windows MSVC
+if(WIN32)           # Windows
+    if(MSVC)        # Windows con compilador de Windows MSVC
+        
+        # Aquí de momento no hay nada.
 
-    elseif(MINGW)
-        # MinGW/Clang 
+    elseif(MINGW)        # MinGW/Clang 
         message(STATUS "[Cyclone] Injecting C compiler to external project: ${CMAKE_C_COMPILER}")
         message(STATUS "[Cyclone] Injecting CXX compiler to external project: ${CMAKE_CXX_COMPILER}")
         list(APPEND _generator_args
@@ -80,10 +79,10 @@ if(WIN32)
             "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
         )
 
-        # Fix para UNICODE
+        # Fix para UNICODE, omitir warnings
         list(APPEND _generator_args
-            "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -UUNICODE -U_UNICODE"
-            "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -UUNICODE -U_UNICODE"
+            "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -UUNICODE -U_UNICODE -w"
+            "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -UUNICODE -U_UNICODE -w"
         )
 
         if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -96,9 +95,12 @@ if(WIN32)
 
         endif()
     endif()
-elseif(UNIX)
-    # Linux
-
+elseif(UNIX) # Linux
+        # Fix para UNICODE, omitir warnings
+        list(APPEND _generator_args
+            "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS} -UUNICODE -U_UNICODE -w"
+            "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS} -UUNICODE -U_UNICODE -w"
+        )
 endif()
 
 
