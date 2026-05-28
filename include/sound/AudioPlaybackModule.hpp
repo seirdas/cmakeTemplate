@@ -112,7 +112,7 @@ public:
      * @param id Identificador del sonido.
      * @return true si el sonido está en reproducción, false en caso contrario.
      */
-    bool isPlaying(SoundID id);
+    bool isPlaying(SoundID id) const;
 
     /**
      * @brief Devuelve el nombre del dispositivo de audio.
@@ -143,10 +143,10 @@ private:
 
 /************ Variables ****************************************************************/
     
-    ma_context*     context_;       // Contexto de mini audio.
-    ma_device_info  device_info_;   // Información del dispositivo de audio.
-    ma_engine       engine_;        // Motor de audio.
-    std::mutex      mutex_;         // Mutex para sincronización de acceso a los recursos.
+    ma_context*         context_;       // Contexto de mini audio.
+    ma_device_info      device_info_;   // Información del dispositivo de audio.
+    ma_engine           engine_;        // Motor de audio.
+    mutable std::mutex  mutex_;         // Mutex para sincronización de acceso a los recursos.
 
     std::unordered_map<SoundID, std::unique_ptr<SoundInstance>> sounds_;    // Mapa de instancias de sonido.
     std::unordered_map<std::string, std::unique_ptr<ma_sound>>  cache_;     // Mapa de caché de sonidos.
