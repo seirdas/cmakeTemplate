@@ -7,21 +7,21 @@
     #include "net/UdpSocket.hpp"
 
     using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
-    using RcvVector = std::vector<std::shared_ptr<UdpSocket>>;
+    using UDPSocketsVector = std::vector<std::shared_ptr<UdpSocket>>;
 
     // Implementación de miembros de la clase de asio (pimpl_)
     struct NetMgr::Impl {
         asio::io_context    io_context_;       // UN ÚNICO contexto de operaciones asíncronas para todo
         WorkGuard           work_guard_;       // RAII para mantener vivo el io
-        RcvVector           udp_sockets_;      // Lista de receptores UDP registrados
+        UDPSocketsVector    udp_sockets_;      // Lista de receptores UDP registrados
 
         // Este struct necesita inicializar io_context con work_guar, por eso declaramos el constructor
         Impl() : work_guard_(asio::make_work_guard(io_context_)) {}
     };
 
     // Función helper fuera de la clase para evitar esta transformación siempre que se use el strand
-    asio::strand<asio::io_context::executor_type>& getAsioStrand(std::shared_ptr<UdpSocket> const& rcv) {
-        return *static_cast<asio::strand<asio::io_context::executor_type>*>(rcv->getStrandNative());
+    asio::strand<asio::io_context::executor_type>& getAsioStrand(std::shared_ptr<UdpSocket> const& sock) {
+        return *static_cast<asio::strand<asio::io_context::executor_type>*>(sock->getStrandNative());
     }
 
 
@@ -54,7 +54,7 @@
 
     // Gestión de sockets -------------------------------------------------------------------
 
-    bool NetMgr::addReceiver(
+    bool NetMgr::addUdpSocket(
         std::string         name,
         short               local_port, 
         const std::string&  local_ip, 
@@ -62,23 +62,23 @@
     ) 
     {
         // Evitar duplicados por nombre y puerto
-        for (const auto& rcv : pimpl_->udp_sockets_) {
-            if (rcv->name() == name) {
+        for (const auto& sock : pimpl_->udp_sockets_) {
+            if (sock->name() == name) {
                 SYS_WARN("NetMgr","Socket already exists with name " + name);;
                 return false;
             }
-            if (rcv->port() == local_port) {
+            if (sock->port() == local_port) {
                 SYS_WARN("NetMgr","Socket already exists with port " + std::to_string(local_port));
                 return false;
             }
         }
 
-        // Crear receiver (aún no registrado)
-        std::shared_ptr<UdpSocket> receiver = std::make_shared<UdpSocket>(name, &pimpl_->io_context_);
+        // Crear socket (aún no registrado)
+        std::shared_ptr<UdpSocket> socket = std::make_shared<UdpSocket>(name, &pimpl_->io_context_);
 
         // Intentar inicializar
         SYS_INFO("NetMgr","Opening new socket...");
-        if (!receiver->init(local_port, local_ip, rcv_packet_size))
+        if (!socket->init(local_port, local_ip, rcv_packet_size))
         {
             // No hay nada que limpiar, el puntero make_unique se destruye al salir.
             SYS_WARN("NetMgr","Failed to initialize socket on port " + std::to_string(local_port));
@@ -87,32 +87,32 @@
 
         // Insertar en el vector
         std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
-        pimpl_->udp_sockets_.push_back(receiver);
+        pimpl_->udp_sockets_.push_back(socket);
         SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );
 
         // "encender" el socket si estaban los demás corriendo
         if (sockets_running_)
-            asio::post(getAsioStrand(receiver), [receiver]{ 
-                receiver->start(); 
+            asio::post(getAsioStrand(socket), [socket]{ 
+                socket->start(); 
             });
 
         return true;
     }
 
-    bool NetMgr::removeReceiver(std::string const& name) {
+    bool NetMgr::removeUdpSocket(std::string const& name) {
 
         // Buscar el socket por puerto y llamar a la otra función
         unsigned int port;
         for(auto& it : pimpl_->udp_sockets_)
             if (it->name() == name) 
-                return removeReceiver(it->port());
+                return removeUdpSocket(it->port());
 
         /* else */
-        SYS_WARN("NetMgr","Cannot delete selected UDP socket: Name "+name+" not found.");
+        SYS_WARN("NetMgr","Cannot delete selected UDP socket: Name '"+name+"' not found.");
         return false;
     }
 
-    bool NetMgr::removeReceiver(unsigned int port) {
+    bool NetMgr::removeUdpSocket(unsigned int port) {
         std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
         
         // Busca el índice del socket en el vector, -1 si falla
@@ -123,17 +123,17 @@
         }
 
         // Copiamos el shared_ptr para mantenerlo vivo durante esta función
-        std::shared_ptr<UdpSocket> rcv = pimpl_->udp_sockets_[index];
+        std::shared_ptr<UdpSocket> sock = pimpl_->udp_sockets_[index];
         
         // info
         SYS_INFO("NetMgr",
-            "Deleting socket '" + rcv->name()
-            + "' with port " + std::to_string(rcv->port() )
+            "Deleting socket '" + sock->name()
+            + "' with port " + std::to_string(sock->port() )
         );
                 
         // Esto fuerza a que el lambda de async_receive_from se ejecute con error 'operation_aborted'.
-        asio::post(getAsioStrand(rcv), [rcv]() {
-            rcv->stop();
+        asio::post(getAsioStrand(sock), [sock]() {
+            sock->stop();
         });
 
         // Borrar el elemento del vector usando iterator
@@ -144,7 +144,7 @@
         return true;
     }
 
-    void NetMgr::printReceivers() {
+    void NetMgr::printUdpSockets() const {
 
         SYS_INFO("NetMgr", "--- SOCKETS ACTIVOS ---");
         for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
@@ -155,6 +155,41 @@
             );
     }
 
+    /**
+     * @brief Comprueba si un socket se está gestionando por nombre
+     * @param name Nombre del socket
+     * @return true si está en el vector de sockets gestionados, false en caso contrario.
+     */
+    bool NetMgr::socketExists(std::string const& socketname) {
+        // Si hay un socket con ese nombre, devuelve true
+        for (const auto& sock : pimpl_->udp_sockets_) 
+            if (sock->name() == socketname) {
+                SYS_INFO("NetMgr","Socket " + socketname + ":" + std::to_string(sock->port()) + "' found.");
+                return true;
+            }
+
+        // Llegará aquí si no encuentra socket
+        SYS_WARN("NetMgr","Socket " + socketname + "' not found.");
+        return false;
+    }
+
+    /**
+     * @brief Comprueba si un socket se está gestionando por puerto
+     * @param port Puerto del socket
+     * @return true si está en el vector de sockets gestionados, false en caso contrario.
+     */
+    bool NetMgr::socketExists(unsigned short port) {
+        // Si hay un socket con ese puerto, devuelve true
+        for (const auto& sock : pimpl_->udp_sockets_)
+            if (sock->port() == port) {
+                SYS_INFO("NetMgr","Socket " + sock->name() + ":" + std::to_string(port) + "' found.");
+                return true;
+            }
+
+        // Llegará aquí si no encuentra socket
+        SYS_WARN("NetMgr","Socket with port " + std::to_string(port) + "' not found.");
+        return {};
+    }
 
     // Ejecución ----------------------------------------------------------------------------
 
@@ -179,9 +214,9 @@
         }
 
         // Iniciar (de nuevo si aplica) los sockets
-        for (auto& rcv : pimpl_->udp_sockets_) {
-            asio::post(getAsioStrand(rcv), [rcv]{ 
-                rcv->start(); 
+        for (auto& sock : pimpl_->udp_sockets_) {
+            asio::post(getAsioStrand(sock), [sock]{ 
+                sock->start(); 
             });
         }
 
@@ -192,19 +227,20 @@
 
     void NetMgr::stop() {
 
+        // Si los sockets ya están inactivos, no hacer nada
         if (!sockets_running_) return;
 
         SYS_INFO("NetMgr","Stopping sockets...");
 
         // Parar la recepción de los sockets
-        for (auto& rcv : pimpl_->udp_sockets_) {
-            asio::post(getAsioStrand(rcv), [rcv]{ 
-                rcv->stop(); 
+        for (auto& sock : pimpl_->udp_sockets_) {
+            asio::post(getAsioStrand(sock), [sock]{ 
+                sock->stop(); 
             });
         }
 
         sockets_running_ = false;
-        SYS_INFO("NetMgr","All receivers stopped");
+        SYS_INFO("NetMgr","All sockets stopped");
     }
 
     bool NetMgr::isRunning() const {
@@ -221,12 +257,12 @@
     ) 
     {
         // Si hay un socket con ese nombre, manda los datos
-        for (const auto& rcv : pimpl_->udp_sockets_) 
-            if (rcv->name() == socketname)
-                return rcv->sendPacket(data, dest_ip, dest_port);
+        for (const auto& sock : pimpl_->udp_sockets_) 
+            if (sock->name() == socketname)
+                return sock->sendPacket(data, dest_ip, dest_port);
 
         // Llegará aquí si no encuentra socket
-        SYS_WARN("NetMgr","Socket not exists with name " + socketname);
+        SYS_WARN("NetMgr","Socket '"+ socketname +"' not exists");
         return false;
     }
 
@@ -238,9 +274,9 @@
     ) 
     {
         // Si hay un socket con ese nombre, manda los datos
-        for (const auto& rcv : pimpl_->udp_sockets_)
-            if (rcv->port() == local_port) 
-                return rcv->sendPacket(data, dest_ip, dest_port);
+        for (const auto& sock : pimpl_->udp_sockets_)
+            if (sock->port() == local_port) 
+                return sock->sendPacket(data, dest_ip, dest_port);
 
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
@@ -251,9 +287,9 @@
 
     std::vector<char> NetMgr::getDataFromSocket(std::string const& socketname) {
         // Si hay un socket con ese nombre, pide los datos
-        for (const auto& rcv : pimpl_->udp_sockets_) 
-            if (rcv->name() == socketname)
-                return rcv->getFirstPacket();   // <-- BLOQUEANTE 
+        for (const auto& sock : pimpl_->udp_sockets_) 
+            if (sock->name() == socketname)
+                return sock->getFirstPacket();   // <-- BLOQUEANTE 
 
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket not exists with name " + socketname);
@@ -263,9 +299,9 @@
     std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port) {
 
         // Si hay un socket con ese nombre, manda los datos
-        for (const auto& rcv : pimpl_->udp_sockets_)
-            if (rcv->port() == local_port) 
-                return rcv->getFirstPacket();   // <-- BLOQUEANTE 
+        for (const auto& sock : pimpl_->udp_sockets_)
+            if (sock->port() == local_port) 
+                return sock->getFirstPacket();   // <-- BLOQUEANTE 
 
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
@@ -303,15 +339,15 @@ struct NetMgr::Impl {};
     NetMgr::~NetMgr()                               { }
 
 // Gestión de sockets -------------------------------------------------------------------
-    bool NetMgr::addReceiver(
+    bool NetMgr::addUdpSocket(
         std::string         name,
         short               local_port, 
         const std::string&  local_ip, 
         unsigned int        rcv_packet_size
     ) { return false; }
-    bool NetMgr::removeReceiver(std::string const& name)   { return false; }
-    bool NetMgr::removeReceiver(unsigned int port)         { return false; }
-    void NetMgr::printReceivers()                          { return; }
+    bool NetMgr::removeUdpSocket(std::string const& name)   { return false; }
+    bool NetMgr::removeUdpSocket(unsigned int port)         { return false; }
+    void NetMgr::printsockets()                          { return; }
 
 // Ejecución ----------------------------------------------------------------------------
     bool NetMgr::start()                                   { return false; }

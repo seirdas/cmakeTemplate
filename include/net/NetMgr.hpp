@@ -53,7 +53,7 @@ public:
     /**
      * @brief Añade un socket.
      */
-    bool addReceiver(
+    bool addUdpSocket(
         std::string         name,
         short               local_port, 
         const std::string&  local_ip = "", 
@@ -64,18 +64,32 @@ public:
      * @brief Detener y desvincular un socket activo por nombre
      * @param name Nombre del socket UDP gestionado
      */
-    bool removeReceiver(std::string const& name);
+    bool removeUdpSocket(std::string const& name);
 
     /**
      * @brief Detener y desvincular un socket activo por puerto
      * @param port Puerto del socket UDP gestionado
      */
-    bool removeReceiver(unsigned int port);
+    bool removeUdpSocket(unsigned int port);
 
     /**
      * @brief Imprime por cout los sockets creados.
      */
-    void printReceivers();
+    void printUdpSockets() const;
+
+    /**
+     * @brief Comprueba si un socket se está gestionando por nombre
+     * @param name Nombre del socket
+     * @return true si está en el vector de sockets gestionados, false en caso contrario.
+     */
+    bool socketExists(std::string const& socketname);
+
+    /**
+     * @brief Comprueba si un socket se está gestionando por puerto
+     * @param port Puerto del socket
+     * @return true si está en el vector de sockets gestionados, false en caso contrario.
+     */
+    bool socketExists(unsigned short port);
 
 
 // Ejecución ----------------------------------------------------------------------------

@@ -101,6 +101,11 @@ void AppController::TWorker() {
     SYS_INFO("TWorker","Initializating consumer thread...");
     std::vector<char> data;
 
+    if (!net_.socketExists("Host")) {
+        SYS_WARN("TWorker", "Socket host not initialized. Exiting network consumer thread");
+        return;
+    }
+
     while (running_) {
 
         std::unique_lock<std::mutex> lock(online_mtx_);
@@ -124,7 +129,8 @@ void AppController::TWorker() {
         // Procesar el paquete (simulado)
         SYS_INFO("TWorker", "Procesando paquete de datos...");
         SYS_INFO("TWorker","Size of data " + std::to_string(data.size()));
-        std::this_thread::sleep_for(std::chrono::milliseconds(500)); 
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
     }
 
     SYS_INFO("TWorker", "Consumer thread stopped.");

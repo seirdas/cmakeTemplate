@@ -183,7 +183,7 @@ void AudioPlaybackModule::setPitch(SoundID id, float pitch)
     ma_sound_set_pitch(&it->second->sound, pitch);
 }
 
-bool AudioPlaybackModule::isPlaying(SoundID id)
+bool AudioPlaybackModule::isPlaying(SoundID id) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -217,7 +217,6 @@ void AudioPlaybackModule::endCallback(void* userData, ma_sound* sound)
         }
     }
 }
-
 
 void AudioPlaybackModule::cleanupFinished()
 {
