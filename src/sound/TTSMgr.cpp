@@ -4,10 +4,12 @@
 // Macro de cmake al activar la librería
 #if defined SHERPA || defined SHERPA_VERSION
 
+    #include "sherpa-onnx/c-api/cxx-api.h"
     #include <vector>
     #include <cstring>
     #include <mutex>
-    #include "sherpa-onnx/c-api/cxx-api.h"
+    #include <algorithm> // Para std::sort y std::set_difference
+    #include <iterator>  // Para std::back_inserter
 
     // Este #define está definido en lib-sherpaonnx.cmake según la ruta de descarga
     // Se redefine aquí por si acaso, pero no se debería usar ésta
@@ -39,7 +41,7 @@
         running_ = true;
 
         // obtener la lista de rutas de los modelos de la ruta models_path_
-        std::vector<std::string> models_str = getAvailableModels();
+        std::vector<std::string> models_str = getAvailableModelsPath();
         std::vector<std::filesystem::path> available_models(models_str.begin(), models_str.end());
 
         if (available_models.empty())
@@ -71,7 +73,7 @@
 
         if (num_loaded_models_ != num_available_models_) {
             SYS_WARN("TTSMgr", std::to_string(num_available_models_-num_loaded_models_) + " models left.");
-            loadRemaining();
+            loadMissingModels();
         }
 
         return !loaded_models_.empty();;
@@ -101,9 +103,37 @@
         init();
     }
 
-    void TTSMgr::loadRemaining() {
-        // TODO
-        /* la idea es cargar los que falten cuando el init "falle" con los que falle*/
+    void TTSMgr::loadMissingModels() {
+
+        // No cargar modelos restantes si se está cerrrando
+        if(!running_) return;
+
+        // conseguir los modelos disponibles y cargados
+        std::vector<std::string> av_models_str = getAvailableModels();
+        std::vector<std::string> load_models_str = getLoadedModels();
+
+        // Ordenar ambos vectores (Obligatorio para set_difference)
+        std::sort(av_models_str.begin(), av_models_str.end());
+        std::sort(load_models_str.begin(), load_models_str.end());
+
+        // Obtener la "diferencia", los modelos disponibles que no están cargados
+        std::vector<std::string> missing_models_str;
+        std::set_difference(
+            av_models_str.begin(), av_models_str.end(),
+            load_models_str.begin(), load_models_str.end(),
+            std::back_inserter(missing_models_str)
+        );
+
+        // De momento imprimir
+        SYS_INFO("TTSMgr"," Models missing:");
+        for (auto& it : missing_models_str)
+            SYS_INFO("TTSMgr"," - " + it);
+        
+        // Obtiene el path de los modelos faltantes
+        /* #TODO */
+
+        // inicializar los modelos disponibles que no estén en la lista de cargados
+        /* #TODO */
     }
 
     // Datos del módulo TTS -----------------------------------------------------------------
@@ -118,9 +148,9 @@
         }
 
         // Rellena el vector con el nombre de los modelos (nombre de carpeta)
-        for (const auto& entry : fs::directory_iterator(models_path_))
-            if (entry.is_directory())
-                available_models.push_back(fs::absolute(entry.path()).string());
+        for (const auto& entry : fs::directory_iterator(models_path_)) 
+            if (entry.is_directory()) 
+                available_models.push_back(entry.path().filename().string());
 
         // Avisa si la lista de modelos disponibles está vacía
         if (available_models.empty()) {
@@ -134,6 +164,36 @@
         // Devuelve la lista de nombres de los modelos
         return available_models;
     }
+
+    std::vector<std::string> TTSMgr::getAvailableModelsPath() {
+        std::vector<std::string> available_models;
+
+        // Comprobar que existe el directorio de modelos de voz
+        if (!fs::is_directory(models_path_)) {
+            SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
+            return {};
+        }
+
+        // Rellena el vector con el nombre de los modelos (ruta de carpeta)
+        for (const auto& entry : fs::directory_iterator(models_path_))
+            if (entry.is_directory())
+                available_models.push_back(fs::absolute(entry.path()).string());
+
+
+        // Avisa si la lista de modelos disponibles está vacía
+        if (available_models.empty()) {
+            SYS_WARN("TTSMgr","Cannot load any voice model. Check assets folder " + models_path_);
+            return {};
+        }
+
+        // Guarda internamente el número de modelos
+        num_available_models_ = static_cast<short>(available_models.size());
+
+        // Devuelve la lista de nombres de los modelos
+        return available_models;
+    }
+
+
 
     std::vector<std::string> TTSMgr::getLoadedModels() const {
         std::vector<std::string> models;
