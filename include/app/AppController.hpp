@@ -27,9 +27,7 @@
   *      init() inicializa los miembros necesarios (red, UI, audio, etc.).
   *      run() Mantiene el ciclo de vida de la aplicación hasta su finalización.
   *  @note La variable VERSION se usa para construir version_.
-  *  @author
   *  @see IAppControl
-  *  @date March 2, 2026
   */
 class AppController : public IAppControl {
 
