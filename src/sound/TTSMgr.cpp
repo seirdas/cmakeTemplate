@@ -142,7 +142,7 @@
     }
 
 
-    // Datos del módulo TTS -----------------------------------------------------------------
+    // Datos de los modelos -----------------------------------------------------------------
 
     std::vector<std::string> TTSMgr::getAvailableModels() {
         std::vector<std::string> available_models;
@@ -172,7 +172,6 @@
     }
 
     std::vector<std::string> TTSMgr::getAvailableModelsPath() {
-        std::vector<std::string> available_models;
 
         // Comprobar que existe el directorio de modelos de voz
         if (!fs::is_directory(models_path_)) {
@@ -181,10 +180,10 @@
         }
 
         // Rellena el vector con el nombre de los modelos (ruta de carpeta)
+        std::vector<std::string> available_models;
         for (const auto& entry : fs::directory_iterator(models_path_))
             if (entry.is_directory())
                 available_models.push_back(fs::absolute(entry.path()).string());
-
 
         // Avisa si la lista de modelos disponibles está vacía
         if (available_models.empty()) {
@@ -208,8 +207,22 @@
         return models;
     }
 
-    std::vector<std::string> TTSMgr::getModelPath(std::string model) {
+    std::string TTSMgr::getModelPath(std::string model) const {
 
+        // Comprobar que existe el directorio de modelos de voz
+        if (!fs::is_directory(models_path_)) {
+            SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
+            return {};
+        }
+
+        // Busca y devuelve la ruta del modelo (carpeta) si existe en ese directorio
+        for (const auto& entry : fs::directory_iterator(models_path_))
+            if (entry.is_directory() && entry.path().filename().string().find(model) != std::string::npos)
+                return entry.path().string();
+
+        /* else */
+        SYS_WARN("TTSMgr","Model '" + model + "' not found.");
+        return {};
     }
 
     short TTSMgr::getAvailableNumModels() const {

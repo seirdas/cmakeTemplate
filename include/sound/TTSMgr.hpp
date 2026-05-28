@@ -62,7 +62,7 @@ public:
      */
     bool isWorking() const;
 
-// Datos de la lista de modelos cargados ------------------------------------------------
+// Datos de los modelos ---------------------------------------------------------
 
     /**
      * @brief Obtiene una lista con los nombres de los modelos disponibles
@@ -81,8 +81,10 @@ public:
 
     /**
      * @brief Obtiene la ruta de un modelo
+     * @param model Nombre del modelo a obtener la ruta
+     * @return Ruta del modelo
      */
-    std::vector<std::string> getModelPath(std::string model);
+    std::string getModelPath(std::string model) const;
       
     /**
      * @brief Obtiene el número de modelos disponibles
