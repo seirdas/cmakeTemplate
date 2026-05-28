@@ -55,27 +55,35 @@ public:
     /**
      * @brief Intenta cargar los modelos disponibles que no estén cargados
      */
-    void loadRemaining();
-
-
-// Datos del módulo TTS -----------------------------------------------------------------
+    void loadMissingModels();
 
     /**
-     * @brief Obtiene el porcentaje de inicialización del módulo TTS.
-     * @return El porcentaje de inicialización (0 a 100).
+     * @brief Devuelve si el módulo tiene algún proceso activo.
      */
-    short getInitPercent() const;
-  
+    bool isWorking() const;
+
+// Datos de la lista de modelos cargados ------------------------------------------------
+
     /**
      * @brief Obtiene una lista con los nombres de los modelos disponibles
      */
     std::vector<std::string> getAvailableModels();
       
     /**
+     * @brief Obtiene una lista con las rutas de los modelos disponibles
+     */
+    std::vector<std::string> getAvailableModelsPath();
+
+    /**
      * @brief Obtiene una lista con los nombres de los modelos cargados
      */
     std::vector<std::string> getLoadedModels() const;
 
+    /**
+     * @brief Obtiene la ruta de un modelo
+     */
+    std::vector<std::string> getModelPath(std::string model);
+      
     /**
      * @brief Obtiene el número de modelos disponibles
      */
@@ -85,11 +93,6 @@ public:
      * @brief Obtiene el número de modelos cargados
      */
     short getLoadedNumModels() const;
-
-    /**
-     * @brief Devuelve si el módulo tiene algún proceso activo.
-     */
-    bool isWorking() const;
 
 
 // Datos y control de modelos -----------------------------------------------------------

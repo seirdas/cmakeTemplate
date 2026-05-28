@@ -34,10 +34,11 @@
         cerrar();
     };
 
+
     // Ejecución ----------------------------------------------------------------------------
 
     bool TTSMgr::init() {
-        // Marcar como corriendo por si se destruye entre las generaciones
+        // Marcar como corriendo por si se destruye mientras carga modelos
         running_ = true;
 
         // obtener la lista de rutas de los modelos de la ruta models_path_
@@ -136,6 +137,11 @@
         /* #TODO */
     }
 
+    bool TTSMgr::isWorking() const {
+        return active_tasks_>0;
+    }
+
+
     // Datos del módulo TTS -----------------------------------------------------------------
 
     std::vector<std::string> TTSMgr::getAvailableModels() {
@@ -193,8 +199,6 @@
         return available_models;
     }
 
-
-
     std::vector<std::string> TTSMgr::getLoadedModels() const {
         std::vector<std::string> models;
 
@@ -202,6 +206,10 @@
         for(const auto& [name, model] : loaded_models_)
             models.push_back(name);
         return models;
+    }
+
+    std::vector<std::string> TTSMgr::getModelPath(std::string model) {
+
     }
 
     short TTSMgr::getAvailableNumModels() const {
@@ -212,9 +220,6 @@
         return num_loaded_models_;
     };
 
-    bool TTSMgr::isWorking() const {
-        return active_tasks_>0;
-    }
 
     // Datos y control de modelos -----------------------------------------------------------
 
@@ -420,7 +425,6 @@
     void TTSMgr::loadRemaining() { return; }
 
     // Datos del módulo TTS -----------------------------------------------------------------
-    short TTSMgr::getInitPercent() const                        { return 0; }
     std::vector<std::string> TTSMgr::getAvailableModels()       { return {}; }
     std::vector<std::string> TTSMgr::getLoadedModels() const    { return {}; }
     short   TTSMgr::getAvailableNumModels() const               { return 0; }
