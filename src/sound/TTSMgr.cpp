@@ -27,6 +27,7 @@
         models_path_(VOICES_PATH),
         num_available_models_(0),
         active_tasks_(0),
+        num_load_retries_(2),
         running_(false),
         loading_(false)
     {
@@ -78,11 +79,18 @@
         std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded.";
         if (numLoaded == numAvailable) {
             SYS_INFO("TTSMgr", msg);
-        } else {    
+        } else {
+
             // Intentar cargar los modelos faltantes si han fallado
             SYS_WARN("TTSMgr", msg + " Trying to load missing models...");
-            loadMissingModels();
-            if (numLoaded != numAvailable)
+            for (unsigned int i = 0; i < num_load_retries_; i++) {
+                // Intentar cargar los modelos faltantes si han fallado
+                loadMissingModels();
+                numLoaded     = numLoadedModels();
+                if (numLoaded == numAvailable)
+                    break;
+            }
+            if (numLoaded == numAvailable)
                 SYS_SOLVED("TTSMgr","Missing TTS models loaded (" + std::to_string(numLoadedModels()) + "/" + std::to_string(numAvailableModels()) + ")" );
             else
                 SYS_WARN("TTSMgr","Cannot load all models");
@@ -465,25 +473,26 @@
     TTSMgr::~TTSMgr() {};
 
     // Ejecución ----------------------------------------------------------------------------
-    bool TTSMgr::init()          { return false; };
-    void TTSMgr::cerrar()        { return; };
-    void TTSMgr::reload()        { return; }
-    void TTSMgr::loadRemaining() { return; }
+    bool TTSMgr::init()              { return false; };
+    void TTSMgr::cerrar()            { return; };
+    void TTSMgr::reload()            { return; }
+    void TTSMgr::loadMissingModels() { return; }
+    bool TTSMgr::isWorking() const   { return false; }
 
     // Datos del módulo TTS -----------------------------------------------------------------
     std::vector<std::string> TTSMgr::getAvailableModels()       { return {}; }
     std::vector<std::string> TTSMgr::getLoadedModels() const    { return {}; }
-    short   TTSMgr::getAvailableNumModels() const               { return 0; }
-    short   TTSMgr::getLoadedNumModels() const                  { return 0; }
-    bool    TTSMgr::isWorking() const                           { return false; }
+    std::string TTSMgr::getModelPath(std::string model) const   { return ""; }
+    short   TTSMgr::numAvailableModels() const                  { return 0; }
+    short   TTSMgr::numLoadedModels() const                     { return 0; }
 
     // Datos y control de modelos -----------------------------------------------------------
     bool    TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname) { return false; }
-    int     TTSMgr::getSampleRate(std::string const& modelName) const { return 0; }
-    int     TTSMgr::getNumSpeakers(std::string const& modelName) const { return 0; }
+    int     TTSMgr::getSampleRate(std::string const& modelName) const         { return 0; }
+    int     TTSMgr::getNumSpeakers(std::string const& modelName) const        { return 0; }
     std::string TTSMgr::getProccesingText(std::string const& modelName) const { return ""; }
 
     // Inicialización de modelos ------------------------------------------------------------
     bool TTSMgr::load_vits_model(std::filesystem::path modelDir) { return false; }
-
+    bool TTSMgr::unload_model(std::string const& modelName)      { return false; }
 #endif
