@@ -2,6 +2,7 @@
 
 #include <string>
 #include "files/LogMgr.hpp"
+#include <mutex>
 
 // Macros simplificados para escribir mensajes:
 #define SYS_ERROR(module, msg)  SystemMgr::instance().error(module, msg)
@@ -102,6 +103,8 @@ private:
 
 /************ Variables ****************************************************************/
 
-    LogMgr log_;        // Log de ejecución de aplicación
-    LogMgr errlog_;     // Log de errores de las ejecuciones (persistente)
+    LogMgr log_;             // Log de ejecución de aplicación
+    LogMgr errlog_;          // Log de errores de las ejecuciones (persistente)
+
+    std::mutex  console_mtx;     // Mutex para evitar solapamientos de mensajes en paralelo
 };

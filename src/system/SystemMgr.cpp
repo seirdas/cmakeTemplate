@@ -72,6 +72,7 @@ void SystemMgr::error(std::string const& module, std::string const& msg) {
     errlog_.write(ss.str());
     
     // Para la consola
+    std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << ANSI_RED << prefix 
               << std::left << std::setw(width) << module_brackets 
               << msg << ANSI_RESET << std::endl;
@@ -92,6 +93,7 @@ void SystemMgr::warning(std::string const& module, std::string const& msg) {
     errlog_.write(ss.str());
     
     // Para la consola
+    std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << ANSI_YELLOW << prefix 
               << std::left << std::setw(width) << module_brackets 
               << msg << ANSI_RESET << std::endl;
@@ -108,6 +110,7 @@ void SystemMgr::info(std::string const& module, std::string const& msg) {
     log_.write(ss.str());
     
     // Para la consola
+    std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << prefix 
               << std::left << std::setw(width) << module_brackets 
               << msg << std::endl;
@@ -125,6 +128,7 @@ void SystemMgr::solved(std::string const& module, std::string const& msg) {
     errlog_.write(ss.str());
     
     // Para la consola
+    std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << ANSI_GREEN << prefix 
               << std::left << std::setw(width) << module_brackets 
               << msg << ANSI_RESET << std::endl;
