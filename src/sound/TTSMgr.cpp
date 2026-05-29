@@ -23,12 +23,15 @@
 
     TTSMgr::TTSMgr(std::size_t const& num_threads_) :
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
-        concurrent_init_(false),
+        concurrent_init_(true),
         models_path_(VOICES_PATH),
         num_available_models_(0),
-        num_loaded_models_(0),
-        active_tasks_(0)
-    {};
+        active_tasks_(0),
+        running_(false),
+        loading_(false)
+    {
+
+    };
 
     TTSMgr::~TTSMgr() {
         cerrar();
@@ -49,6 +52,7 @@
             SYS_WARN("TTSMgr", "Cannot read TTS voice models");
 
         // Inicialización concurrente (experimental)
+        loading_ = true;
         if (concurrent_init_) {
             // Realizar la inicialización de cada modelo en hilos independientes 
             std::vector<std::thread> workers;
@@ -66,15 +70,22 @@
             for (std::filesystem::path const& modelDir : available_models)
                 load_vits_model(modelDir);
         }
+        loading_ = false;
 
-        SYS_INFO(
-            "TTSMgr", 
-            std::to_string(num_loaded_models_) + "/" + std::to_string(num_available_models_) + " TTS models loaded."
-        );
+        short numLoaded     = numLoadedModels();
+        short numAvailable  = numAvailableModels();
 
-        if (num_loaded_models_ != num_available_models_) {
-            SYS_WARN("TTSMgr", std::to_string(num_available_models_-num_loaded_models_) + " models left.");
+        std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded.";
+        if (numLoaded == numAvailable) {
+            SYS_INFO("TTSMgr", msg);
+        } else {    
+            // Intentar cargar los modelos faltantes si han fallado
+            SYS_WARN("TTSMgr", msg + " Trying to load missing models...");
             loadMissingModels();
+            if (numLoaded != numAvailable)
+                SYS_SOLVED("TTSMgr","Missing TTS models loaded (" + std::to_string(numLoadedModels()) + "/" + std::to_string(numAvailableModels()) + ")" );
+            else
+                SYS_WARN("TTSMgr","Cannot load all models");
         }
 
         return !loaded_models_.empty();;
@@ -109,32 +120,41 @@
         // No cargar modelos restantes si se está cerrrando
         if(!running_) return;
 
-        // conseguir los modelos disponibles y cargados
-        std::vector<std::string> av_models_str = getAvailableModels();
-        std::vector<std::string> load_models_str = getLoadedModels();
+        // No cargar modelos si se están cargando por otro lado
+        if(loading_) return;
 
-        // Ordenar ambos vectores (Obligatorio para set_difference)
-        std::sort(av_models_str.begin(), av_models_str.end());
-        std::sort(load_models_str.begin(), load_models_str.end());
+        // Variables locales:
+        std::vector<std::string> av_models_path_str;        // Lista de rutas de modelos disponibles
+        std::vector<std::string> load_models_str;           // Lista de modelos cargados
+        std::vector<std::string> load_models_path_str;      // Lista de rutas de modelos cargados
+        std::vector<std::string> missing_models_path_str;   // Lista de rutas de modelos restantes
 
-        // Obtener la "diferencia", los modelos disponibles que no están cargados
-        std::vector<std::string> missing_models_str;
+        // Obtener la ruta de los modelos disponibles
+        av_models_path_str = getAvailableModelsPath();
+        
+        // Obtener la ruta de los modelos cargados para ver posteriormente la diferencia
+        load_models_str = getLoadedModels();
+        for (std::string const& model : load_models_str) 
+            load_models_path_str.push_back(getModelPath(model));
+
+        // Ordenar ambos vectores de rutas (Obligatorio para set_difference)
+        std::sort(av_models_path_str.begin(), av_models_path_str.end());
+        std::sort(load_models_path_str.begin(), load_models_path_str.end());
+
+        // Obtener la "diferencia", las rutas de modelos disponibles que no están cargados
         std::set_difference(
-            av_models_str.begin(), av_models_str.end(),
-            load_models_str.begin(), load_models_str.end(),
-            std::back_inserter(missing_models_str)
+            av_models_path_str.begin(), av_models_path_str.end(),
+            load_models_path_str.begin(), load_models_path_str.end(),
+            std::back_inserter(missing_models_path_str)
         );
 
-        // De momento imprimir
-        SYS_INFO("TTSMgr"," Models missing:");
-        for (auto& it : missing_models_str)
-            SYS_INFO("TTSMgr"," - " + it);
-        
-        // Obtiene el path de los modelos faltantes
-        /* #TODO */
+        // Inicializar los modelos disponibles faltantes obtenidos (secuencial forzado, sin hilos)
+        loading_ = true;
+        for (std::string const& model_path : missing_models_path_str)
+            load_vits_model(model_path);
+        loading_ = false;
 
-        // inicializar los modelos disponibles que no estén en la lista de cargados
-        /* #TODO */
+        return;
     }
 
     bool TTSMgr::isWorking() const {
@@ -218,19 +238,20 @@
         // Busca y devuelve la ruta del modelo (carpeta) si existe en ese directorio
         for (const auto& entry : fs::directory_iterator(models_path_))
             if (entry.is_directory() && entry.path().filename().string().find(model) != std::string::npos)
-                return entry.path().string();
+                return fs::absolute(entry.path()).string();
 
         /* else */
         SYS_WARN("TTSMgr","Model '" + model + "' not found.");
         return {};
     }
 
-    short TTSMgr::getAvailableNumModels() const {
+    short TTSMgr::numAvailableModels() const {
         return num_available_models_;
     }
 
-    short TTSMgr::getLoadedNumModels() const {
-        return num_loaded_models_;
+    short TTSMgr::numLoadedModels() const {
+        std::lock_guard<std::mutex> lock(processing_mtx_);
+        return loaded_models_.size();
     };
 
 
@@ -412,13 +433,25 @@
         std::lock_guard<std::mutex> lock(models_mutex_);
         loaded_models_[st_modelname] = tts_model;
 
-        // Actualizar el porcentaje de inicialización
-        num_loaded_models_ = static_cast<short>(loaded_models_.size());
-
         // Todo correcto
         return true;
     }
 
+    bool TTSMgr::unload_model(std::string const& modelName) {
+
+        auto it = loaded_models_.find(modelName);
+        if (it != loaded_models_.end()) {
+            SherpaOnnxDestroyOfflineTts(it->second);
+            loaded_models_.erase(it);
+            SYS_INFO("TTSMgr", "Model '" + modelName + "' unloaded successfully");
+            return true;
+        }
+        
+        /* else */
+        SYS_WARN("TTSMgr", "Cannot unload model: Model '" + modelName + "' not found");
+        return false;
+    }
+    
 
 #else
 // ============================================================

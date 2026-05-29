@@ -89,12 +89,12 @@ public:
     /**
      * @brief Obtiene el número de modelos disponibles
      */
-    short getAvailableNumModels() const;
+    short numAvailableModels() const;
 
     /**
      * @brief Obtiene el número de modelos cargados
      */
-    short getLoadedNumModels() const;
+    short numLoadedModels() const;
 
 
 // Datos y control de modelos -----------------------------------------------------------
@@ -131,27 +131,33 @@ private:
     /**
      * @brief Carga un modelo vits TTS 
      */
-    bool load_vits_model(std::filesystem::path modelDir);
+    bool load_vits_model(std::filesystem::path modelAbsPath);
 
-    
+    /**
+     * @brief Libera/Borra un modelo cargado
+     * @details Esto se usará en debug y demás, no creo que sea necesario en ejecución normal.
+     */
+    bool unload_model(std::string const& modelName);
+
+
 /************ Variables ********************************************************/
 
     using TTSModelsMap  = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
     using TTSTextsMap   = std::unordered_map<std::string, std::string>; // Podría ser un struct con más datos
 
     TTSModelsMap            loaded_models_;         // Mapa de modelos TTS cargados
+    short                   num_available_models_;  // Número de modelos disponibles
     size_t                  num_threads_;           // Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       // Activa/desactiva la inicialización concurrente (experimental)
     std::string const       models_path_;           // Ruta de carpetas donde residen los modelos
-    short                   num_available_models_;  // Número de modelos disponibles
-    short                   num_loaded_models_;     // Número de modelos disponibles
-    std::mutex              models_mutex_;          // Mutex para proteger el mapa de modelos y init_percent
+    mutable std::mutex      models_mutex_;          // Mutex para proteger el mapa de modelos y init_percent
 
     TTSTextsMap             processing_texts_;      // Relaciona modelo - texto que está procesando
     mutable std::mutex      processing_mtx_;        // Mutex para proteger el acceso al mapa (mutable para métodos const)
 
     std::atomic<short>      active_tasks_;      // Indica si hay algo en ejecución
     std::atomic<bool>       running_;           // Indica si no se ha comandado destruir la clase
+    std::atomic<bool>       loading_;           // Indica si está cargando modelos
     std::mutex              exit_mtx_;          // Evita destruir TTSMgr si hay algo ejecutándose
     std::condition_variable exit_cv_;           // Notifica cuándo paran las tareas
 };
