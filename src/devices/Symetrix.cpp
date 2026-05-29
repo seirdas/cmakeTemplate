@@ -17,5 +17,5 @@ Symetrix::~Symetrix() {
 // Ejecución ----------------------------------------------------------------------------
 
 bool Symetrix::init() {
-
+    return false;
 }

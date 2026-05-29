@@ -16,5 +16,5 @@ Totalmix::~Totalmix() {
 // Ejecución ----------------------------------------------------------------------------
 
 bool Totalmix::init() {
-
+    return false;
 }
