@@ -347,7 +347,9 @@ struct NetMgr::Impl {};
     ) { return false; }
     bool NetMgr::removeUdpSocket(std::string const& name)   { return false; }
     bool NetMgr::removeUdpSocket(unsigned int port)         { return false; }
-    void NetMgr::printsockets()                          { return; }
+    void NetMgr::printUdpSockets() const                      { return; }
+    bool NetMgr::socketExists(std::string const& socketname)  { return false; }
+    bool NetMgr::socketExists(unsigned short port)            { return false; }
 
 // Ejecución ----------------------------------------------------------------------------
     bool NetMgr::start()                                   { return false; }
