@@ -4,9 +4,10 @@
 #include "files/LogMgr.hpp"
 
 // Macros simplificados para escribir mensajes:
-#define SYS_ERROR(module, msg) SystemMgr::instance().error(module, msg)
-#define SYS_WARN(module, msg)  SystemMgr::instance().warning(module, msg)
-#define SYS_INFO(module, msg)  SystemMgr::instance().info(module, msg)
+#define SYS_ERROR(module, msg)  SystemMgr::instance().error(module, msg)
+#define SYS_WARN(module, msg)   SystemMgr::instance().warning(module, msg)
+#define SYS_INFO(module, msg)   SystemMgr::instance().info(module, msg)
+#define SYS_SOLVED(module, msg) SystemMgr::instance().solved(module, msg)
 
 
 /**
@@ -49,6 +50,13 @@ public:
      * @param msg Mensaje de error
      */
     void info(std::string const& module, std::string const& msg);
+    
+    /**
+     * @brief Genera un mensaje de solved (solucionado) en cout, log.
+     * @param module Módulo (Clase) desde donde se genera el error
+     * @param msg Mensaje de error
+     */
+    void solved(std::string const& module, std::string const& msg);
 
 
 // Conversiones -------------------------------------------------------------------------
