@@ -313,30 +313,17 @@ function(configure_sherpa_deps)
     # Copiar las dlls al lado del ejecutable
     foreach(DLL_NAME ${DLL_LIST})
         set(SRC_PATH "${SHERPA_LIB_PATH}/${DLL_NAME}")
-        file(TO_NATIVE_PATH "${SRC_PATH}" SRC_PATH)
 
         # Log en build de lo que va a hacer...
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} ↔ $<TARGET_FILE_DIR:${PROJECT_NAME}>"
         )
-        
-        if(NOT MINGW) # Este comando me ha fallado con MinGW, por algo de los espacios, slashes... no sé (?)
-            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
-                WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMAND ${CMAKE_COMMAND} -E create_hardlink "${SRC_PATH}" "${DLL_NAME}"
-                VERBATIM
-            )
-        else() # Hardlink manual
-            if(WIN32)
-                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                    # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
-                    WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                    COMMAND cmd /c if not exist "${DLL_NAME}" mklink /H "${DLL_NAME}" "${SRC_PATH}"
-                    VERBATIM
-                )
-            endif() # Faltaría linux con mingw
-        endif()
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMAND ${CMAKE_COMMAND} -E create_hardlink "${SRC_PATH}" "${DLL_NAME}"
+            VERBATIM
+        )
     endforeach()
 
     # Los siguientes target_properties hay que hacerlos cuando el proyecto esté creado:
