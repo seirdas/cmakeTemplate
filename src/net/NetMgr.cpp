@@ -164,12 +164,12 @@
         // Si hay un socket con ese nombre, devuelve true
         for (const auto& sock : pimpl_->udp_sockets_) 
             if (sock->name() == socketname) {
-                SYS_INFO("NetMgr","Socket " + socketname + ":" + std::to_string(sock->port()) + "' found.");
+                SYS_INFO("NetMgr","Socket exists function: '" + socketname + ":" + std::to_string(sock->port()) + "' found.");
                 return true;
             }
 
         // Llegará aquí si no encuentra socket
-        SYS_WARN("NetMgr","Socket " + socketname + "' not found.");
+        SYS_INFO("NetMgr","Socket exists function: '" + socketname + "' not found.");
         return false;
     }
 
