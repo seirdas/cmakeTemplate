@@ -37,7 +37,7 @@ struct TTSData {
  *
  * ```cpp
  * // MyClass.hpp
- * #include "IAppControl.hpp"
+ * #include "app/IAppControl.hpp"
  *
  * class MyClass {
  * public:
