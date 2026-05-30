@@ -328,7 +328,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 # Generar Doxygen
-if (USE_DOXYGEN)
+if (DOXYGEN)
     generate_doxygen()
 endif()
 
