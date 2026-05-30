@@ -3,13 +3,11 @@
 
 #include <thread>               // Hilos
 
-#include <nlohmann/json.hpp>    // Manipula archivos .json
-
 #include "gui/GuiMgr.hpp"          // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
-#include "devices/Totalmix.hpp" // Clase para gestionar driver TotalmixFX
+#include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver TotalmixFX
 
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
@@ -160,7 +158,7 @@ private:
     GuiMgr      gui_;                           // Gestor de ventanas para la interfaz gráfica
     SoundMgr    snd_;                           // Gestor de audio
     TTSMgr      tts_;                           // Gestor módulo TTS
-    Totalmix    tmx_;                           // Gestor módulo Totalmix
+    TotalMix    tmx_;                           // Gestor módulo Totalmix
     Symetrix    sym_;                           // Gestor módulo Symetrix
 
     bool        net_initialized_;               // Indica si net está inicializado
