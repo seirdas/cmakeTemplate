@@ -14,6 +14,12 @@
  *   - Options → Settings → OSC1 → TotalMix FX OSC Service:
  *       comprobar IP y port incoming (deben coincidir con localIP y localPort).
  *
+ * @par Canales y banks
+ * TotalMix agrupa los canales en banks de 8. El número de canales NO tiene
+ * que ser múltiplo de 8: si el último bank está incompleto, sus canales se
+ * numeran desde arriba (ej. 5 canales → posiciones 4,5,6,7,8 dentro del bank).
+ * Puedes inicializar con cualquier valor, por ejemplo 82 entradas.
+ *
  * @par Ejemplo de uso
  * @code
  *   TotalMix tm;
@@ -31,19 +37,6 @@
 #include <memory>
 #include <vector>
 
-/**
- * @brief Códigos de retorno de todas las operaciones de TotalMix.
- */
-enum class TMError : int
-{
-    OK               =  0, ///< Operación completada con éxito.
-    ChannelOutOfRange = -1, ///< El número de canal o salida está fuera del rango configurado.
-    SocketError      = -2, ///< Error al enviar el paquete UDP (fallo de Winsock).
-    InitFailed       = -3, ///< Fallo durante la inicialización del socket o Winsock.
-    BufferOverflow   = -4, ///< El paquete OSC no cabe en el buffer interno.
-};
-
-// ---------------------------------------------------------------------------
 
 /**
  * @brief Controlador de RME TotalMix FX vía OSC/UDP.
@@ -55,6 +48,8 @@ enum class TMError : int
 class TotalMix
 {
 public:
+
+// General ------------------------------------------------------------------------------
 
     /**
      * @brief Constructor.
@@ -81,20 +76,18 @@ public:
 
     /**
      * @brief Inicializa Winsock, crea el socket UDP y lo enlaza a la dirección local.
-     *
-     * @param localPort  Puerto UDP local al que se hace bind.
-     * @param localIP    Dirección IP local (ej. @c "127.0.0.1").
-     * @param remotePort Puerto UDP de TotalMix FX (destino de los paquetes).
-     * @param remoteIP   Dirección IP del host donde corre TotalMix FX.
+     * @param localPort    Puerto UDP local al que se hace bind.
+     * @param localIP      Dirección IP local (ej. @c "127.0.0.1").
+     * @param remotePort   Puerto UDP de TotalMix FX (destino de los paquetes).
+     * @param remoteIP     Dirección IP del host donde corre TotalMix FX.
      * @param numInputs    Número total de entradas físicas del dispositivo.
      * @param numPlaybacks Número total de canales de playback del dispositivo.
      * @param numOutputs   Número total de salidas físicas del dispositivo.
-     * @return TMError::OK si la inicialización fue exitosa.
-     * @return TMError::InitFailed si WSAStartup, socket() o bind() fallaron.
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError init(int localPort, const std::string& localIP,
-                 int remotePort, const std::string& remoteIP,
-                 int numInputs, int numPlaybacks, int numOutputs);
+    bool init(int localPort, const std::string& localIP,
+              int remotePort, const std::string& remoteIP,
+              int numInputs, int numPlaybacks, int numOutputs);
 
 
 // Control de volumen -----------------------------------------------------------------------
@@ -103,92 +96,63 @@ public:
      * @brief Ajusta el fader principal de una salida física en porcentaje.
      *
      * @param out Número de salida (1-based, máximo numOutputs).
-     * @param pct Nivel en porcentaje (0 … 100).
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
+     * @param pct Nivel en porcentaje (0 … 100) o en dB si in_dB_units activo
+     * @param in_db_units Indicador para considerar el valor como porcentaje (false) o dB (true)
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetOutputVolume(int out, float pct);
+    bool SetOutputVolume(int out, float pct, bool in_dB_units = false);
 
     /**
      * @brief Ajusta el volumen de una entrada en el submix de una salida, en porcentaje.
      *
      * @param out Número de salida destino del submix (1-based, máximo numOutputs).
      * @param in  Número de entrada (1-based, máximo numInputs).
-     * @param pct Nivel en porcentaje (0 … 100).
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
+     * @param pct Nivel en porcentaje (0 … 100) o en dB si in_dB_units activo
+     * @param in_db_units Indicador para considerar el valor como porcentaje (false) o dB (true)
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetInputVolume(int out, int in, float pct);
+    bool SetInputVolume(int out, int in, float pct, bool in_dB_units = false);
 
     /**
      * @brief Ajusta el volumen de un canal de playback en el submix de una salida, en porcentaje.
      *
      * @param out Número de salida destino del submix (1-based, máximo numOutputs).
      * @param pb  Número de canal de playback (1-based, máximo numPlaybacks).
-     * @param pct Nivel en porcentaje (0 … 100).
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
+     * @param pct Nivel en porcentaje (0 … 100) o en dB si in_dB_units activo
+     * @param in_db_units Indicador para considerar el valor como porcentaje (false) o dB (true)
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetPlaybackVolume(int out, int pb, float pct);
+    bool SetPlaybackVolume(int out, int pb, float pct, bool in_dB_units = false);
 
 
-// Control de volumen  (dB) -------------------------------------------------------------
-
-    /**
-     * @brief Ajusta el fader principal de una salida física.
-     *
-     * @param out Número de salida (1-based, máximo numOutputs).
-     * @param dB  Nivel en decibelios (rango: -65 dB … +6 dB).
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
-     */
-    TMError SetOutputVolumedB(int out, float dB);
-
-    /**
-     * @brief Ajusta el volumen de una entrada física en el submix de una salida.
-     *
-     * @param out Número de salida destino del submix (1-based, máximo numOutputs).
-     * @param in  Número de entrada (1-based, máximo numInputs).
-     * @param dB  Nivel en decibelios (rango: -65 dB … +6 dB).
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
-     */
-    TMError SetInputVolumedB(int out, int in, float dB);
-
-    /**
-     * @brief Ajusta el volumen de un canal de playback en el submix de una salida.
-     *
-     * @param out Número de salida destino del submix (1-based, máximo numOutputs).
-     * @param pb  Número de canal de playback (1-based, máximo numPlaybacks).
-     * @param dB  Nivel en decibelios (rango: -65 dB … +6 dB).
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
-     */
-    TMError SetPlaybackVolumedB(int out, int pb, float dB);
-
-
-// Control de Mute -----------------------------------------------------------------------
+// Control de Mute ----------------------------------------------------------------------
 
     /**
      * @brief Activa o desactiva el mute de una salida física.
      *
      * @param out  Número de salida (1-based, máximo numOutputs).
      * @param mute @c true para mutear, @c false para desmutear.
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetMuteOutput(int out, bool mute);
+    bool SetMuteOutput(int out, bool mute);
 
     /**
      * @brief Activa o desactiva el mute de una entrada física.
      *
      * @param in   Número de entrada (1-based, máximo numInputs).
      * @param mute @c true para mutear, @c false para desmutear.
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetMuteInput(int in, bool mute);
+    bool SetMuteInput(int in, bool mute);
 
     /**
      * @brief Activa o desactiva el mute de un canal de playback.
      *
      * @param pb   Número de canal de playback (1-based, máximo numPlaybacks).
      * @param mute @c true para mutear, @c false para desmutear.
-     * @return TMError::OK, TMError::ChannelOutOfRange o TMError::SocketError.
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetMutePlayback(int pb, bool mute);
+    bool SetMutePlayback(int pb, bool mute);
 
 
 // Miscelánea ---------------------------------------------------------------------------
@@ -197,18 +161,18 @@ public:
      * @brief Carga un snapshot de TotalMix FX.
      *
      * @param index Número de snapshot a activar (1-based).
-     * @return TMError::OK, TMError::BufferOverflow o TMError::SocketError.
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetSnapshot(int index);
+    bool SetSnapshot(int index);
 
     /**
      * @brief Ajusta el umbral (threshold) del expansor de una entrada física.
      *
      * @param in        Número de entrada (1-based, máximo numInputs).
      * @param threshold Valor de threshold en el rango que acepta TotalMix FX (0.0 … 1.0).
-     * @return TMError::OK, TMError::ChannelOutOfRange, TMError::BufferOverflow o TMError::SocketError.
+     * @return @c true si la inicialización fue exitosa.
      */
-    TMError SetInputThreshold(int in, float threshold);
+    bool SetInputThreshold(int in, float threshold);
 
 
 private:
@@ -218,9 +182,83 @@ private:
     struct OscTimeTag;
 
 
+// Envío de paquete OSC -----------------------------------------------------------------
+
+    /**
+     * @brief Construye y envía un paquete OSC de volumen para cualquier tipo de bus.
+     *
+     * @param bus     Bus de destino (Output, Input o Playback).
+     * @param out     Salida destino del submix (ignorado si bus == Output).
+     * @param channel Número de canal dentro del bus (1-based).
+     * @param dB      Nivel en decibelios.
+     * @return TMError correspondiente al resultado de la operación.
+     */
+    bool SendVolume(Bus bus, int out, int channel, float dB);
+
+    /**
+     * @brief Construye y envía un paquete OSC de mute para cualquier tipo de bus.
+     *
+     * @param bus     Bus de destino (Output, Input o Playback).
+     * @param channel Número de canal dentro del bus (1-based).
+     * @param mute    @c true para mutear, @c false para desmutear.
+     * @return TMError correspondiente al resultado de la operación.
+     */
+    bool SendMute(Bus bus, int channel, bool mute);
+
+    /**
+     * @brief Envía el contenido actual del buffer OSC por UDP al host TotalMix FX.
+     * @return TMError::OK si sendto() tuvo éxito; TMError::SocketError en caso contrario.
+     */
+    bool SendPacket();
+
+
+// Banks --------------------------------------------------------------------------------
+/*
+ * TotalMix numera sus canales en grupos de 8 ("banks"), con posiciones 1–8.
+ * Si el total de canales no es múltiplo de 8, el último bank incompleto
+ * se rellena desde arriba:
+ *   ej. 5 canales en el último bank → posiciones 4, 5, 6, 7, 8
+ */
+
+    /**
+     * @brief Precalcula la posición dentro del bank OSC para cada canal de cada bus.
+     * @details TotalMix divide los canales en grupos de 8 ("banks"). Esta función
+     *          rellena bankPosOutput_, bankPosInput_ y bankPosPlayback_.
+     */
+    void BuildBankMaps();
+
+    /**
+     * @brief Devuelve el índice de inicio de bank para un canal dado.
+     * @details El valor resultante se envía en el mensaje @c /setBankStart.
+     * @param channel Número de canal (1-based).
+     * @return Índice de inicio del bank (múltiplo de 8).
+     */
+    int BankStartFor(int channel) const;
+
+
+// Utilidades ---------------------------------------------------------------------------
+
+    /**
+     * @brief Convierte un nivel en dB al valor de fader que espera TotalMix FX (0.0–1.0).
+     * @param dB Nivel en decibelios (rango: -65 dB … +6 dB).
+     * @return Valor de fader normalizado entre 0.0 y 1.0.
+     */
+    static float dBtoFader(float dB);
+
+    /**
+     * @brief Convierte un porcentaje de volumen a dB.
+     * @details Escala logarítmica: 100 % → +6 dB, ~0 % → -64 dB.
+     * @param pct Nivel en porcentaje (rango: 0.0 … 100.0).
+     * @return Nivel en decibelios.
+     */
+    static float PctTodB(float pct);
+
+
 // Métodos OSC --------------------------------------------------------------------------
 
-    /** @brief Resetea el buffer OSC para empezar a construir un nuevo paquete. */
+    /** 
+     * @brief Resetea el buffer OSC para empezar a construir un nuevo paquete. 
+     */
     void OscReset();
 
     /**
@@ -236,7 +274,9 @@ private:
      */
     bool OscCheckTag(char expected);
 
-    /** @brief Escribe el tamaño del mensaje en curso en el campo de longitud reservado previamente. */
+    /** 
+     * @brief Escribe el tamaño del mensaje en curso en el campo de longitud reservado previamente. 
+     */
     void OscPatchMsgSize();
 
     /**
@@ -289,78 +329,6 @@ private:
     bool OscWriteFloat(float val);
 
 
-// Envío de paquete OSC -----------------------------------------------------------------
-
-    /**
-     * @brief Construye y envía un paquete OSC de volumen para cualquier tipo de bus.
-     *
-     * @param bus     Bus de destino (Output, Input o Playback).
-     * @param out     Salida destino del submix (ignorado si bus == Output).
-     * @param channel Número de canal dentro del bus (1-based).
-     * @param dB      Nivel en decibelios.
-     * @return TMError correspondiente al resultado de la operación.
-     */
-    TMError SendVolume(Bus bus, int out, int channel, float dB);
-
-    /**
-     * @brief Construye y envía un paquete OSC de mute para cualquier tipo de bus.
-     *
-     * @param bus     Bus de destino (Output, Input o Playback).
-     * @param channel Número de canal dentro del bus (1-based).
-     * @param mute    @c true para mutear, @c false para desmutear.
-     * @return TMError correspondiente al resultado de la operación.
-     */
-    TMError SendMute(Bus bus, int channel, bool mute);
-
-    /**
-     * @brief Envía el contenido actual del buffer OSC por UDP al host TotalMix FX.
-     * @return TMError::OK si sendto() tuvo éxito; TMError::SocketError en caso contrario.
-     */
-    TMError SendPacket();
-
-
-// Banks --------------------------------------------------------------------------------
-/*
- * TotalMix numera sus canales en grupos de 8 ("banks"), con posiciones 1–8.
- * Si el total de canales no es múltiplo de 8, el último bank incompleto
- * se rellena desde arriba:
- *   ej. 5 canales en el último bank → posiciones 4, 5, 6, 7, 8
- */
-
-    /**
-     * @brief Precalcula la posición dentro del bank OSC para cada canal de cada bus.
-     * @details TotalMix divide los canales en grupos de 8 ("banks"). Esta función
-     *          rellena bankPosOutput_, bankPosInput_ y bankPosPlayback_.
-     */
-    void BuildBankMaps();
-
-    /**
-     * @brief Devuelve el índice de inicio de bank para un canal dado.
-     * @details El valor resultante se envía en el mensaje @c /setBankStart.
-     * @param channel Número de canal (1-based).
-     * @return Índice de inicio del bank (múltiplo de 8).
-     */
-    int BankStartFor(int channel) const;
-
-
-// Utilidades ---------------------------------------------------------------------------
-
-    /**
-     * @brief Convierte un nivel en dB al valor de fader que espera TotalMix FX (0.0–1.0).
-     * @param dB Nivel en decibelios (rango: -65 dB … +6 dB).
-     * @return Valor de fader normalizado entre 0.0 y 1.0.
-     */
-    static float dBtoFader(float dB);
-
-    /**
-     * @brief Convierte un porcentaje de volumen a dB.
-     * @details Escala logarítmica: 100 % → +6 dB, ~0 % → -64 dB.
-     * @param pct Nivel en porcentaje (rango: 0.0 … 100.0).
-     * @return Nivel en decibelios.
-     */
-    static float PctTodB(float pct);
-
-
 /************ Variables ****************************************************************/
 
     static constexpr int OSC_MAX_BUNDLE_NESTING = 32;   ///< Máximo nivel de anidamiento de bundles OSC.
@@ -406,7 +374,7 @@ private:
 
 
     // Inicialización y ejecución
-
+    bool wsaStarted_ = false;           ///< true si WSAStartup ya fue llamado con éxito.
 
     // Socket
     int         remotePort_ = 0;        ///< Puerto UDP de TotalMix FX (destino).
