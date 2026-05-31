@@ -27,7 +27,9 @@
  */
 
 #include <string>
-#include <math.h>
+#include <cmath>
+#include <memory>
+#include <vector>
 
 /**
  * @brief Códigos de retorno de todas las operaciones de TotalMix.
@@ -333,14 +335,6 @@ private:
     void BuildBankMaps();
 
     /**
-     * @brief Devuelve la posición (1–8) de un canal dentro de su bank OSC.
-     * @param bus     Bus al que pertenece el canal.
-     * @param channel Número de canal (1-based).
-     * @return Posición del canal dentro de su bank (1–8).
-     */
-    int BankPosFor(Bus bus, int channel) const;
-
-    /**
      * @brief Devuelve el índice de inicio de bank para un canal dado.
      * @details El valor resultante se envía en el mensaje @c /setBankStart.
      * @param channel Número de canal (1-based).
@@ -371,6 +365,8 @@ private:
 
     static constexpr int OSC_MAX_BUNDLE_NESTING = 32;   ///< Máximo nivel de anidamiento de bundles OSC.
     static constexpr int OSC_STRING_ALIGN       = 4;    ///< Alineación de strings en el protocolo OSC (4 bytes).
+    static constexpr int MAX_TOTAL_CHANNELS     = 256;  ///< Para los bankPos
+    static constexpr int OSC_BUF_SIZE           = 1024; ///< Aumentado para mayor seguridad en paquetes complejos
 
     /** @brief Timestamp OSC de 64 bits (segundos + fracción en formato NTP). */
     struct OscTimeTag {
@@ -408,12 +404,16 @@ private:
         Playback  ///< Bus de canales de playback (software).
     };
 
-    // Estructura PIMPL para el socket, para no depender de Windows en el header
-    struct Impl;
-    std::unique_ptr<Impl> pimpl_;       // Miembros dependientes de Windows (socket)
 
-    int         remotePort_ = 0;                ///< Puerto UDP de TotalMix FX (destino).
-    std::string remoteIP_;                      ///< IP de TotalMix FX (destino).
+    // Inicialización y ejecución
+
+
+    // Socket
+    int         remotePort_ = 0;        ///< Puerto UDP de TotalMix FX (destino).
+    std::string remoteIP_;              ///< IP de TotalMix FX (destino).
+    struct Impl;                        ///< Estructura PIMPL para el socket, para no depender de Windows en el header
+    std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de Windows (socket)
+
 
     // Número de canales
     int numInputs_    = 0;                      ///< Número total de entradas del dispositivo.
@@ -421,13 +421,12 @@ private:
     int numOutputs_   = 0;                      ///< Número total de salidas del dispositivo.
 
     // Banks
-    int bankPosOutput_  [256] = {};             ///< Posición dentro del bank OSC para cada salida (1-based).
-    int bankPosInput_   [256] = {};             ///< Posición dentro del bank OSC para cada entrada (1-based).
-    int bankPosPlayback_[256] = {};             ///< Posición dentro del bank OSC para cada canal de playback (1-based).
+    std::vector<int> bankPosOutput_;            ///< Posición dentro del bank OSC para cada salida (1-based).
+    std::vector<int> bankPosInput_;             ///< Posición dentro del bank OSC para cada entrada (1-based).
+    std::vector<int> bankPosPlayback_;          ///< Posición dentro del bank OSC para cada canal de playback (1-based).
 
     // Buffer OSC
-    static constexpr int OSC_BUF_SIZE = 256;    ///< Tamaño del buffer OSC en bytes (máximo observado: ~120 bytes).
-    char      oscRaw_[OSC_BUF_SIZE] = {};       ///< Array de bytes subyacente del buffer OSC.
+    char      oscRaw_[OSC_BUF_SIZE]     = {};   ///< Array de bytes subyacente del buffer OSC.
     OscBuffer oscBuf_;                          ///< Estructura de estado del buffer OSC en construcción.
 
 };

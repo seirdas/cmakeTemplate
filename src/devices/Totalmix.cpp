@@ -13,7 +13,7 @@ struct TotalMix::Impl {
 
 // General ------------------------------------------------------------------------------
 
-TotalMix::TotalMix()
+TotalMix::TotalMix() : pimpl_(std::make_unique<Impl>())
 {
     // Inicialización del buffer OSC apuntando a oscRaw_
     oscBuf_.data = oscRaw_;
@@ -60,6 +60,11 @@ TMError TotalMix::init(int localPort, const std::string& localIP,
     numInputs_    = numInputs;
     numPlaybacks_ = numPlaybacks;
     numOutputs_   = numOutputs;
+
+    // Redimensiona los vectores 
+    bankPosOutput_.resize(numOutputs + 1); 
+    bankPosInput_.resize(numInputs + 1);
+    bankPosPlayback_.resize(numPlaybacks + 1);
 
     BuildBankMaps();
     return TMError::OK;
@@ -189,12 +194,13 @@ void TotalMix::OscPatchMsgSize()
 
 int TotalMix::OscPadString(char* dest, const char* str)
 {
-    int i = 0;
-    for (; str[i] != '\0'; ++i) dest[i] = str[i];
-    dest[i] = '\0';
-    ++i;
-    for (; (i % OSC_STRING_ALIGN) != 0; ++i) dest[i] = '\0';
-    return i;
+    size_t len = std::strlen(str);
+    std::memcpy(dest, str, len + 1); // Copia el string y el '\0'
+    int padLen = static_cast<int>(len) + 1;
+    while (padLen % OSC_STRING_ALIGN != 0) {
+        dest[padLen++] = '\0';
+    }
+    return padLen;
 }
 
 int TotalMix::OscEffectiveStringLen(const char* str) const
@@ -328,11 +334,12 @@ TMError TotalMix::SendVolume(Bus bus, int out, int channel, float dB)
 {
     int         maxChannel;
     const char* busAddr;
+    const std::vector<int>* bankMap = nullptr;
 
     switch (bus) {
-        case Bus::Output:   maxChannel = numOutputs_;   busAddr = "/1/busOutput";   break;
-        case Bus::Input:    maxChannel = numInputs_;    busAddr = "/1/busInput";    break;
-        case Bus::Playback: maxChannel = numPlaybacks_; busAddr = "/1/busPlayback"; break;
+        case Bus::Output:   maxChannel = numOutputs_;   busAddr = "/1/busOutput";   bankMap = &bankPosOutput_;   break;
+        case Bus::Input:    maxChannel = numInputs_;    busAddr = "/1/busInput";    bankMap = &bankPosInput_;    break;
+        case Bus::Playback: maxChannel = numPlaybacks_; busAddr = "/1/busPlayback"; bankMap = &bankPosPlayback_; break;
         default: return TMError::ChannelOutOfRange;
     }
 
@@ -340,7 +347,7 @@ TMError TotalMix::SendVolume(Bus bus, int out, int channel, float dB)
     if (bus != Bus::Output && (out < 1 || out > numOutputs_)) return TMError::ChannelOutOfRange;
 
     char volumeAddr[32];
-    snprintf(volumeAddr, sizeof(volumeAddr), "/1/volume%d", BankPosFor(bus, channel));
+    snprintf(volumeAddr, sizeof(volumeAddr), "/1/volume%d", (*bankMap)[channel]);
 
     OscReset();
     OscTimeTag tt{ 0, 1 };
@@ -357,7 +364,7 @@ TMError TotalMix::SendVolume(Bus bus, int out, int channel, float dB)
     if (!OscWriteFloat((float)BankStartFor(channel)))         return TMError::BufferOverflow;
     if (!OscWriteAddrAndTypes(volumeAddr,      ",f"))         return TMError::BufferOverflow;
     if (!OscWriteFloat(dBtoFader(dB)))                        return TMError::BufferOverflow;
-    if (!OscCloseAll())                                        return TMError::BufferOverflow;
+    if (!OscCloseAll())                                       return TMError::BufferOverflow;
     return SendPacket();
 }
 
@@ -365,12 +372,12 @@ TMError TotalMix::SendMute(Bus bus, int channel, bool mute)
 {
     int         maxChannel;
     const char* busAddr;
-    const int*  bankMap;
+    const std::vector<int>* bankMap = nullptr;
 
     switch (bus) {
-        case Bus::Output:   maxChannel = numOutputs_;   busAddr = "/1/busOutput";   bankMap = bankPosOutput_;   break;
-        case Bus::Input:    maxChannel = numInputs_;    busAddr = "/1/busInput";    bankMap = bankPosInput_;    break;
-        case Bus::Playback: maxChannel = numPlaybacks_; busAddr = "/1/busPlayback"; bankMap = bankPosPlayback_; break;
+        case Bus::Output:   maxChannel = numOutputs_;   busAddr = "/1/busOutput";   bankMap = &bankPosOutput_;   break;
+        case Bus::Input:    maxChannel = numInputs_;    busAddr = "/1/busInput";    bankMap = &bankPosInput_;    break;
+        case Bus::Playback: maxChannel = numPlaybacks_; busAddr = "/1/busPlayback"; bankMap = &bankPosPlayback_; break;
         default: return TMError::ChannelOutOfRange;
     }
 
@@ -397,7 +404,9 @@ TMError TotalMix::SendMute(Bus bus, int channel, bool mute)
 
 void TotalMix::BuildBankMaps()
 {
-    auto fill = [](int* map, int total) {
+    auto fill = [](std::vector<int>& map, int total) {
+        map.assign(total + 1, 0);
+        
         for (int i = 1; i <= total; ++i)
             map[i] = (i % 8 == 0) ? 8 : (i % 8);
 
@@ -413,16 +422,6 @@ void TotalMix::BuildBankMaps()
     fill(bankPosOutput_,    numOutputs_);
     fill(bankPosInput_,     numInputs_);
     fill(bankPosPlayback_,  numPlaybacks_);
-}
-
-int TotalMix::BankPosFor(Bus bus, int channel) const
-{
-    switch (bus) {
-        case Bus::Output:   return bankPosOutput_  [channel];
-        case Bus::Input:    return bankPosInput_   [channel];
-        case Bus::Playback: return bankPosPlayback_[channel];
-    }
-    return 0;
 }
 
 int TotalMix::BankStartFor(int channel) const
