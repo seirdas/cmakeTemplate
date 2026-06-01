@@ -79,10 +79,10 @@ private:
 
 /************ Variables ****************************************************************/
 
-	std::ofstream 			file_;			// Archivo (literalmente)
-	std::filesystem::path	filepath_;		// Ruta del archivo
-	std::string 			name_;			// Nombre del archivo
-	bool 					enabled_;		// Flag para activar/desactivar la escritura
-	bool					keep_open_;		// Mantiene el archivo abierto durante la ejecución
-	std::mutex 				mtx_;			// Mutex de operaciones sobre archivo
+	std::ofstream 			file_;			///< Archivo (literalmente)
+	std::filesystem::path	filepath_;		///< Ruta del archivo
+	std::string 			name_;			///< Nombre del archivo
+	bool 					enabled_;		///< Flag para activar/desactivar la escritura
+	bool					keep_open_;		///< Mantiene el archivo abierto durante la ejecución
+	std::mutex 				mtx_;			///< Mutex de operaciones sobre archivo
 };

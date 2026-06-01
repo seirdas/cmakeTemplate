@@ -80,13 +80,13 @@ private:
 
     // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl> pimpl_;       // Miembros dependientes de la librería externa
+    std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de la librería externa
 
     // Módulos de audio
-    InputsVector    inputs_;            // Vector con dispositivos inicializados de captura
-    PlaybacksVector playbacks_;         // Vector con dispositivos inicializados de playback
+    InputsVector    inputs_;            ///< Vector con dispositivos inicializados de captura
+    PlaybacksVector playbacks_;         ///< Vector con dispositivos inicializados de playback
 
     // Estado del módulo
-    std::atomic<bool> ctx_initialized_; // Flag para saber si el motor de audio está inicializado.
+    std::atomic<bool> ctx_initialized_; ///< Flag para saber si el motor de audio está inicializado.
 
 };

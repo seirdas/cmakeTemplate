@@ -150,29 +150,29 @@ private:
     /************ Variables ********************************************************/
 
     // Parámetros de entrada (igual que main)
-    int         argc_;                          // Número de parámetros de entrada
-    char**      argv_;                          // Texto de parámetro de entrada
+    int         argc_;                          ///< Número de parámetros de entrada
+    char**      argv_;                          ///< Texto de parámetro de entrada
 
     // Módulos
-    NetMgr      net_;                           // Gestor de sockets de red
-    GuiMgr      gui_;                           // Gestor de ventanas para la interfaz gráfica
-    SoundMgr    snd_;                           // Gestor de audio
-    TTSMgr      tts_;                           // Gestor módulo TTS
-    TotalMix    tmx_;                           // Gestor módulo Totalmix
-    Symetrix    sym_;                           // Gestor módulo Symetrix
+    NetMgr      net_;                           ///< Gestor de sockets de red
+    GuiMgr      gui_;                           ///< Gestor de ventanas para la interfaz gráfica
+    SoundMgr    snd_;                           ///< Gestor de audio
+    TTSMgr      tts_;                           ///< Gestor módulo TTS
+    TotalMix    tmx_;                           ///< Gestor módulo Totalmix
+    Symetrix    sym_;                           ///< Gestor módulo Symetrix
 
-    bool        net_initialized_;               // Indica si net está inicializado
-    bool        gui_initialized_;               // Indica si gui está inicializado
-    bool        snd_initialized_;               // Indica si snd está inicializado
-    bool        tts_initialized_;               // Indica si tts está inicializado
+    bool        net_initialized_;               ///< Indica si net está inicializado
+    bool        gui_initialized_;               ///< Indica si gui está inicializado
+    bool        snd_initialized_;               ///< Indica si snd está inicializado
+    bool        tts_initialized_;               ///< Indica si tts está inicializado
 
     // Gestión de hilos
-    std::thread             worker_;            // gestor de paquetes
-    std::mutex              online_mtx_;        // Mutex para dejar en espera al hilo
-    std::condition_variable online_cv_;         // Reacciona al cambio de estado para el hilo consumidor
+    std::thread             worker_;            ///< gestor de paquetes
+    std::mutex              online_mtx_;        ///< Mutex para dejar en espera al hilo
+    std::condition_variable online_cv_;         ///< Reacciona al cambio de estado para el hilo consumidor
 
     // Estado de aplicación
-    std::atomic<bool>       running_;           // flag de aplicación corriendo (para hilos)
-    std::atomic<bool>       online_mode_;       // Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
-    std::string             version_;           // Versión de la aplicación
+    std::atomic<bool>       running_;           ///< flag de aplicación corriendo (para hilos)
+    std::atomic<bool>       online_mode_;       ///< Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
+    std::string             version_;           ///< Versión de la aplicación
 };

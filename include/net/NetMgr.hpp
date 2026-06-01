@@ -179,16 +179,16 @@ private:
 
     // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl> pimpl_;       // Miembros dependientes de la librería externa
+    std::unique_ptr<Impl> pimpl_;               ///< Miembros dependientes de la librería externa
 
     // Contexto de operaciones asíncronas
-    std::atomic<bool>   io_running_;       // Flag para saber si la red (io_context) está en funcionamiento
+    std::atomic<bool>   io_running_;            ///< Flag para saber si la red (io_context) está en funcionamiento
     
     // Sockets
-    std::mutex          mtx_udp_sockets_;    // Mutex para gestion del vector de sockets
-    std::atomic<bool>   sockets_running_;    // Flag para saber si la red (io_context) está en funcionamiento
+    std::mutex          mtx_udp_sockets_;       ///< Mutex para gestion del vector de sockets
+    std::atomic<bool>   sockets_running_;       ///< Flag para saber si la red (io_context) está en funcionamiento
 
     // Hilos de trabajo
-    std::vector<std::thread>    threads_;           // Hilos procesando operaciones asíncronas.
-    std::size_t                 thread_count_;      // Numero máximo de hilos gestionando operaciones asíncronas.
+    std::vector<std::thread>    threads_;       ///< Hilos procesando operaciones asíncronas.
+    std::size_t                 thread_count_;  ///< Numero máximo de hilos gestionando operaciones asíncronas.
 };

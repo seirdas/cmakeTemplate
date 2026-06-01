@@ -22,9 +22,9 @@ using SoundID = uint64_t; ///< Tipo de dato para almacenar la identificación de
 
 struct SoundInstance
 {
-    ma_sound            sound;                      // La instancia del sonido en mini audio.
-    LoopMode            loopMode = LoopMode::NONE;  // Modo de repetición del sonido.
-    std::atomic<bool>   finished{false};            // Indica si el sonido ha terminado de reproducirse.
+    ma_sound            sound;                      ///< La instancia del sonido en mini audio.
+    LoopMode            loopMode = LoopMode::NONE;  ///< Modo de repetición del sonido.
+    std::atomic<bool>   finished{false};            ///< Indica si el sonido ha terminado de reproducirse.
 };
 
 /**
@@ -143,14 +143,14 @@ private:
 
 /************ Variables ****************************************************************/
     
-    ma_context*         context_;       // Contexto de mini audio.
-    ma_device_info      device_info_;   // Información del dispositivo de audio.
-    ma_engine           engine_;        // Motor de audio.
-    mutable std::mutex  mutex_;         // Mutex para sincronización de acceso a los recursos.
+    ma_context*         context_;       ///< Contexto de mini audio.
+    ma_device_info      device_info_;   ///< Información del dispositivo de audio.
+    ma_engine           engine_;        ///< Motor de audio.
+    mutable std::mutex  mutex_;         ///< Mutex para sincronización de acceso a los recursos.
 
-    std::unordered_map<SoundID, std::unique_ptr<SoundInstance>> sounds_;    // Mapa de instancias de sonido.
-    std::unordered_map<std::string, std::unique_ptr<ma_sound>>  cache_;     // Mapa de caché de sonidos.
+    std::unordered_map<SoundID, std::unique_ptr<SoundInstance>> sounds_;    ///< Mapa de instancias de sonido.
+    std::unordered_map<std::string, std::unique_ptr<ma_sound>>  cache_;     ///< Mapa de caché de sonidos.
 
-    std::atomic<SoundID> idCounter_{1}; // Contador para los IDs de sonido.
-    bool running_ = false;              // Indica si el motor de audio está en funcionamiento.
+    std::atomic<SoundID> idCounter_{1}; ///< Contador para los IDs de sonido.
+    bool running_ = false;              ///< Indica si el motor de audio está en funcionamiento.
 };

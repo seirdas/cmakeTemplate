@@ -78,16 +78,16 @@ private:
     ma_device device_;
 
     // Motor de grabación
-    struct RecordingContext {                               // Estructura de datos de grabación
-        std::string             filename        = "";       // Nombre del archivo a grabar (.wav)
-        ma_encoder              encoder         = {};       // Encoder.
-        std::atomic<uint64_t>   framesWritten   = 0;        // Muestras escritas en el archivo.
-        uint64_t                maxFrames       = 0;        // Máximo de muestras a escribir en el archivo.
-        std::atomic<bool>       recording       = false;    // Flag que indica si está grabando.
+    struct RecordingContext {                               ///< Estructura de datos de grabación
+        std::string             filename        = "";       ///< Nombre del archivo a grabar (.wav)
+        ma_encoder              encoder         = {};       ///< Encoder.
+        std::atomic<uint64_t>   framesWritten   = 0;        ///< Muestras escritas en el archivo.
+        uint64_t                maxFrames       = 0;        ///< Máximo de muestras a escribir en el archivo.
+        std::atomic<bool>       recording       = false;    ///< Flag que indica si está grabando.
     };
 
-    RecordingContext    rec_ctx_        = {};               // Estructura de contexto/datos de grabación
-    ma_uint32           sampleRate      = 44100;            // Frecuencia de muestreo de grabación.
-    ma_uint32           channels        = 2;                // Canales de grabación.
-    ma_uint32           secondsToRecord = 60*60;            // Segundos máximos de grabación (1h por defecto).
+    RecordingContext    rec_ctx_        = {};               ///< Estructura de contexto/datos de grabación
+    ma_uint32           sampleRate      = 44100;            ///< Frecuencia de muestreo de grabación.
+    ma_uint32           channels        = 2;                ///< Canales de grabación.
+    ma_uint32           secondsToRecord = 60*60;            ///< Segundos máximos de grabación (1h por defecto).
 };

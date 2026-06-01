@@ -193,39 +193,39 @@ private:
 /************ Variables ********************************************************/
     
     // Propiedades de la ventana ________________
-    ImGuiStyle*     style_          = nullptr;                  // Modificar ajustes de estilo
-    ImGuiIO*        io_             = nullptr;                  // Manejar entrada/salida
-    bool            captureKeys_    = false;                    // Modo Debug para detección de teclas en consola
+    ImGuiStyle*     style_          = nullptr;                  ///< Modificar ajustes de estilo
+    ImGuiIO*        io_             = nullptr;                  ///< Manejar entrada/salida
+    bool            captureKeys_    = false;                    ///< Modo Debug para detección de teclas en consola
 
-    std::string     AppName_        = "Demo";                   // Nombre de la aplicación/ventana
-    unsigned int    windowSizeX_    = 1280;                     // Tamaño horizontal (x) de la ventana
-    unsigned int    windowSizeY_    = 720;                      // Tamaño vertical (y) de la ventana
-    unsigned int    windowPosX_     = 0;                        // Posición horizontal (x) de la ventana
-    unsigned int    windowPosY_     = 0;                        // Posición vertical (y) de la ventana
-    bool            fullscreen_     = false;                    // Modo ventana completa activo
+    std::string     AppName_        = "Demo";                   ///< Nombre de la aplicación/ventana
+    unsigned int    windowSizeX_    = 1280;                     ///< Tamaño horizontal (x) de la ventana
+    unsigned int    windowSizeY_    = 720;                      ///< Tamaño vertical (y) de la ventana
+    unsigned int    windowPosX_     = 0;                        ///< Posición horizontal (x) de la ventana
+    unsigned int    windowPosY_     = 0;                        ///< Posición vertical (y) de la ventana
+    bool            fullscreen_     = false;                    ///< Modo ventana completa activo
 
-    float           fontSize_         = 16.0f;                  // Tamaño de fuente predeterminado
-    unsigned int const MAX_FONT_SIZE_ = 30;                     // Tamaño de fuente máximo permitido
-    unsigned int const MIN_FONT_SIZE_ = 14;                     // Tamaño de fuente mínimo permitido
+    float           fontSize_         = 16.0f;                  ///< Tamaño de fuente predeterminado
+    unsigned int const MAX_FONT_SIZE_ = 30;                     ///< Tamaño de fuente máximo permitido
+    unsigned int const MIN_FONT_SIZE_ = 14;                     ///< Tamaño de fuente mínimo permitido
 
-    GLFWwindow*     window_         = nullptr;                  // Puntero a la ventana GLFW
-    IAppControl*    ctrl_           = nullptr;                  // Puntero al controlador de la aplicación para comunicación entre miembros
-    bool            running_        = false;                    // Indica si la ventana se ha cerrado para evitar cerrar varias veces
+    GLFWwindow*     window_         = nullptr;                  ///< Puntero a la ventana GLFW
+    IAppControl*    ctrl_           = nullptr;                  ///< Puntero al controlador de la aplicación para comunicación entre miembros
+    bool            running_        = false;                    ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
     // Imágenes _________________________________
 
-    struct imageData {      // Datos de imagen
-        uintptr_t tex = 0;  // Puntero a textura (lo que usa imgui)
-        int x = 0;          // resolución width (ancho)
-        int y = 0;          // resolución height (alto)
-        int channels = 0;   // Canales de color (no se usa)
+    struct imageData {      ///< Datos de imagen
+        uintptr_t tex = 0;  ///< Puntero a textura (lo que usa imgui)
+        int x = 0;          ///< resolución width (ancho)
+        int y = 0;          ///< resolución height (alto)
+        int channels = 0;   ///< Canales de color (no se usa)
     };
     // Cargar las imágenes en la función loadImages
-    std::unordered_map<std::string, imageData> images_;         // Mapa de imágenes cargadas
-    uintptr_t defaultTexture_ = 0;                              // Textura generada por defecto (mosaico blaco/rosa)
+    std::unordered_map<std::string, imageData> images_;         ///< Mapa de imágenes cargadas
+    uintptr_t defaultTexture_ = 0;                              ///< Textura generada por defecto (mosaico blaco/rosa)
 
     // Variables (MenuBar) ______________________
-    float           MainMenuBar_Height_       = 0.0f;           // Almacena el alto de la barra de menú para ajustar la ventana principal
+    float           MainMenuBar_Height_       = 0.0f;           ///< Almacena el alto de la barra de menú para ajustar la ventana principal
 
 };
 
