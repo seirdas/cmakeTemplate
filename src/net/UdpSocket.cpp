@@ -7,8 +7,6 @@
 
     constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paquete UDP (64 KB)
 
-    // General ------------------------------------------------------------------------------
-
     using CStrand = asio::strand<asio::io_context::executor_type>;
     using CSocket = asio::basic_datagram_socket<asio::ip::udp, asio::io_context::executor_type>;
 
@@ -26,6 +24,9 @@
             socket_(io)
         {}
     };
+
+
+    // General ------------------------------------------------------------------------------
 
     UdpSocket::UdpSocket(std::string const& name, void* io) :
         name_(name), 
@@ -221,11 +222,16 @@
         return data;
     }
 
+    void UdpSocket::setReceiveCallback(std::function<void(NetPacket)> cb) 
+    { 
+        on_receive_cb_ = std::move(cb); 
+    }
+
     void UdpSocket::discardOnDupe(bool enable){
         ignore_dupe_ = enable;
     }
 
-    void UdpSocket::clearCache() {
+    void UdpSocket::clearRcvCache() {
         clearQueue();
     }
 
@@ -387,7 +393,20 @@
         }
 
         // Añade el paquete recibido a la cola listo para gestionar
-        saveToQueue(std::move( data ) ); 
+        if (on_receive_cb_) {
+            // Si NetMgr (o alguien) registró un callback, le pasamos los datos
+            // Usamos std::move para no copiar el vector en memoria
+            NetPacket packet;
+            packet.socket_name = name_;
+            packet.port = port(); // Usamos la función port() de tu clase
+            packet.data_rcv = std::move(data);
+            
+            // Pasamos el struct entero al callback
+            on_receive_cb_(std::move(packet));
+        } else {
+            // Si el socket se usa de forma independiente, usa su propia cola local
+            saveToQueue(std::move(data)); 
+        }
     }
 
     // Gestión de cola de datos recibidos ---------------------------------------------------
