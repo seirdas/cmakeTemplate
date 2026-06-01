@@ -55,7 +55,7 @@ public:
      */
     bool addUdpSocket(
         std::string         name,
-        short               local_port, 
+        unsigned short      local_port, 
         const std::string&  local_ip = "", 
         unsigned int        rcv_packet_size = 0
     );
@@ -165,28 +165,44 @@ private:
 
     /**
      * @brief Obtener el ID/index del socket por puerto.
+     * @details Bloquea con lock el vector UdpSockets
+     * @param port Puerto local del socket abierto asignado en su creación
+     * @return Índice del vector udpSockets
      */
     int getSocketIndex(short port) const;
 
     /**
      * @brief Obtener el ID/index del socket por nombre
+     * @details Bloquea con lock el vector UdpSockets
+     * @param name Nombre asignado al socket en su creación
+     * @return Índice del vector udpSockets
      */
     int getSocketIndex(std::string const& name) const;
 
+
+// Operaciones privadas con sockets -----------------------------------------------------
+
+    /**
+     * @brief Detener y desvincular un socket activo por índice
+     * @details Es llamado por @c RemoveUdpSocket público
+     * @param index Índice del vector udpsockets del socket a borrar
+     * @return @c true Si se ha borrado correctamente
+     */
+    bool RemoveUdpSocketLocked(int index);
 
 
 /************ Variables ****************************************************************/
 
     // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl> pimpl_;               ///< Miembros dependientes de la librería externa
+    std::unique_ptr<Impl>       pimpl_;               ///< Miembros dependientes de la librería externa
 
     // Contexto de operaciones asíncronas
-    std::atomic<bool>   io_running_;            ///< Flag para saber si la red (io_context) está en funcionamiento
+    std::atomic<bool>           io_running_;            ///< Flag para saber si la red (io_context) está en funcionamiento
     
     // Sockets
-    std::mutex          mtx_udp_sockets_;       ///< Mutex para gestion del vector de sockets
-    std::atomic<bool>   sockets_running_;       ///< Flag para saber si la red (io_context) está en funcionamiento
+    mutable std::mutex          mtx_udp_sockets_;       ///< Mutex para gestion del vector de sockets
+    std::atomic<bool>           sockets_running_;       ///< Flag para saber si la red (io_context) está en funcionamiento
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;       ///< Hilos procesando operaciones asíncronas.

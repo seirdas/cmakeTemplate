@@ -14,11 +14,11 @@
 
     // Implementación de miembros de la clase de asio (pimpl_)
     struct UdpSocket::Impl {
-        CStrand                     strand_;            // Protección del buffer asíncrono de recepción
-        CSocket                     socket_;            // Socket asio
+        CStrand                     strand_;            ///< Protección del buffer asíncrono de recepción
+        CSocket                     socket_;            ///< Socket asio
 
-        asio::ip::udp::endpoint     local_endpoint_;    // Endpoint local (ip+puerto local)
-        asio::ip::udp::endpoint     remote_endpoint_;   // Endpoint remoto desde el que se reciben los datos
+        asio::ip::udp::endpoint     local_endpoint_;    ///< Endpoint local (ip+puerto local)
+        asio::ip::udp::endpoint     remote_endpoint_;   ///< Endpoint remoto desde el que se reciben los datos
 
         // El constructor recibe la referencia del io_context general
         Impl(asio::io_context& io) 
@@ -41,7 +41,7 @@
 
     UdpSocket::~UdpSocket() {
         stop();
-        clearQueue();
+        //clearQueue();     // <- En el stop() ya se hace clearQueue
     }
 
     // Ejecución ----------------------------------------------------------------------------
@@ -200,16 +200,21 @@
     // Recepción ----------------------------------------------------------------------------
 
     std::vector<char> UdpSocket::getFirstPacket() {
+
+        if (!running_) {
+            SYS_WARN("UdpSocket", "getFirstPacket: Socket is not running.");
+            return {};
+        }
+
         std::unique_lock<std::mutex> lock(mutex_);
         // Se BLOQUEA aquí hasta que la cola no esté vacía
-        condition_.wait(lock, 
-            [this] { 
-                return !queue_.empty() || !pimpl_->socket_.is_open(); 
+        condition_.wait(lock, [this] { 
+                return !queue_.empty() || !pimpl_->socket_.is_open() || !running_; 
             }
         );
 
         // En parada del socket devolvemos vector vacío
-        if (queue_.empty()) return {};
+        if (queue_.empty() || !running_) return {};
 
         std::vector<char> data = std::move(queue_.front());
         queue_.pop();
@@ -234,9 +239,9 @@
 
     // Datos de socket ----------------------------------------------------------------------
 
-    short UdpSocket::port() const {
+    unsigned short UdpSocket::port() const {
         if (pimpl_->socket_.is_open())  return pimpl_->socket_.local_endpoint().port();
-        else                    return -1; // Indica que el socket no está abierto
+        else                    return 0; // Indica que el socket no está abierto
     }
 
     std::string const& UdpSocket::name() const {
@@ -311,7 +316,6 @@
             return false;
         }
 
-        initialized_ = true;
         return true;
     }
 
@@ -332,7 +336,7 @@
                 if (ec) {
                     if (ec == asio::error::operation_aborted) {
                         // Caso esperado al cerrar el socket o borrar el receptor
-                        SYS_INFO("UdpSocket", "Socket " + name_ + " stopped successfully.");
+                        SYS_INFO("UdpSocket", "Socket '" + name_ + "' stopped successfully");
                         return;
                     } else {
                         // Continúa recibiendo a pesar del error (si !abortar)
@@ -456,7 +460,7 @@ struct UdpSocket::Impl {};
     void* UdpSocket::getStrandNative()             { return nullptr;}
 
 // Datos de socket ----------------------------------------------------------------------
-    short UdpSocket::port() const                  { return 0;     }
+    unsigned short UdpSocket::port() const                  { return 0;     }
     std::string const& UdpSocket::name() const     { return name_;    }
     bool UdpSocket::isRunning() const              { return false; }
     bool UdpSocket::isOpen() const                 { return false; }

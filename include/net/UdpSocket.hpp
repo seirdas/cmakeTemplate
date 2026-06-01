@@ -137,7 +137,7 @@ public:
      * @brief Devuelve el puerto local al que está enlazado el socket.
      * @return El puerto local del socket UDP. Si el receptor no está en ejecución, devuelve -1.
      */
-    short port() const;
+    unsigned short port() const;
 
     /**
      * @brief Devuelve el nombre dado al socket
@@ -221,7 +221,7 @@ private:
     void clearQueue();
 
     /**
-     * @brief Compara un paquete de datos con el primer elemento que se va a obtener de la tabla
+     * @brief Compara un paquete con el último elemento recibido (back de la cola)
      * @return true si es igual, false en caso contrario.
      */
     bool compareLast(std::vector<char> const& data);
@@ -231,15 +231,15 @@ private:
 
     // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl>       pimpl_;       ///< Miembros dependientes de la librería externa
+    std::unique_ptr<Impl>           pimpl_;             ///< Miembros dependientes de la librería externa
 
     // Configuración y estado del receptor UDP
-    std::string                 name_;              ///< Nombre dado al socket para identificarlo
-    std::vector<char>           recv_buffer_;       ///< Buffer para almacenar los datos recibidos
-    unsigned int                rcv_packet_size_;   ///< Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
+    std::string                     name_;              ///< Nombre dado al socket para identificarlo
+    std::vector<char>               recv_buffer_;       ///< Buffer para almacenar los datos recibidos
+    unsigned int                    rcv_packet_size_;   ///< Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
 
-    bool                        initialized_;       ///< Socket inicializado
-    bool                        running_;           ///< Socket corriendo
+    std::atomic<bool>               initialized_;       ///< Socket inicializado
+    std::atomic<bool>               running_;           ///< Socket corriendo
 
     // Cola de datos recibidos
     std::queue<std::vector<char>>   queue_;                     ///< Cola de datos recibidos

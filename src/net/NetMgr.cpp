@@ -25,7 +25,6 @@
     }
 
 
-
     // General ------------------------------------------------------------------------------
 
     NetMgr::NetMgr(std::size_t const& thread_count) :
@@ -38,13 +37,20 @@
     }
 
     NetMgr::~NetMgr() {
-        stop(); // Para los sockets
 
-        // Quitar protector para que los hilos pueden salir de run()
+        // Parar los sockets directamente antes de tocar el io_context.
+        {
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            for (auto& sock : pimpl_->udp_sockets_)
+                sock->stop();   // llamada directa, no post
+        }
+        sockets_running_ = false;
+
+        // Soltar el work_guard para que io_context pueda drenar y terminar.
         pimpl_->work_guard_.reset();
 
-        // (Opcional) Fuerza la parada de cualquier handler pendiente del io_context
-        pimpl_->io_context_.stop();  
+        // Esperar a que los hilos salgan naturalmente (sin stop() forzado).
+        //    io_context terminará solo cuando no queden handlers pendientes.
         for (auto& t : threads_)
             if (t.joinable()) t.join(); // Esperar a los hilos de io_context
         io_running_ = false;
@@ -56,20 +62,36 @@
 
     bool NetMgr::addUdpSocket(
         std::string         name,
-        short               local_port, 
+        unsigned short      local_port, 
         const std::string&  local_ip, 
         unsigned int        rcv_packet_size
     ) 
     {
+        // Rechazar datos inválidos
+        if (local_port < 0) {
+            SYS_WARN("NetMgr","Cannot add new socket: Invalid port: " + std::to_string(local_port));
+            return false;
+        }
+        if (name.empty()) {
+            SYS_WARN("NetMgr","Cannot add new socket: No name provided.");
+            return false;
+        }
+
         // Evitar duplicados por nombre y puerto
-        for (const auto& sock : pimpl_->udp_sockets_) {
-            if (sock->name() == name) {
-                SYS_WARN("NetMgr","Socket already exists with name " + name);;
-                return false;
-            }
-            if (sock->port() == local_port) {
-                SYS_WARN("NetMgr","Socket already exists with port " + std::to_string(local_port));
-                return false;
+        {
+            // Bloquear el acceso a la cola de otras llamadas
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+
+            // Buscar duplicados
+            for (const auto& sock : pimpl_->udp_sockets_) {
+                if (sock->name() == name) {
+                    SYS_WARN("NetMgr","Socket already exists with name " + name);;
+                    return false;
+                }
+                if (sock->port() == local_port) {
+                    SYS_WARN("NetMgr","Socket already exists with port " + std::to_string(local_port));
+                    return false;
+                }
             }
         }
 
@@ -85,74 +107,56 @@
             return false;
         }
 
-        // Insertar en el vector
-        std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
-        pimpl_->udp_sockets_.push_back(socket);
-        SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );
+        {
+            // Proteger el vector de sockets udp
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
 
+            // Insertar en el vector
+            pimpl_->udp_sockets_.push_back(socket);
+        }
+        
         // "encender" el socket si estaban los demás corriendo
         if (sockets_running_)
             asio::post(getAsioStrand(socket), [socket]{ 
                 socket->start(); 
             });
 
+        SYS_INFO("NetMgr","Socket added on port " + std::to_string(local_port) );
         return true;
     }
 
     bool NetMgr::removeUdpSocket(std::string const& name) {
+        // Protege el vector de sockets de otras llamadas
+        std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
 
-        // Buscar el socket por puerto y llamar a la otra función
-        unsigned int port;
-        for(auto& it : pimpl_->udp_sockets_)
-            if (it->name() == name) 
-                return removeUdpSocket(it->port());
-
-        /* else */
-        SYS_WARN("NetMgr","Cannot delete selected UDP socket: Name '"+name+"' not found.");
-        return false;
+        // Llama función privada con lock adquirido
+        return RemoveUdpSocketLocked(getSocketIndex(name));
     }
 
     bool NetMgr::removeUdpSocket(unsigned int port) {
+        // Protege el vector de sockets de otras llamadas
         std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
-        
-        // Busca el índice del socket en el vector, -1 si falla
-        unsigned int index = getSocketIndex(port);
-        if (index == -1) {
-            SYS_WARN("NetMgr","Cannot delete selected UDP socket: Port "+std::to_string(port)+" not found.");
-            return false;
-        }
 
-        // Copiamos el shared_ptr para mantenerlo vivo durante esta función
-        std::shared_ptr<UdpSocket> sock = pimpl_->udp_sockets_[index];
-        
-        // info
-        SYS_INFO("NetMgr",
-            "Deleting socket '" + sock->name()
-            + "' with port " + std::to_string(sock->port() )
-        );
-                
-        // Esto fuerza a que el lambda de async_receive_from se ejecute con error 'operation_aborted'.
-        asio::post(getAsioStrand(sock), [sock]() {
-            sock->stop();
-        });
-
-        // Borrar el elemento del vector usando iterator
-        pimpl_->udp_sockets_.erase(pimpl_->udp_sockets_.begin() + index);
-
-        // info y salir
-        SYS_INFO("NetMgr","Socket deleted");
-        return true;
+        // Llama función privada con lock adquirido
+        return RemoveUdpSocketLocked(getSocketIndex(port));
     }
 
     void NetMgr::printUdpSockets() const {
 
-        SYS_INFO("NetMgr", "--- SOCKETS ACTIVOS ---");
-        for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
+        SYS_INFO("NetMgr", "--- SOCKETS ENABLED ---");
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+
+            // Recorrer e imprimir sockets
+            for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
             SYS_INFO("NetMgr", 
                 "[" + std::to_string(i) + "] Socket '" + 
                 pimpl_->udp_sockets_[i]->name() + ":" + 
                 std::to_string(pimpl_->udp_sockets_[i]->port() ) + "'"
             );
+        }
+        
     }
 
     /**
@@ -161,12 +165,17 @@
      * @return true si está en el vector de sockets gestionados, false en caso contrario.
      */
     bool NetMgr::socketExists(std::string const& socketname) {
-        // Si hay un socket con ese nombre, devuelve true
-        for (const auto& sock : pimpl_->udp_sockets_) 
-            if (sock->name() == socketname) {
-                SYS_INFO("NetMgr","Socket exists function: '" + socketname + ":" + std::to_string(sock->port()) + "' found.");
-                return true;
-            }
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+
+            // Si hay un socket con ese nombre, devuelve true
+            for (const auto& sock : pimpl_->udp_sockets_) 
+                if (sock->name() == socketname) {
+                    SYS_INFO("NetMgr","Socket exists function: '" + socketname + ":" + std::to_string(sock->port()) + "' found.");
+                    return true;
+                }
+        }
 
         // Llegará aquí si no encuentra socket
         SYS_INFO("NetMgr","Socket exists function: '" + socketname + "' not found.");
@@ -179,16 +188,21 @@
      * @return true si está en el vector de sockets gestionados, false en caso contrario.
      */
     bool NetMgr::socketExists(unsigned short port) {
-        // Si hay un socket con ese puerto, devuelve true
-        for (const auto& sock : pimpl_->udp_sockets_)
-            if (sock->port() == port) {
-                SYS_INFO("NetMgr","Socket " + sock->name() + ":" + std::to_string(port) + "' found.");
-                return true;
-            }
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
 
+            // Si hay un socket con ese puerto, devuelve true
+            for (const auto& sock : pimpl_->udp_sockets_)
+                if (sock->port() == port) {
+                    SYS_INFO("NetMgr","Socket " + sock->name() + ":" + std::to_string(port) + "' found.");
+                    return true;
+                }
+        }
+        
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket with port " + std::to_string(port) + "' not found.");
-        return {};
+        return false;
     }
 
     // Ejecución ----------------------------------------------------------------------------
@@ -214,10 +228,16 @@
         }
 
         // Iniciar (de nuevo si aplica) los sockets
-        for (auto& sock : pimpl_->udp_sockets_) {
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+
+            // Iniciar sockets
+            for (auto& sock : pimpl_->udp_sockets_) {
             asio::post(getAsioStrand(sock), [sock]{ 
-                sock->start(); 
-            });
+                    sock->start(); 
+                });
+            }
         }
 
         SYS_INFO("NetMgr","Sockets running");
@@ -233,10 +253,16 @@
         SYS_INFO("NetMgr","Stopping sockets...");
 
         // Parar la recepción de los sockets
-        for (auto& sock : pimpl_->udp_sockets_) {
-            asio::post(getAsioStrand(sock), [sock]{ 
-                sock->stop(); 
-            });
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+
+            // Parar sockets
+            for (auto& sock : pimpl_->udp_sockets_) {
+                asio::post(getAsioStrand(sock), [sock]{ 
+                    sock->stop(); 
+                });
+            }
         }
 
         sockets_running_ = false;
@@ -257,9 +283,15 @@
     ) 
     {
         // Si hay un socket con ese nombre, manda los datos
-        for (const auto& sock : pimpl_->udp_sockets_) 
-            if (sock->name() == socketname)
-                return sock->sendPacket(data, dest_ip, dest_port);
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+
+            // Mandar paquete por nombre de socket
+            for (const auto& sock : pimpl_->udp_sockets_) 
+                if (sock->name() == socketname)
+                    return sock->sendPacket(data, dest_ip, dest_port);
+        }
 
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket '"+ socketname +"' not exists");
@@ -286,10 +318,22 @@
     // Recepción ----------------------------------------------------------------------------
 
     std::vector<char> NetMgr::getDataFromSocket(std::string const& socketname) {
+        // Puntero al socket objetivo
+        std::shared_ptr<UdpSocket> target;
+
+        if (socketname.empty()) {
+            SYS_WARN("NetMgr","getDataFromSocket: No name provided.");
+            return {};
+        }
+
         // Si hay un socket con ese nombre, pide los datos
-        for (const auto& sock : pimpl_->udp_sockets_) 
-            if (sock->name() == socketname)
-                return sock->getFirstPacket();   // <-- BLOQUEANTE 
+        {
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            for (const auto& sock : pimpl_->udp_sockets_)
+                if (sock->name() == socketname) { target = sock; break; }
+        }
+
+        if (target) return target->getFirstPacket();  // <-- BLOQUEANTE
 
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket not exists with name " + socketname);
@@ -297,11 +341,21 @@
     }
 
     std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port) {
+        // Puntero al socket objetivo
+        std::shared_ptr<UdpSocket> target;
 
-        // Si hay un socket con ese nombre, manda los datos
-        for (const auto& sock : pimpl_->udp_sockets_)
-            if (sock->port() == local_port) 
-                return sock->getFirstPacket();   // <-- BLOQUEANTE 
+        if (local_port == 0) {
+            SYS_WARN("NetMgr","getDataFromSocket: Invalid port:" + std::to_string(local_port));
+            return {};
+        }
+
+        // Si hay un socket con ese nombre, pide los datos
+        {
+            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            for (const auto& sock : pimpl_->udp_sockets_)
+                if (sock->port() == local_port) { target = sock; break; }
+        }
+        if (target) return target->getFirstPacket();  // <-- BLOQUEANTE
 
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
@@ -323,6 +377,36 @@
         /*else*/ return -1;
     }
 
+
+    // Operaciones privadas con sockets -----------------------------------------------------
+    
+    bool NetMgr::RemoveUdpSocketLocked(int index) {
+        // Busca el índice del socket en el vector, -1 si falla
+        if (index < 0) {
+            SYS_WARN("NetMgr","Cannot delete selected UDP socket: Negative vector index.");
+            return false;
+        }
+
+        // Copiamos el shared_ptr para mantenerlo vivo durante esta función
+        std::shared_ptr<UdpSocket> sock = pimpl_->udp_sockets_[index];
+        
+        // info
+        SYS_INFO("NetMgr",
+            "Deleting socket '" + sock->name()
+            + "' with port " + std::to_string(sock->port() )
+        );
+                
+        // Esto fuerza a que el lambda de async_receive_from se ejecute con error 'operation_aborted'.
+        sock->stop();
+
+        // Borrar el elemento del vector usando iterator
+        pimpl_->udp_sockets_.erase(pimpl_->udp_sockets_.begin() + index);
+
+        // info y salir
+        SYS_INFO("NetMgr","Socket deleted");
+        return true;
+    }
+
 #else
 // ============================================================
 //  (Stubs)
@@ -341,7 +425,7 @@ struct NetMgr::Impl {};
 // Gestión de sockets -------------------------------------------------------------------
     bool NetMgr::addUdpSocket(
         std::string         name,
-        short               local_port, 
+        unsigned short      local_port, 
         const std::string&  local_ip, 
         unsigned int        rcv_packet_size
     ) { return false; }
@@ -375,7 +459,7 @@ struct NetMgr::Impl {};
     std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port)     { return {}; }
 
 // Datos de los sockets guardados -------------------------------------------------------
-    int NetMgr::getSocketIndex(short port) const                { return 0; }
+    int NetMgr::getSocketIndex(unsigned short port) const                { return 0; }
     int NetMgr::getSocketIndex(std::string const& name) const  { return 0; }
 
 #endif
