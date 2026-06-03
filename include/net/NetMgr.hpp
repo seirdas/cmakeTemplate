@@ -5,6 +5,7 @@
 #include <vector>               // Vectores
 #include <thread>               // Hilos
 #include <memory>               // unique_ptr
+#include <queue>                // Cola de datos de los sockets
 
 // Para no mezclar includes, declaración implícita
 class UdpSocket;
@@ -52,6 +53,14 @@ public:
 
     /**
      * @brief Añade un socket.
+     * @param name Nombre (arbitrario) asignado al socket
+     * @param local_port Puerto local del socket
+     * @param local_ip Ip local donde se asigna el socket.
+     *  Si no se provee IP o está vacío, se asigna en todas las IP locales disponibles
+     * @param rcv_packet_size Tamaño de paquete de recepción esperado.
+     *  Si el paquete recibido no coincide con este tamaño, se rechazará.
+     *  Si es =0 o no se especifica, se aceptarán todos los paquetes de cuelquier tamaño.
+     * @return true si se ha registrado el socket correctamente, false en caso contrario.
      */
     bool addUdpSocket(
         std::string         name,
@@ -63,12 +72,14 @@ public:
     /**
      * @brief Detener y desvincular un socket activo por nombre
      * @param name Nombre del socket UDP gestionado
+     * @return true si se ha eliminado correctamente, false en caso contrario.
      */
     bool removeUdpSocket(std::string const& name);
 
     /**
      * @brief Detener y desvincular un socket activo por puerto
      * @param port Puerto del socket UDP gestionado
+     * @return true si se ha eliminado correctamente, false en caso contrario.
      */
     bool removeUdpSocket(unsigned int port);
 
@@ -110,6 +121,7 @@ public:
 
     /**
      * @brief Devuelve si la red está activa (los sockets están activos)
+     * @returns true si los sockets están activos, false en caso contrario
      */
     bool isRunning() const;
     
@@ -149,12 +161,14 @@ public:
     /**
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
      * @warning BLOQUEANTE
+     * @returns Datos recibidos del socket en formato std::vector<char>
      */
     std::vector<char> getDataFromSocket(std::string const& socketname);
 
     /**
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
      * @warning BLOQUEANTE
+     * @returns Datos recibidos del socket en formato std::vector<char>
      */
     std::vector<char> getDataFromSocket(unsigned short local_port);
 
@@ -195,16 +209,21 @@ private:
 
     // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl>       pimpl_;               ///< Miembros dependientes de la librería externa
+    std::unique_ptr<Impl>       pimpl_;             ///< Miembros dependientes de la librería externa
 
     // Contexto de operaciones asíncronas
-    std::atomic<bool>           io_running_;            ///< Flag para saber si la red (io_context) está en funcionamiento
+    std::atomic<bool>           io_running_;        ///< Flag para saber si la red (io_context) está en funcionamiento
     
     // Sockets
-    mutable std::mutex          mtx_udp_sockets_;       ///< Mutex para gestion del vector de sockets
-    std::atomic<bool>           sockets_running_;       ///< Flag para saber si la red (io_context) está en funcionamiento
+    mutable std::mutex          udp_sockets_mtx_;   ///< Mutex para gestion del vector de sockets
+    std::atomic<bool>           sockets_running_;   ///< Flag para saber si la red (io_context) está en funcionamiento
+
+    // Cola global de datos de socket
+    std::queue<NetPacket>       udp_rcv_data_;      ///< Cola de datos recibidos por los sockets UDP
+    mutable std::mutex          udp_rcv_data_mtx_;  ///< Mutex para cola de datos de sockets
+    mutable std::mutex          udp_rcv_data_cv_;   ///< Condition variable para cola de datos de sockets
 
     // Hilos de trabajo
-    std::vector<std::thread>    threads_;       ///< Hilos procesando operaciones asíncronas.
-    std::size_t                 thread_count_;  ///< Numero máximo de hilos gestionando operaciones asíncronas.
+    std::vector<std::thread>    threads_;           ///< Hilos procesando operaciones asíncronas.
+    std::size_t                 thread_count_;      ///< Numero máximo de hilos gestionando operaciones asíncronas.
 };

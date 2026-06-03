@@ -4,6 +4,17 @@
 #include <mutex>                // Mutex (Cerrojos) para concurrencia
 #include <condition_variable>   // Variable condicional para concurrencia
 #include <vector>               // Vectores
+#include <functional>           // Para std::function
+#include <string>               // Para std::string
+#include <memory>               // Para std::unique_ptr y std::enable_shared_from_this
+
+// Datos del paquete recibidos para implementar en cola centralizada de NetMgr
+struct NetPacket {
+    std::string         socket_name;        ///< Nombre del socket
+    unsigned short      port = 0;           ///< Puerto del socket
+    std::vector<char>   data_rcv;           ///< Datos recibidos
+};
+
 
 /**
   * @class UdpSocket
@@ -76,7 +87,8 @@ public:
     void start();
 
     /**
-     * @brief Si está en ejecución, detiene la recepción de datos UDP, cierra el socket y finaliza el hilo de trabajo.
+     * @brief Si está en ejecución, detiene la recepción de datos UDP, 
+     *  cierra el socket y finaliza el hilo de trabajo.
      */
     void stop();
 
@@ -99,6 +111,14 @@ public:
      * @brief Devuelve el primer paquete recibido de la cola. Si la cola está vacía, espera hasta que llegue un nuevo paquete.
      */
     std::vector<char> getFirstPacket();
+
+    /**
+     * @brief Callback para mandar el paquete recibido a cola centralizada de gestor de red
+     * @details Solo válido cuando esta clase se instancia desde un gestor de red
+     * @param cb Función callback que será invocada con un objeto NetPacket cada vez 
+     *  que se reciba un paquete válido.
+     */
+    void setReceiveCallback(std::function<void(NetPacket)> cb);
     
     /**
      * @brief Opción para rechazar el paquete de datos si es igual que el último recibido.
@@ -109,7 +129,7 @@ public:
     /**
      * @brief Método público para limpiar la cola de datos.
      */
-    void clearCache();
+    void clearRcvCache();
 
 	/**
 	 * @brief Devuelve si el socket tiene datos en su "buffer"
@@ -237,6 +257,8 @@ private:
     std::string                     name_;              ///< Nombre dado al socket para identificarlo
     std::vector<char>               recv_buffer_;       ///< Buffer para almacenar los datos recibidos
     unsigned int                    rcv_packet_size_;   ///< Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
+
+    std::function<void(NetPacket)>  on_receive_cb_;     ///< Función callback para mandar paquete recibido a cola centralizada de gestor de red
 
     std::atomic<bool>               initialized_;       ///< Socket inicializado
     std::atomic<bool>               running_;           ///< Socket corriendo

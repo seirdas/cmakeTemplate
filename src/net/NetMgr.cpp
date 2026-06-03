@@ -40,7 +40,7 @@
 
         // Parar los sockets directamente antes de tocar el io_context.
         {
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
             for (auto& sock : pimpl_->udp_sockets_)
                 sock->stop();   // llamada directa, no post
         }
@@ -80,7 +80,7 @@
         // Evitar duplicados por nombre y puerto
         {
             // Bloquear el acceso a la cola de otras llamadas
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Buscar duplicados
             for (const auto& sock : pimpl_->udp_sockets_) {
@@ -109,7 +109,7 @@
 
         {
             // Proteger el vector de sockets udp
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Insertar en el vector
             pimpl_->udp_sockets_.push_back(socket);
@@ -127,7 +127,7 @@
 
     bool NetMgr::removeUdpSocket(std::string const& name) {
         // Protege el vector de sockets de otras llamadas
-        std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+        std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
         // Llama función privada con lock adquirido
         return RemoveUdpSocketLocked(getSocketIndex(name));
@@ -135,7 +135,7 @@
 
     bool NetMgr::removeUdpSocket(unsigned int port) {
         // Protege el vector de sockets de otras llamadas
-        std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+        std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
         // Llama función privada con lock adquirido
         return RemoveUdpSocketLocked(getSocketIndex(port));
@@ -146,7 +146,7 @@
         SYS_INFO("NetMgr", "--- SOCKETS ENABLED ---");
         {
             // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Recorrer e imprimir sockets
             for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
@@ -167,7 +167,7 @@
     bool NetMgr::socketExists(std::string const& socketname) {
         {
             // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Si hay un socket con ese nombre, devuelve true
             for (const auto& sock : pimpl_->udp_sockets_) 
@@ -190,7 +190,7 @@
     bool NetMgr::socketExists(unsigned short port) {
         {
             // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Si hay un socket con ese puerto, devuelve true
             for (const auto& sock : pimpl_->udp_sockets_)
@@ -230,7 +230,7 @@
         // Iniciar (de nuevo si aplica) los sockets
         {
             // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Iniciar sockets
             for (auto& sock : pimpl_->udp_sockets_) {
@@ -255,7 +255,7 @@
         // Parar la recepción de los sockets
         {
             // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Parar sockets
             for (auto& sock : pimpl_->udp_sockets_) {
@@ -285,7 +285,7 @@
         // Si hay un socket con ese nombre, manda los datos
         {
             // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Mandar paquete por nombre de socket
             for (const auto& sock : pimpl_->udp_sockets_) 
@@ -328,7 +328,7 @@
 
         // Si hay un socket con ese nombre, pide los datos
         {
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
             for (const auto& sock : pimpl_->udp_sockets_)
                 if (sock->name() == socketname) { target = sock; break; }
         }
@@ -351,7 +351,7 @@
 
         // Si hay un socket con ese nombre, pide los datos
         {
-            std::lock_guard<std::mutex> lock(mtx_udp_sockets_);
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
             for (const auto& sock : pimpl_->udp_sockets_)
                 if (sock->port() == local_port) { target = sock; break; }
         }
