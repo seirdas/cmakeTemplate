@@ -15,6 +15,9 @@
         WorkGuard           work_guard_;       // RAII para mantener vivo el io
         UDPSocketsVector    udp_sockets_;      // Lista de receptores UDP registrados
 
+        // Se declara aquí porque NetPacket está definido en UdpSocket, que sólo se incluye en este cpp
+        std::queue<NetPacket>       udp_rcv_data_;      ///< Cola de datos recibidos por los sockets UDP
+
         // Este struct necesita inicializar io_context con work_guar, por eso declaramos el constructor
         Impl() : work_guard_(asio::make_work_guard(io_context_)) {}
     };
@@ -159,11 +162,6 @@
         
     }
 
-    /**
-     * @brief Comprueba si un socket se está gestionando por nombre
-     * @param name Nombre del socket
-     * @return true si está en el vector de sockets gestionados, false en caso contrario.
-     */
     bool NetMgr::socketExists(std::string const& socketname) {
         {
             // Proteger acceso a vector de sockets
@@ -182,11 +180,6 @@
         return false;
     }
 
-    /**
-     * @brief Comprueba si un socket se está gestionando por puerto
-     * @param port Puerto del socket
-     * @return true si está en el vector de sockets gestionados, false en caso contrario.
-     */
     bool NetMgr::socketExists(unsigned short port) {
         {
             // Proteger acceso a vector de sockets
@@ -204,6 +197,7 @@
         SYS_WARN("NetMgr","Socket with port " + std::to_string(port) + "' not found.");
         return false;
     }
+
 
     // Ejecución ----------------------------------------------------------------------------
 
@@ -273,6 +267,7 @@
         return sockets_running_;
     }
 
+
     // Envío --------------------------------------------------------------------------------
 
     bool NetMgr::sendData(
@@ -314,6 +309,7 @@
         SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
         return false;
     }
+
 
     // Recepción ----------------------------------------------------------------------------
 

@@ -197,7 +197,8 @@ private:
 // Operaciones privadas con sockets -----------------------------------------------------
 
     /**
-     * @brief Detener y desvincular un socket activo por índice
+     * @brief Detener y desvincular un socket activo por índice. 
+     *  Supone que se ha adquirido lock de mutex
      * @details Es llamado por @c RemoveUdpSocket público
      * @param index Índice del vector udpsockets del socket a borrar
      * @return @c true Si se ha borrado correctamente
@@ -219,7 +220,7 @@ private:
     std::atomic<bool>           sockets_running_;   ///< Flag para saber si la red (io_context) está en funcionamiento
 
     // Cola global de datos de socket
-    std::queue<NetPacket>       udp_rcv_data_;      ///< Cola de datos recibidos por los sockets UDP
+    /* std::queue<NetPacket>    udp_rcv_data_; */   ///< Implementado en Impl de cpp, donde se incluye UdpSocket con NetPacket
     mutable std::mutex          udp_rcv_data_mtx_;  ///< Mutex para cola de datos de sockets
     mutable std::mutex          udp_rcv_data_cv_;   ///< Condition variable para cola de datos de sockets
 
