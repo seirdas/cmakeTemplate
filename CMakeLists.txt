@@ -153,9 +153,9 @@ if (WIN32)
     user32      # MessageBoxA
   )
 
-  # Propiedades para sistema Windows
+  # No usar consola en ninguna configuración que NO sea Debug
   set_target_properties(${PROJECT_NAME} PROPERTIES 
-    WIN32_EXECUTABLE $<CONFIG:Release>                    # No usar consola en Release
+    WIN32_EXECUTABLE $<NOT:$<CONFIG:Debug>>
   )
 
   # Definiciones para compatibilidad
@@ -171,7 +171,7 @@ if (WIN32)
 
   if (MINGW)
     target_link_options(${PROJECT_NAME} PRIVATE 
-      $<$<CONFIG:Release>:-mwindows>
+      $<$<NOT:$<CONFIG:Debug>>:-mwindows>
     )
   endif()
 
@@ -201,21 +201,44 @@ if(MSVC)
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
     /W3                       # Nivel de advertencia 3
-    /EHsc                     # Manejo de excepciones en C++
+    /EHsc                     # Manejo de excepciones estándar en C++
+    /MP                       # Compilación multiproceso (¡Acelera un montón el build!)
+    
+    # Flags específicos por configuración
     $<$<CONFIG:Debug>:
-      /ZI                     # Información de depuración
-      /Od                     # Desactivar optimizaciones en Debug
+      /ZI                     # Símbolos de depuración (Edit and Continue)
+      /Od                     # Desactivar optimizaciones
+      /RTC1                   # Verificaciones en tiempo de ejecución (Stack frames / uninitialized)
     >  
-    $<$<CONFIG:Release>:/O2>  # Optimización para velocidad en Release
+    $<$<CONFIG:Release>:
+      /O2                     # Optimización para velocidad máxima
+      /Oi                     # Habilitar funciones intrínsecas
+      /GL                     # Optimización global (Whole Program Optimization)
+    >
+    $<$<CONFIG:MinSizeRel>:
+      /O1                     # Optimización enfocada estrictamente en tamaño mínimo
+      /Oi                     # Habilitar intrínsecas
+    >
+    $<$<CONFIG:RelWithDebInfo>:
+      /O2                     # Optimización para velocidad (igual que Release)
+      /Zi                     # Generar símbolos de depuración completos (sin Edit & Continue)
+      /Oi                     # Habilitar funciones intrínsecas
+    >
   )
 
   # Flag para mejorar la compatibilidad de headers antiguos
   target_compile_options(${PROJECT_NAME} PRIVATE /volatile:iso /Zc:__cplusplus)
 
-  # Usar main normal, subsistema windows
+  # Configuración de MSVC para Windows
   target_link_options(${PROJECT_NAME} PRIVATE 
-    $<$<CONFIG:Release>:/SUBSYSTEM:WINDOWS>
-    "/ENTRY:mainCRTStartup" # Usar el main normal aunque sea una App de Windows
+    # Aplicar /SUBSYSTEM:WINDOWS solo si NO es Debug
+    $<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>
+    
+    # Aplicar /LTCG solo en Release (para optimización global)
+    $<$<CONFIG:Release>:/LTCG>
+    
+    # Configurar punto de entrada como 'main'
+    "/ENTRY:mainCRTStartup"
   )
 
   # Especifica el proyecto principal
@@ -237,22 +260,24 @@ elseif (MINGW)
 
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-    -Wall                      # Habilitar todas las advertencias
-    -Wextra                    # Habilitar advertencias adicionales
-    -Wpedantic                 # Habilitar advertencias estrictas de estándar
-    -Wshadow                   # Advertir sobre variables que ocultan otras
-    -Wuninitialized            # Advertir sobre variables no inicializadas
-    -Wformat=2                 # Advertir sobre problemas de formato en printf/scanf
-    -Wshadow                   # Advertir de variables re-declaradas
-    -Wunused-parameter         # Advertir de variables que no se usan
-
-    # Depuración y optimización según la configuración
-    $<$<NOT:$<CONFIG:Release>>:
-      -g    # Información de depuración en Debug
-      -O0   # Sin optimizaciones en Debug
-    >   
+    -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat=2 -Wunused-parameter
+    
+    # Flags específicos por configuración
+    $<$<CONFIG:Debug>:
+      -g                      # Información de depuración
+      -O0                     # Sin optimizaciones para depurar línea a línea sin saltos
+    >
     $<$<CONFIG:Release>:
-      -O2   # Optimización para velocidad en Release
+      -O3                     # Máxima optimización de velocidad (-O3 suele ser mejor que -O2 en GCC moderno)
+      -DNDEBUG                # Desactivar asserts de cabeceras estándar
+    >
+    $<$<CONFIG:MinSizeRel>:
+      -Os                     # Optimizar para reducir el tamaño del binario al máximo
+      -DNDEBUG
+    >
+    $<$<CONFIG:RelWithDebInfo>:
+      -O2                     # Optimización de velocidad equilibrada y segura para perfiles estables
+      -g                      # Incluir símbolos de depuración independientes
     >
   )
 
