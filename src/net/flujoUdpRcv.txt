@@ -1,0 +1,29 @@
+
+
+[hilo io_context]                [hilo TWorker]
+      │
+      │  1. llega datagrama UDP
+      │
+      ▼
+ async_receive_from completa
+      │
+      ▼
+ handle_received_packet()
+      │
+      │  2. construye NetPacket con
+      │     name_, port(), data
+      │
+      ▼
+ on_receive_cb_(pkt)          ← callback registrado por NetMgr
+      │
+      ▼
+ [lambda en NetMgr::addUdpSocket]
+      │
+      │  3. lock(udp_rcv_data_mtx_)
+      │     udp_rcv_data_.push(pkt)
+      │     notify_one()
+      │
+      └──────────────────────────────► getNextPacket() despierta
+                                              │
+                                              ▼
+                                        TWorker procesa pkt

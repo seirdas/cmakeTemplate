@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mutex>
+#include <condition_variable>
 #include <string>               // std::string
 #include <vector>               // Vectores
 #include <thread>               // Hilos
@@ -9,6 +10,8 @@
 
 // Para no mezclar includes, declaración implícita
 class UdpSocket;
+struct NetPacket;
+
 
 /**
   * @brief Gestiona varios sockets a partir de un único contexto de operaciones asíncronas (io_context)
@@ -158,6 +161,8 @@ public:
 
 // Recepción ----------------------------------------------------------------------------
 
+    std::vector<char> getNextUdpPacket(std::string* name = nullptr, unsigned short* port = nullptr);
+
     /**
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
      * @warning BLOQUEANTE
@@ -172,6 +177,7 @@ public:
      */
     std::vector<char> getDataFromSocket(unsigned short local_port);
 
+    size_t numUdpRcvElements();
 
 private:
 
@@ -222,7 +228,8 @@ private:
     // Cola global de datos de socket
     /* std::queue<NetPacket>    udp_rcv_data_; */   ///< Implementado en Impl de cpp, donde se incluye UdpSocket con NetPacket
     mutable std::mutex          udp_rcv_data_mtx_;  ///< Mutex para cola de datos de sockets
-    mutable std::mutex          udp_rcv_data_cv_;   ///< Condition variable para cola de datos de sockets
+    std::condition_variable     udp_rcv_data_cv_;   ///< Condition variable para cola de datos de sockets
+    const std::size_t           MAX_QUEUE_ELEMENTS_ = 100;    ///< Número máximo de elementos en la cola
 
     // Hilos de trabajo
     std::vector<std::thread>    threads_;           ///< Hilos procesando operaciones asíncronas.

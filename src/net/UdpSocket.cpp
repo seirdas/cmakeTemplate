@@ -4,6 +4,7 @@
 #if defined ASIO || defined ASIO_VERSION
 
     #include <asio.hpp>             // asio external lib
+    #include "net/netTypes.hpp"     // Para conocer NetPacket
 
     constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paquete UDP (64 KB)
 
@@ -45,6 +46,7 @@
         //clearQueue();     // <- En el stop() ya se hace clearQueue
     }
 
+
     // Ejecución ----------------------------------------------------------------------------
 
     bool UdpSocket::init(unsigned short local_port, const std::string& local_ip, unsigned int rcv_packet_size) {
@@ -53,7 +55,7 @@
         std::string st_rcv_packet_size = (rcv_packet_size==0) ? "any" : std::to_string(rcv_packet_size);
 
         SYS_INFO("UdpSocket", 
-            "Creating new socket: port: " + 
+            "Registering new socket: port: " + 
             std::to_string(local_port) +
             ", IP: " + st_local_ip + 
             ", rcv_size: " + st_rcv_packet_size
@@ -146,6 +148,7 @@
         running_ = false;
     }
 
+
     // Envío --------------------------------------------------------------------------------
 
     bool UdpSocket::sendPacket(const std::vector<char>& data, const std::string& ip, unsigned short port) {
@@ -198,6 +201,7 @@
         }
     }
 
+
     // Recepción ----------------------------------------------------------------------------
 
     std::vector<char> UdpSocket::getFirstPacket() {
@@ -242,6 +246,7 @@
     void* UdpSocket::getStrandNative() { 
         return static_cast<void*>(&pimpl_->strand_);
     }
+
 
     // Datos de socket ----------------------------------------------------------------------
 
@@ -409,6 +414,7 @@
         }
     }
 
+    
     // Gestión de cola de datos recibidos ---------------------------------------------------
 
     void UdpSocket::saveToQueue(std::vector<char> data) {

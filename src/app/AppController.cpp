@@ -28,8 +28,11 @@ AppController::~AppController() {
     net_.stop();
     online_cv_.notify_all();
     SYS_INFO("AppController","Closing running threads...");
-    if (worker_.joinable())
-        worker_.join();
+    if (hilo_consumer_.joinable())
+        hilo_consumer_.join();
+
+    if (hilo_test_.joinable())
+        hilo_test_.join();
 
     // Cerrar módulos (opcional, recomendado)
     snd_.stop();
@@ -71,6 +74,10 @@ bool AppController::init(int argc, char** argv) {
     if(!snd_initialized_)
         SYS_ERROR("AppController","Sound subsystem FAIL");
     else SYS_INFO("AppController","Sound subsystem OK");
+
+    // Iniciar conexión Totalmix
+    SYS_INFO("AppController","Totalmix manager loading...");
+    tmx_.init(12321,"127.0.0.1", 7001,"127.0.0.1",32,32,32);
     
 
     // Inicialización de TTS (en hilo para no bloquear)
@@ -81,8 +88,6 @@ bool AppController::init(int argc, char** argv) {
     );
     tLoadTTS.detach();  // No necesitamos "esperar" a que termine
     
-    // Hilo consumidor de paquetes online
-    worker_ = std::thread(&AppController::TWorker, this);
 
     SYS_INFO("AppController","App initialized.");
     return true;
@@ -91,36 +96,42 @@ bool AppController::init(int argc, char** argv) {
 int AppController::run() {
     SYS_INFO("AppController","Running app...");
     running_ = true;
+    
+    // Hilo consumidor de paquetes online
+    hilo_consumer_ = std::thread(&AppController::TWorker, this);
+
+    // Hilo para cout de pruebas
+    hilo_test_ = std::thread(&AppController::TPruebas, this);
+
     gui_.run(); // ← Bloquea hasta cerrar
     return 0;
 }
 
 
 // Hilos --------------------------------------------------------------------------------
+
 void AppController::TWorker() {
     SYS_INFO("TWorker","Initializating consumer thread...");
     std::vector<char> data;
 
-    if (!net_.socketExists("Host")) {
-        SYS_WARN("TWorker", "Socket host not initialized. Exiting network consumer thread");
-        return;
-    }
-
     while (running_) {
 
+        // Forzar la espera hasta que sea notificado de un paquete nuevo
         std::unique_lock<std::mutex> lock(online_mtx_);
-
         online_cv_.wait(lock, [this] {
             return !running_ || online_mode_;
         });
 
+        // Salir si el programa se está cerrando
         if (!running_) break;
 
-        lock.unlock();  // Libera el lock de aquí en adelante
+        // Libera el lock de aquí en adelante
+        lock.unlock();
 
         // Pide datos al socket para procesar
-        data = net_.getDataFromSocket("Host");
+        data = net_.getNextUdpPacket();
 
+        // Si no hay datos no hacer nada
         if (data.empty()) {
             SYS_WARN("TWorker","Empty data received");
             continue;
@@ -130,10 +141,24 @@ void AppController::TWorker() {
         SYS_INFO("TWorker", "Procesando paquete de datos...");
         SYS_INFO("TWorker","Size of data " + std::to_string(data.size()));
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
     }
 
     SYS_INFO("TWorker", "Consumer thread stopped.");
+}
+
+
+void AppController::TPruebas() {
+    SYS_INFO("TPruebas","init TPruebas");
+
+    // Poner aquí las pruebas o lo que sea
+    /*
+    while (running_) {
+        SYS_INFO("TPruebas","Udp queue size: " + std::to_string(net_.numUdpRcvElements()));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+    */
+
+    SYS_INFO("TPruebas","fin TPruebas");
 }
 
 

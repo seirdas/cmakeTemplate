@@ -8,12 +8,8 @@
 #include <string>               // Para std::string
 #include <memory>               // Para std::unique_ptr y std::enable_shared_from_this
 
-// Datos del paquete recibidos para implementar en cola centralizada de NetMgr
-struct NetPacket {
-    std::string         socket_name;        ///< Nombre del socket
-    unsigned short      port = 0;           ///< Puerto del socket
-    std::vector<char>   data_rcv;           ///< Datos recibidos
-};
+// Para evitar la inclusión del hpp en este header
+struct NetPacket;
 
 
 /**
@@ -114,7 +110,9 @@ public:
 
     /**
      * @brief Callback para mandar el paquete recibido a cola centralizada de gestor de red
-     * @details Solo válido cuando esta clase se instancia desde un gestor de red
+     * @details Solo se define y se usa cuando esta clase se instancia desde un gestor de red
+     *  Por el contrario, si se crea esta clase sin un gestor de red (NetMgr), los paquetes 
+     *  recibidos se guardan en la cola de esta misma clase.
      * @param cb Función callback que será invocada con un objeto NetPacket cada vez 
      *  que se reciba un paquete válido.
      */
@@ -176,7 +174,6 @@ public:
      * @return true si el socket está abierto, false en caso contrario.
      */
     bool isOpen() const;
-
 
 
 private:

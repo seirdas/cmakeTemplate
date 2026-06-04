@@ -64,6 +64,12 @@ public:
      * @note Solo se ejecuta cuando la aplicación está en online, de lo contrario se queda parado.
      */
     void TWorker();
+    
+    /**
+     * @brief Función para ejecutar pruebas durante la ejecución de todo el programa
+     * @details Se puede hacer un bucle infinito que escriba en cout alguna info, por ejemplo
+     */
+    void TPruebas();
 
 
 // IAppControl methods ------------------------------------------------------------------
@@ -167,7 +173,8 @@ private:
     bool        tts_initialized_;               ///< Indica si tts está inicializado
 
     // Gestión de hilos
-    std::thread             worker_;            ///< gestor de paquetes
+    std::thread             hilo_test_;         ///< Hilo de pruebas
+    std::thread             hilo_consumer_;     ///< Hilo consumidor de paquetes de red
     std::mutex              online_mtx_;        ///< Mutex para dejar en espera al hilo
     std::condition_variable online_cv_;         ///< Reacciona al cambio de estado para el hilo consumidor
 
