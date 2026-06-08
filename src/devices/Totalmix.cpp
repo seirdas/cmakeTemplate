@@ -132,7 +132,6 @@
 
     bool TotalMix::SetSnapshot(int index)
     {
-        bool res;
         char addr[64];
         snprintf(addr, sizeof(addr), "/3/snapshots/8/%d", index);
 

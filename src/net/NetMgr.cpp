@@ -1,7 +1,7 @@
 #include "net/NetMgr.hpp"
 #include "system/SystemMgr.hpp"
 
-#if defined ASIO || defined ASIO_VERSION
+#if defined ASIO_NETWORK || defined ASIO_NETWORK_VERSION
 
     #include <asio.hpp>             // asio external lib
     #include "net/UdpSocket.hpp"    // Para conocer UdpSocket
@@ -491,11 +491,11 @@ struct NetMgr::Impl {};
     ) { return false; }
 
 // Recepción ----------------------------------------------------------------------------
+    std::vector<char> NetMgr::getNextUdpPacket(std::string* name, unsigned short* port) { return {}; }
     std::vector<char> NetMgr::getDataFromSocket(std::string const& socketname) { return {}; }
     std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port)     { return {}; }
 
 // Datos de los sockets guardados -------------------------------------------------------
-    int NetMgr::getSocketIndex(unsigned short port) const                { return 0; }
     int NetMgr::getSocketIndex(std::string const& name) const  { return 0; }
 
 #endif

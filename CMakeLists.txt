@@ -105,7 +105,7 @@ endmacro()
 import_dependency( SHERPA           ON     sherpa_lib         audio/lib-sherpaonnx audio/tts-assets) # Tiene 2 toolchains
 import_dependency( MINIAUDIO        ON     miniaudio_lib      audio/lib-miniaudio)
 import_dependency( DAISYSP          OFF    daisysp_lib        audio/lib-daisysp)
-import_dependency( ASIO             ON     asio_lib           net/lib-asionetwork)
+import_dependency( ASIO_NETWORK     ON     asio_lib           net/lib-asionetwork)
 import_dependency( IMGUI            ON     imgui_lib          gui/lib-imgui)
 import_dependency( STB              ON     stb_lib            gui/lib-stb)
 import_dependency( JSON             ON     nlohmann_json      file/lib-json)

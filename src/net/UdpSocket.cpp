@@ -1,7 +1,7 @@
 #include "net/UdpSocket.hpp"
 #include <system/SystemMgr.hpp>
 
-#if defined ASIO || defined ASIO_VERSION
+#if defined ASIO_NETWORK || defined ASIO_NETWORK_VERSION
 
     #include <asio.hpp>             // asio external lib
     #include "net/netTypes.hpp"     // Para conocer NetPacket
@@ -480,7 +480,6 @@ struct UdpSocket::Impl {};
 // Recepción ----------------------------------------------------------------------------
     std::vector<char> UdpSocket::getFirstPacket()  { return {};     }
     void UdpSocket::discardOnDupe(bool enable)     { return;        }
-    void UdpSocket::clearCache()                   { return;        }
     bool UdpSocket::hasData()                      { return false;  }
     void* UdpSocket::getStrandNative()             { return nullptr;}
 
