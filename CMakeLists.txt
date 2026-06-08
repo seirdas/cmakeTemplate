@@ -4,7 +4,7 @@
 # ==============================
 
 # CMake minimum version and project setup
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
 # Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
 if (MSVC)
@@ -153,9 +153,9 @@ if (WIN32)
     user32      # MessageBoxA
   )
 
-  # No usar consola en ninguna configuración que NO sea Debug
+  # No usar consola en Release o MinSizeRel
   set_target_properties(${PROJECT_NAME} PROPERTIES 
-    WIN32_EXECUTABLE $<NOT:$<CONFIG:Debug>>
+    WIN32_EXECUTABLE $<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>
   )
 
   # Definiciones para compatibilidad
@@ -231,8 +231,8 @@ if(MSVC)
 
   # Configuración de MSVC para Windows
   target_link_options(${PROJECT_NAME} PRIVATE 
-    # Aplicar /SUBSYSTEM:WINDOWS solo si NO es Debug
-    $<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>
+    # Aplicar /SUBSYSTEM:WINDOWS para Release y MinSizeRel
+    $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/SUBSYSTEM:WINDOWS>
     
     # Aplicar /LTCG solo en Release (para optimización global)
     $<$<CONFIG:Release>:/LTCG>
@@ -249,9 +249,35 @@ if(MSVC)
   source_group("Source"     FILES ${SOURCES})
   source_group("Resources"  FILES ${RESOURCES})
 
+  # Determinar el nombre de la DLL según la configuración actual (Debug o Release)
+  set(MSVCP_NAME "$<IF:$<CONFIG:Debug>,msvcp140d.dll,msvcp140.dll>")
+  set(VCRUNTIME_NAME "$<IF:$<CONFIG:Debug>,vcruntime140d.dll,vcruntime140.dll>")
 
-  # Configuración específica para GCC/MinGW y Clang
+  # Localizar las librerías usando el path del compilador
+  get_filename_component(MSVC_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+  find_file(MSVCP_DLL_PATH NAMES ${MSVCP_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
+  find_file(VCRUNTIME_DLL_PATH NAMES ${VCRUNTIME_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
+  if (MSVCP_DLL_PATH)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MSVCP_DLL_PATH}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VCRUNTIME_DLL_PATH}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    )
+  else()
+    # Fallback usando las carpetas del sistema
+    if (ARCH_NAME STREQUAL "x86")
+      set(SYSTEM_WINDOWS_DIR "C:/Windows/SysWOW64")
+    else()
+      set(SYSTEM_WINDOWS_DIR "C:/Windows/System32")
+    endif()
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SYSTEM_WINDOWS_DIR}/${MSVCP_NAME}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SYSTEM_WINDOWS_DIR}/${VCRUNTIME_NAME}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    )
+  endif()
+
+
 elseif (MINGW)
+  # Configuración específica para GCC/MinGW y Clang
 
   # Mensajes de información sobre el compilador
   message(STATUS "Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
