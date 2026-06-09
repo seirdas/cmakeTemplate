@@ -200,10 +200,12 @@ endif()
 if(MSVC)
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-    /W3                       # Nivel de advertencia 3
+    /W4                       # Nivel de advertencia 4
+    /w44062                   # Advertencia cuando falta un caso en switch de enum
     /EHsc                     # Manejo de excepciones estándar en C++
-    /MP                       # Compilación multiproceso (¡Acelera un montón el build!)
-    
+    /MP                       # Compilación multiproceso
+    # /WX                     # Tratar warnings como errores
+
     # Flags específicos por configuración
     $<$<CONFIG:Debug>:
       /ZI                     # Símbolos de depuración (Edit and Continue)
@@ -286,7 +288,18 @@ elseif (MINGW)
 
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-    -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat=2 -Wunused-parameter
+    -Wall                       # Habilitar la mayoría de las advertencias comunes
+    -Wextra                     # Habilitar advertencias adicionales de buenas prácticas
+    -Wpedantic                  # Cumplimiento estricto del estándar ISO C++
+    -Wconversion                # Advertir sobre conversiones de tipos con pérdida de datos
+    -Wshadow                    # Advertir cuando una variable oculta otra de un ámbito superior
+    -Wformat=2                  # Advertencias estrictas para funciones printf/scanf
+    -Wunused-parameter          # Advertir sobre parámetros no utilizados en funciones
+    -Wnon-virtual-dtor          # Advertir si una clase polimórfica no tiene destructor virtual
+    -Wold-style-cast            # Advertir sobre el uso de casts estilo C (usar C++ casts)
+    -Wcast-align                # Advertir sobre punteros con alineación ineficiente
+    -Wdouble-promotion          # Advertir si float se convierte implícitamente a double
+    # -Werror                   # Tratar warnings como errores
     
     # Flags específicos por configuración
     $<$<CONFIG:Debug>:
