@@ -236,7 +236,7 @@ void AppController::TPruebas() {
         data.loaded_models        = tts_.getLoadedModels();
         data.num_available_models = tts_.numAvailableModels();
         data.num_loaded_models    = tts_.numLoadedModels();
-        data.init_percent         = static_cast<int>(100.0 * data.num_loaded_models / data.num_available_models);
+        data.init_percent         = static_cast<short>(100.0 * data.num_loaded_models / data.num_available_models);
         
         return data;
     }

@@ -118,7 +118,7 @@ public:
  	* @param path Ruta del registro
 	* @return true si la clave de registro ha cambiado
 	*/
-	bool WaitUntilChange(std::wstring const& root, std::wstring const& path, std::wstring const& clave);
+	bool WaitUntilChange(std::wstring const& root, std::wstring const& path);
 
 private:
 

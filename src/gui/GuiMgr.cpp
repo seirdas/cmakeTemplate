@@ -1285,12 +1285,12 @@
 //  (Stubs)
 // ============================================================
 
-    GuiMgr::GuiMgr(IAppControl* ctrl_) 					{
+    GuiMgr::GuiMgr(IAppControl*)	{
 		SYS_WARN("GuiMgr", "ImGUI Graphics library has not been implemented.");
 	}
 
     GuiMgr::~GuiMgr()									{ }
-    void GuiMgr::setController(IAppControl* controller)	{ return; }
+    void GuiMgr::setController(IAppControl*)	{ return; }
     
 	// Ejecución ----------------------------------------------------------------------------
     bool GuiMgr::init()				{ return false;}
@@ -1309,14 +1309,14 @@
     void GuiMgr::ventanaPrincipal()		{ return; }
 
 	// Carga de imágenes --------------------------------------------------------------------
-    uintptr_t GuiMgr::getImage(std::string path)			{ return 0; }
+    uintptr_t GuiMgr::getImage(std::string)					{ return 0; }
     void GuiMgr::unloadImages()								{ return; }
-    void GuiMgr::addTextureFromFile(std::string filename)	{ return; }
+    void GuiMgr::addTextureFromFile(std::string)			{ return; }
     void GuiMgr::generateDefaultTexture()					{ return; }
     
 	// Aspecto y temas ----------------------------------------------------------------------
-    void updateDensity(int delta)				{ return; }
-    void titleBarDarkMode(bool useDarkMode)		{ return; }
+    void updateDensity(int)						{ return; }
+    void titleBarDarkMode(bool)					{ return; }
     void Style_Confy()							{ return; }
     void Style_FutureDark()						{ return; }
     void Style_Moonlight()						{ return; }	

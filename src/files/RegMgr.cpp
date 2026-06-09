@@ -35,7 +35,7 @@
 		}
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. AVISA PERO CONTINÚA
-		DWORD actualType = (DWORD)queryType(ptr_Root, path, clave);
+		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_DWORD)
 			SYS_WARN("RegMgr", "Type mismatch at " + toStr(path) + ": expected " + 
 					regTypeName(REG_DWORD) + " but found " + regTypeName(actualType));
@@ -67,7 +67,7 @@
 		}
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. AVISA PERO CONTINÚA
-		DWORD actualType = (DWORD)queryType(ptr_Root, path, clave);
+		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_QWORD)
 			SYS_WARN("RegMgr", "Type mismatch at " + toStr(path) + ": expected " + 
 					regTypeName(REG_QWORD) + " but found " + regTypeName(actualType));
@@ -101,7 +101,7 @@
 		}
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. AVISA PERO CONTINÚA
-		DWORD actualType = (DWORD)queryType(ptr_Root, path, clave);
+		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_SZ)
 			SYS_WARN("RegMgr", "Type mismatch at " + toStr(path) + ": expected " + 
 					regTypeName(REG_SZ) + " but found " + regTypeName(actualType));
@@ -160,7 +160,7 @@
 		if (!ptr_Root) return false;
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. ERROR BLOQUEANTE
-		DWORD actualType = (DWORD)queryType(ptr_Root, path, clave);
+		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_DWORD) {
 			SYS_ERROR("RegMgr", "Type mismatch: cannot write REG_DWORD over existing "
 							+ std::string(regTypeName(actualType))
@@ -183,7 +183,7 @@
 		if (!ptr_Root) return false;
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. ERROR BLOQUEANTE
-		DWORD actualType = (DWORD)queryType(ptr_Root, path, clave);
+		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_QWORD) {
 			SYS_ERROR("RegMgr", "Type mismatch: cannot write REG_QWORD over existing "
 							+ std::string(regTypeName(actualType))
@@ -205,7 +205,7 @@
 		if (!ptr_Root) return false;
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. ERROR BLOQUEANTE
-		DWORD actualType = (DWORD)queryType(ptr_Root, path, clave);
+		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_SZ) {
 			SYS_ERROR("RegMgr", "Type mismatch: cannot write REG_SZ over existing "
 							+ std::string(regTypeName(actualType))
@@ -224,7 +224,7 @@
 
 	// Otros --------------------------------------------------------------------------------
 
-	bool RegMgr::WaitUntilChange(std::wstring const& root, std::wstring const& path, std::wstring const& clave) {
+	bool RegMgr::WaitUntilChange(std::wstring const& root, std::wstring const& path) {
         void* ptr_Root = ResolveRoot(root);
         if (!ptr_Root) return false;
 

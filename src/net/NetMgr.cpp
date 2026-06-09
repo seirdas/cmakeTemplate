@@ -453,49 +453,49 @@ struct NetMgr::Impl {};
 
 
 // General ------------------------------------------------------------------------------
-    NetMgr::NetMgr(std::size_t const& thread_count) {
+    NetMgr::NetMgr(std::size_t const&) {
 		SYS_WARN("NetMgr", "Network library has not been implemented.");
     }
     NetMgr::~NetMgr()                               { }
 
 // Gestión de sockets -------------------------------------------------------------------
     bool NetMgr::addUdpSocket(
-        std::string         name,
-        unsigned short      local_port, 
-        const std::string&  local_ip, 
-        unsigned int        rcv_packet_size
+        std::string         ,
+        unsigned short      , 
+        const std::string&  , 
+        unsigned int        
     ) { return false; }
-    bool NetMgr::removeUdpSocket(std::string const& name)   { return false; }
-    bool NetMgr::removeUdpSocket(unsigned int port)         { return false; }
-    void NetMgr::printUdpSockets() const                      { return; }
-    bool NetMgr::socketExists(std::string const& socketname)  { return false; }
-    bool NetMgr::socketExists(unsigned short port)            { return false; }
+    bool NetMgr::removeUdpSocket(std::string const&)    { return false; }
+    bool NetMgr::removeUdpSocket(unsigned int)          { return false; }
+    void NetMgr::printUdpSockets() const                { return; }
+    bool NetMgr::socketExists(std::string const&)       { return false; }
+    bool NetMgr::socketExists(unsigned short)           { return false; }
 
 // Ejecución ----------------------------------------------------------------------------
-    bool NetMgr::start()                                   { return false; }
-    void NetMgr::stop()                                    { return; }
-    bool NetMgr::isRunning() const                         { return false; }
+    bool NetMgr::start()                                { return false; }
+    void NetMgr::stop()                                 { return; }
+    bool NetMgr::isRunning() const                      { return false; }
     
 // Envío --------------------------------------------------------------------------------
     bool NetMgr::sendData(
-        std::string              socketname, 
-        const std::vector<char>& data,
-        const std::string&       dest_ip,
-        unsigned short           dest_port
+        std::string              , 
+        const std::vector<char>& ,
+        const std::string&       ,
+        unsigned short           
     ) { return false; }
     bool NetMgr::sendData(
-        unsigned short           local_port, 
-        const std::vector<char>& data,
-        const std::string&       dest_ip,
-        unsigned short           dest_port
+        unsigned short           , 
+        const std::vector<char>& ,
+        const std::string&       ,
+        unsigned short           
     ) { return false; }
 
 // Recepción ----------------------------------------------------------------------------
-    std::vector<char> NetMgr::getNextUdpPacket(std::string* name, unsigned short* port) { return {}; }
-    std::vector<char> NetMgr::getDataFromSocket(std::string const& socketname) { return {}; }
-    std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port)     { return {}; }
+    std::vector<char> NetMgr::getNextUdpPacket(std::string*, unsigned short*) { return {}; }
+    std::vector<char> NetMgr::getDataFromSocket(std::string const&)           { return {}; }
+    std::vector<char> NetMgr::getDataFromSocket(unsigned short)               { return {}; }
 
 // Datos de los sockets guardados -------------------------------------------------------
-    int NetMgr::getSocketIndex(std::string const& name) const  { return 0; }
+    int NetMgr::getSocketIndex(std::string const&) const  { return 0; }
 
 #endif

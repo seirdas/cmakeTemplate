@@ -31,7 +31,7 @@ bool AudioInputModule::StartRec(std::string const& filename) {
 
     rec_ctx_.filename = filename+".wav";
     rec_ctx_.framesWritten.store(0);
-    rec_ctx_.maxFrames = (uint64_t)sampleRate * secondsToRecord;
+    rec_ctx_.maxFrames = static_cast<uint64_t> (sampleRate) * secondsToRecord;
 
     // --- Encoder WAV ---
     if (!initWavEncoder())

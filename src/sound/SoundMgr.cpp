@@ -316,8 +316,8 @@
 // ============================================================
 
     // General ------------------------------------------------------------------------------
-    SoundMgr() {}
-    ~SoundMgr() {}
+    SoundMgr::SoundMgr()             {}
+    SoundMgr::~SoundMgr()            {}
     bool SoundMgr::init()            { return false; }
     bool SoundMgr::stop();           { return false; }
     bool SoundMgr::updateDevices();  { return false; }
@@ -332,8 +332,8 @@
     std::vector<std::string> SoundMgr::getAvailablePlaybacks() const;   { return {}; }
     std::string SoundMgr::getDefaultPlaybackDevice() const              { return {}; }
     void        SoundMgr::listAvailablePlaybacks() const                { return; }
-    bool        SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) { return false; }
-    bool        SoundMgr::removePlaybackDevice(unsigned short index)    { return false; }
+    bool        SoundMgr::addPlaybackDevice(std::string const&, std::string const&) { return false; }
+    bool        SoundMgr::removePlaybackDevice(unsigned short)          { return false; }
     bool        SoundMgr::playbackTest()                                { return false; }
 
 #endif

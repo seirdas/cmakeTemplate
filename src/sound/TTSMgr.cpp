@@ -467,7 +467,7 @@
 // ============================================================
 
     // General ------------------------------------------------------------------------------
-    TTSMgr::TTSMgr(std::size_t const& num_threads_) {
+    TTSMgr::TTSMgr(std::size_t const&) {
 		SYS_WARN("TTSMgr", "Sherpa TTS library has not been implemented.");
     };
     TTSMgr::~TTSMgr() {};
@@ -482,17 +482,17 @@
     // Datos del módulo TTS -----------------------------------------------------------------
     std::vector<std::string> TTSMgr::getAvailableModels()       { return {}; }
     std::vector<std::string> TTSMgr::getLoadedModels() const    { return {}; }
-    std::string TTSMgr::getModelPath(std::string model) const   { return ""; }
+    std::string TTSMgr::getModelPath(std::string) const         { return ""; }
     short   TTSMgr::numAvailableModels() const                  { return 0; }
     short   TTSMgr::numLoadedModels() const                     { return 0; }
 
     // Datos y control de modelos -----------------------------------------------------------
-    bool    TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname) { return false; }
-    int     TTSMgr::getSampleRate(std::string const& modelName) const         { return 0; }
-    int     TTSMgr::getNumSpeakers(std::string const& modelName) const        { return 0; }
-    std::string TTSMgr::getProccesingText(std::string const& modelName) const { return ""; }
+    bool    TTSMgr::generate(std::string const&, std::string const&, std::string const&) { return false; }
+    int     TTSMgr::getSampleRate(std::string const&) const         { return 0; }
+    int     TTSMgr::getNumSpeakers(std::string const&) const        { return 0; }
+    std::string TTSMgr::getProccesingText(std::string const&) const { return ""; }
 
     // Inicialización de modelos ------------------------------------------------------------
-    bool TTSMgr::load_vits_model(std::filesystem::path modelDir) { return false; }
-    bool TTSMgr::unload_model(std::string const& modelName)      { return false; }
+    bool TTSMgr::load_vits_model(std::filesystem::path)          { return false; }
+    bool TTSMgr::unload_model(std::string const&)                { return false; }
 #endif
