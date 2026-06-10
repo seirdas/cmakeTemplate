@@ -8,6 +8,7 @@
     #include <cstdio>
 
     #include <winsock2.h>
+    #include <ws2tcpip.h>       // inet_pton
     #include <windows.h>
 
     static constexpr const char* MODULE = "TotalMix";
@@ -68,12 +69,11 @@
         sockaddr_in local{};
         local.sin_family      = AF_INET;
         local.sin_port        = htons(static_cast<u_short>(localPort));
-        local.sin_addr.s_addr = inet_addr(localIP.c_str());
-    
-        if (bind(pimpl_->socket, reinterpret_cast<sockaddr*>(&local), sizeof(local)) == SOCKET_ERROR) {
+
+        if (inet_pton(AF_INET, localIP.c_str(), &local.sin_addr) != 1) {
             closesocket(pimpl_->socket);
             pimpl_->socket = INVALID_SOCKET;
-            SYS_WARN(MODULE, "Socket bind() failed: " + localIP + ":" + std::to_string(localPort));
+            SYS_WARN(MODULE, "Invalid local IP address: " + localIP);
             return false;
         }
     
@@ -184,9 +184,14 @@
     {
         int size = static_cast<int>(oscBuf_.ptr - oscBuf_.data);
         sockaddr_in dest{};
-        dest.sin_family      = AF_INET;
-        dest.sin_port        = htons(static_cast<u_short>(remotePort_));
-        dest.sin_addr.s_addr = inet_addr(remoteIP_.c_str());
+        dest.sin_family = AF_INET;
+        dest.sin_port   = htons(static_cast<u_short>(remotePort_));
+        
+        // CAMBIO: inet_addr por inet_pton
+        if (inet_pton(AF_INET, remoteIP_.c_str(), &dest.sin_addr) != 1) {
+            SYS_WARN(MODULE, "Invalid remote IP address: " + remoteIP_);
+            return false;
+        }
 
         int sent = sendto(pimpl_->socket, oscBuf_.data, size, 0,
                          reinterpret_cast<sockaddr*>(&dest), sizeof(dest));
