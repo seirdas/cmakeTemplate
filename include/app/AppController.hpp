@@ -113,6 +113,11 @@ public:
     // Audio ----------------------------------------------------------------------------
 
     /**
+     * @brief refresca la lista de dispositivos de entrada
+     */
+    void refreshAudioDevices() noexcept override;
+
+    /**
      * @brief Devuelve la lista con los dispositivos de entrada disponibles.
      */
     std::vector<std::string> getAvailableInputDevices() noexcept override;
@@ -121,7 +126,49 @@ public:
      * @brief Devuelve la lista con los dispositivos de reproducción disponibles.
      */
     std::vector<std::string> getAvailablePlaybackDevices() noexcept override;
+
+    /**
+     * @brief Añade un dispositivo de captura por nombre.
+     */
+    bool addInputDevice(std::string const& name) noexcept override;
+
+    /**
+     * @brief Elimina un dispositivo de captura por índice.
+     */
+    bool removeInputDevice(unsigned short index) noexcept override;
     
+    /**
+     * @brief Manda que se empiece a grabar
+     */
+    bool StartRecording(unsigned short index) noexcept override;
+
+    /**
+     * @brief Manda que pare de grabar
+     */
+    virtual bool StopRecording(unsigned short index) noexcept override;
+
+    /**
+     * @brief Obtiene el tamaño del buffer de captura
+     * @param index indice de dispositivo de captura
+     * @return el tamaño del buffer de captura
+     */
+    virtual size_t getInputBufferSize(unsigned short index) noexcept override;
+
+    /**
+     * @brief Obtiene el tamaño del buffer de grabación
+     * @param index indice de dispositivo de captura
+     * @return el tamaño del buffer de grabación
+     */
+    virtual size_t getInputRecBufferSize(unsigned short index) noexcept override;
+
+    /**
+     * @brief Comprobar si el dispositivo sigue activo y funcionando
+     */
+
+     virtual bool isInputDeviceValid(unsigned short index) noexcept override;
+
+
+
 
     // TTS ----------------------------------------------------------------------------
 

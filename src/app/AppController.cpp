@@ -218,6 +218,41 @@ void AppController::TPruebas() {
         return snd_.getAvailablePlaybacks();
     }
 
+    void AppController::refreshAudioDevices() noexcept {
+        snd_.updateDevices();
+        return;
+    }
+
+    bool AppController::addInputDevice(std::string const& name) noexcept {
+        return snd_.addCaptureDevice(name, 0);
+    }
+
+    bool AppController::removeInputDevice(unsigned short index) noexcept {
+        return snd_.removeInputDevice(index);
+    }
+
+    bool AppController::StartRecording(unsigned short index) noexcept{
+        return snd_.startRec_snd(index); 
+    }
+    
+    bool AppController::StopRecording(unsigned short index) noexcept{
+        return snd_.stopRec_snd(index); 
+    }
+
+    size_t AppController::getInputBufferSize(unsigned short index) noexcept {
+        return snd_.getInputBufferSize(index); 
+    }
+
+    size_t AppController::getInputRecBufferSize(unsigned short index) noexcept {
+        return snd_.getInputRecBufferSize(index); 
+    }
+
+    bool AppController::isInputDeviceValid(unsigned short index) noexcept {
+        return snd_.isInputDeviceValid(index);
+    }
+
+
+
 
     // TTS ----------------------------------------------------------------------------
     

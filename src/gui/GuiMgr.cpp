@@ -257,6 +257,15 @@
 		initCuadro();
 		captureKeys();
 
+		//Meto un timer para que refresque todo el rato los devices
+		static float device_refresh_timer = 0.0f;
+    	device_refresh_timer += io_->DeltaTime;
+		if (device_refresh_timer >= deviceRefreshInterval_)
+		{
+			ctrl_->refreshAudioDevices();
+			device_refresh_timer = 0.0f;
+		}
+
 		//ShowDemoWindow();     // Ventana de demostración
 		//ShowMetricsWindow();  // Ventana de métricas
 
@@ -331,8 +340,8 @@
 		static std::string TTS_text;
 		
 		// Coge datos de módulos
-		static TTSData tts;
-		tts = ctrl_->getTTSData();
+		datosTTS = ctrl_->getTTSData();
+	
 		
 		// COLUMNA IZQUIERDA
 		BeginGroup();
@@ -341,16 +350,16 @@
 			BeginChild("##F1", ImVec2(sizeX__Izq, GetContentRegionAvail().y), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_FrameStyle);
 
 			// Mostrar carga de TTS
-			if (tts.init_percent < 100) {
+			if (datosTTS.init_percent < 100) {
 				ImSpinner::SpinnerPulsar("Pulsar",  6, 2, ImColor(.5f,.5f,.5f));
 				SameLine();
 				TTS_text = "Loading TTS voice models: ";
-				TTS_text += std::to_string(tts.num_loaded_models) + "/" + std::to_string(tts.num_available_models);
+				TTS_text += std::to_string(datosTTS.num_loaded_models) + "/" + std::to_string(datosTTS.num_available_models);
 			} else TTS_text = "TTS voice models loaded.";
 			
 			Text("%s", TTS_text.c_str());
-			ProgressBar(tts.init_percent/100.0f, ImVec2(0.0f, 0.0f));
-
+			ProgressBar(datosTTS.init_percent/100.0f, ImVec2(0.0f, 0.0f));
+	
 			// Botón de modo
 			if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
 				ctrl_->setOnlineMode(!ctrl_->isOnlineMode());
@@ -402,7 +411,12 @@
 		EndGroup();
 
 		SameLine(); // Pegamos la siguiente columna
-
+	
+		columnaDerecha();
+	
+	}
+	
+	void GuiMgr::columnaDerecha() {
 		//  COLUMNA DERECHA (Layout principal)
 		BeginGroup(); 
 		{
@@ -549,8 +563,8 @@
 				if (BeginTabItem("TTS")) {
 					// --- CONFIGURACIÓN PREVIA ---
 					static int selected_idx = 0;
-					std::string current_model = (!tts.loaded_models.empty()) ? tts.loaded_models[selected_idx] : "";
-
+					std::string current_model = (!datosTTS.loaded_models.empty()) ? datosTTS.loaded_models[selected_idx] : "";
+	
 					static std::string proc_text;
 
 					/* De momento esto no se usa, comento porque sino logea todo el rato cannot process text*/
@@ -599,10 +613,10 @@
 						if (is_online) BeginDisabled(); // Si es online, todo lo que sigue se deshabilita
 
 						SetNextItemWidth(-FLT_MIN); // Que ocupe todo el ancho del child
-						const char* preview_value = (tts.loaded_models.empty()) ? "" : tts.loaded_models[selected_idx].c_str();
+						const char* preview_value = (datosTTS.loaded_models.empty()) ? "" : datosTTS.loaded_models[selected_idx].c_str();
 						if (BeginCombo("##cb_model", preview_value)) {
-							for (int n = 0; n < static_cast<int>(tts.loaded_models.size()); ++n) {
-								if (Selectable(tts.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
+							for (int n = 0; n < static_cast<int>(datosTTS.loaded_models.size()); ++n) {
+								if (Selectable(datosTTS.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
 							}
 							EndCombo();
 						}
@@ -621,6 +635,101 @@
 
 					EndTabItem();
 				}
+				
+				if (BeginTabItem("audio")) {
+
+					// Pide al controlador la lista de micrófonos disponibles en este momento
+					std::vector<std::string> entradas = ctrl_->getAvailableInputDevices();
+
+					// Lista con los nombres de los dispositivos que el usuario ha activado
+					static std::vector<std::string> dispositivos_activos;
+					// Flag para abrir/cerrar la ventana flotante del selector
+					static bool show_device_selector = false;
+
+					// --- Muestra los dispositivos activos ---
+					Text("Dispositivos activos:");
+					if (dispositivos_activos.empty()) {
+						TextDisabled("  (ninguno)");   // Si no hay ninguno, muestra texto gris
+					} else {
+
+						for (int i = 0; i < static_cast<int>(dispositivos_activos.size()); i++) {
+							PushID(i);
+
+							// Si el dispositivo se ha desconectado, mostrar aviso en rojo
+							if (!ctrl_->isInputDeviceValid(static_cast<unsigned short>(i))) {
+								TextColored(ImVec4(1, 0, 0, 1), "  [%d] %s - DESCONECTADO", i + 1, dispositivos_activos[i].c_str());
+								SameLine();
+								if (SmallButton("x")) {
+									ctrl_->removeInputDevice(static_cast<unsigned short>(i));
+									dispositivos_activos.erase(dispositivos_activos.begin() + i--);
+								}
+								
+							} else {
+								
+								Text("  [%d] %s", i + 1, dispositivos_activos[i].c_str());
+								SameLine();
+								if (SmallButton("Grabar"))
+									ctrl_->StartRecording(static_cast<unsigned short>(i));
+								SameLine();
+								if (SmallButton("Parar"))
+									ctrl_->StopRecording(static_cast<unsigned short>(i));
+								SameLine();
+								if (SmallButton("x")) {
+									ctrl_->removeInputDevice(static_cast<unsigned short>(i));
+									dispositivos_activos.erase(dispositivos_activos.begin() + i--);
+								}
+	
+								SameLine();
+	
+								std::string cadena = std::to_string(ctrl_->getInputBufferSize(static_cast<unsigned short>(i)));
+								Text(cadena.c_str());
+	
+								std::string cadena_rec = std::to_string(ctrl_->getInputRecBufferSize(static_cast<unsigned short>(i)));
+								Text(cadena_rec.c_str());
+							}
+
+
+							
+							PopID();
+						}
+					}
+
+					// Botón para abrir el selector de dispositivos disponibles
+					if (Button("Selecciona dispositivo disponible"))
+						show_device_selector = true;
+
+					SameLine();
+					// Botón para refrescar la lista de dispositivos del sistema
+					if (Button("Actualizar"))
+						ctrl_->refreshAudioDevices();
+
+					// --- Ventana flotante: selector de dispositivos disponibles ---
+					if (show_device_selector) {
+						SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);    // Tamaño inicial de la ventana
+						if (Begin("Dispositivos de entrada", &show_device_selector)) {  // &show_device_selector: la X de la ventana la cierra
+							if (entradas.empty()) {
+								TextDisabled("No hay dispositivos disponibles.");
+							} else {
+								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
+									// Si ya está en la lista activa, no lo muestra
+									bool ya_activo = std::find(dispositivos_activos.begin(), dispositivos_activos.end(), entradas[n]) != dispositivos_activos.end();
+									if (ya_activo) continue;
+
+									if (Selectable(entradas[n].c_str())) {
+										ctrl_->addInputDevice(entradas[n]);         // Inicializa el dispositivo en SoundMgr
+										dispositivos_activos.push_back(entradas[n]); // Lo añade a la lista visual
+										show_device_selector = false;               // Cierra el popup
+									}
+								}
+							}
+						}
+						End();
+					}
+
+
+					EndTabItem();
+				}
+	
 				EndTabBar();
 			}
 
@@ -631,7 +740,7 @@
 
 
 	// Carga de imágenes --------------------------------------------------------------------
-	
+
 	uintptr_t GuiMgr::getImage(std::string path) {
 		// Si la imagen no está precacheada, se añade
 		if (images_.find(path) == images_.end())

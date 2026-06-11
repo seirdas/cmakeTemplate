@@ -102,6 +102,8 @@ public:
 
 // Audio --------------------------------------------------------------------------------
 
+    virtual void refreshAudioDevices() noexcept = 0;
+
     /**
      * @brief Devuelve la lista con los dispositivos de entrada disponibles.
      */
@@ -111,6 +113,46 @@ public:
      * @brief Devuelve la lista con los dispositivos de reproducción disponibles.
      */
     virtual std::vector<std::string> getAvailablePlaybackDevices() noexcept = 0;
+
+    /**
+     * @brief Añade un dispositivo de captura por nombre.
+     */
+    virtual bool addInputDevice(std::string const& name) noexcept = 0;
+
+    /**
+     * @brief Elimina un dispositivo de captura por índice.
+     */
+    virtual bool removeInputDevice(unsigned short index) noexcept = 0;
+
+    /**
+     * @brief Manda que se empiece a grabar
+     */
+    virtual bool StartRecording(unsigned short index) noexcept = 0;
+
+    /**
+     * @brief Manda que pare de grabar
+     */
+    virtual bool StopRecording(unsigned short index) noexcept = 0;
+    
+    /**
+     * @brief Obtiene el tamaño del buffer de captura
+     * @param index indice de dispositivo de captura
+     * @return el tamaño del buffer de captura
+     */
+    virtual size_t getInputBufferSize(unsigned short index) noexcept = 0;
+
+    /**
+     * @brief Obtiene el tamaño del buffer de grabación
+     * @param index indice de dispositivo de captura
+     * @return el tamaño del buffer de grabación
+     */
+    virtual size_t getInputRecBufferSize(unsigned short index) noexcept = 0;
+
+    /**
+     * @brief Comprobar si el dispositivo sigue activo y funcionando
+     */
+     virtual bool isInputDeviceValid(unsigned short index) noexcept = 0;
+
 
 // TTS --------------------------------------------------------------------------------
 
