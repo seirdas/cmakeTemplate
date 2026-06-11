@@ -1,7 +1,7 @@
 #include "net/UdpSocket.hpp"
 #include <system/SystemMgr.hpp>
 
-#if defined ASIO || defined ASIO_VERSION
+#if defined ASIO_NETWORK || defined ASIO_NETWORK_VERSION
 
     #include <asio.hpp>             // asio external lib
     #include "net/netTypes.hpp"     // Para conocer NetPacket
@@ -464,46 +464,45 @@ struct UdpSocket::Impl {};
 
 
 // General ------------------------------------------------------------------------------
-    UdpSocket::UdpSocket(std::string const& name, void* io) : name_(name) {
+    UdpSocket::UdpSocket(std::string const&, void*) {
 		SYS_WARN("UdpSocket", "Network library has not been implemented.");
     }
     UdpSocket::~UdpSocket() { }
     
 // Ejecución ----------------------------------------------------------------------------
-    bool UdpSocket::init(unsigned short local_port, const std::string& local_ip, unsigned int rcv_packet_size) { return false;}
+    bool UdpSocket::init(unsigned short, const std::string&, unsigned int) { return false;}
     void UdpSocket::start() { }
     void UdpSocket::stop()  { }
 
 // Envío --------------------------------------------------------------------------------
-    bool UdpSocket::sendPacket(const std::vector<char>& data, const std::string& ip, unsigned short port) { return false;}
+    bool UdpSocket::sendPacket(const std::vector<char>&, const std::string&, unsigned short) { return false;}
 
 // Recepción ----------------------------------------------------------------------------
     std::vector<char> UdpSocket::getFirstPacket()  { return {};     }
-    void UdpSocket::discardOnDupe(bool enable)     { return;        }
-    void UdpSocket::clearCache()                   { return;        }
+    void UdpSocket::discardOnDupe(bool)            { return;        }
     bool UdpSocket::hasData()                      { return false;  }
     void* UdpSocket::getStrandNative()             { return nullptr;}
 
 // Datos de socket ----------------------------------------------------------------------
-    unsigned short UdpSocket::port() const                  { return 0;     }
+    unsigned short UdpSocket::port() const         { return 0;     }
     std::string const& UdpSocket::name() const     { return name_;    }
     bool UdpSocket::isRunning() const              { return false; }
     bool UdpSocket::isOpen() const                 { return false; }
 
 // Creación de socket -------------------------------------------------------------------
-    bool UdpSocket::createLocalEndpoint(unsigned short local_port, const std::string& local_ip) { return false;}
+    bool UdpSocket::createLocalEndpoint(unsigned short, const std::string&) { return false;}
     bool UdpSocket::openSocket() { return false; }
 
 // Callback de recepción ----------------------------------------------------------------
-    void UdpSocket::start_receive()                                    { return; }
-    void UdpSocket::handle_received_packet(std::size_t bytes_recvd)    { return; }
+    void UdpSocket::start_receive()                        { return; }
+    void UdpSocket::handle_received_packet(std::size_t)    { return; }
 
 // Gestión de la cola de datos recibidos ------------------------------------------------
-    void UdpSocket::saveToQueue(std::vector<char> data)    { return;       }
+    void UdpSocket::saveToQueue(std::vector<char>)         { return;       }
     bool UdpSocket::isQueueEmpty() const                   { return false; }
     bool UdpSocket::isQueueFull() const                    { return false; }
     size_t UdpSocket::getQueueSize() const                 { return 0;     }
     void UdpSocket::clearQueue()                           { return;       }
-    bool UdpSocket::compareLast(std::vector<char> const& data)    { return false; }
+    bool UdpSocket::compareLast(std::vector<char> const&)  { return false; }
 
 #endif

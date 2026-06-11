@@ -174,11 +174,11 @@ inline std::string wstringToString(std::wstring const& ws) {
 
     #ifdef _WIN32
         // 1. Obtener el tamaño necesario para el buffer string (ANSI/UTF-8)
-        int size_needed = WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), (int)ws.size(), NULL, 0, NULL, NULL);
+        int size_needed = WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), static_cast<int>(ws.size()), NULL, 0, NULL, NULL);
         
         // 2. Crear el string y convertir
         std::string strTo(size_needed, 0);
-        WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), (int)ws.size(), &strTo[0], size_needed, NULL, NULL);
+        WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), static_cast<int>(ws.size()), &strTo[0], size_needed, NULL, NULL);
         return strTo;
     #else
         // Versión para Linux/Posix

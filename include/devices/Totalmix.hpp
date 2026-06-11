@@ -372,7 +372,6 @@ private:
         Playback  ///< Bus de canales de playback (software).
     };
 
-
     // Inicialización y ejecución
     bool wsaStarted_ = false;           ///< true si WSAStartup ya fue llamado con éxito.
 
@@ -381,7 +380,6 @@ private:
     std::string remoteIP_;              ///< IP de TotalMix FX (destino).
     struct Impl;                        ///< Estructura PIMPL para el socket, para no depender de Windows en el header
     std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de Windows (socket)
-
 
     // Número de canales
     int numInputs_    = 0;                      ///< Número total de entradas del dispositivo.

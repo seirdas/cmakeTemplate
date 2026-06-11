@@ -67,10 +67,10 @@
     
         sockaddr_in local{};
         local.sin_family      = AF_INET;
-        local.sin_port        = htons((u_short)localPort);
+        local.sin_port        = htons(static_cast<u_short>(localPort));
         local.sin_addr.s_addr = inet_addr(localIP.c_str());
     
-        if (bind(pimpl_->socket, (sockaddr*)&local, sizeof(local)) == SOCKET_ERROR) {
+        if (bind(pimpl_->socket, reinterpret_cast<sockaddr*>(&local), sizeof(local)) == SOCKET_ERROR) {
             closesocket(pimpl_->socket);
             pimpl_->socket = INVALID_SOCKET;
             SYS_WARN(MODULE, "Socket bind() failed: " + localIP + ":" + std::to_string(localPort));
@@ -132,7 +132,6 @@
 
     bool TotalMix::SetSnapshot(int index)
     {
-        bool res;
         char addr[64];
         snprintf(addr, sizeof(addr), "/3/snapshots/8/%d", index);
 
@@ -166,7 +165,7 @@
             !OscWriteAddrAndTypes("/1/busInput",  ",f")     ||
             !OscWriteFloat(1.0f)                            ||
             !OscWriteAddrAndTypes("/setBankStart", ",f")    ||
-            !OscWriteFloat((float)(in - 1))                 ||
+            !OscWriteFloat(static_cast<float>(in - 1))      ||
             !OscWriteAddrAndTypes("/2/expTrsh",   ",f")     ||
             !OscWriteFloat(threshold_effective)             ||
             !OscCloseAll()                                  ) 
@@ -183,14 +182,14 @@
 
     bool TotalMix::SendPacket()
     {
-        int size = (int)(oscBuf_.ptr - oscBuf_.data);
+        int size = static_cast<int>(oscBuf_.ptr - oscBuf_.data);
         sockaddr_in dest{};
         dest.sin_family      = AF_INET;
-        dest.sin_port        = htons((u_short)remotePort_);
+        dest.sin_port        = htons(static_cast<u_short>(remotePort_));
         dest.sin_addr.s_addr = inet_addr(remoteIP_.c_str());
 
         int sent = sendto(pimpl_->socket, oscBuf_.data, size, 0,
-                        (sockaddr*)&dest, sizeof(dest));
+                         reinterpret_cast<sockaddr*>(&dest), sizeof(dest));
 
         if (sent == SOCKET_ERROR) {
             SYS_WARN(MODULE, "Socket error on send packet.");
@@ -239,18 +238,18 @@
 
         if (bus != Bus::Output) {
             if (!OscWriteAddrAndTypes("/setSubmix", ",f")   ||
-                !OscWriteFloat((float)(out - 1))            )
+                !OscWriteFloat(static_cast<float>(out - 1)) )
             {
                 SYS_WARN(MODULE,"SendVolume: Buffer overflow");
                 return false;
             }
         }
 
-        if (!OscWriteAddrAndTypes("/setBankStart", ",f")    ||
-            !OscWriteFloat((float)BankStartFor(channel))    ||
-            !OscWriteAddrAndTypes(volumeAddr,      ",f")    ||
-            !OscWriteFloat(dBtoFader(dB))                   ||
-            !OscCloseAll()                                  )
+        if (!OscWriteAddrAndTypes("/setBankStart", ",f")                ||
+            !OscWriteFloat(static_cast<float>(BankStartFor(channel)))   ||
+            !OscWriteAddrAndTypes(volumeAddr,      ",f")                ||
+            !OscWriteFloat(dBtoFader(dB))                               ||
+            !OscCloseAll()                                              )
         {
             SYS_WARN(MODULE,"SendVolume: Buffer overflow");
             return false;
@@ -284,14 +283,14 @@
         // Escribe el mensaje OSC
         OscReset();
         OscTimeTag tt{ 0, 1 };
-        if (!OscOpenBundle(tt)                           ||
-            !OscWriteAddrAndTypes(busAddr,       ",f")   ||
-            !OscWriteFloat(1.0f)                         ||
-            !OscWriteAddrAndTypes("/setBankStart", ",f") ||
-            !OscWriteFloat((float)BankStartFor(channel)) ||
-            !OscWriteAddrAndTypes(muteAddr,       ",f")  ||
-            !OscWriteFloat(mute ? 1.0f : 0.0f)           ||
-            !OscCloseAll()                               )
+        if (!OscOpenBundle(tt)                                          ||
+            !OscWriteAddrAndTypes(busAddr,       ",f")                  ||
+            !OscWriteFloat(1.0f)                                        ||
+            !OscWriteAddrAndTypes("/setBankStart", ",f")                ||
+            !OscWriteFloat(static_cast<float>(BankStartFor(channel)))   ||
+            !OscWriteAddrAndTypes(muteAddr,       ",f")                 ||
+            !OscWriteFloat(mute ? 1.0f : 0.0f)                          ||
+            !OscCloseAll()                                              )
         {
             SYS_WARN(MODULE,"SendMute: Buffer overflow");
             return false;
@@ -368,7 +367,7 @@
 
     int TotalMix::OscFreeSpace() const
     {
-        return oscBuf_.size - (int)(oscBuf_.ptr - oscBuf_.data);
+        return oscBuf_.size - static_cast<int>(oscBuf_.ptr - oscBuf_.data);
     }
 
     bool TotalMix::OscCheckTag(char expected)
@@ -381,7 +380,7 @@
 
     void TotalMix::OscPatchMsgSize()
     {
-        int size = (int)(oscBuf_.ptr - (char*)oscBuf_.thisMsgSize - 4);
+        int size = static_cast<int>( oscBuf_.ptr - reinterpret_cast<char*>(oscBuf_.thisMsgSize - 4) );
         *oscBuf_.thisMsgSize = htonl(size);
     }
 
@@ -398,7 +397,7 @@
 
     int TotalMix::OscEffectiveStringLen(const char* str) const
     {
-        int len = (int)strlen(str) + 1;
+        int len = static_cast<int>(strlen(str) + 1);
         if (len % OSC_STRING_ALIGN != 0)
             len += OSC_STRING_ALIGN - (len % OSC_STRING_ALIGN);
         return len;
@@ -415,19 +414,19 @@
 
         ++oscBuf_.bundleDepth;
         if (oscBuf_.state != OSC_EMPTY) {
-            *((int*)oscBuf_.ptr) = 0xaaaaaaaa;
-            oscBuf_.prevCounts[oscBuf_.bundleDepth] = (int*)oscBuf_.ptr;
+            *reinterpret_cast<int*> (oscBuf_.ptr) = 0xaaaaaaaa;
+            oscBuf_.prevCounts[oscBuf_.bundleDepth] = reinterpret_cast<int*>(oscBuf_.ptr);
             oscBuf_.ptr += 4;
         }
         
         oscBuf_.ptr += OscPadString(oscBuf_.ptr, "#bundle");
 
-        *((OscTimeTag*)oscBuf_.ptr) = tt;
+        *(reinterpret_cast<OscTimeTag*> (oscBuf_.ptr)) = tt;
         if (oscBuf_.state == OSC_EMPTY)
-            oscBuf_.outerStamp = (OscTimeTag*)oscBuf_.ptr;
+            oscBuf_.outerStamp = reinterpret_cast<OscTimeTag*> (oscBuf_.ptr);
 
         if (htonl(1) != 1) {   // big-endian byte swap
-            int* p = (int*)oscBuf_.ptr;
+            int* p = reinterpret_cast<int*>(oscBuf_.ptr);
             p[0] = htonl(p[0]);
             p[1] = htonl(p[1]);
         }
@@ -448,7 +447,7 @@
         if (oscBuf_.bundleDepth == 1) {
             oscBuf_.state = OSC_DONE;
         } else {
-            int size = (int)(oscBuf_.ptr - (char*)oscBuf_.prevCounts[oscBuf_.bundleDepth] - 4);
+            int size = (int)(oscBuf_.ptr - reinterpret_cast<char*>(oscBuf_.prevCounts[oscBuf_.bundleDepth] - 4) );
             *oscBuf_.prevCounts[oscBuf_.bundleDepth] = htonl(size);
             oscBuf_.state = OSC_NEED_COUNT;
         }
@@ -480,7 +479,7 @@
         } else {
             if (OscFreeSpace() < 4 + paddedName) return false;
             if (oscBuf_.state == OSC_GET_ARGS) OscPatchMsgSize();
-            oscBuf_.thisMsgSize  = (int*)oscBuf_.ptr;
+            oscBuf_.thisMsgSize  = reinterpret_cast<int*> (oscBuf_.ptr);
             *oscBuf_.thisMsgSize = 0xbbbbbbbb;
             oscBuf_.ptr += 4;
             oscBuf_.state = OSC_GET_ARGS;
@@ -499,8 +498,8 @@
     {
         if (OscFreeSpace() < 4) return false;
         if (!OscCheckTag('f'))   return false;
-        int* ip = (int*)(&val);
-        *((int*)oscBuf_.ptr) = htonl(*ip);
+        int* ip = reinterpret_cast<int*> ((&val));
+        *reinterpret_cast<int*> (oscBuf_.ptr) = htonl(*ip);
         oscBuf_.ptr += 4;
         oscBuf_.firstUntyped = false;
         return true;

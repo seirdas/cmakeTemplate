@@ -214,8 +214,8 @@ private:
 
 /************ Variables ****************************************************************/
 
-    // Estructura PIMPL para no depender de la librería en el header
-    struct Impl;
+    // Pointer to implementation
+    struct Impl;                                    ///< Declaración de estructura PIMPL para no depender de la librería en el header
     std::unique_ptr<Impl>       pimpl_;             ///< Miembros dependientes de la librería externa
 
     // Contexto de operaciones asíncronas

@@ -4,7 +4,7 @@
 # ==============================
 
 # CMake minimum version and project setup
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
 # Activa configuración dependiente de dlls (no static) para compilación MSVC (Visual Studio)
 if (MSVC)
@@ -105,7 +105,7 @@ endmacro()
 import_dependency( SHERPA           ON     sherpa_lib         audio/lib-sherpaonnx audio/tts-assets) # Tiene 2 toolchains
 import_dependency( MINIAUDIO        ON     miniaudio_lib      audio/lib-miniaudio)
 import_dependency( DAISYSP          OFF    daisysp_lib        audio/lib-daisysp)
-import_dependency( ASIO             ON     asio_lib           net/lib-asionetwork)
+import_dependency( ASIO_NETWORK     ON     asio_lib           net/lib-asionetwork)
 import_dependency( IMGUI            ON     imgui_lib          gui/lib-imgui)
 import_dependency( STB              ON     stb_lib            gui/lib-stb)
 import_dependency( JSON             ON     nlohmann_json      file/lib-json)
@@ -153,9 +153,9 @@ if (WIN32)
     user32      # MessageBoxA
   )
 
-  # No usar consola en ninguna configuración que NO sea Debug
+  # No usar consola en Release o MinSizeRel
   set_target_properties(${PROJECT_NAME} PROPERTIES 
-    WIN32_EXECUTABLE $<NOT:$<CONFIG:Debug>>
+    WIN32_EXECUTABLE $<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>
   )
 
   # Definiciones para compatibilidad
@@ -200,10 +200,12 @@ endif()
 if(MSVC)
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-    /W3                       # Nivel de advertencia 3
+    /W4                       # Nivel de advertencia 4
+    /w44062                   # Advertencia cuando falta un caso en switch de enum
     /EHsc                     # Manejo de excepciones estándar en C++
-    /MP                       # Compilación multiproceso (¡Acelera un montón el build!)
-    
+    /MP                       # Compilación multiproceso
+    # /WX                     # Tratar warnings como errores
+
     # Flags específicos por configuración
     $<$<CONFIG:Debug>:
       /ZI                     # Símbolos de depuración (Edit and Continue)
@@ -231,8 +233,8 @@ if(MSVC)
 
   # Configuración de MSVC para Windows
   target_link_options(${PROJECT_NAME} PRIVATE 
-    # Aplicar /SUBSYSTEM:WINDOWS solo si NO es Debug
-    $<$<NOT:$<CONFIG:Debug>>:/SUBSYSTEM:WINDOWS>
+    # Aplicar /SUBSYSTEM:WINDOWS para Release y MinSizeRel
+    $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/SUBSYSTEM:WINDOWS>
     
     # Aplicar /LTCG solo en Release (para optimización global)
     $<$<CONFIG:Release>:/LTCG>
@@ -249,9 +251,35 @@ if(MSVC)
   source_group("Source"     FILES ${SOURCES})
   source_group("Resources"  FILES ${RESOURCES})
 
+  # Determinar el nombre de la DLL según la configuración actual (Debug o Release)
+  set(MSVCP_NAME "$<IF:$<CONFIG:Debug>,msvcp140d.dll,msvcp140.dll>")
+  set(VCRUNTIME_NAME "$<IF:$<CONFIG:Debug>,vcruntime140d.dll,vcruntime140.dll>")
 
-  # Configuración específica para GCC/MinGW y Clang
+  # Localizar las librerías usando el path del compilador
+  get_filename_component(MSVC_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+  find_file(MSVCP_DLL_PATH NAMES ${MSVCP_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
+  find_file(VCRUNTIME_DLL_PATH NAMES ${VCRUNTIME_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
+  if (MSVCP_DLL_PATH)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MSVCP_DLL_PATH}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VCRUNTIME_DLL_PATH}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    )
+  else()
+    # Fallback usando las carpetas del sistema
+    if (ARCH_NAME STREQUAL "x86")
+      set(SYSTEM_WINDOWS_DIR "C:/Windows/SysWOW64")
+    else()
+      set(SYSTEM_WINDOWS_DIR "C:/Windows/System32")
+    endif()
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SYSTEM_WINDOWS_DIR}/${MSVCP_NAME}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SYSTEM_WINDOWS_DIR}/${VCRUNTIME_NAME}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    )
+  endif()
+
+
 elseif (MINGW)
+  # Configuración específica para GCC/MinGW y Clang
 
   # Mensajes de información sobre el compilador
   message(STATUS "Compiler ID: ${CMAKE_CXX_COMPILER_ID}")
@@ -260,7 +288,18 @@ elseif (MINGW)
 
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-    -Wall -Wextra -Wpedantic -Wshadow -Wuninitialized -Wformat=2 -Wunused-parameter
+    -Wall                       # Habilitar la mayoría de las advertencias comunes
+    -Wextra                     # Habilitar advertencias adicionales de buenas prácticas
+    -Wpedantic                  # Cumplimiento estricto del estándar ISO C++
+    -Wconversion                # Advertir sobre conversiones de tipos con pérdida de datos
+    -Wshadow                    # Advertir cuando una variable oculta otra de un ámbito superior
+    -Wformat=2                  # Advertencias estrictas para funciones printf/scanf
+    -Wunused-parameter          # Advertir sobre parámetros no utilizados en funciones
+    -Wnon-virtual-dtor          # Advertir si una clase polimórfica no tiene destructor virtual
+    -Wold-style-cast            # Advertir sobre el uso de casts estilo C (usar C++ casts)
+    -Wcast-align                # Advertir sobre punteros con alineación ineficiente
+    -Wdouble-promotion          # Advertir si float se convierte implícitamente a double
+    # -Werror                   # Tratar warnings como errores
     
     # Flags específicos por configuración
     $<$<CONFIG:Debug>:

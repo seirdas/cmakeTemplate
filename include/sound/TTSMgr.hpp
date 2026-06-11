@@ -151,7 +151,7 @@ private:
     size_t                  num_threads_;           ///< Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       ///< Activa/desactiva la inicialización concurrente (experimental)
     std::string const       models_path_;           ///< Ruta de carpetas donde residen los modelos
-    mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos y init_percent
+    mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos
 
     // Datos de modelos
     TTSTextsMap             processing_texts_;      ///< Relaciona modelo - texto que está procesando

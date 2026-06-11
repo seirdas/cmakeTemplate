@@ -45,12 +45,20 @@
         // Marcar como corriendo por si se destruye mientras carga modelos
         running_ = true;
 
+        // Comprobar que existe el directorio de modelos de voz
+        if (!fs::is_directory(models_path_)) {
+            SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
+            return {};
+        }
+
         // obtener la lista de rutas de los modelos de la ruta models_path_
         std::vector<std::string> models_str = getAvailableModelsPath();
         std::vector<std::filesystem::path> available_models(models_str.begin(), models_str.end());
 
-        if (available_models.empty())
+        if (available_models.empty()) {
             SYS_WARN("TTSMgr", "Cannot read TTS voice models");
+            return false;
+        }
 
         // Inicialización concurrente (experimental)
         loading_ = true;
@@ -111,6 +119,7 @@
         });
 
         // Destruye los modelos creados (opcional con cxx, mejor)
+        std::lock_guard<std::mutex> lock2(models_mutex_);
         for (auto& [name,model] : loaded_models_) {
             SYS_INFO("TTSMgr","Unloading model " + name);
             SherpaOnnxDestroyOfflineTts(model);
@@ -130,6 +139,9 @@
 
         // No cargar modelos si se están cargando por otro lado
         if(loading_) return;
+
+        // No hacer nada si no hay modelos disponibles
+        if(num_available_models_==0) return;
 
         // Variables locales:
         std::vector<std::string> av_models_path_str;        // Lista de rutas de modelos disponibles
@@ -173,24 +185,16 @@
     // Datos de los modelos -----------------------------------------------------------------
 
     std::vector<std::string> TTSMgr::getAvailableModels() {
-        std::vector<std::string> available_models;
 
         // Comprobar que existe el directorio de modelos de voz
-        if (!fs::is_directory(models_path_)) {
-            SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
+        if (!fs::is_directory(models_path_))
             return {};
-        }
 
         // Rellena el vector con el nombre de los modelos (nombre de carpeta)
+        std::vector<std::string> available_models;
         for (const auto& entry : fs::directory_iterator(models_path_)) 
             if (entry.is_directory()) 
                 available_models.push_back(entry.path().filename().string());
-
-        // Avisa si la lista de modelos disponibles está vacía
-        if (available_models.empty()) {
-            SYS_WARN("TTSMgr","Cannot load any voice model. Check assets folder " + models_path_);
-            return {};
-        }
 
         // Guarda internamente el número de modelos
         num_available_models_ = static_cast<short>(available_models.size());
@@ -202,22 +206,14 @@
     std::vector<std::string> TTSMgr::getAvailableModelsPath() {
 
         // Comprobar que existe el directorio de modelos de voz
-        if (!fs::is_directory(models_path_)) {
-            SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
+        if (!fs::is_directory(models_path_)) 
             return {};
-        }
 
         // Rellena el vector con el nombre de los modelos (ruta de carpeta)
         std::vector<std::string> available_models;
         for (const auto& entry : fs::directory_iterator(models_path_))
             if (entry.is_directory())
                 available_models.push_back(fs::absolute(entry.path()).string());
-
-        // Avisa si la lista de modelos disponibles está vacía
-        if (available_models.empty()) {
-            SYS_WARN("TTSMgr","Cannot load any voice model. Check assets folder " + models_path_);
-            return {};
-        }
 
         // Guarda internamente el número de modelos
         num_available_models_ = static_cast<short>(available_models.size());
@@ -230,6 +226,7 @@
         std::vector<std::string> models;
 
         // Rellena la lista de modelos inicializados y lo devuelve
+        std::lock_guard<std::mutex> lock(models_mutex_);
         for(const auto& [name, model] : loaded_models_)
             models.push_back(name);
         return models;
@@ -238,10 +235,8 @@
     std::string TTSMgr::getModelPath(std::string model) const {
 
         // Comprobar que existe el directorio de modelos de voz
-        if (!fs::is_directory(models_path_)) {
-            SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
+        if (!fs::is_directory(models_path_))
             return {};
-        }
 
         // Busca y devuelve la ruta del modelo (carpeta) si existe en ese directorio
         for (const auto& entry : fs::directory_iterator(models_path_))
@@ -249,7 +244,6 @@
                 return fs::absolute(entry.path()).string();
 
         /* else */
-        SYS_WARN("TTSMgr","Model '" + model + "' not found.");
         return {};
     }
 
@@ -258,7 +252,7 @@
     }
 
     short TTSMgr::numLoadedModels() const {
-        std::lock_guard<std::mutex> lock(processing_mtx_);
+        std::lock_guard<std::mutex> lock(models_mutex_);
         return loaded_models_.size();
     };
 
@@ -282,9 +276,13 @@
         }
 
         // Comprobar que el modelo "seleccionado" por param existe
-        if (loaded_models_.find(modelName) == loaded_models_.end()) {
-            SYS_ERROR("Model not found or loaded: " + modelName, "TTSMgr");
-            return false;
+        {
+            std::lock_guard<std::mutex> lock(models_mutex_);
+            auto it = loaded_models_.find(modelName);
+            if (it == loaded_models_.end()) {
+                SYS_ERROR("Model not found or loaded: " + modelName, "TTSMgr");
+                return false;
+            }
         }
 
         // Inicia el proceso
@@ -314,7 +312,6 @@
         );
 
         // Notifica al terminar de generar
-        active_tasks_--;
         exit_cv_.notify_all();
         
         // Comprobar si se ha generado audio
@@ -325,7 +322,6 @@
 
         // Generar archivo de audio
         SYS_INFO("TTSMgr","Writing to file...");
-        active_tasks_++;
         SherpaOnnxWriteWave(audio->samples, audio->n, audio->sample_rate, (wavname+".wav").c_str());
         active_tasks_--;
         exit_cv_.notify_all();
@@ -348,6 +344,7 @@
     int TTSMgr::getSampleRate(std::string const& modelName) const {
 
         // Busca el modelo, avisa si no lo encuentra
+        std::lock_guard<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName);
         if (it == loaded_models_.end()) {
             SYS_WARN("TTSMgr","Cannot get sample rate: Model '" + modelName + "' not found.");
@@ -360,6 +357,7 @@
     int TTSMgr::getNumSpeakers(std::string const& modelName) const {
 
         // Busca el modelo, avisa si no lo encuentra
+        std::lock_guard<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName);
         if (it == loaded_models_.end()) {
             SYS_WARN("TTSMgr","Cannot get num speakers: Model '" + modelName + "' not found.");
@@ -447,6 +445,8 @@
 
     bool TTSMgr::unload_model(std::string const& modelName) {
 
+        // Busca el modelo y lo borra
+        std::lock_guard<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName);
         if (it != loaded_models_.end()) {
             SherpaOnnxDestroyOfflineTts(it->second);
@@ -455,7 +455,7 @@
             return true;
         }
         
-        /* else */
+        /* else */  // No ha encontrado el modelo
         SYS_WARN("TTSMgr", "Cannot unload model: Model '" + modelName + "' not found");
         return false;
     }
@@ -467,7 +467,7 @@
 // ============================================================
 
     // General ------------------------------------------------------------------------------
-    TTSMgr::TTSMgr(std::size_t const& num_threads_) {
+    TTSMgr::TTSMgr(std::size_t const&) {
 		SYS_WARN("TTSMgr", "Sherpa TTS library has not been implemented.");
     };
     TTSMgr::~TTSMgr() {};
@@ -482,17 +482,17 @@
     // Datos del módulo TTS -----------------------------------------------------------------
     std::vector<std::string> TTSMgr::getAvailableModels()       { return {}; }
     std::vector<std::string> TTSMgr::getLoadedModels() const    { return {}; }
-    std::string TTSMgr::getModelPath(std::string model) const   { return ""; }
+    std::string TTSMgr::getModelPath(std::string) const         { return ""; }
     short   TTSMgr::numAvailableModels() const                  { return 0; }
     short   TTSMgr::numLoadedModels() const                     { return 0; }
 
     // Datos y control de modelos -----------------------------------------------------------
-    bool    TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname) { return false; }
-    int     TTSMgr::getSampleRate(std::string const& modelName) const         { return 0; }
-    int     TTSMgr::getNumSpeakers(std::string const& modelName) const        { return 0; }
-    std::string TTSMgr::getProccesingText(std::string const& modelName) const { return ""; }
+    bool    TTSMgr::generate(std::string const&, std::string const&, std::string const&) { return false; }
+    int     TTSMgr::getSampleRate(std::string const&) const         { return 0; }
+    int     TTSMgr::getNumSpeakers(std::string const&) const        { return 0; }
+    std::string TTSMgr::getProccesingText(std::string const&) const { return ""; }
 
     // Inicialización de modelos ------------------------------------------------------------
-    bool TTSMgr::load_vits_model(std::filesystem::path modelDir) { return false; }
-    bool TTSMgr::unload_model(std::string const& modelName)      { return false; }
+    bool TTSMgr::load_vits_model(std::filesystem::path)          { return false; }
+    bool TTSMgr::unload_model(std::string const&)                { return false; }
 #endif
