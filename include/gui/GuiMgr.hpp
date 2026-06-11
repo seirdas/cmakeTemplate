@@ -21,7 +21,6 @@ struct ImGuiIO;
   * @note BuclePrincipal() puede ser sobreescrito para modificar los elementos de la UI.
   * @note Proporciona varias funciones de estilo para configurar la apariencia de ImGui.
   * @see IAppControl
-  * @date March 2, 2026 
   */
 class GuiMgr {
 
@@ -148,7 +147,7 @@ private:
     void generateDefaultTexture();
     
 
-// Aspecto y temas ----------------------------------------------------------------------
+// Aspecto ------------------------------------------------------------------------------
 
     /**
      * @brief Activa/desactiva el modo de pantalla completa
@@ -169,6 +168,9 @@ private:
      */
     void titleBarDarkMode(bool useDarkMode);
     
+
+// Temas --------------------------------------------------------------------------------
+
     /**
      * @brief Dark - Comfy style by Giuseppe from ImThemes
      */
@@ -193,6 +195,11 @@ private:
      * @brief Light - Microsoft style by usernameiwantedwasalreadytaken from ImThemes
      */
     void Style_Microfrost();
+
+    /**
+     * @brief Dark - AdobeInspired style by nexacopic from ImThemes
+     */
+    void Style_AdobeInspired();
     
     
 /************ Variables ********************************************************/
@@ -213,7 +220,6 @@ private:
     unsigned int const MAX_FONT_SIZE_ = 30;                     ///< Tamaño de fuente máximo permitido
     unsigned int const MIN_FONT_SIZE_ = 14;                     ///< Tamaño de fuente mínimo permitido
     float deviceRefreshInterval_      = 5.0f;                   ///< Tiempo de refrescar los dispositivos de entrada
-
 
     GLFWwindow*     window_         = nullptr;                  ///< Puntero a la ventana GLFW
     IAppControl*    ctrl_           = nullptr;                  ///< Puntero al controlador de la aplicación para comunicación entre miembros
