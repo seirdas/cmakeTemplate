@@ -114,6 +114,11 @@ private:
      */
     void ventanaPrincipal();
 
+    /**
+     * @brief Gestión de la columna derecha
+     */
+    void columnaDerecha();
+
 
 // Carga de imágenes --------------------------------------------------------------------
    
@@ -204,9 +209,11 @@ private:
     unsigned int    windowPosY_     = 0;                        ///< Posición vertical (y) de la ventana
     bool            fullscreen_     = false;                    ///< Modo ventana completa activo
 
-    float           fontSize_         = 16.0f;                  ///< Tamaño de fuente predeterminado
+    float              fontSize_      = 16.0f;                  ///< Tamaño de fuente predeterminado
     unsigned int const MAX_FONT_SIZE_ = 30;                     ///< Tamaño de fuente máximo permitido
     unsigned int const MIN_FONT_SIZE_ = 14;                     ///< Tamaño de fuente mínimo permitido
+    float deviceRefreshInterval_      = 5.0f;                   ///< Tiempo de refrescar los dispositivos de entrada
+
 
     GLFWwindow*     window_         = nullptr;                  ///< Puntero a la ventana GLFW
     IAppControl*    ctrl_           = nullptr;                  ///< Puntero al controlador de la aplicación para comunicación entre miembros
@@ -227,6 +234,7 @@ private:
     // Variables (MenuBar) ______________________
     float           MainMenuBar_Height_       = 0.0f;           ///< Almacena el alto de la barra de menú para ajustar la ventana principal
 
+    TTSData         datosTTS;
 };
 
 /**** imgui knobs

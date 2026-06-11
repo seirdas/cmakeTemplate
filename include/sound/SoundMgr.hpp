@@ -49,13 +49,60 @@ public:
 
 // Capture Input ------------------------------------------------------------------------
 
+    /**
+     * @brief Devuelve una lista con los nombres de todos los micrófonos disponibles
+     */
     std::vector<std::string> getAvailableInputs() const;
 
-    std::string getDefaultInputDevice() const;
+    /** 
+     * @brief Devuelve el nombre del micrófono que tiene Windows marcado como predeterminado.
+     */
+    std::string getDefaultInputsDevice() const;
 
-    void listAvailableInputs();
-
+    /**
+     * @brief Añadir como dispositivo de captura
+     */ 
     bool addCaptureDevice(std::string const& name, unsigned short index);
+
+    /**
+     * @brief Eliminar el dispositivo de captura
+     */ 
+    bool removeInputDevice(unsigned short index); 
+
+    /**
+     * @brief Empieza a grabar
+     */
+    bool startRec_snd(unsigned short index);
+
+    /**
+     * @brief Para de grabar
+     */
+    bool stopRec_snd(unsigned short index);
+
+    /**
+     * @brief Obtiene el nivel de RMS del audio
+     */
+    float getInputRmsLevel(unsigned short index);
+
+    /**
+     * @brief Obtiene el tamaño del buffer de captura
+     * @param index indice de dispositivo de captura
+     * @return el tamaño del buffer de captura
+     */
+    size_t getInputBufferSize(unsigned int index);
+    
+    /**
+     * @brief Obtiene el tamaño del buffer de grabación
+     * @param index indice de dispositivo de captura
+     * @return el tamaño del buffer de grabación
+     */
+    size_t getInputRecBufferSize(unsigned int index);
+
+    /**
+     * @brief Comprobar si el dispositivo sigue activo y funcionando
+     */
+    bool isInputDeviceValid(unsigned short index) const;
+
 
 // Playbacks ----------------------------------------------------------------------------
 
@@ -70,6 +117,7 @@ public:
     bool removePlaybackDevice(unsigned short index);
 
     bool playbackTest();
+
 
 private:
 
@@ -88,5 +136,5 @@ private:
 
     // Estado del módulo
     std::atomic<bool> ctx_initialized_; ///< Flag para saber si el motor de audio está inicializado.
-
+    int MAX_REINIT_ATTEMPTS = 3;        ///< Número de reintentos para reinicializar dispositivo de entrada
 };

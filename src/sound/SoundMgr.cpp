@@ -14,13 +14,11 @@
     // Implementación de miembros de la clase de miniaudio (pimpl_)
     struct SoundMgr::Impl {
         ma_context snd_context_;                            // Contexto (motor) de audio
-
         ma_device_info* pPlaybackDevInfos_   = nullptr;     // Información de dispositivos playback
         ma_uint32       PlaybackDevCount_    = 0;           // Número de dispositivos playback
         ma_device_info* pCaptureDevInfos_ = nullptr;        // Información de dispositivos de captura
         ma_uint32       captureDevCount_  = 0;              // Número de dispositivos de captura
     };
-
 
     // General ------------------------------------------------------------------------------
 
@@ -83,59 +81,158 @@
             &pimpl_->pPlaybackDevInfos_, &pimpl_->PlaybackDevCount_, 
             &pimpl_->pCaptureDevInfos_, &pimpl_->captureDevCount_);
 
-        // Devolver true/false en función del resultado
-        return (res==MA_SUCCESS) ? true : false;
+    if (res != MA_SUCCESS) return false;
+
+    std::string name; 
+    // Si hay algun dispositivo con is_valid = false se reinicializa
+    for (auto& aim : inputs_) {
+        name = aim->deviceName(); 
+        if (aim->isValid()) continue;
+
+        
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
+            if (aim->deviceName() == pimpl_->pCaptureDevInfos_[i].name)
+                for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++) // contador
+                   if (aim->init())
+                        break;
+                        
     }
 
+    return true;
+}
 
-    // Capture Input ------------------------------------------------------------------------
+
+    // Capture Input --------------------------------------------------------------------
 
     std::vector<std::string> SoundMgr::getAvailableInputs() const {
+
         // Si no está inicializado no se puede hacer nada
         if (!ctx_initialized_) return {};
 
-        // Popular vector con dispositivos disponibles
+        // Crea un vector de strings devlist
         std::vector<std::string> devlist;
+        // Recorre los dispositivos de captura que miniaudio encuentra
+        // Se guardan en captureDevCount
         for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) 
             devlist.push_back(pimpl_->pCaptureDevInfos_[i].name);
 
         // Devolver la lista de dispositivos
         return devlist;
     }
-
-    std::string SoundMgr::getDefaultInputDevice() const {
+ 
+    std::string SoundMgr::getDefaultInputsDevice() const {
         // Si no está inicializado no se puede hacer nada
         if (!ctx_initialized_) return {};
 
-        // Popular vector con dispositivos disponibles
+        // Recorre todos los dispositivos de captura 
         for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
+        // Cuando encuentra el que tiene Default = true devuelve su nombre
             if (pimpl_->pCaptureDevInfos_[i].isDefault)
                 return pimpl_->pCaptureDevInfos_[i].name;
 
+                // Si no hay nungún predeterminado, devuelve un ""
         /*else*/ return "";
     }
     
-    void SoundMgr::listAvailableInputs() {
-
-        // Primero actualizar la lista dse dispositivos disponibles
-        updateDevices();
-
-        SYS_INFO("SoundMgr","--- CAPTURE DEVICES ---");
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {
-            SYS_INFO(
-                "SoundMgr",
-                "[" + std::to_string(i) + "] " 
-                + pimpl_->pCaptureDevInfos_[i].name
-                + ( (pimpl_->pCaptureDevInfos_[i].isDefault) ? " (Default)" : "" )
-            );
-        }
-    }
-
     bool SoundMgr::addCaptureDevice(std::string const& name, unsigned short index){
-        // #TODO
-        return false;
+        // Comprobar que el contexto está inicializado
+        if (!ctx_initialized_){
+            SYS_WARN("SoundMgr", "Audio context not initialized.");
+            return false; 
+        }
+
+        // Refrescar lista de dispositivos disponibles
+        updateDevices(); 
+
+        // bucle para encontrar el nombre que hemos seleccionado
+        ma_device_info* selectedDeviceInfo = nullptr;
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {
+            if (name == pimpl_->pCaptureDevInfos_[i].name) {
+                selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];
+                break;
+            }
+        }
+        
+        // Si no encuentra ningún nombre salta fallo
+        if(selectedDeviceInfo==nullptr){
+            SYS_WARN("SoundMgr", "Failed to found device with name"); 
+            return false; 
+        }
+    
+        SYS_INFO("SoundMgr", " Using capture device:" + name); 
+
+        // Crear AudioInputModule y le pasa toda la información
+        std::unique_ptr<AudioInputModule> aim = std::make_unique<AudioInputModule>(
+            &pimpl_->snd_context_, 
+            *selectedDeviceInfo
+        );
+
+        // Intenta inicializar el AudioInputModule ?
+        SYS_INFO("SoundMgr", "Initializing capture...");
+
+        if(!aim->init())
+        {
+            SYS_WARN("SoundMgr","Failed to initialize capture.");
+            return false;
+        }
+
+        // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (inputs_).
+        inputs_.push_back(std::move(aim));
+        SYS_INFO("SoundMgr", "Inputs loaded. ");
+
+        return true;
     }
 
+    // Eliminar el dispositivo de captura
+   bool SoundMgr::removeInputDevice(unsigned short index) {
+
+        // comprobar si existe
+        if (index >= inputs_.size()) {
+            SYS_WARN("SoundMgr","Selected index " + std::to_string(index) +
+                " out of bounds (" + std::to_string(inputs_.size()) + ")");;
+            return false;
+        }
+        
+        // Obtener el módulo de reproducción
+        AudioInputModule* aim = inputs_[index].get();
+
+        // Detener las operaciones del módulo de reproducción
+        aim->stop();
+
+        // Borrar el elemento del vector usando iterator
+        inputs_.erase(inputs_.begin() + index);
+
+        // Notificar y salir
+        SYS_INFO("SoundMgr", "Deleted Capture Device.");
+        return true;
+    }
+
+    //Empieza a grabar
+    bool SoundMgr::startRec_snd(unsigned short index){
+        if (index >= inputs_.size()) return false;
+        return inputs_[index]->StartRec();
+    }
+
+    // Para de grabar y guarda el audio como .wav
+    bool SoundMgr::stopRec_snd(unsigned short index){
+        if (index >= inputs_.size()) return false;
+
+        AudioInputModule* aim = inputs_[index].get();
+        aim->StopRec();
+
+        std::string filename = "grabacion_" + std::to_string(index) + ".wav";
+        aim->InitwavEncoder(filename);
+        aim->saveSound();
+        aim->RemovewavEncoder();
+
+        return true;
+    }
+
+    // Obtener nivel del RMS
+    float SoundMgr::getInputRmsLevel(unsigned short index) {
+    if (index >= inputs_.size()) return 0.0f;
+    return inputs_[index]->getRmsLevel();
+}
 
     // Playbacks ----------------------------------------------------------------------------
 
@@ -159,22 +256,6 @@
                 return pimpl_->pPlaybackDevInfos_[i].name;
 
         /*else*/ return "";
-    }
-
-    void SoundMgr::listAvailablePlaybacks() {
-        
-        // Primero actualizar la lista dse dispositivos disponibles
-        updateDevices();
-
-        SYS_INFO("SoundMgr","--- PLAYBACK DEVICES ---");
-        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) {
-            SYS_INFO(
-                "SoundMgr",
-                "[" + std::to_string(i) + "] " 
-                + pimpl_->pPlaybackDevInfos_[i].name
-                + ( (pimpl_->pPlaybackDevInfos_[i].isDefault) ? " (Default)" : "" )
-            );
-        }
     }
 
     bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) {
@@ -308,7 +389,25 @@
 
         return true;
     }
+    
+    size_t SoundMgr::getInputBufferSize(unsigned int index) {
+        if (index >= inputs_.size()) return false;
+        return inputs_[index]->getBufferSize();
+    }
 
+    size_t SoundMgr::getInputRecBufferSize(unsigned int index) 
+    {
+        if (index >= inputs_.size()) return false;
+        return inputs_[index]->getRecBufferSize();
+    }
+
+    bool SoundMgr::isInputDeviceValid(unsigned short index) const 
+    {
+        // Comprueba que el índice que pides existe.
+        if (index >= inputs_.size()) return false;
+        // comprueba si es valido
+        return inputs_[index]->isValid();
+    }
 
 #else
 // ============================================================
