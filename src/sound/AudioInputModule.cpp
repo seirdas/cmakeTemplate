@@ -8,7 +8,7 @@ AudioInputModule::AudioInputModule(ma_context* ctx, ma_device_info const& device
     is_valid_(false),
     ctx_(ctx),
     device_info_(device_info),
-    deviceName_(deviceName)
+    deviceName_(device_info.name)
 {
 
 }
