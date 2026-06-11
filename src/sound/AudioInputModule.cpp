@@ -5,19 +5,11 @@
 
 AudioInputModule::AudioInputModule(ma_context* ctx, ma_device_info const& device_info):
     recording_(false),
-    is_valid_(false)    
-
+    is_valid_(false),
+    ctx_(ctx),
+    device_info_(device_info),
+    deviceName_(deviceName)
 {
-    // Recibe el contexto
-    ctx_ = ctx;
-
-    // recibe el device
-    device_info_ = device_info; 
-
-    // Consigue el nombre
-    deviceName_ = device_info.name; 
-
-
 
 }
 
@@ -27,6 +19,7 @@ AudioInputModule::~AudioInputModule() {
 
 
 // Ejecución-----------------------------------------------------------------------------
+
 bool AudioInputModule::init() {
     if (is_valid_) return true; 
     ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
@@ -64,7 +57,7 @@ void AudioInputModule::stop() {
 
 // Audio---------------------------------------------------------------------------------
 
-bool  AudioInputModule::StartRec(){
+bool  AudioInputModule::StartRec() {
 
     // El callback vacía el buffer para meter datos nuevos
     rec_buffer_.clear();
@@ -75,14 +68,14 @@ bool  AudioInputModule::StartRec(){
     return true; 
 }
 
-bool AudioInputModule::StopRec(){
+bool AudioInputModule::StopRec() {
 
     // En el momento recording está en false, para de grabar
     recording_=false; 
     return true;  
 }
 
-bool AudioInputModule::isRecording(){
+bool AudioInputModule::isRecording() {
     //Devuelve el valor del recording true o false, 
     //depende de si está en startrec o stoprec
     return recording_; 
@@ -105,13 +98,12 @@ void AudioInputModule::InitwavEncoder(const std::string& filename) {
     ma_encoder_init_file(filename.c_str(), &config, &encoder_);
 }
 
-void AudioInputModule::RemovewavEncoder(){
+void AudioInputModule::RemovewavEncoder() {
     //Funcion de miniaudio que cierra el encoder
     ma_encoder_uninit(&encoder_);
-
 }
 
-void AudioInputModule::saveSound(){
+void AudioInputModule::saveSound() {
 
     // Variable donde miniaudio guarda cuantos frames ha escrito realmente
     ma_uint64 framesWritten;
@@ -166,10 +158,6 @@ void AudioInputModule::dataCallback_(ma_device* pDevice, void* pOutput, const vo
         self->buffer_.clear();
     }
 
-
-     
-
-
     // Si no estás grabando, ignora los datos y sale.
     if (!self->recording_) return;
 
@@ -192,4 +180,3 @@ void AudioInputModule::notificationCallback_(const ma_device_notification* pNoti
 
 
 }
-
