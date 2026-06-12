@@ -43,9 +43,8 @@
                         int remotePort, const std::string& remoteIP,
                         int numInputs, int numPlaybacks, int numOutputs)
     {
-        if (wsaStarted_) {
-            SYS_INFO(MODULE, "init: WSAStartup already initialized.");
-        } else {
+        // Iniciar WSA (Contexto de red Windows)
+        if (!wsaStarted_) {
             WSADATA wsaData;
             if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
                 SYS_WARN(MODULE, "init: WSAStartup failed.");
@@ -509,6 +508,7 @@
         oscBuf_.firstUntyped = false;
         return true;
     }
+
 
 #else
 // ============================================================
