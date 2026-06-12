@@ -82,10 +82,6 @@
         numPlaybacks_ = numPlaybacks;
         numOutputs_   = numOutputs;
     
-        bankPosOutput_.resize(numOutputs   + 1);
-        bankPosInput_.resize(numInputs     + 1);
-        bankPosPlayback_.resize(numPlaybacks + 1);
-    
         BuildBankMaps();
         return true;
     }
@@ -206,7 +202,7 @@
     {
         int         maxChannel;
         const char* busAddr;
-        const std::vector<int>* bankMap = nullptr;
+        const std::array<int, MAX_TOTAL_CHANNELS + 1>* bankMap = nullptr;
 
         switch (bus) {
             case Bus::Output:   maxChannel = numOutputs_;   busAddr = "/1/busOutput";   bankMap = &bankPosOutput_;   break;
@@ -265,7 +261,7 @@
     {
         int         maxChannel;
         const char* busAddr;
-        const std::vector<int>* bankMap = nullptr;
+        const std::array<int, MAX_TOTAL_CHANNELS + 1>* bankMap = nullptr;
 
         switch (bus) {
             case Bus::Output:   maxChannel = numOutputs_;   busAddr = "/1/busOutput";   bankMap = &bankPosOutput_;   break;
@@ -307,9 +303,9 @@
 
     void TotalMix::BuildBankMaps()
     {
-        auto fill = [](std::vector<int>& map, int total) {
-            map.assign(total + 1, 0);
-            
+        auto fill = [](std::array<int, MAX_TOTAL_CHANNELS + 1>& map, int total) {
+            // Eliminadas las líneas de resize y assign porque el tamaño ya es estático y está a 0.
+        
             for (int i = 1; i <= total; ++i)
                 map[i] = (i % 8 == 0) ? 8 : (i % 8);
 
@@ -391,20 +387,19 @@
     int TotalMix::OscPadString(char* dest, const char* str)
     {
         size_t len = std::strlen(str);
-        std::memcpy(dest, str, len + 1); // Copia el string y el '\0'
-        int padLen = static_cast<int>(len) + 1;
-        while (padLen % OSC_STRING_ALIGN != 0) {
-            dest[padLen++] = '\0';
-        }
+        int padLen = (len + 4) & ~3; 
+
+        std::memcpy(dest, str, len);
+        // Llenar el resto con ceros (cubriendo el \0 y el padding)
+        std::memset(dest + len, 0, padLen - len); 
+
         return padLen;
     }
 
     int TotalMix::OscEffectiveStringLen(const char* str) const
     {
-        int len = static_cast<int>(strlen(str) + 1);
-        if (len % OSC_STRING_ALIGN != 0)
-            len += OSC_STRING_ALIGN - (len % OSC_STRING_ALIGN);
-        return len;
+        // Sumamos 4 (1 para el \0 obligatorio + 3 para el redondeo) y aplicamos la máscara
+        return (static_cast<int>(std::strlen(str)) + 4) & ~3;
     }
 
     bool TotalMix::OscOpenBundle(OscTimeTag tt)
@@ -500,10 +495,14 @@
 
     bool TotalMix::OscWriteFloat(float val)
     {
-        if (OscFreeSpace() < 4) return false;
-        if (!OscCheckTag('f'))   return false;
-        int* ip = reinterpret_cast<int*> ((&val));
-        *reinterpret_cast<int*> (oscBuf_.ptr) = htonl(*ip);
+        if (OscFreeSpace() < 4 || !OscCheckTag('f')) return false;
+
+        uint32_t net_val;
+        std::memcpy(&net_val, &val, sizeof(float));
+        net_val = htonl(net_val);
+
+        std::memcpy(oscBuf_.ptr, &net_val, 4);
+
         oscBuf_.ptr += 4;
         oscBuf_.firstUntyped = false;
         return true;

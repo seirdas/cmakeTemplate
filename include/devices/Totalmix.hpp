@@ -36,7 +36,7 @@
 #include <cmath>
 #include <memory>
 #include <vector>
-
+#include <array>
 
 /**
  * @brief Controlador de RME TotalMix FX vía OSC/UDP.
@@ -387,9 +387,9 @@ private:
     int numOutputs_   = 0;                      ///< Número total de salidas del dispositivo.
 
     // Banks
-    std::vector<int> bankPosOutput_;            ///< Posición dentro del bank OSC para cada salida (1-based).
-    std::vector<int> bankPosInput_;             ///< Posición dentro del bank OSC para cada entrada (1-based).
-    std::vector<int> bankPosPlayback_;          ///< Posición dentro del bank OSC para cada canal de playback (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosOutput_ = {};     ///< Posición dentro del bank OSC para cada salida (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosInput_ = {};      ///< Posición dentro del bank OSC para cada entrada (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosPlayback_ = {};   ///< Posición dentro del bank OSC para cada canal de playback (1-based).
 
     // Buffer OSC
     char      oscRaw_[OSC_BUF_SIZE]     = {};   ///< Array de bytes subyacente del buffer OSC.
