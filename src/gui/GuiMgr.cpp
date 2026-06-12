@@ -138,7 +138,7 @@
 		);
 
 		// Configuración de estilo por defecto
-		Style_Microfrost();
+		Style_DefaultLight();
 
 		// Propiedades de ventana de windows
 		#ifdef _WIN32
@@ -368,12 +368,15 @@
 			// Test de temas (Combobox from imgui demo)
 
 			Text("Tema:"); SameLine();
-			static const char* theme_items[] = { 
+			static const char* theme_items[] = {
+				"Default Light",
+				"Default Dark",
 				"Confy", 
 				"FutureDark", 
 				"Moonlight",
 				"VisualStudio",
-				"Microfost"
+				"Microfrost",
+				"Adobe Inspired"
 			};
 			static int item_selected_idx;
 			if (BeginCombo("##cbth", theme_items[item_selected_idx]))
@@ -391,11 +394,14 @@
 						// ----> ACCIÓN A EJECUTAR ----
 						// Por ejemplo:
 						switch(n){
-							case 0: Style_Confy(); 			break;
-							case 1: Style_FutureDark(); 	break;
-							case 2: Style_Moonlight(); 		break;
-							case 3: Style_VisualStudio(); 	break;
-							case 4: Style_Microfrost(); 	break;
+							case 0: Style_DefaultLight(); 	break;
+							case 1: Style_DefaultDark();	break;
+							case 2: Style_Confy(); 			break;
+							case 3: Style_FutureDark(); 	break;
+							case 4: Style_Moonlight(); 		break;
+							case 5: Style_VisualStudio(); 	break;
+							case 6: Style_Microfrost(); 	break;
+							case 7: Style_AdobeInspired(); 	break;
 						}
 					}
 

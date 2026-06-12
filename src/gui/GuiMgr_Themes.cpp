@@ -10,7 +10,85 @@
 
 	// Temas --------------------------------------------------------------------------------
 
+    
+    void GuiMgr::Style_DefaultDark() {
+
+        style_->Alpha                       = 1.0000f;
+        style_->DisabledAlpha               = 0.1000f;
+        style_->WindowPadding               = ImVec2(8.0000f, 8.0000f);
+        style_->WindowRounding              = 10.0000f;
+        style_->WindowBorderSize            = 0.0000f;
+        style_->WindowMinSize               = ImVec2(30.0000f, 30.0000f);
+        style_->WindowTitleAlign            = ImVec2(0.5000f, 0.5000f);
+        style_->WindowMenuButtonPosition    = ImGuiDir_Right;
+        style_->ChildRounding               = 5.0000f;
+        style_->ChildBorderSize             = 1.0000f;
+        style_->PopupRounding               = 10.0000f;
+        style_->PopupBorderSize             = 0.0000f;
+        style_->FramePadding                = ImVec2(5.0000f, 3.5000f);
+        style_->FrameRounding               = 5.0000f;
+        style_->FrameBorderSize             = 0.0000f;
+        style_->ItemSpacing                 = ImVec2(5.0000f, 4.0000f);
+        style_->ItemInnerSpacing            = ImVec2(5.0000f, 5.0000f);
+        style_->CellPadding                 = ImVec2(4.0000f, 2.0000f);
+        style_->IndentSpacing               = 5.0000f;
+        style_->ColumnsMinSpacing           = 5.0000f;
+        style_->ScrollbarSize               = 15.0000f;
+        style_->ScrollbarRounding           = 9.0000f;
+        style_->GrabMinSize                 = 15.0000f;
+        style_->GrabRounding                = 5.0000f;
+        style_->TabRounding                 = 5.0000f;
+        style_->TabBorderSize               = 0.0000f;
+        style_->ColorButtonPosition         = ImGuiDir_Right;
+        style_->ButtonTextAlign             = ImVec2(0.5000f, 0.5000f);
+        style_->SelectableTextAlign         = ImVec2(0.0000f, 0.0000f);
+        
+        StyleColorsDark();
+        titleBarDarkMode(true);
+        SYS_INFO("GuiMgr", "'DefaultDark' theme applied.");
+    }
+
+    void GuiMgr::Style_DefaultLight() {
+
+        style_->Alpha                       = 1.0000f;
+        style_->DisabledAlpha               = 0.1000f;
+        style_->WindowPadding               = ImVec2(8.0000f, 8.0000f);
+        style_->WindowRounding              = 10.0000f;
+        style_->WindowBorderSize            = 0.0000f;
+        style_->WindowMinSize               = ImVec2(30.0000f, 30.0000f);
+        style_->WindowTitleAlign            = ImVec2(0.5000f, 0.5000f);
+        style_->WindowMenuButtonPosition    = ImGuiDir_Right;
+        style_->ChildRounding               = 5.0000f;
+        style_->ChildBorderSize             = 1.0000f;
+        style_->PopupRounding               = 10.0000f;
+        style_->PopupBorderSize             = 0.0000f;
+        style_->FramePadding                = ImVec2(5.0000f, 3.5000f);
+        style_->FrameRounding               = 5.0000f;
+        style_->FrameBorderSize             = 0.0000f;
+        style_->ItemSpacing                 = ImVec2(5.0000f, 4.0000f);
+        style_->ItemInnerSpacing            = ImVec2(5.0000f, 5.0000f);
+        style_->CellPadding                 = ImVec2(4.0000f, 2.0000f);
+        style_->IndentSpacing               = 5.0000f;
+        style_->ColumnsMinSpacing           = 5.0000f;
+        style_->ScrollbarSize               = 15.0000f;
+        style_->ScrollbarRounding           = 9.0000f;
+        style_->GrabMinSize                 = 15.0000f;
+        style_->GrabRounding                = 5.0000f;
+        style_->TabRounding                 = 5.0000f;
+        style_->TabBorderSize               = 0.0000f;
+        style_->ColorButtonPosition         = ImGuiDir_Right;
+        style_->ButtonTextAlign             = ImVec2(0.5000f, 0.5000f);
+        style_->SelectableTextAlign         = ImVec2(0.0000f, 0.0000f);
+        
+        StyleColorsLight();
+        titleBarDarkMode(false);
+        SYS_INFO("GuiMgr", "'DefaultLight' theme applied.");
+    }
+
     void GuiMgr::Style_Confy() {
+
+        StyleColorsDark();
+        titleBarDarkMode(true);
 
         style_->Alpha                       = 1.0000f;
         style_->DisabledAlpha               = 0.1000f;
@@ -96,12 +174,13 @@
         style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
         style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
         
-        StyleColorsDark();
-        titleBarDarkMode(true);
         SYS_INFO("GuiMgr", "'Confy' theme applied.");
     }
 
     void GuiMgr::Style_FutureDark() {
+
+        StyleColorsDark();
+        titleBarDarkMode(true);
 
         style_->Alpha                       = 1.0000f;
         style_->DisabledAlpha               = 1.0000f;
@@ -187,8 +266,6 @@
         style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
         style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
         
-        StyleColorsDark();
-        titleBarDarkMode(true);
         SYS_INFO("GuiMgr", "'FutureDark' theme applied.");
     }
 
@@ -281,12 +358,13 @@
         style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
         style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.50196f);
 
-        StyleColorsDark();
-        titleBarDarkMode(true);
         SYS_INFO("GuiMgr", "'Moonlight' theme applied.");
     }
 
     void GuiMgr::Style_VisualStudio() {
+
+        StyleColorsDark();
+        titleBarDarkMode(true);
 
         style_->Alpha                           = 1.0000f;
         style_->DisabledAlpha                   = 0.6000f;
@@ -372,12 +450,13 @@
         style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
         style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.1451f, 0.1451f, 0.1490f, 1.0000f);
 
-        StyleColorsDark();
-        titleBarDarkMode(true);
         SYS_INFO("GuiMgr", "'Visual Studio' theme applied.");
     }
 
     void GuiMgr::Style_Microfrost() {
+
+        StyleColorsLight();
+        titleBarDarkMode(false);
 
         style_->Alpha                       = 1.0f;
         style_->DisabledAlpha               = 0.6f;
@@ -463,12 +542,13 @@
         style_->Colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
         style_->Colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
-        StyleColorsLight();
-        titleBarDarkMode(false);
         SYS_INFO("GuiMgr", "'Microfrost' theme applied.");
     }
 
     void GuiMgr::Style_AdobeInspired() {
+
+        StyleColorsDark();
+        titleBarDarkMode(true);
 
         style_->Alpha = 1.0f;
         style_->DisabledAlpha = 0.6f;
@@ -554,8 +634,6 @@
         style_->Colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
         style_->Colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
-        StyleColorsDark();
-        titleBarDarkMode(true);
         ImGuiStyle& style = ImGui::GetStyle();
     }
 

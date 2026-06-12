@@ -172,6 +172,16 @@ private:
 // Temas --------------------------------------------------------------------------------
 
     /**
+     * @brief Tema oscuro por defecto ImGui con bordes estilizados
+     */
+    void Style_DefaultDark();
+
+    /**
+     * @brief Tema oscuro por defecto ImGui con bordes estilizados
+     */
+    void Style_DefaultLight();
+
+    /**
      * @brief Dark - Comfy style by Giuseppe from ImThemes
      */
     void Style_Confy();
