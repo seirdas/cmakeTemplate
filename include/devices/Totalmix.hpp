@@ -96,22 +96,22 @@ public:
      * @brief Ajusta el fader principal de una salida física en porcentaje.
      *
      * @param out Número de salida (1-based, máximo numOutputs).
-     * @param pct Nivel en porcentaje (0 … 100) o en dB si in_dB_units activo
+     * @param value Nivel en porcentaje (0 … 100) o en dB si in_dB_units activo
      * @param in_db_units Indicador para considerar el valor como porcentaje (false) o dB (true)
      * @return @c true si la inicialización fue exitosa.
      */
-    bool SetOutputVolume(int out, float pct, bool in_dB_units = false);
+    bool SetOutputVolume(int out, float value, bool in_dB_units = false);
 
     /**
      * @brief Ajusta el volumen de una entrada en el submix de una salida, en porcentaje.
      *
      * @param out Número de salida destino del submix (1-based, máximo numOutputs).
      * @param in  Número de entrada (1-based, máximo numInputs).
-     * @param pct Nivel en porcentaje (0 … 100) o en dB si in_dB_units activo
+     * @param value Nivel en porcentaje (0 … 100) o en dB si in_dB_units activo
      * @param in_db_units Indicador para considerar el valor como porcentaje (false) o dB (true)
      * @return @c true si la inicialización fue exitosa.
      */
-    bool SetInputVolume(int out, int in, float pct, bool in_dB_units = false);
+    bool SetInputVolume(int out, int in, float value, bool in_dB_units = false);
 
     /**
      * @brief Ajusta el volumen de un canal de playback en el submix de una salida, en porcentaje.
