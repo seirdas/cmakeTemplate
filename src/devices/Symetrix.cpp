@@ -43,11 +43,13 @@
 
     Symetrix::Symetrix() : 
         pimpl_(std::make_unique<Impl>()),
+        connected_(false),
         initialized_(false),
         supermatrix_ins_(20),       // Por defecto está diseñado para tener 20 entradas (se puede cambiar por método)
         supermatrix_outs_(20),      // Por defecto está diseñado para tener 20 salidas  (se puede cambiar por método)
         connection_ping_timeout_ms_(500),
-        ComposerPort_(48631)
+        ComposerPort_(48631),
+        kBootPreset_(1)
     {
 
     }
@@ -70,24 +72,16 @@
             net_cleanup();
         }
 
-        m_offsets = Offsets{};
-
         // Inicializar y probar conexión de red con Symetrix
         if(!initConnection(hostIp))
             return false;
 
-        // --- INIT DE VARIABLES ---
-        const size_t total = size_t(supermatrix_outs_ + 1) * size_t(supermatrix_ins_ + 1);
-        m_smPrevCenti.assign(total, -7200);
-        m_smOffsetCenti.assign(total, (unsigned short)((m_offsets.superMatrixCenti > 1) ? m_offsets.superMatrixCenti : 1));
-
+        // Inicialización de variables de supermatrix
         initSupermatrix();
 
-
         // Cargar preset de boot
-        if (kBootPreset > 0) {
-            LoadPreset(kBootPreset);
-        }
+        if (kBootPreset_ > 0)
+            LoadPreset(kBootPreset_);
 
         initialized_ = true;
         return true;
@@ -108,30 +102,14 @@
         return connected_;
     }
 
-    void Symetrix::initSupermatrix() {
-
-        constexpr double gamma = 0.415;
-        constexpr int kOffCenti = -7200;
-        constexpr int kMinCenti = -7200;
-        constexpr int kMaxCenti = +1200;
-
-        stepToCentidB_[0] = kOffCenti;
-        for (int s = 1; s <= 100; ++s) {
-            const double x = static_cast<double>(s) / 100.0;
-            const double dB = -60.0 + 72.0 * std::pow(x, gamma);
-            long v = static_cast<long>(std::llround(dB * 100.0));
-            stepToCentidB_[s] = std::clamp(static_cast<int>(v), kMinCenti, kMaxCenti);
-        }
-    }
-
 
     // Parámetros ---------------------------------------------------------------------------
 
-    void Symetrix::set_supermatrix_ins(unsigned int num) {
+    void Symetrix::setSupermatrixINs(unsigned int num) {
         supermatrix_ins_ = num;
     }
 
-    void Symetrix::set_supermatrix_outs(unsigned int num) {
+    void Symetrix::setSupermatrixOUTs(unsigned int num) {
         supermatrix_outs_ = num;
     }
 
@@ -177,23 +155,36 @@
     
     // Componentes: Controles generales -----------------------------------------------------
 
-    bool Symetrix::set_Mute(unsigned int id, bool mute) {
+    bool Symetrix::setMute(unsigned int id, bool mute) {
         // #TODO
         return false;
     }
 
+    bool Symetrix::setThreshold(unsigned int id, double value, bool true_scale) {
+        // Comprobar si se pueden mandar los datos
+        if (!connected_ || id == 0) return false;
 
-    // Componentes: Dynamics ----------------------------------------------------------------
+        // Si el valor está en escala natural, convertirlo
+        float dB = (true_scale) ? value : MapScale(value, ThresholdMin_, ThresholdMax_);
+        
+        // No sobrepasar los límites
+        if (dB < ThresholdMin_) dB = ThresholdMin_; 
+        if (dB > ThresholdMax_) dB = ThresholdMax_;
 
-    bool Symetrix::set_MonoGate_Threshold(int id, double dB) {
-        // #TODO
+        const int ticks = dbToTicks(dB, ThresholdMin_, ThresholdMax_);
+        const int offTicks = dbOffsetToTicks(tolerances_.ThresholdDb, ThresholdMin_, ThresholdMax_);
+
+        int idx = findOrAlloc(id, offTicks);        
+        if (!shouldSend(id, ticks)) return true;
+        return sendCSQ(id, ticks) && setCached(id, ticks);
     }
 
 
     // Componentes: Routers & Selectors -----------------------------------------------------
 
-    bool Symetrix::set_InputSelector_Selection(int id, unsigned int sel) {
+    bool Symetrix::set_InputSelector_Selection(unsigned int id, unsigned int sel) {
         // #TODO
+        return false;
     }
 
 
@@ -282,6 +273,25 @@
         return true;
     }
 
+    void Symetrix::initSupermatrix() {
+        const size_t total = size_t(supermatrix_outs_ + 1) * size_t(supermatrix_ins_ + 1);
+        PrevCenti_.assign(total, -7200);
+        ToleranceCenti_.assign(total, (unsigned short)((tolerances_.superMatrixCenti > 1) ? tolerances_.superMatrixCenti : 1));
+
+        constexpr double gamma = 0.415;
+        constexpr int kOffCenti = -7200;
+        constexpr int kMinCenti = -7200;
+        constexpr int kMaxCenti = +1200;
+
+        stepToCentidB_[0] = kOffCenti;
+        for (int s = 1; s <= 100; ++s) {
+            const double x = static_cast<double>(s) / 100.0;
+            const double dB = -60.0 + 72.0 * std::pow(x, gamma);
+            long v = static_cast<long>(std::llround(dB * 100.0));
+            stepToCentidB_[s] = std::clamp(static_cast<int>(v), kMinCenti, kMaxCenti);
+        }
+    }
+
     void Symetrix::net_cleanup() {
 
         if (pimpl_->socket != INVALID_SOCKET) {
@@ -296,7 +306,20 @@
     }
 
 
-    // Conversión a ticks -------------------------------------------------------------------
+    // Conversión de datos ------------------------------------------------------------------
+
+    float Symetrix::MapScale(float value, float minVal, float maxVal) {
+
+        // Devuelve directamente el valor si sobrepasa los límites 0-100
+        if (value <= 0.0f)   return minVal;
+        if (value <= 100.0f) return minVal;
+
+        // Normalizar a un rango [0.0, 1.0] basado en la escala 1-100
+        float t = (value - 1.0f) / (100.0f - 1.0f);
+        
+        // Cálculo de porcentaje sobre el rango [minVal, maxVal]
+        return minVal + (t * (maxVal - minVal));
+    }
 
     int Symetrix::dbToTicks(double dB, double minDb, double maxDb) {
         const double t = (dB - minDb) / (maxDb - minDb);
@@ -316,35 +339,50 @@
 
     // Búsqueda de parámetros ---------------------------------------------------------------
 
-    int Symetrix::indexOf(int id) const {
-        for (int i = 0; i < m_count_; ++i) if (m_cache_[i].id == id) return i;
-        return -1;
-    }
+    int Symetrix::findOrAlloc(int id, int defaultOffsetTicks) {
 
-    int Symetrix::findOrAlloc(int id, Type t, int defaultOffsetTicks) {
-        int idx = indexOf(id);
-        if (idx >= 0) return idx;
-        if (m_count_ >= kMaxEntries) return -1;
-        idx = m_count_++;
-        m_cache_[idx].id = id;
-        m_cache_[idx].ticks = -1;
-        m_cache_[idx].type = t;
-        m_cache_[idx].offsetTicks = (defaultOffsetTicks > 0 ? defaultOffsetTicks : 1);
-        return idx;
+        // Buscar y devolver los datos cacheados del id si ya existen
+        if (cache_.find(id) != cache_.end())
+            return id; // En un mapa, el 'id' es el identificador único/clave
+
+        // Si no existe, añadir una nueva entrada
+        CacheEntry newEntry;
+        newEntry.id = id;
+        newEntry.ticks = -1;
+        newEntry.offsetTicks = (defaultOffsetTicks > 0 ? defaultOffsetTicks : 1);
+        cache_[id] = newEntry;
+        
+        // Devuelve el índice del elemento recién añadido
+        return static_cast<int>(cache_.size() - 1);
     }
 
 
     // Envío de datos -----------------------------------------------------------------------
 
-    bool Symetrix::shouldSend(int idx, int newTicks) const {
-        const int prev = m_cache_[idx].ticks;
-        if (prev < 0) return true;
-        const int thr = m_cache_[idx].offsetTicks;
-        return std::abs(newTicks - prev) >= thr;
+    bool Symetrix::shouldSend(int id, int newTicks) const {
+
+        // Buscar el valor en la cache
+        auto it = cache_.find(id);
+
+        // Si el valor no está cacheado, se debería enviar
+        if (it == cache_.end()) {
+            return true;
+        }
+        
+        // Comprobar si se debería mandar el dato o no
+        const CacheEntry& entry = it->second;
+        if (entry.ticks < 0) return true;
+        return std::abs(newTicks - entry.ticks) >= entry.offsetTicks;   
     }
 
-    bool Symetrix::setCached(int idx, int ticks) {
-        m_cache_[idx].ticks = ticks;
+    bool Symetrix::setCached(int id, int ticks) {
+
+        // Si el valor no está cacheado, no guarda nada
+        if (cache_.find(id) == cache_.end())
+            return false;
+
+        // Guarda los ticks en la cache
+        cache_[id].ticks = ticks;
         return true;
     }
 
@@ -395,6 +433,26 @@
 Symetrix::Symetrix() {
     SYS_WARN("GuiMgr", "Symetrix class not compatible in not Windows SO.");
 }
+Symetrix::~Symetrix() {}
 
+// #TODO métodos públicos
+
+// Inicialización privada ---------------------------------------------------------------
+bool Symetrix::initConnection(std::wstring const&)       { return false; }
+void Symetrix::initSupermatrix()                         { return;       }
+void Symetrix::net_cleanup()                             { return;       }
+
+// Conversión de datos ------------------------------------------------------------------
+float Symetrix::MapScale(float, float, float)             { return 0.0f; }
+int   Symetrix::dbToTicks(double, double, double)         { return 0;    }
+int   Symetrix::dbOffsetToTicks(double, double, double)   { return 0;    }
+
+// Búsqueda de parámetros ---------------------------------------------------------------
+int  Symetrix::findOrAlloc(int, int)                     { return 0;     } 
+
+// Envío de datos -----------------------------------------------------------------------
+bool Symetrix::shouldSend(int, int) const                { return false; }                  
+bool Symetrix::setCached(int, int)                       { return false; }         
+bool Symetrix::sendCSQ(int, int)                         { return false; }          
 
 #endif
