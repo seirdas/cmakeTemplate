@@ -286,7 +286,7 @@
 	bool RegMgr::Set_QWORD(std::wstring const&, std::wstring const&, std::wstring const&, uint64_t)            { unsupported(); return false; }
 	bool RegMgr::Set_STR  (std::wstring const&, std::wstring const&, std::wstring const&, std::wstring const&) { unsupported(); return false; }
 
-	bool  		RegMgr::WaitUntilChange(std::wstring const&, std::wstring const&, std::wstring const&) 	{ unsupported(); return false;  }
+	bool 		RegMgr::WaitUntilChange(std::wstring const&, std::wstring const&)					 	{ unsupported(); return false;  }
 	void* 		RegMgr::ResolveRoot(std::wstring const&)     											{ unsupported(); return nullptr; }
 	uint32_t 	RegMgr::queryType(void*, const std::wstring&, const std::wstring&)						{ unsupported(); return 0; }
 	const char* RegMgr::regTypeName(uint32_t)															{ unsupported(); return 0; }

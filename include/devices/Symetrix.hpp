@@ -247,8 +247,8 @@ private:
     static constexpr double GainMax_        = +12.0;    ///< Valor máximo de ganancia soportado por los componentes de Symetrix
 
     // --- Caché de Comandos de Control Único ---
-    static constexpr int    kMaxTicks    = 2^16-1;  ///< Valor máximo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
-    std::unordered_map<int, CacheEntry> cache_;                 ///< Array estático que funciona como caché local para evitar saturar el bus UDP con valores idénticos.
+    static constexpr int    kMaxTicks    = 65535;       ///< Valor máximo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
+    std::unordered_map<int, CacheEntry> cache_;         ///< Array estático que funciona como caché local para evitar saturar el bus UDP con valores idénticos.
 
     // --- Configuración y Estado de la SuperMatrix ---
     int supermatrix_outs_;                          ///< Número de salidas lógicas de la SuperMatrix.

@@ -430,7 +430,14 @@
 //  (Stubs)
 // ============================================================
 
-Symetrix::Symetrix() {
+// Definición del struct de pimpl vacío
+struct Symetrix::Impl {};
+
+Symetrix::Symetrix() :
+    pimpl_(std::make_unique<Impl>()),
+    connection_ping_timeout_ms_(0),
+    kBootPreset_(0)
+{
     SYS_WARN("GuiMgr", "Symetrix class not compatible in not Windows SO.");
 }
 Symetrix::~Symetrix() {}

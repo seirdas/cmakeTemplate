@@ -514,55 +514,59 @@
 //  (Stubs)
 // ============================================================
 
-TotalMix::TotalMix() : {
-    SYS_WARN("GuiMgr", "Totalmix class not compatible in not Windows SO.");
-}
-TotalMix::~TotalMix() { }
-bool TotalMix::init(int localPort, const std::string& localIP,
-                    int remotePort, const std::string& remoteIP,
-                    int numInputs, int numPlaybacks, int numOutputs) 
-{
-    return false;
-}
+// Definición del struct de pimpl vacío
+struct TotalMix::Impl {};
+
+// General ------------------------------------------------------------------------------
+    TotalMix::TotalMix() : pimpl_(std::make_unique<Impl>()) {
+        SYS_WARN("GuiMgr", "Totalmix class not compatible in not Windows SO.");
+    }
+    TotalMix::~TotalMix() { }
+    bool TotalMix::init(int localPort, const std::string& localIP,
+                        int remotePort, const std::string& remoteIP,
+                        int numInputs, int numPlaybacks, int numOutputs) 
+    {
+        return false;
+    }
 
 // Control de volumen -------------------------------------------------------
-bool TotalMix::SetOutputVolume(int out, float pct, bool in_dB_units)            { return false; }
-bool TotalMix::SetInputVolume(int out, int in, float pct, bool in_dB_units)     { return false; }
-bool TotalMix::SetPlaybackVolume(int out, int pb, float pct, bool in_dB_units)  { return false; }
+    bool TotalMix::SetOutputVolume(int out, float pct, bool in_dB_units)            { return false; }
+    bool TotalMix::SetInputVolume(int out, int in, float pct, bool in_dB_units)     { return false; }
+    bool TotalMix::SetPlaybackVolume(int out, int pb, float pct, bool in_dB_units)  { return false; }
 
 // Control de Mute ----------------------------------------------------------
-bool TotalMix::SetMuteOutput(int out, bool mute)                    { return false; }
-bool TotalMix::SetMuteInput(int in, bool mute)                      { return false; }
-bool TotalMix::SetMutePlayback(int pb, bool mute)                   { return false; }
+    bool TotalMix::SetMuteOutput(int out, bool mute)                    { return false; }
+    bool TotalMix::SetMuteInput(int in, bool mute)                      { return false; }
+    bool TotalMix::SetMutePlayback(int pb, bool mute)                   { return false; }
 
 // Miscelánea ---------------------------------------------------------------
-bool TotalMix::SetSnapshot(int index)                               { return false; }
-bool TotalMix::SetInputThreshold(int in, float threshold)           { return false; }
+    bool TotalMix::SetSnapshot(int index)                               { return false; }
+    bool TotalMix::SetInputThreshold(int in, float threshold)           { return false; }
 
 // Privados - Envío OSC -----------------------------------------------------
-bool TotalMix::SendVolume(Bus bus, int out, int channel, float dB)  { return false; }
-bool TotalMix::SendMute(Bus bus, int channel, bool mute)            { return false; }
-bool TotalMix::SendPacket()                                         { return false; }
+    bool TotalMix::SendVolume(Bus bus, int out, int channel, float dB)  { return false; }
+    bool TotalMix::SendMute(Bus bus, int channel, bool mute)            { return false; }
+    bool TotalMix::SendPacket()                                         { return false; }
 
 // Bancos -------------------------------------------------------------------
-void TotalMix::BuildBankMaps()                                      { return; }
-int TotalMix::BankStartFor(int channel) const                       { return; }
+    void TotalMix::BuildBankMaps()                                      { return;   }
+    int TotalMix::BankStartFor(int channel) const                       { return 0; }
 
 // Utilidades ---------------------------------------------------------------
-float TotalMix::dBtoFader(float dB)                                 { return; }
-float TotalMix::PctTodB(float pct)                                  { return; }
+    float TotalMix::dBtoFader(float dB)                                 { return 0; }
+    float TotalMix::PctTodB(float pct)                                  { return 0; }
 
 // Métodos OSC --------------------------------------------------------------
-void TotalMix::OscReset()                                                   { return; }
-int TotalMix::OscFreeSpace() const                                          { return 0; }
-bool TotalMix::OscCheckTag(char expected)                                   { return true; }
-void TotalMix::OscPatchMsgSize()                                            { return; }
-int TotalMix::OscPadString(char* dest, const char* str)                     { return 0; }
-int TotalMix::OscEffectiveStringLen(const char* str) const                  { return 0; }
-bool TotalMix::OscOpenBundle(OscTimeTag tt)                                 { return true; }
-bool TotalMix::OscCloseBundle()                                             { return true; }
-bool TotalMix::OscCloseAll()                                                { return true; }
-bool TotalMix::OscWriteAddrAndTypes(const char* name, const char* types)    { return true; }
-bool TotalMix::OscWriteFloat(float val)                                     { return true; }
+    void TotalMix::OscReset()                                                   { return; }
+    int TotalMix::OscFreeSpace() const                                          { return 0; }
+    bool TotalMix::OscCheckTag(char expected)                                   { return true; }
+    void TotalMix::OscPatchMsgSize()                                            { return; }
+    int TotalMix::OscPadString(char* dest, const char* str)                     { return 0; }
+    int TotalMix::OscEffectiveStringLen(const char* str) const                  { return 0; }
+    bool TotalMix::OscOpenBundle(OscTimeTag tt)                                 { return true; }
+    bool TotalMix::OscCloseBundle()                                             { return true; }
+    bool TotalMix::OscCloseAll()                                                { return true; }
+    bool TotalMix::OscWriteAddrAndTypes(const char* name, const char* types)    { return true; }
+    bool TotalMix::OscWriteFloat(float val)                                     { return true; }
 
 #endif
