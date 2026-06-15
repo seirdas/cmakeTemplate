@@ -57,7 +57,7 @@ public:
     /** 
      * @brief Devuelve el nombre del micrófono que tiene Windows marcado como predeterminado.
      */
-    std::string getDefaultInputsDevice() const;
+    std::string getDefaultInputDevice() const;
 
     /**
      * @brief Añadir como dispositivo de captura

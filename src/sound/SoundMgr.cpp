@@ -120,7 +120,7 @@
         return devlist;
     }
  
-    std::string SoundMgr::getDefaultInputsDevice() const {
+    std::string SoundMgr::getDefaultInputDevice() const {
         // Si no está inicializado no se puede hacer nada
         if (!ctx_initialized_) return {};
 
@@ -183,7 +183,6 @@
         return true;
     }
 
-    // Eliminar el dispositivo de captura
    bool SoundMgr::removeInputDevice(unsigned short index) {
 
         // comprobar si existe
@@ -207,13 +206,11 @@
         return true;
     }
 
-    //Empieza a grabar
     bool SoundMgr::startRec_snd(unsigned short index){
         if (index >= inputs_.size()) return false;
         return inputs_[index]->StartRec();
     }
 
-    // Para de grabar y guarda el audio como .wav
     bool SoundMgr::stopRec_snd(unsigned short index){
         if (index >= inputs_.size()) return false;
 
@@ -228,11 +225,30 @@
         return true;
     }
 
-    // Obtener nivel del RMS
     float SoundMgr::getInputRmsLevel(unsigned short index) {
     if (index >= inputs_.size()) return 0.0f;
     return inputs_[index]->getRmsLevel();
 }
+
+    size_t SoundMgr::getInputBufferSize(unsigned int index) {
+        if (index >= inputs_.size()) return false;
+        return inputs_[index]->getBufferSize();
+    }
+
+    size_t SoundMgr::getInputRecBufferSize(unsigned int index) 
+    {
+        if (index >= inputs_.size()) return false;
+        return inputs_[index]->getRecBufferSize();
+    }
+
+    bool SoundMgr::isInputDeviceValid(unsigned short index) const 
+    {
+        // Comprueba que el índice que pides existe.
+        if (index >= inputs_.size()) return false;
+        // comprueba si es valido
+        return inputs_[index]->isValid();
+    }
+
 
     // Playbacks ----------------------------------------------------------------------------
 
@@ -390,24 +406,6 @@
         return true;
     }
     
-    size_t SoundMgr::getInputBufferSize(unsigned int index) {
-        if (index >= inputs_.size()) return false;
-        return inputs_[index]->getBufferSize();
-    }
-
-    size_t SoundMgr::getInputRecBufferSize(unsigned int index) 
-    {
-        if (index >= inputs_.size()) return false;
-        return inputs_[index]->getRecBufferSize();
-    }
-
-    bool SoundMgr::isInputDeviceValid(unsigned short index) const 
-    {
-        // Comprueba que el índice que pides existe.
-        if (index >= inputs_.size()) return false;
-        // comprueba si es valido
-        return inputs_[index]->isValid();
-    }
 
 #else
 // ============================================================
@@ -418,19 +416,25 @@
     SoundMgr::SoundMgr()             {}
     SoundMgr::~SoundMgr()            {}
     bool SoundMgr::init()            { return false; }
-    bool SoundMgr::stop();           { return false; }
-    bool SoundMgr::updateDevices();  { return false; }
+    bool SoundMgr::stop()            { return false; }
+    bool SoundMgr::updateDevices()   { return false; }
 
     // Capture Input ------------------------------------------------------------------------
-    std::vector<std::string> SoundMgr::getAvailableInputs() const;                         { return {}; }
-    std::string SoundMgr::getDefaultInputDevice() const                                    { return {}; }
-    void        SoundMgr::listAvailableInputs() const                                      { return; }
-    bool        SoundMgr::addCaptureDevice(std::string const& name, unsigned short index); { return false; }
+    std::vector<std::string> SoundMgr::getAvailableInputs() const               { return {}; }
+    std::string SoundMgr::getDefaultInputDevice() const                         { return {}; }
+    bool        SoundMgr::addCaptureDevice(std::string const&, unsigned short)  { return false; }
+    bool SoundMgr::removeInputDevice(unsigned short)                            { return false; }
+    bool SoundMgr::startRec_snd(unsigned short)                                 { return false; }
+    bool SoundMgr::stopRec_snd(unsigned short)                                  { return false; }
+    float SoundMgr::getInputRmsLevel(unsigned short)                            { return 0.0f;  }
+
+    size_t SoundMgr::getInputBufferSize(unsigned int)                     { return 0;     }    
+    size_t SoundMgr::getInputRecBufferSize(unsigned int)                  { return 0;     }        
+    bool   SoundMgr::isInputDeviceValid(unsigned short) const             { return false; }            
 
     // Playbacks ----------------------------------------------------------------------------
-    std::vector<std::string> SoundMgr::getAvailablePlaybacks() const;   { return {}; }
+    std::vector<std::string> SoundMgr::getAvailablePlaybacks() const    { return {}; }
     std::string SoundMgr::getDefaultPlaybackDevice() const              { return {}; }
-    void        SoundMgr::listAvailablePlaybacks() const                { return; }
     bool        SoundMgr::addPlaybackDevice(std::string const&, std::string const&) { return false; }
     bool        SoundMgr::removePlaybackDevice(unsigned short)          { return false; }
     bool        SoundMgr::playbackTest()                                { return false; }
