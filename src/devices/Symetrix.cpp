@@ -30,8 +30,7 @@
 
     #include <string>           ///< Clase std::string para manipulación de cadenas de texto.
     #include <vector>           ///< Contenedor de secuencia dinámica (std::vector).
-    #include <charconv>
-    #include <cstring>
+    #include <algorithm>        ///< std::clamp
 
 
     struct Symetrix::Impl {
@@ -41,14 +40,18 @@
 
     // General ------------------------------------------------------------------------------
 
-    Symetrix::Symetrix() : 
+    Symetrix::Symetrix() :
         pimpl_(std::make_unique<Impl>()),
+        m_lastPingTime_(std::chrono::steady_clock::now()),
+        m_waitingPingResponse_(false),
+        wsaStarted_(false),
         connected_(false),
         initialized_(false),
-        supermatrix_ins_(20),       // Por defecto está diseñado para tener 20 entradas (se puede cambiar por método)
-        supermatrix_outs_(20),      // Por defecto está diseñado para tener 20 salidas  (se puede cambiar por método)
         connection_ping_timeout_ms_(500),
         ComposerPort_(48631),
+        tolerance_percent_(2),            // Por defecto tolerancias de un 2% sobre el rango
+        supermatrix_ins_(20),             // Por defecto para tener 20 entradas (se puede cambiar por método)
+        supermatrix_outs_(20),            // Por defecto para tener 20 salidas (se puede cambiar por método)
         kBootPreset_(1)
     {
 
@@ -98,7 +101,7 @@
         initialized_ = false;
     }
 
-    bool Symetrix::isConnected() {
+    bool Symetrix::isConnected() const {
         return connected_;
     }
 
@@ -126,7 +129,7 @@
         // Comprueba si el socket a symetrix está correcto
         if (pimpl_->socket == INVALID_SOCKET) {
             return false;
-        }        
+        }
 
         // El preset no puede ser mayor a 1000
         if (preset > 1000) {
@@ -134,66 +137,126 @@
         }
 
         // Comando oficial: LP <PRESET><CR>. Puedo usar $q para evitar tráfico.
-        // Ref: (LP) Load Preset — responde ACK/NAK. Nosotros no leemos (UDP/Quiet). 
+        // Ref: (LP) Load Preset — responde ACK/NAK. Nosotros no leemos (UDP/Quiet).
         char cmd[32];
         int len = std::snprintf(cmd, sizeof(cmd), "$q LP %u\r", preset);
 
         // Verificación de seguridad del buffer (snprintf devuelve el número de caracteres requeridos)
         if (len <= 0 || len >= static_cast<int>(sizeof(cmd))) {
-            return false; 
+            return false;
         }
 
         // Envío por red
         int sent = send(pimpl_->socket, cmd, len, 0);
         if (sent == SOCKET_ERROR || sent != len) {
-            return false; 
+            return false;
         }
         return true;
 
     }
 
-    
+
     // Componentes: Controles generales -----------------------------------------------------
 
-    bool Symetrix::setMute(unsigned int id, bool mute) {
-        // #TODO
-        return false;
-    }
+    bool Symetrix::setValue(unsigned int id, float value, float minValue, float maxValue) {
 
-    bool Symetrix::setThreshold(unsigned int id, double value, bool true_scale) {
         // Comprobar si se pueden mandar los datos
         if (!connected_ || id == 0) return false;
 
-        // Si el valor está en escala natural, convertirlo
-        float dB = (true_scale) ? value : MapScale(value, ThresholdMin_, ThresholdMax_);
-        
-        // No sobrepasar los límites
-        if (dB < ThresholdMin_) dB = ThresholdMin_; 
-        if (dB > ThresholdMax_) dB = ThresholdMax_;
+        if (value < minValue) {
+            SYS_WARN("Symetrix","Value lower than min value range");
+            return false;
+        }
+        if (value > maxValue) {
+            SYS_WARN("Symetrix","Value higher than max value range");
+            return false;
+        }
 
-        const int ticks = dbToTicks(dB, ThresholdMin_, ThresholdMax_);
-        const int offTicks = dbOffsetToTicks(tolerances_.ThresholdDb, ThresholdMin_, ThresholdMax_);
+        // Obtener el valor en la escala de ticks de Symetrix
+        const int ticks = ValueToTicks(value, minValue, maxValue);
 
-        int idx = findOrAlloc(id, offTicks);        
-        if (!shouldSend(id, ticks)) return true;
-        return sendCSQ(id, ticks) && setCached(id, ticks);
-    }
+        // Comprobar variación respecto a tolerancia para mandar o no
+        if (shouldSend(id, ticks) && sendCSQ(id, ticks)) {
 
+            // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
+            if (!isCached(id)) {
+                unsigned int toleranceTicks = 
+                    static_cast<unsigned int>(std::round((maxTickValue_ - minTickValue_) * (tolerance_percent_ / 100.0f)));
+                setToleranceTicks(id, toleranceTicks);
+            }
 
-    // Componentes: Routers & Selectors -----------------------------------------------------
+            // Guardar el valor nuevo en la cache
+            cacheValue(id, ticks);
+            return true;
+        }
 
-    bool Symetrix::set_InputSelector_Selection(unsigned int id, unsigned int sel) {
-        // #TODO
+        /* else */      // No se ha mandado el valor
         return false;
     }
 
+    bool Symetrix::setButton(unsigned int id, bool selection) {
+
+        // Comprobar si se pueden mandar los datos
+        if (!connected_ || id == 0) return false;
+
+        // Obtener el valor en la escala de ticks de Symetrix, desde escala [0,1] (disable,enable)
+        const int ticks = ValueToTicks( selection ? 1 : 0 , 0, 1);
+
+        // Comprobar variación respecto a tolerancia para mandar o no
+        if (sendCSQ(id, ticks)) {
+
+            // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
+            if (!isCached(id))
+                setToleranceTicks(id, 0);   // Tolerancia a 0 en valores binarios
+
+            // Guardar el valor nuevo en la cache
+            cacheValue(id, ticks);
+            return true;
+        }
+
+        /* else */      // No se ha mandado el valor
+        return false;
+    }
+
+
+    // Tolerancias --------------------------------------------------------------------------
+
+    void Symetrix::updateTolerance(unsigned int newTolerancePercent, unsigned int id) {
+
+        // Comprobar rango
+        if (newTolerancePercent > 100 || newTolerancePercent < 0) {
+            SYS_WARN("Symetrix", "New tolerance percent must be in the interval [0-100]");
+            return;
+        }
+
+        // Calcular nuevos ticks de tolerancia
+        unsigned int tickTol = static_cast<unsigned int>(std::round((maxTickValue_ - minTickValue_) * (newTolerancePercent / 100.0f)));
+
+        // Cuando se selecciona el cambio de tolerancia para un id concreto
+        if (id != 0) {
+            // Si el valor no está cacheado, avisar de que va a cambiar la tolerancia en un valor no cacheado
+            auto it = cache_.find(id);
+            if (it == cache_.end()) {
+                SYS_WARN("Symetrix","Updating tolerance to not cached value");
+                cache_[id].toleranceTick = tickTol;
+            }
+            it->second.toleranceTick = tickTol;
+        }
+        else {      // Aplica a todos los componentes antiguos y nuevos
+            tolerance_percent_ = newTolerancePercent;
+            // Establecer el nuevo valor de tolerancia en todos los elementos de la cache
+            for (auto & it : cache_)
+                it.second.toleranceTick = tickTol;
+        }
+
+    }
 
     // Inicialización privada ---------------------------------------------------------------
 
     bool Symetrix::initConnection(std::wstring const& hostIp) {
-        
+
         // Si ya está conectado no hacer nada
-        if (connected_) 
+        if (connected_)
             return true;
 
         // Iniciar WSA (Contexto de red Windows)
@@ -210,8 +273,8 @@
         pimpl_->socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (pimpl_->socket == INVALID_SOCKET) {
             SYS_WARN("Symetrix", "init: Socket binding failed.");
-            net_cleanup(); 
-            return false; 
+            net_cleanup();
+            return false;
         }
 
         // Establecer timeout de recepción de ping al socket
@@ -222,26 +285,26 @@
         }
 
         // Prepara la dirección de destino en formato big-endian
-        sockaddr_in dest{}; 
-        dest.sin_family = AF_INET; 
+        sockaddr_in dest{};
+        dest.sin_family = AF_INET;
         dest.sin_port = htons(ComposerPort_);
-        
+
         // Probar conexión desde IP literal (si hostIP es una IP)
         if (InetPtonW(AF_INET, hostIp.c_str(), &dest.sin_addr) != 1) {
             SYS_WARN("Symetrix","Cannot bind with hostIP: " + std::string(hostIp.begin(),hostIp.end()) );
             SYS_INFO("Symetrix","Trying to connect by IP alias...");
             // Intenta conectar si hostIP es un alias (como por ejemplo DNS)
-            ADDRINFOW hints{}; 
-            hints.ai_family = AF_INET; 
-            hints.ai_socktype = SOCK_DGRAM; 
+            ADDRINFOW hints{};
+            hints.ai_family = AF_INET;
+            hints.ai_socktype = SOCK_DGRAM;
             hints.ai_protocol = IPPROTO_UDP;
-            ADDRINFOW* res = nullptr; 
-            if (GetAddrInfoW(hostIp.c_str(), nullptr, &hints, &res) != 0 || !res) { 
+            ADDRINFOW* res = nullptr;
+            if (GetAddrInfoW(hostIp.c_str(), nullptr, &hints, &res) != 0 || !res) {
                 SYS_WARN("Symetrix","Cannot connect to Symetrix: hostIP not recognized.");
-                net_cleanup(); 
-                return false; 
+                net_cleanup();
+                return false;
             }
-            dest = *reinterpret_cast<sockaddr_in*>(res->ai_addr); 
+            dest = *reinterpret_cast<sockaddr_in*>(res->ai_addr);
             dest.sin_port = htons(ComposerPort_);
             SYS_SOLVED("Symetrix","hostIP alias found and bind correctly.");
             FreeAddrInfoW(res);
@@ -249,7 +312,7 @@
 
         // Asociación "estática" del socket UDP: Ahora "send" y "recv" no necesitan especificar destino
         if (connect(pimpl_->socket, reinterpret_cast<const sockaddr*>(&dest), sizeof(dest)) == SOCKET_ERROR) {
-            net_cleanup(); 
+            net_cleanup();
             return false;
         }
 
@@ -260,11 +323,11 @@
         if (send(pimpl_->socket, pingCmd, (int)strlen(pingCmd), 0) == SOCKET_ERROR) {
             SYS_WARN("Symetrix", "Cannot send ping to symetrix: Socket fail.");
             return false;
-        } 
+        }
 
         // Esperamos respuesta (el socket tiene 500ms de timeout configurado arriba)
         char rxBuf[64];
-        if (!recv(pimpl_->socket, rxBuf, sizeof(rxBuf), 0) > 0) {
+        if (recv(pimpl_->socket, rxBuf, sizeof(rxBuf), 0) >= 0) {
             SYS_WARN("Symetrix","Cannot receive ACK from Symetrix. Check connection or IP");
             return false;
         }
@@ -275,8 +338,6 @@
 
     void Symetrix::initSupermatrix() {
         const size_t total = size_t(supermatrix_outs_ + 1) * size_t(supermatrix_ins_ + 1);
-        PrevCenti_.assign(total, -7200);
-        ToleranceCenti_.assign(total, (unsigned short)((tolerances_.superMatrixCenti > 1) ? tolerances_.superMatrixCenti : 1));
 
         constexpr double gamma = 0.415;
         constexpr int kOffCenti = -7200;
@@ -306,88 +367,68 @@
     }
 
 
-    // Conversión de datos ------------------------------------------------------------------
+    // Caché de datos de envío --------------------------------------------------------------
 
-    float Symetrix::MapScale(float value, float minVal, float maxVal) {
-
-        // Devuelve directamente el valor si sobrepasa los límites 0-100
-        if (value <= 0.0f)   return minVal;
-        if (value <= 100.0f) return minVal;
-
-        // Normalizar a un rango [0.0, 1.0] basado en la escala 1-100
-        float t = (value - 1.0f) / (100.0f - 1.0f);
+    unsigned int Symetrix::ValueToTicks(float value, float minValue, float maxValue) {
         
-        // Cálculo de porcentaje sobre el rango [minVal, maxVal]
-        return minVal + (t * (maxVal - minVal));
-    }
-
-    int Symetrix::dbToTicks(double dB, double minDb, double maxDb) {
-        const double t = (dB - minDb) / (maxDb - minDb);
-        long long v = llround(t * 65535.0);
-        if (v < 0) v = 0; if (v > 65535) v = 65535;
-        return static_cast<int>(v);
-    }
-
-    int Symetrix::dbOffsetToTicks(double offDb, double minDb, double maxDb) {
-        if (offDb <= 0.0) return 1;
-        const double span = maxDb - minDb;
-        long long v = llround((offDb / span) * 65535.0);
-        if (v < 1) v = 1; if (v > 65535) v = 65535;
-        return static_cast<int>(v);
-    }
-
-
-    // Búsqueda de parámetros ---------------------------------------------------------------
-
-    int Symetrix::findOrAlloc(int id, int defaultOffsetTicks) {
-
-        // Buscar y devolver los datos cacheados del id si ya existen
-        if (cache_.find(id) != cache_.end())
-            return id; // En un mapa, el 'id' es el identificador único/clave
-
-        // Si no existe, añadir una nueva entrada
-        CacheEntry newEntry;
-        newEntry.id = id;
-        newEntry.ticks = -1;
-        newEntry.offsetTicks = (defaultOffsetTicks > 0 ? defaultOffsetTicks : 1);
-        cache_[id] = newEntry;
+        // Comprobación de errores
+        if (minValue >= maxValue) {
+            SYS_WARN("Symetrix","ValueToTicks: Min value greater or equal than max value.");
+            return 0;   // Cuidado con esto que no es el valor esperado
+        }
+        if (minValue >= maxValue) {
+            SYS_WARN("Symetrix","ValueToTicks: Max value lower or equal than min value.");
+            return 0;   // Cuidado con esto que no es el valor esperado
+        }
         
-        // Devuelve el índice del elemento recién añadido
-        return static_cast<int>(cache_.size() - 1);
+        // Asignación directa sin calcular
+        if (value <= minValue) return minTickValue_;
+        if (value >= maxValue) return maxTickValue_;
+
+
+        // Devolver el valor convertido escalado a la escala de destino (ticks)
+        float fraction = (value - minValue) / (maxValue - minValue);
+        return minTickValue_ + static_cast<unsigned int>(std::round(fraction * (maxTickValue_ - minTickValue_)));
+    }
+
+    bool Symetrix::isCached(unsigned int id) const {
+        return cache_.find(id) != cache_.end();
+    }
+
+    void Symetrix::cacheValue(unsigned int id, unsigned int currentTick) {
+        cache_[id].cachedTicks = currentTick;
+    }
+
+    
+    // Tolerancias (privado) ----------------------------------------------------------------
+
+    void Symetrix::setToleranceTicks(unsigned int id, unsigned int newToleranceTicks) {
+        // Si el valor no está cacheado, avisar de que va a cambiar la tolerancia en un valor no cacheado
+        auto it = cache_.find(id);
+        if (it == cache_.end()) {
+            SYS_WARN("Symetrix","Updating tolerance to not cached value");
+            cache_[id].toleranceTick = newToleranceTicks;
+        }
+        it->second.toleranceTick = newToleranceTicks;
     }
 
 
     // Envío de datos -----------------------------------------------------------------------
 
-    bool Symetrix::shouldSend(int id, int newTicks) const {
+    bool Symetrix::shouldSend(unsigned int id, unsigned int newTicks) {
 
-        // Buscar el valor en la cache
         auto it = cache_.find(id);
 
         // Si el valor no está cacheado, se debería enviar
-        if (it == cache_.end()) {
-            return true;
-        }
-        
-        // Comprobar si se debería mandar el dato o no
-        const CacheEntry& entry = it->second;
-        if (entry.ticks < 0) return true;
-        return std::abs(newTicks - entry.ticks) >= entry.offsetTicks;   
-    }
-
-    bool Symetrix::setCached(int id, int ticks) {
-
-        // Si el valor no está cacheado, no guarda nada
-        if (cache_.find(id) == cache_.end())
-            return false;
-
-        // Guarda los ticks en la cache
-        cache_[id].ticks = ticks;
+        if (it == cache_.end())
         return true;
+
+        // Comprobar si el cambio de valor supera la tolerancia
+        return std::abs(static_cast<int>(newTicks) - it->second.cachedTicks) >= it->second.toleranceTick;
     }
 
-    bool Symetrix::sendCSQ(int id, int ticks) {
-        char buf[64];
+    bool Symetrix::sendCSQ(unsigned int id, unsigned int ticks) {
+        char buf[32];
         char* p = buf;
         char* const end = buf + sizeof(buf);
 
@@ -416,7 +457,7 @@
         // Envío
         const int len = static_cast<int>(p - buf);
         int sent = send(pimpl_->socket, buf, len, 0);
-        if (sent == SOCKET_ERROR || sent != len) { 
+        if (sent == SOCKET_ERROR || sent != len) {
             SYS_WARN("Symetrix", "sendCSQ Error");
             return false;
         }
@@ -427,7 +468,7 @@
 
 #else
 // ============================================================
-//  (Stubs)
+//  (Stubs para SO No-Windows)
 // ============================================================
 
 // Definición del struct de pimpl vacío
@@ -435,31 +476,59 @@ struct Symetrix::Impl {};
 
 Symetrix::Symetrix() :
     pimpl_(std::make_unique<Impl>()),
+    m_lastPingTime_(),
+    m_waitingPingResponse_(false),
+    wsaStarted_(false),
+    connected_(false),
+    initialized_(false),
     connection_ping_timeout_ms_(0),
+    ComposerPort_(48631),
+    tolerance_percent_(2),
+    supermatrix_outs_(20),
+    supermatrix_ins_(20),
     kBootPreset_(0)
 {
-    SYS_WARN("GuiMgr", "Symetrix class not compatible in not Windows SO.");
+    SYS_WARN("Symetrix", "Symetrix class not compatible in non-Windows OS. Network bypassed.");
 }
+
 Symetrix::~Symetrix() {}
 
-// #TODO métodos públicos
+// Ejecución ----------------------------------------------------------------------------
+bool Symetrix::Init(const std::wstring&, bool) { return false; }
+void Symetrix::Destroy() {}
+bool Symetrix::isConnected() { return false; }
+
+// Parámetros ---------------------------------------------------------------------------
+void Symetrix::setSupermatrixINs(unsigned int) {}
+void Symetrix::setSupermatrixOUTs(unsigned int) {}
+
+// Comandos -----------------------------------------------------------------------------
+bool Symetrix::LoadPreset(unsigned int) { return false; }
+
+// Componentes: Controles generales -----------------------------------------------------
+bool Symetrix::setValue(unsigned int, float, float, float) { return false; }
+bool Symetrix::setButton(unsigned int, bool) { return false; }
+
+// Tolerancias --------------------------------------------------------------------------
+void Symetrix::updateTolerance(unsigned int, unsigned int) {}
 
 // Inicialización privada ---------------------------------------------------------------
-bool Symetrix::initConnection(std::wstring const&)       { return false; }
-void Symetrix::initSupermatrix()                         { return;       }
-void Symetrix::net_cleanup()                             { return;       }
+bool Symetrix::initConnection(std::wstring const&) { return false; }
+void Symetrix::initSupermatrix() {}
+void Symetrix::net_cleanup() {}
 
-// Conversión de datos ------------------------------------------------------------------
-float Symetrix::MapScale(float, float, float)             { return 0.0f; }
-int   Symetrix::dbToTicks(double, double, double)         { return 0;    }
-int   Symetrix::dbOffsetToTicks(double, double, double)   { return 0;    }
+// Conversión de datos a ticks ----------------------------------------------------------
+unsigned int Symetrix::ValueToTicks(float, float, float) { return 0; }
 
-// Búsqueda de parámetros ---------------------------------------------------------------
-int  Symetrix::findOrAlloc(int, int)                     { return 0;     } 
+// Caché de datos de envío --------------------------------------------------------------
+bool Symetrix::isCached(unsigned int) const { return false; }
+void Symetrix::cacheValue(unsigned int, unsigned int) {}
+
+// Tolerancias (privado) ----------------------------------------------------------------
+void Symetrix::setToleranceTicks(unsigned int, unsigned int) {}
 
 // Envío de datos -----------------------------------------------------------------------
-bool Symetrix::shouldSend(int, int) const                { return false; }                  
-bool Symetrix::setCached(int, int)                       { return false; }         
-bool Symetrix::sendCSQ(int, int)                         { return false; }          
+bool Symetrix::shouldSend(unsigned int, unsigned int) { return false; }
+bool Symetrix::sendCSQ(unsigned int, unsigned int) { return false; }
 
 #endif
