@@ -23,7 +23,7 @@
 
     TTSMgr::TTSMgr(std::size_t const& num_threads_) :
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
-        concurrent_init_(true),
+        concurrent_init_(false),
         models_path_(VOICES_PATH),
         num_available_models_(0),
         active_tasks_(0),
