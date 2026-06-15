@@ -218,6 +218,8 @@ private:
     bool        gui_initialized_;               ///< Indica si gui está inicializado
     bool        snd_initialized_;               ///< Indica si snd está inicializado
     bool        tts_initialized_;               ///< Indica si tts está inicializado
+    bool        tmx_initialized_;               ///< Indica si tmx está inicializado
+    bool        sym_initialized_;               ///< Indica si sym está inicializado
 
     // Gestión de hilos
     std::thread             hilo_test_;         ///< Hilo de pruebas

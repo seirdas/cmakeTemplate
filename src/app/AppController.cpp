@@ -12,6 +12,7 @@ AppController::AppController() :
     gui_initialized_(false),
     snd_initialized_(false),
     tts_initialized_(false),
+    sym_initialized_(false),
     running_(false),
     online_mode_(true),
     version_(std::to_string(VERSION))
@@ -66,7 +67,7 @@ bool AppController::init(int argc, char** argv) {
     if(!net_initialized_)
         SYS_ERROR("AppController","Network subsystem FAIL");
     else SYS_INFO("AppController","Network subsystem OK");
-    
+
 
     // Iniciar gestor de sonidos
     SYS_INFO("AppController","Sound subsystem loading...");
@@ -75,9 +76,21 @@ bool AppController::init(int argc, char** argv) {
         SYS_ERROR("AppController","Sound subsystem FAIL");
     else SYS_INFO("AppController","Sound subsystem OK");
 
+
     // Iniciar conexión Totalmix
     SYS_INFO("AppController","Totalmix manager loading...");
-    tmx_.init(12321,"127.0.0.1", 7001,"127.0.0.1",32,32,32);
+    tmx_initialized_ = tmx_.init(12321,"127.0.0.1", 7001,"127.0.0.1",32,32,32);
+    if(!tmx_initialized_)
+        SYS_WARN("AppController","Totalmix manager FAIL");
+    else SYS_INFO("AppController","Totalmix manager OK");
+
+
+    // Iniciar conexión Symetrix
+    SYS_INFO("AppController","Symetrix manager loading...");
+    sym_initialized_ = sym_.Init(L"192.168.7.21");
+    if(!sym_initialized_)
+        SYS_WARN("AppController","Symetrix manager FAIL");
+    else SYS_INFO("AppController","Symetrix manager OK");
     
 
     // Inicialización de TTS (en hilo para no bloquear)
