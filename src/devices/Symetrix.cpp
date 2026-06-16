@@ -64,7 +64,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool Symetrix::Init(std::wstring const& hostIp, bool force) {
+    bool Symetrix::Init(std::wstring const& SymetrixIP, bool force) {
 
         // No hacer nada si ya está inicializado y no se fuerza el init
         if (initialized_ && !force) return true;
@@ -76,7 +76,7 @@
         }
 
         // Inicializar y probar conexión de red con Symetrix
-        if(!initConnection(hostIp))
+        if(!initConnection(SymetrixIP))
             return false;
 
         // Inicialización de variables de supermatrix
@@ -240,7 +240,7 @@
                 SYS_WARN("Symetrix","Updating tolerance to not cached value");
                 cache_[id].toleranceTick = tickTol;
             }
-            it->second.toleranceTick = tickTol;
+            cache_[id].toleranceTick = tickTol;
         }
         else {      // Aplica a todos los componentes antiguos y nuevos
             tolerance_percent_ = newTolerancePercent;
@@ -250,6 +250,7 @@
         }
 
     }
+
 
     // Inicialización privada ---------------------------------------------------------------
 
@@ -327,7 +328,7 @@
 
         // Esperamos respuesta (el socket tiene 500ms de timeout configurado arriba)
         char rxBuf[64];
-        if (recv(pimpl_->socket, rxBuf, sizeof(rxBuf), 0) >= 0) {
+        if (recv(pimpl_->socket, rxBuf, sizeof(rxBuf), 0) <= 0) {
             SYS_WARN("Symetrix","Cannot receive ACK from Symetrix. Check connection or IP");
             return false;
         }
@@ -403,13 +404,7 @@
     // Tolerancias (privado) ----------------------------------------------------------------
 
     void Symetrix::setToleranceTicks(unsigned int id, unsigned int newToleranceTicks) {
-        // Si el valor no está cacheado, avisar de que va a cambiar la tolerancia en un valor no cacheado
-        auto it = cache_.find(id);
-        if (it == cache_.end()) {
-            SYS_WARN("Symetrix","Updating tolerance to not cached value");
-            cache_[id].toleranceTick = newToleranceTicks;
-        }
-        it->second.toleranceTick = newToleranceTicks;
+        cache_[id].toleranceTick = newToleranceTicks;
     }
 
 
