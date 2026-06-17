@@ -491,7 +491,7 @@ Symetrix::~Symetrix() {}
 // Ejecución ----------------------------------------------------------------------------
 bool Symetrix::Init(const std::wstring&, bool) { return false; }
 void Symetrix::Destroy() {}
-bool Symetrix::isConnected() { return false; }
+bool Symetrix::isConnected() const { return false; }
 
 // Parámetros ---------------------------------------------------------------------------
 void Symetrix::setSupermatrixINs(unsigned int) {}
