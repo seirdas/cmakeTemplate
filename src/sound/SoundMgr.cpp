@@ -164,7 +164,7 @@
         // Crear AudioInputModule y le pasa toda la información
         std::unique_ptr<AudioInputModule> aim = std::make_unique<AudioInputModule>(
             &pimpl_->snd_context_, 
-            *selectedDeviceInfo
+            selectedDeviceInfo
         );
 
         // Intenta inicializar el AudioInputModule ?
