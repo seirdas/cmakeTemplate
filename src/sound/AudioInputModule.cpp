@@ -198,6 +198,9 @@
 
     void AudioInputModule::StopRec() {
 
+        // Si no está grabando, no hacer nada
+        if (!recording_) return;
+
         // Flag para desactivar la toma de samples en el buffer de grabación del callback de captura
         recording_=false; 
 
