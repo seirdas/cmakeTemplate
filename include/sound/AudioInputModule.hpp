@@ -8,13 +8,13 @@
 
 /**
  * @class AudioInputModule
- * @brief Clase para la captura de audio utilizando mini audio.
+ * @brief Clase para la captura de audio utilizando miniaudio.
  */
 class AudioInputModule{
 
 public: 
 
-    // General --------------------------------------------------------------------------
+    // General ------------------------------------------------------------------------------
 
     /**
      * @brief Constructor de AudioInputModule.
@@ -29,7 +29,7 @@ public:
     ~AudioInputModule();
 
 
-    //Ejecución ------------------------------------------------------------------------- 
+    //Ejecución -----------------------------------------------------------------------------
 
     /**
      * @brief Inicializa el dispositivo de captura
@@ -38,106 +38,117 @@ public:
     bool init();
 
     /**
-     * @brief para de capturar y lo elimina
+     * @brief Detiene la captura de audio y desinicializa el dispositivo
+     *  Si estaba grabando, deja de grabar y guarda lo grabado.
      */
     void stop();
 
-
-    // Init -----------------------------------------------------------------------------
+    
+    // Información y parámetros -------------------------------------------------------------
+    
+    /**
+     * @brief Devuelve el nombre del dispositivo
+     * @return Nombre del dispositivo
+     */
+    std::string deviceName() const;
 
     /**
-     * @brief Orden de empieza a grabar
+     * @brief Indica si el dispositivo está activo o se ha desconectado
+     * @return @c true Si el dispositivo está activo, @c false en caso contrario 
+     */
+    bool isValid();
+
+
+    // Captura ------------------------------------------------------------------------------
+
+    /**
+     * @brief Devuelve el valor medio RMS del buffer de captura.
+     * @return Nivel de señal RMS del buffer de captura
+     */
+    float getRmsLevel() const;
+
+    /**
+     * @brief Obtener tamaño del buffer de captura
+     * @return Tamaño de buffer de captura
+     */
+    size_t getBufferSize();
+
+
+    // Grabación ----------------------------------------------------------------------------
+
+    /**
+     * @brief Comienza a grabar en el archivo especificado
+     * @param filename Archivo donde se grabarán las muestras. 
+     *  No es necesario especificar el formato, se graba en .wav
      * @return true si consigue grabar, false si falla
      */
-    bool StartRec();
+    void StartRec(std::string const& filename);
 
     /**
      * @brief Orden de para de grabar
      * @return 
      */
-    bool StopRec();
+    void StopRec();
+
+    /**
+     * @brief Obtener tamaño del buffer de grabación
+     * @return Tamaño de buffer de grabación
+     */
+    size_t getRecBufferSize();
 
     /** 
-     * @brief Está grabando
+     * @brief Devuelve si el dispositivo de captura está grabando o no
+     * @return @c true si está grabando, @c false en caso contrario
      */
     bool isRecording();
 
 
-    // Dispositivos ---------------------------------------------------------------------
+private:
 
-    /**
-     * @brief devuelve el nombre del dispositivo
-     * @return nombre del dispositivo
-     */
-    std::string deviceName() const { return deviceName_; }
-
-
-    // Grabacion ------------------------------------------------------------------------
+    // Codificador de grabación -------------------------------------------------------------
 
     /**
      * @brief Inicializa el codificador para pasar a .wav
+     * @note Hay que inicializar y desinicializar el encoder cada vez que quieras grabar en un archivo nuevo
      * @param filename Recibe el nombre del archivo donde se va a guardar el audio
      */
-    void InitwavEncoder(const std::string& filename);
+    void InitRecEncoder(std::string const& filename);
 
     /**
-     * @brief  Desinicializa el codificador si eliminamos la entrada 
+     * @brief Desinicializa el encoder de grabación
+     * @note Hay que inicializar y desinicializar el encoder cada vez que quieras grabar en un archivo nuevo
     */
-    void RemovewavEncoder();
+    void UninitRecEncoder();
 
     /**
-     * @brief Guarda el sonido en un .wav
+     * @brief Guarda el audio grabado en un fichero .wav
+     * @details Por defecto se hace justo después de parar la grabación
      */
-    void saveSound();
-
-    /**
-     * @brief Obtener tamaño del buffer de captura
-     * @return tamaño de buffer de captura
-     */
-    size_t getBufferSize();
-
-    /**
-     * @brief Obtener tamaño del buffer de grabación
-     * @return tamaño de buffer de grabación
-     */
-    size_t getRecBufferSize();
-
-    /**
-     * @brief booleano para saber si el dispositivo sigue activo o no 
-     */
-    bool isValid();
+    void saveRecording();
 
 
-    // Nivel RMS ------------------------------------------------------------------------
-
-    /**
-     * @brief obtiene el valor del rms
-     */
-    float getRmsLevel() const { return rmsLevel_; }
-
-
-private:
-
-    /************ Variables ********************************************************/
+/************ Variables ********************************************************/
 
     // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl>   pimpl_;                         ///< Miembros dependientes de la librería externa
+    std::unique_ptr<Impl>   pimpl_;               ///< Miembros dependientes de la librería externa
 
     // Configuración de entrada
-    unsigned int            channels_ = 2;                  ///< Canales del audio
-    unsigned int            sampleRate_ = 44100;            ///< Frecuencia de muestreo
-    std::vector<int16_t>    buffer_;                        ///< Buffer que acumula las muestras de audio capturadas (formato s16)
-    unsigned int            processBufferSize_ = 1024;      ///< frames por bloque de proceso
+    unsigned int            channels_;            ///< Canales del audio
+    unsigned int            sampleRate_;          ///< Frecuencia de muestreo
+    std::vector<int16_t>    buffer_;              ///< Buffer que acumula las muestras de audio capturadas (formato s16)
+    unsigned int            processBufferSize_;   ///< frames por bloque de proceso
 
     // Grabación 
-    std::vector<int16_t>    rec_buffer_;                    ///< Buffer que acumula las muestras de audio capturadas (formato s16)
-    std::atomic<bool>       recording_;                     ///< Flag thread-safe: true = el callback guarda datos, false = los ignora
+    std::vector<int16_t>    rec_buffer_;          ///< Buffer que acumula las muestras de audio capturadas para grabación (formato s16)
+    bool                    codec_inited_;        ///< Flag que indica si el encoder se ha inicializado
+    std::atomic<bool>       recording_;           ///< Flag para guardar samples de audio en el buffer de grabación
+    std::string             rec_filename_;        ///< Nombre de archivo generado con la grabación (para INFO)
     
     // Datos del dispositivo  
-    bool                    is_valid_;                      ///< Bandera para indicar si está inicializado el dispositivo
-    std::string             deviceName_;                    ///< Nombre del dispositivo
+    bool                    is_valid_;            ///< Bandera para indicar si está inicializado el dispositivo
+    std::string             deviceName_;          ///< Nombre del dispositivo
 
     // Valor de entrada del RMS
-    std::atomic<float>      rmsLevel_{0.0f};                ///< guarda el nivel actual de rms
+    std::atomic<float>      rmsLevel_;            ///< guarda el nivel actual de rms
 };

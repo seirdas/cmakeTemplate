@@ -82,6 +82,8 @@
     void AudioInputModule::Impl::notificationCallback_(const ma_device_notification* pNotification) {
 
         AudioInputModule* self = static_cast<AudioInputModule*>(pNotification->pDevice->pUserData);
+
+        // Avisar, guardar y notificar si el dispositivo se ha desconectado o ya no está disponible
         if (pNotification->type == ma_device_notification_type_stopped) {
             self->is_valid_ = false;
             SYS_WARN("AudioInputModule", "Device disconnected or stopped unexpectedly.");
@@ -94,12 +96,17 @@
 
 
 
-    // General --------------------------------------------------------------------------
+    // General ------------------------------------------------------------------------------
 
     AudioInputModule::AudioInputModule(void* ctx, const void* devInfo) :
         pimpl_(std::make_unique<Impl>(ctx, devInfo)),
+        channels_(2),
+        sampleRate_(44100),
+        processBufferSize_(1024),
+        codec_inited_(false),
         recording_(false),
-        is_valid_(false)
+        is_valid_(false),
+        rmsLevel_(0.0f)
     {
         deviceName_ = pimpl_->device_info.name;
     }
@@ -140,42 +147,79 @@
     }
 
     void AudioInputModule::stop() {
-        ma_device_stop(&pimpl_->device);    // para de capturar audio
-        ma_device_uninit(&pimpl_->device);  // libera el dispositivo
+
+        // Si estaba grabando, parar la grabación (no guardamos nada)
+        if (recording_) {
+            SYS_WARN("AudioInputModule","Device stopped while recording.");
+            StopRec();
+            rec_buffer_.clear();
+        }
+
+        // Detener la captura de audio
+        ma_device_stop(&pimpl_->device);
+
+        // Desinicializa el dispositivo
+        ma_device_uninit(&pimpl_->device);
         is_valid_ = false;
     }
 
 
-    // Audio---------------------------------------------------------------------------------
+    // Información y parámetros -------------------------------------------------------------
 
-    bool  AudioInputModule::StartRec() {
+    std::string AudioInputModule::deviceName() const { 
+        return deviceName_; 
+    }
 
-        // El callback vacía el buffer para meter datos nuevos
-        rec_buffer_.clear();
+    bool AudioInputModule::isValid() {
+        return is_valid_;
+    };
 
-        // Si está en true los guarda, si está en false los borra
+    // Captura ------------------------------------------------------------------------------
+
+    float AudioInputModule::getRmsLevel() const { 
+        return rmsLevel_; 
+    }
+    
+    size_t AudioInputModule::getBufferSize() {
+        return buffer_.size();
+    };
+
+
+    // Grabación ----------------------------------------------------------------------------
+
+    void AudioInputModule::StartRec(std::string const& filename) {
+
+        // Inicializar el encoder (necesita el nombre de archivo)
+        InitRecEncoder(filename);
+
+        // Flag para activar la toma de samples en el buffer de grabación del callback de captura
         recording_ = true;
-
-        return true; 
     }
 
-    bool AudioInputModule::StopRec() {
+    void AudioInputModule::StopRec() {
 
-        // En el momento recording está en false, para de grabar
+        // Flag para desactivar la toma de samples en el buffer de grabación del callback de captura
         recording_=false; 
-        return true;  
+
+        // Guarda las muestras grabadas en el buffer de grabación en el archivo
+        saveRecording();
+
+        // Desinicializa el encoder
+        UninitRecEncoder();
     }
+
+    size_t AudioInputModule::getRecBufferSize() {
+        return rec_buffer_.size();
+    };
 
     bool AudioInputModule::isRecording() {
-        //Devuelve el valor del recording true o false, 
-        //depende de si está en startrec o stoprec
         return recording_; 
     }
 
 
-    // Grabacion ----------------------------------------------------------------------------
+    // Codificador de grabación -------------------------------------------------------------
 
-    void AudioInputModule::InitwavEncoder(const std::string& filename) {
+    void AudioInputModule::InitRecEncoder(std::string const& filename) {
 
         // Le dices cómo quieres que sea el archivo.
         ma_encoder_config config = ma_encoder_config_init(
@@ -185,38 +229,33 @@
             sampleRate_              // mismo sample rate
         );
 
-        // Crea el archivo en el disco y prepara el encoder_ para escribir en el 
-        ma_encoder_init_file(filename.c_str(), &config, &pimpl_->encoder);
+        // Crea el archivo en el disco y prepara el encoder_ para escribir en él
+        ma_encoder_init_file((filename + ".wav").c_str(), &config, &pimpl_->encoder);
+
+        // Guarda el nombre para usarlo después
+        rec_filename_=filename;
     }
 
-    void AudioInputModule::RemovewavEncoder() {
-        //Funcion de miniaudio que cierra el encoder
+    void AudioInputModule::UninitRecEncoder() {
         ma_encoder_uninit(&pimpl_->encoder);
     }
 
-    void AudioInputModule::saveSound() {
+    void AudioInputModule::saveRecording() {
 
         // Variable donde miniaudio guarda cuantos frames ha escrito realmente
-        ma_uint64 framesWritten;
-
-        // Puntero al inicio del buffer con todas las muestras grabadas
-        // Convierte muestras a frames. Si tienes 88200 muestras con 2 canales, son 44100 frames
+        ma_uint64 framesWritten = 0;
+        
+        // Volcado a disco
         ma_encoder_write_pcm_frames(&pimpl_->encoder, rec_buffer_.data(), rec_buffer_.size() / channels_, &framesWritten);
+
+        // Mostrar info del tiempo grabado y el archivo de salida
+        float recTime_s = static_cast<float>(framesWritten) / static_cast<float>(sampleRate_);
+        SYS_INFO("AudioInputModule","Record " + std::to_string(recTime_s) + "s to file '" + rec_filename_ + "'");
+        rec_filename_.clear();
+
+        // Limpiar el buffer de grabación
+        rec_buffer_.clear();
     }
-
-    size_t AudioInputModule::getBufferSize() {
-        return buffer_.size();
-    };
-
-    size_t AudioInputModule::getRecBufferSize() {
-        return rec_buffer_.size();
-    };
-
-    bool AudioInputModule::isValid() {
-        return is_valid_;
-    };
-
-
 
 
 #else

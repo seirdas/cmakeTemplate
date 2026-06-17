@@ -134,7 +134,8 @@
         /*else*/ return "";
     }
     
-    bool SoundMgr::addCaptureDevice(std::string const& name, unsigned short index){
+    bool SoundMgr::addCaptureDevice(std::string const& name, unsigned short index) {
+        
         // Comprobar que el contexto está inicializado
         if (!ctx_initialized_){
             SYS_WARN("SoundMgr", "Audio context not initialized.");
@@ -159,7 +160,7 @@
             return false; 
         }
     
-        SYS_INFO("SoundMgr", " Using capture device:" + name); 
+        SYS_INFO("SoundMgr", "Initializing capture device:" + name); 
 
         // Crear AudioInputModule y le pasa toda la información
         std::unique_ptr<AudioInputModule> aim = std::make_unique<AudioInputModule>(
@@ -167,9 +168,7 @@
             selectedDeviceInfo
         );
 
-        // Intenta inicializar el AudioInputModule ?
-        SYS_INFO("SoundMgr", "Initializing capture...");
-
+        // Intenta inicializar el AudioInputModule
         if(!aim->init())
         {
             SYS_WARN("SoundMgr","Failed to initialize capture.");
@@ -178,7 +177,7 @@
 
         // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (inputs_).
         inputs_.push_back(std::move(aim));
-        SYS_INFO("SoundMgr", "Inputs loaded. ");
+        SYS_INFO("SoundMgr", "New input device loaded.");
 
         return true;
     }
@@ -208,7 +207,11 @@
 
     bool SoundMgr::startRec_snd(unsigned short index){
         if (index >= inputs_.size()) return false;
-        return inputs_[index]->StartRec();
+
+        std::string filename = "grabacion_" + std::to_string(index);
+        inputs_[index]->StartRec(filename);
+
+        return true;
     }
 
     bool SoundMgr::stopRec_snd(unsigned short index){
@@ -216,11 +219,6 @@
 
         AudioInputModule* aim = inputs_[index].get();
         aim->StopRec();
-
-        std::string filename = "grabacion_" + std::to_string(index) + ".wav";
-        aim->InitwavEncoder(filename);
-        aim->saveSound();
-        aim->RemovewavEncoder();
 
         return true;
     }
