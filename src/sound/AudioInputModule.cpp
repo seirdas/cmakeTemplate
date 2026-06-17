@@ -264,30 +264,28 @@
 // ============================================================
 
 // General ------------------------------------------------------------------------------
-AudioInputModule::AudioInputModule(ma_context* ctx, ma_device_info const& device_info)  {}
-AudioInputModule::~AudioInputModule()                                                   {}
+AudioInputModule::AudioInputModule(void*, const void*) {}
+AudioInputModule::~AudioInputModule() {}
 
-// Ejecución-----------------------------------------------------------------------------
-bool AudioInputModule::init()                      {return false;}
-void AudioInputModule::stop()                      {return; }
+// Ejecución -----------------------------------------------------------------------------
+bool AudioInputModule::init() { return false; }
+void AudioInputModule::stop() { return; }
 
-// Audio---------------------------------------------------------------------------------
-bool  AudioInputModule::StartRec()                 {return false; }
-bool AudioInputModule::StopRec()                   {return false; }
-bool AudioInputModule::isRecording()               {return false; }
+// Información y parámetros --------------------------------------------------------------
+std::string AudioInputModule::deviceName() const { return ""; }
+bool AudioInputModule::isValid()                 { return false; }
+float AudioInputModule::getRmsLevel() const      { return 0.0f; }
+size_t AudioInputModule::getBufferSize()         { return 0; }
 
+// Grabación ----------------------------------------------------------------------------
+void AudioInputModule::StartRec(std::string const&) { return; }
+void AudioInputModule::StopRec()                    { return; }
+size_t AudioInputModule::getRecBufferSize()         { return 0; }
+bool AudioInputModule::isRecording()                { return false; }
 
-// Grabacion ----------------------------------------------------------------------------
-void AudioInputModule::InitwavEncoder(const std::string& )   {return; }
-void AudioInputModule::RemovewavEncoder()                    {return; }
-void AudioInputModule::saveSound()                           {return; }
-size_t AudioInputModule::getBufferSize()                     {return 0; }
-size_t AudioInputModule::getRecBufferSize()                  {return 0; }
-bool AudioInputModule::isValid()                             {return false; }
-
-
-// CallBacks ----------------------------------------------------------------------------
-void AudioInputModule::dataCallback_(ma_device* , void* , const void* , ma_uint32 ) {return; }
-void AudioInputModule::notificationCallback_(const ma_device_notification*)         {return; }
+// Codificador de grabación (Privados) --------------------------------------------------
+void AudioInputModule::InitRecEncoder(std::string const&) { return; }
+void AudioInputModule::UninitRecEncoder()                 { return; }
+void AudioInputModule::saveRecording()                    { return; }
 
 #endif
