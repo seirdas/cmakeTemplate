@@ -634,8 +634,194 @@
         style_->Colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.2000f);
         style_->Colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.8000f, 0.8000f, 0.8000f, 0.3500f);
 
-        ImGuiStyle& style = ImGui::GetStyle();
+        SYS_INFO("GuiMgr", "'AdobeInspired' theme applied.");
     }
+
+
+    void GuiMgr::Style_DarkCyan() {
+        
+        StyleColorsDark();
+        titleBarDarkMode(true);
+        
+        style_->Alpha                    = 1.0000f;
+        style_->DisabledAlpha            = 1.0000f;
+        style_->WindowPadding            = ImVec2(20.0000f, 20.0000f);
+        style_->WindowRounding           = 11.5000f;
+        style_->WindowBorderSize         = 0.0000f;
+        style_->WindowMinSize            = ImVec2(20.0000f, 20.0000f);
+        style_->WindowTitleAlign         = ImVec2(0.5000f, 0.5000f);
+        style_->WindowMenuButtonPosition = ImGuiDir_None;
+        style_->ChildRounding            = 20.0000f;
+        style_->ChildBorderSize          = 1.0000f;
+        style_->PopupRounding            = 17.4000f;
+        style_->PopupBorderSize          = 1.0000f;
+        style_->FramePadding             = ImVec2(20.0000f, 3.4000f);
+        style_->FrameRounding            = 11.9000f;
+        style_->FrameBorderSize          = 0.0000f;
+        style_->ItemSpacing              = ImVec2(8.9000f, 13.4000f);
+        style_->ItemInnerSpacing         = ImVec2(7.1000f, 1.8000f);
+        style_->CellPadding              = ImVec2(12.1000f, 9.2000f);
+        style_->IndentSpacing            = 0.0000f;
+        style_->ColumnsMinSpacing        = 8.7000f;
+        style_->ScrollbarSize            = 11.6000f;
+        style_->ScrollbarRounding        = 15.9000f;
+        style_->GrabMinSize              = 3.7000f;
+        style_->GrabRounding             = 20.0000f;
+        style_->TabRounding              = 9.8000f;
+        style_->TabBorderSize            = 0.0000f;
+        style_->ColorButtonPosition      = ImGuiDir_Right;
+        style_->ButtonTextAlign          = ImVec2(0.5000f, 0.5000f);
+        style_->SelectableTextAlign      = ImVec2(0.0000f, 0.0000f);
+
+        style_->Colors[ImGuiCol_Text]                  = ImVec4(1.0000f, 1.0000f, 1.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_TextDisabled]          = ImVec4(0.2745f, 0.3176f, 0.4510f, 1.0000f);
+        style_->Colors[ImGuiCol_WindowBg]              = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
+        style_->Colors[ImGuiCol_ChildBg]               = ImVec4(0.0941f, 0.1020f, 0.1176f, 1.0000f);
+        style_->Colors[ImGuiCol_PopupBg]               = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
+        style_->Colors[ImGuiCol_Border]                = ImVec4(0.1569f, 0.1686f, 0.1922f, 1.0000f);
+        style_->Colors[ImGuiCol_BorderShadow]          = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
+        style_->Colors[ImGuiCol_FrameBg]               = ImVec4(0.1137f, 0.1255f, 0.1529f, 1.0000f);
+        style_->Colors[ImGuiCol_FrameBgHovered]        = ImVec4(0.1569f, 0.1686f, 0.1922f, 1.0000f);
+        style_->Colors[ImGuiCol_FrameBgActive]         = ImVec4(0.1569f, 0.1686f, 0.1922f, 1.0000f);
+        style_->Colors[ImGuiCol_TitleBg]               = ImVec4(0.0471f, 0.0549f, 0.0706f, 1.0000f);
+        style_->Colors[ImGuiCol_TitleBgActive]         = ImVec4(0.0471f, 0.0549f, 0.0706f, 1.0000f);
+        style_->Colors[ImGuiCol_TitleBgCollapsed]      = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
+        style_->Colors[ImGuiCol_MenuBarBg]             = ImVec4(0.0980f, 0.1059f, 0.1216f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarBg]           = ImVec4(0.0471f, 0.0549f, 0.0706f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarGrab]         = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarGrabHovered]  = ImVec4(0.1569f, 0.1686f, 0.1922f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarGrabActive]   = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
+        style_->Colors[ImGuiCol_CheckMark]             = ImVec4(0.0314f, 0.9490f, 0.8431f, 1.0000f);
+        style_->Colors[ImGuiCol_SliderGrab]            = ImVec4(0.0314f, 0.9490f, 0.8431f, 1.0000f);
+        style_->Colors[ImGuiCol_SliderGrabActive]      = ImVec4(0.6000f, 0.9647f, 0.0314f, 1.0000f);
+        style_->Colors[ImGuiCol_Button]                = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonHovered]         = ImVec4(0.1804f, 0.1882f, 0.1961f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonActive]          = ImVec4(0.1529f, 0.1529f, 0.1529f, 1.0000f);
+        style_->Colors[ImGuiCol_Header]                = ImVec4(0.1412f, 0.1647f, 0.2078f, 1.0000f);
+        style_->Colors[ImGuiCol_HeaderHovered]         = ImVec4(0.1059f, 0.1059f, 0.1059f, 1.0000f);
+        style_->Colors[ImGuiCol_HeaderActive]          = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
+        style_->Colors[ImGuiCol_Separator]             = ImVec4(0.1294f, 0.1490f, 0.1922f, 1.0000f);
+        style_->Colors[ImGuiCol_SeparatorHovered]      = ImVec4(0.1569f, 0.1843f, 0.2510f, 1.0000f);
+        style_->Colors[ImGuiCol_SeparatorActive]       = ImVec4(0.1569f, 0.1843f, 0.2510f, 1.0000f);
+        style_->Colors[ImGuiCol_ResizeGrip]            = ImVec4(0.1451f, 0.1451f, 0.1451f, 1.0000f);
+        style_->Colors[ImGuiCol_ResizeGripHovered]     = ImVec4(0.0314f, 0.9490f, 0.8431f, 1.0000f);
+        style_->Colors[ImGuiCol_ResizeGripActive]      = ImVec4(1.0000f, 1.0000f, 1.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_Tab]                   = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
+        style_->Colors[ImGuiCol_TabHovered]            = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
+        style_->Colors[ImGuiCol_TabActive]             = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
+        style_->Colors[ImGuiCol_TabUnfocused]          = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
+        style_->Colors[ImGuiCol_TabUnfocusedActive]    = ImVec4(0.1255f, 0.2745f, 0.5725f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotLines]             = ImVec4(0.5216f, 0.6000f, 0.7020f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotLinesHovered]      = ImVec4(0.0392f, 0.9804f, 0.9804f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotHistogram]         = ImVec4(0.0314f, 0.9490f, 0.8431f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotHistogramHovered]  = ImVec4(0.1569f, 0.1843f, 0.2510f, 1.0000f);
+        style_->Colors[ImGuiCol_TableHeaderBg]         = ImVec4(0.0471f, 0.0549f, 0.0706f, 1.0000f);
+        style_->Colors[ImGuiCol_TableBorderStrong]     = ImVec4(0.0471f, 0.0549f, 0.0706f, 1.0000f);
+        style_->Colors[ImGuiCol_TableBorderLight]      = ImVec4(0.0000f, 0.0000f, 0.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_TableRowBg]            = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
+        style_->Colors[ImGuiCol_TableRowBgAlt]         = ImVec4(0.0980f, 0.1059f, 0.1216f, 1.0000f);
+        style_->Colors[ImGuiCol_TextSelectedBg]        = ImVec4(0.9373f, 0.9373f, 0.9373f, 1.0000f);
+        style_->Colors[ImGuiCol_DragDropTarget]        = ImVec4(0.4980f, 0.5137f, 1.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_NavHighlight]          = ImVec4(0.2667f, 0.2902f, 1.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(0.4980f, 0.5137f, 1.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.5020f);
+        style_->Colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.1961f, 0.1765f, 0.5451f, 0.5020f);
+
+        SYS_INFO("GuiMgr", "'DarkCyan' theme applied.");
+    }
+
+    void GuiMgr::Style_LightOrange() {
+
+        StyleColorsLight();
+        titleBarDarkMode(false);
+
+        style_->Alpha                    = 1.0000f;
+        style_->DisabledAlpha            = 1.0000f;
+        style_->WindowPadding            = ImVec2(20.0000f, 20.0000f);
+        style_->WindowRounding           = 11.5000f;
+        style_->WindowBorderSize         = 0.0000f;
+        style_->WindowMinSize            = ImVec2(20.0000f, 20.0000f);
+        style_->WindowTitleAlign         = ImVec2(0.5000f, 0.5000f);
+        style_->WindowMenuButtonPosition = ImGuiDir_None;
+        style_->ChildRounding            = 20.0000f;
+        style_->ChildBorderSize          = 1.0000f;
+        style_->PopupRounding            = 17.4000f;
+        style_->PopupBorderSize          = 1.0000f;
+        style_->FramePadding             = ImVec2(20.0000f, 3.4000f);
+        style_->FrameRounding            = 11.9000f;
+        style_->FrameBorderSize          = 0.0000f;
+        style_->ItemSpacing              = ImVec2(8.9000f, 13.4000f);
+        style_->ItemInnerSpacing         = ImVec2(7.1000f, 1.8000f);
+        style_->CellPadding              = ImVec2(12.1000f, 9.2000f);
+        style_->IndentSpacing            = 0.0000f;
+        style_->ColumnsMinSpacing        = 8.7000f;
+        style_->ScrollbarSize            = 11.6000f;
+        style_->ScrollbarRounding        = 15.9000f;
+        style_->GrabMinSize              = 3.7000f;
+        style_->GrabRounding             = 20.0000f;
+        style_->TabRounding              = 9.8000f;
+        style_->TabBorderSize            = 0.0000f;
+        style_->ColorButtonPosition      = ImGuiDir_Right;
+        style_->ButtonTextAlign          = ImVec2(0.5000f, 0.5000f);
+        style_->SelectableTextAlign      = ImVec2(0.0000f, 0.0000f);
+
+        style_->Colors[ImGuiCol_Text]                  = ImVec4(0.0000f, 0.0000f, 0.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_TextDisabled]          = ImVec4(0.7255f, 0.6824f, 0.5490f, 1.0000f);
+        style_->Colors[ImGuiCol_WindowBg]              = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
+        style_->Colors[ImGuiCol_ChildBg]               = ImVec4(0.9059f, 0.8980f, 0.8824f, 1.0000f);
+        style_->Colors[ImGuiCol_PopupBg]               = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
+        style_->Colors[ImGuiCol_Border]                = ImVec4(0.8431f, 0.8314f, 0.8078f, 1.0000f);
+        style_->Colors[ImGuiCol_BorderShadow]          = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
+        style_->Colors[ImGuiCol_FrameBg]               = ImVec4(0.8863f, 0.8745f, 0.8471f, 1.0000f);
+        style_->Colors[ImGuiCol_FrameBgHovered]        = ImVec4(0.8431f, 0.8314f, 0.8078f, 1.0000f);
+        style_->Colors[ImGuiCol_FrameBgActive]         = ImVec4(0.8431f, 0.8314f, 0.8078f, 1.0000f);
+        style_->Colors[ImGuiCol_TitleBg]               = ImVec4(0.9529f, 0.9451f, 0.9294f, 1.0000f);
+        style_->Colors[ImGuiCol_TitleBgActive]         = ImVec4(0.9529f, 0.9451f, 0.9294f, 1.0000f);
+        style_->Colors[ImGuiCol_TitleBgCollapsed]      = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
+        style_->Colors[ImGuiCol_MenuBarBg]             = ImVec4(0.9020f, 0.8941f, 0.8784f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarBg]           = ImVec4(0.9529f, 0.9451f, 0.9294f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarGrab]         = ImVec4(0.8824f, 0.8667f, 0.8510f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarGrabHovered]  = ImVec4(0.8431f, 0.8314f, 0.8078f, 1.0000f);
+        style_->Colors[ImGuiCol_ScrollbarGrabActive]   = ImVec4(0.8824f, 0.8667f, 0.8510f, 1.0000f);
+        style_->Colors[ImGuiCol_CheckMark]             = ImVec4(0.9686f, 0.0510f, 0.1569f, 1.0000f);
+        style_->Colors[ImGuiCol_SliderGrab]            = ImVec4(0.9647f, 0.8000f, 0.0275f, 1.0000f);
+        style_->Colors[ImGuiCol_SliderGrabActive]      = ImVec4(0.9686f, 0.5882f, 0.0353f, 1.0000f);
+        style_->Colors[ImGuiCol_Button]                = ImVec4(0.8824f, 0.8667f, 0.8510f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonHovered]         = ImVec4(0.8196f, 0.8118f, 0.8039f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonActive]          = ImVec4(0.8471f, 0.8471f, 0.8471f, 1.0000f);
+        style_->Colors[ImGuiCol_Header]                = ImVec4(0.8588f, 0.8353f, 0.7922f, 1.0000f);
+        style_->Colors[ImGuiCol_HeaderHovered]         = ImVec4(0.8941f, 0.8941f, 0.8941f, 1.0000f);
+        style_->Colors[ImGuiCol_HeaderActive]          = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
+        style_->Colors[ImGuiCol_Separator]             = ImVec4(0.8706f, 0.8510f, 0.8078f, 1.0000f);
+        style_->Colors[ImGuiCol_SeparatorHovered]      = ImVec4(0.8431f, 0.8157f, 0.7490f, 1.0000f);
+        style_->Colors[ImGuiCol_SeparatorActive]       = ImVec4(0.8431f, 0.8157f, 0.7490f, 1.0000f);
+        style_->Colors[ImGuiCol_ResizeGrip]            = ImVec4(0.8549f, 0.8549f, 0.8549f, 1.0000f);
+        style_->Colors[ImGuiCol_ResizeGripHovered]     = ImVec4(0.9686f, 0.0510f, 0.1569f, 1.0000f);
+        style_->Colors[ImGuiCol_ResizeGripActive]      = ImVec4(0.0000f, 0.0000f, 0.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_Tab]                   = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
+        style_->Colors[ImGuiCol_TabHovered]            = ImVec4(0.8824f, 0.8667f, 0.8510f, 1.0000f);
+        style_->Colors[ImGuiCol_TabActive]             = ImVec4(0.8824f, 0.8667f, 0.8510f, 1.0000f);
+        style_->Colors[ImGuiCol_TabUnfocused]          = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
+        style_->Colors[ImGuiCol_TabUnfocusedActive]    = ImVec4(0.8745f, 0.7255f, 0.4275f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotLines]             = ImVec4(0.4784f, 0.4000f, 0.2980f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotLinesHovered]      = ImVec4(0.9608f, 0.0196f, 0.1176f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotHistogram]         = ImVec4(0.9059f, 0.6627f, 0.3098f, 1.0000f);
+        style_->Colors[ImGuiCol_PlotHistogramHovered]  = ImVec4(0.6392f, 0.3961f, 0.0431f, 1.0000f);
+        style_->Colors[ImGuiCol_TableHeaderBg]         = ImVec4(0.9529f, 0.9451f, 0.9294f, 1.0000f);
+        style_->Colors[ImGuiCol_TableBorderStrong]     = ImVec4(0.9529f, 0.9451f, 0.9294f, 1.0000f);
+        style_->Colors[ImGuiCol_TableBorderLight]      = ImVec4(1.0000f, 1.0000f, 1.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_TableRowBg]            = ImVec4(0.8824f, 0.8667f, 0.8510f, 1.0000f);
+        style_->Colors[ImGuiCol_TableRowBgAlt]         = ImVec4(0.9020f, 0.8941f, 0.8784f, 1.0000f);
+        style_->Colors[ImGuiCol_TextSelectedBg]        = ImVec4(0.0627f, 0.0627f, 0.0627f, 1.0000f);
+        style_->Colors[ImGuiCol_DragDropTarget]        = ImVec4(0.5020f, 0.4863f, 0.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_NavHighlight]          = ImVec4(0.7333f, 0.7098f, 0.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(0.5020f, 0.4863f, 0.0000f, 1.0000f);
+        style_->Colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.8039f, 0.8235f, 0.4549f, 0.5020f);
+        style_->Colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.8039f, 0.8235f, 0.4549f, 0.5020f);
+
+        SYS_INFO("GuiMgr", "'LightOrange' theme applied.");
+    }
+
 
 #else
 // ============================================================
