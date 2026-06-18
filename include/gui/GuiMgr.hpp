@@ -217,10 +217,10 @@ private:
     void Style_DarkCyan();
 
     /**
-     * @brief Comfortable Light Orange style by SouthCraftX from ImThemes
+     * @brief Light - Comfortable Light Orange style by SouthCraftX from ImThemes
      */
     void Style_LightOrange();
-    
+
     
 /************ Variables ********************************************************/
     
