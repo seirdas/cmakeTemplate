@@ -1,7 +1,7 @@
 #include "gui/GuiMgr.hpp"			// Clase de gestión de UI
 #include <system/SystemMgr.hpp>
 
-#if defined IMGUI || defined IMGUI_VERSION
+#if defined IMGUILIB || defined IMGUILIB_VERSION
 
     #include <imgui.h>
 
