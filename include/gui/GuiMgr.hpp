@@ -210,7 +210,17 @@ private:
      * @brief Dark - AdobeInspired style by nexacopic from ImThemes
      */
     void Style_AdobeInspired();
-    
+
+    /**
+     * @brief Dark - Comfortable Dark Cyan style by SouthCraftX from ImThemes
+     */
+    void Style_DarkCyan();
+
+    /**
+     * @brief Light - Comfortable Light Orange style by SouthCraftX from ImThemes
+     */
+    void Style_LightOrange();
+
     
 /************ Variables ********************************************************/
     

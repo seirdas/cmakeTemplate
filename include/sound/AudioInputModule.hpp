@@ -5,6 +5,7 @@
 #include <vector>               // Vectores
 #include <memory>               // unique_ptr
 #include <atomic>
+#include <functional>           // Callback expuesto de frames de audio (hacia afuera)
 
 /**
  * @class AudioInputModule
@@ -72,6 +73,25 @@ public:
      * @return Tamaño de buffer de captura
      */
     size_t getBufferSize();
+
+
+    // Callback expuesto --------------------------------------------------------------------
+    
+    /**
+     * @brief Alias para definir la firma del callback de audio.
+     * Recibe un puntero a los datos PCM (int16_t) y la cantidad de muestras.
+     */
+    using AudioCallback = std::function<void(const int16_t* data, size_t size)>;
+
+    /**
+     * @brief Registra un callback externo para procesar las tramas de audio capturadas.
+     * * Este método permite inyectar una función o lambda desde el exterior
+     * para que sea ejecutada cada vez que el hilo de audio tenga nuevos datos disponibles.
+     * * @param cb La función (o functor) que se ejecutará al recibir nuevos frames.
+     */
+    void setOnFrameCallback(AudioCallback cb) {
+        onFrame_ = std::move(cb); 
+    }
 
 
     // Grabación ----------------------------------------------------------------------------
@@ -149,6 +169,8 @@ private:
     bool                    is_valid_;            ///< Bandera para indicar si está inicializado el dispositivo
     std::string             deviceName_;          ///< Nombre del dispositivo
 
-    // Valor de entrada del RMS
-    std::atomic<float>      rmsLevel_;            ///< guarda el nivel actual de rms
+    // Captura
+    std::atomic<float>      rmsLevel_;            ///< guarda el nivel actual de RMS
+    AudioCallback           onFrame_;             ///< Almacena la función de callback registrada externamente
+
 };

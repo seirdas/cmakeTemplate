@@ -61,14 +61,17 @@
         short numLoaded     = numLoadedModels();
         short numAvailable  = numAvailableModels();
 
+        // Salir de este init si se ha cerrado la app mientras cargaba modelos
+        if (!running_) return false;
+
         std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded.";
         if (numLoaded == numAvailable) {
             SYS_INFO("TTSMgr", msg);
         } else {
-            // Intentar cargar los modelos faltantes si han fallado
+
+            // Intentar cargar los modelos faltantes si han fallado (varios intentos)
             SYS_WARN("TTSMgr", msg + " Trying to load missing models...");
             for (unsigned int i = 0; i < num_load_retries_; i++) {
-                // Intentar cargar los modelos faltantes si han fallado
                 loadMissingModels();
                 numLoaded     = numLoadedModels();
                 if (numLoaded == numAvailable)

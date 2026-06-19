@@ -48,35 +48,34 @@
         // Recupera el puntero a this, así el CallBack puede acceder a los miembros de la clase. 
         AudioInputModule* self = static_cast<AudioInputModule*>(pDevice->pUserData);
 
-        // pInput llega sin tipo y lo convierte a int16_t (formatpo que se ha configurado ma_format_s16)
+        // pInput llega sin tipo y lo convierte a int16_t (formato que se ha configurado ma_format_s16)
         const int16_t* samples = static_cast<const int16_t*>(pInput);
 
-        // Procesar frame de muestras de captura (normales) y borrar
+        // 1. NIVEL DE SEÑAL: Procesar frame de muestras de captura (normales) y limpiar buffer cuando se llene
         self->buffer_.insert(self->buffer_.end(), samples, samples + frameCount * self->channels_);
-
-        // Si buffer llega a 1024 muestras se resetea
-        if (self->buffer_.size() >= self->processBufferSize_ * self->channels_){
+        if (self->buffer_.size() >= self->processBufferSize_ * self->channels_) {
 
             // Obtiene valor del RMS
             float sum = 0.0f; // acumulador de la suma de cuadrado
             for (ma_uint32 i = 0; i < frameCount * self->channels_; ++i) 
             {
-                sum += (float)samples[i] * samples[i]; // eleva cada muestra al cuadrado y acumula
+                // eleva cada muestra al cuadrado y acumula
+                sum += (float)samples[i] * samples[i];
 
-                // divide la suma entre el número de muestras → media de cuadrados → raíz cuadrada → RMS
-                // divide entre 32767 para normalizar de int16 a rango 0.0-1.0
+                // divide la suma entre el número de muestras → media de cuadrados → raíz cuadrada → RMS (max=2^16/2)
                 self->rmsLevel_ = std::sqrt(sum / (frameCount * self->channels_)) / 327.67f; // Normaliza entre 0 y 100
-            } 
-
+            }
             self->buffer_.clear();
         }
 
-        // Si no estás grabando, ignora los datos y sale.
-        if (!self->recording_) return;
+        // 2. GRABACIÓN: Guarda los samples en el buffer de grabación si está grabando. Cada frame tiene una muestra por canal
+        if (self->recording_)
+            self->rec_buffer_.insert(self->rec_buffer_.end(), samples, samples + frameCount * self->channels_);
 
-        // Mete las muestras nuevas al final del buffer. 
-        // Cada frame tiene una muestra por canal (2 canales = 2 valores por frame).
-        self->rec_buffer_.insert(self->rec_buffer_.end(), samples, samples + frameCount * self->channels_);
+        // 3. CALLBACK: Envío de trama de datos de audio de entrada a "otro sitio" si el callback está definido
+        if (self->onFrame_ != nullptr)
+            self->onFrame_(samples, frameCount);
+
     }
 
     void AudioInputModule::Impl::notificationCallback_(const ma_device_notification* pNotification) {
@@ -106,7 +105,8 @@
         codec_inited_(false),
         recording_(false),
         is_valid_(false),
-        rmsLevel_(0.0f)
+        rmsLevel_(0.0f),
+        onFrame_(nullptr)
     {
         deviceName_ = pimpl_->device_info.name;
     }
