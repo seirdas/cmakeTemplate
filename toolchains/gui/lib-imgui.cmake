@@ -14,7 +14,7 @@ set(IMSPINNER_VERSION    master)  # No hay otra más concreta
 
 
 # Versión para devolver al CMakeLists principal (se devuelve imgui)
-set(LIB_VERSION ${IMGUI_VERSION})
+set(LIB_VERSION "${IMGUI_VERSION}")
 
 # Para Linux necesita mínimo X11
 if(LINUX)
