@@ -24,7 +24,7 @@
     TTSMgr::TTSMgr(std::size_t const& num_threads_) :
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
         concurrent_init_(false),
-        lazy_load_(false),
+        lazy_load_(true),
         models_path_(VOICES_PATH),
         num_available_models_(0),
         active_tasks_(0),
@@ -53,10 +53,27 @@
         }
 
         // Carga los modelos
-        loadModels();
+        if (!lazy_load_)
+            loadModels();
+        else {
+            // Con lazy_load, marcar el modelo como cargado si está disponible
 
-        // No seguir si se ha cerrado la app
-        if (!running_) return false;
+            // obtener la lista de rutas de los modelos de la ruta models_path_
+            std::vector<std::string> av_models_str = getAvailableModelsPath();
+            std::vector<std::filesystem::path> available_models(av_models_str.begin(), av_models_str.end());
+
+            if (available_models.empty()) {
+                SYS_WARN("TTSMgr", "Cannot read any TTS voice models");
+                return false;
+            }
+
+            // Iterar por todas las carpetas de modelos para marcar modelo como "cargado"
+            std::lock_guard<std::mutex> lock(models_mutex_);
+            for (std::filesystem::path const& modelDir : available_models) {
+                if (!running_) break;
+                loaded_models_[getModelName(modelDir)] = nullptr;   // rellenar el vector con puntero nulo
+            }
+        }
 
         short numLoaded     = numLoadedModels();
         short numAvailable  = numAvailableModels();
@@ -64,10 +81,11 @@
         // Salir de este init si se ha cerrado la app mientras cargaba modelos
         if (!running_) return false;
 
-        std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded.";
+        std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded";
+        if (lazy_load_) msg += (" (lazy load enabled)");
         if (numLoaded == numAvailable) {
             SYS_INFO("TTSMgr", msg);
-        } else {
+        } else if (!lazy_load_) {
 
             // Intentar cargar los modelos faltantes si han fallado (varios intentos)
             SYS_WARN("TTSMgr", msg + " Trying to load missing models...");
@@ -100,6 +118,7 @@
         // Destruye los modelos creados (opcional con cxx, mejor)
         std::lock_guard<std::mutex> lock2(models_mutex_);
         for (auto& [name,model] : loaded_models_) {
+            if (!model) continue;
             SYS_INFO("TTSMgr","Unloading model " + name);
             SherpaOnnxDestroyOfflineTts(model);
         }
@@ -232,7 +251,16 @@
 
     short TTSMgr::numLoadedModels() const {
         std::lock_guard<std::mutex> lock(models_mutex_);
-        return loaded_models_.size();
+
+        // en lazy_load, solo devolver el número de los modelos cargados de verdad
+        if (lazy_load_) {
+            unsigned int num = 0;
+            for(const auto& [name, model] : loaded_models_)
+                if (model) 
+                    num++;
+            return num;
+        }
+        else return loaded_models_.size();
     };
 
 
@@ -263,6 +291,10 @@
                 return false;
             }
         }
+
+        // (lazy_load) Si el modelo no está cargado, cargarlo ahora
+        if (loaded_models_[modelName] == nullptr)
+            load_vits_model(getModelPath(modelName));
 
         // Inicia el proceso
         SYS_INFO("TTSMgr","Generating audio '" + wavname +".wav'  with model " + modelName + "...");
@@ -380,8 +412,8 @@
     void TTSMgr::loadModels() {
 
         // obtener la lista de rutas de los modelos de la ruta models_path_
-        std::vector<std::string> models_str = getAvailableModelsPath();
-        std::vector<std::filesystem::path> available_models(models_str.begin(), models_str.end());
+        std::vector<std::string> av_models_str = getAvailableModelsPath();
+        std::vector<std::filesystem::path> available_models(av_models_str.begin(), av_models_str.end());
 
         if (available_models.empty()) {
             SYS_WARN("TTSMgr", "Cannot read any TTS voice models");
@@ -505,16 +537,21 @@
         // Busca el modelo y lo borra
         std::lock_guard<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName);
-        if (it != loaded_models_.end()) {
-            SherpaOnnxDestroyOfflineTts(it->second);
-            loaded_models_.erase(it);
-            SYS_INFO("TTSMgr", "Model '" + modelName + "' unloaded successfully");
-            return true;
+
+        // Comprobar si el modelo existe
+        if (it == loaded_models_.end()) {
+            SYS_WARN("TTSMgr", "Cannot unload model: Model '" + modelName + "' not found");
+            return false;
         }
+
+        // Descargar el modelo de la memoria
+        SherpaOnnxDestroyOfflineTts(it->second);
+
+        if (!lazy_load_)    // Borrar el modelo de la lista si no lazy_load
+            loaded_models_.erase(it);
+        else                // Si lazy_load, solo ponerlo como puntero nulo
+            it->second = nullptr;
         
-        /* else */  // No ha encontrado el modelo
-        SYS_WARN("TTSMgr", "Cannot unload model: Model '" + modelName + "' not found");
-        return false;
     }
     
 

@@ -77,6 +77,7 @@ public:
 
     /**
      * @brief Obtiene una lista con los nombres de los modelos cargados
+     * @note Con lazy_load activo, los modelos disponibles se consideran como cargados
      */
     std::vector<std::string> getLoadedModels() const;
 
@@ -94,6 +95,7 @@ public:
 
     /**
      * @brief Obtiene el número de modelos cargados
+     * @note Con lazy_load activo, NO CUENTA los modelos no disponibles
      */
     short numLoadedModels() const;
 
@@ -139,6 +141,7 @@ private:
 
 // Inicialización de modelos ------------------------------------------------------------
 
+    // #TODO
     void loadModels();
 
     /**
@@ -173,6 +176,7 @@ private:
     size_t                  num_threads_;           ///< Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       ///< Activa/desactiva la inicialización concurrente (experimental)
     bool                    lazy_load_;             ///< Activa/desactiva la inicialización solo al usar un modelo
+    unsigned int            keep_alive_time;        ///< Tiempo de vida en segundos de los modelos cargados (con lazy_load=true)
     std::string const       models_path_;           ///< Ruta de carpetas donde residen los modelos
     mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos
 
