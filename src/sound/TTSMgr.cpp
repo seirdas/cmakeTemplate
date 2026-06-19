@@ -24,6 +24,7 @@
     TTSMgr::TTSMgr(std::size_t const& num_threads_) :
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
         concurrent_init_(false),
+        lazy_load_(false),
         models_path_(VOICES_PATH),
         num_available_models_(0),
         active_tasks_(0),
@@ -51,35 +52,11 @@
             return {};
         }
 
-        // obtener la lista de rutas de los modelos de la ruta models_path_
-        std::vector<std::string> models_str = getAvailableModelsPath();
-        std::vector<std::filesystem::path> available_models(models_str.begin(), models_str.end());
+        // Carga los modelos
+        loadModels();
 
-        if (available_models.empty()) {
-            SYS_WARN("TTSMgr", "Cannot read TTS voice models");
-            return false;
-        }
-
-        // Inicialización concurrente (experimental)
-        loading_ = true;
-        if (concurrent_init_) {
-            // Realizar la inicialización de cada modelo en hilos independientes 
-            std::vector<std::thread> workers;
-            for (const auto& modelDir : available_models)
-                workers.emplace_back(&TTSMgr::load_vits_model, this, modelDir);    // Un hilo por cada inicialización
-
-            // Esperar a que todos los hilos terminen
-            for (auto& t : workers) 
-                if (t.joinable()) 
-                    t.join();   
-        }
-        // Inicialización consecutiva (normal) 
-        else {
-            // Iterar por todas las carpetas de modelos
-            for (std::filesystem::path const& modelDir : available_models)
-                load_vits_model(modelDir);
-        }
-        loading_ = false;
+        // No seguir si se ha cerrado la app
+        if (!running_) return false;
 
         short numLoaded     = numLoadedModels();
         short numAvailable  = numAvailableModels();
@@ -88,7 +65,6 @@
         if (numLoaded == numAvailable) {
             SYS_INFO("TTSMgr", msg);
         } else {
-
             // Intentar cargar los modelos faltantes si han fallado
             SYS_WARN("TTSMgr", msg + " Trying to load missing models...");
             for (unsigned int i = 0; i < num_load_retries_; i++) {
@@ -182,7 +158,7 @@
     }
 
 
-    // Datos de los modelos -----------------------------------------------------------------
+    // Datos de modelos disponibles/cargados ------------------------------------------------
 
     std::vector<std::string> TTSMgr::getAvailableModels() {
 
@@ -257,7 +233,7 @@
     };
 
 
-    // Datos y control de modelos -----------------------------------------------------------
+    // Control de modelos individuales ------------------------------------------------------
 
     bool TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname) {
         if (!running_) return false;
@@ -380,10 +356,60 @@
         return it->second;
     }
 
+    std::string TTSMgr::getModelName(std::filesystem::path modelAbsPath) const {
+        // Rutas
+        std::string st_modelname = "";
+
+        // Iterar por los elementos de la carpeta
+        for (const auto& file : fs::directory_iterator(modelAbsPath)) {
+            fs::path p = file.path();
+            if (p.extension() == ".onnx") 
+                st_modelname = p.stem().string();   // Nombre del modelo
+        }
+
+        // Devuelve vacío si no ha encontrado el modelo
+        return st_modelname;
+    }
+
 
     // Inicialización de modelos ------------------------------------------------------------
 
-    bool TTSMgr::load_vits_model(std::filesystem::path modelDir) {
+    void TTSMgr::loadModels() {
+
+        // obtener la lista de rutas de los modelos de la ruta models_path_
+        std::vector<std::string> models_str = getAvailableModelsPath();
+        std::vector<std::filesystem::path> available_models(models_str.begin(), models_str.end());
+
+        if (available_models.empty()) {
+            SYS_WARN("TTSMgr", "Cannot read any TTS voice models");
+            return;
+        }
+
+        // Inicialización concurrente (experimental)
+        loading_ = true;
+        if (concurrent_init_) {
+            // Realizar la inicialización de cada modelo en hilos independientes 
+            std::vector<std::thread> workers;
+            for (const auto& modelDir : available_models)
+                workers.emplace_back(&TTSMgr::load_vits_model, this, modelDir);    // Un hilo por cada inicialización
+
+            // Esperar a que todos los hilos terminen
+            for (auto& t : workers) 
+                if (t.joinable()) 
+                    t.join();   
+        }
+        // Inicialización consecutiva (normal) 
+        else {
+            // Iterar por todas las carpetas de modelos
+            for (std::filesystem::path const& modelDir : available_models) {
+                if (!running_) break;
+                load_vits_model(modelDir);
+            }
+        }
+        loading_ = false;
+    }
+
+    bool TTSMgr::load_vits_model(std::filesystem::path modelAbsPath) {
         // No inicializar si se está cerrando
         if (!running_) 
             return false;
@@ -392,7 +418,7 @@
         std::string st_modelname_path, st_tokens_path, st_datadir_path, st_modelname;
 
         // Iterar por los elementos de la carpeta
-        for (const auto& file : fs::directory_iterator(modelDir)) {
+        for (const auto& file : fs::directory_iterator(modelAbsPath)) {
             fs::path p = file.path();
             if (p.extension() == ".onnx") {
                 st_modelname_path = p.string();     // Ruta al onnx
@@ -433,13 +459,41 @@
         exit_cv_.notify_all();
 
         // Comprueba si se ha generado bien
-        if (!tts_model) SYS_ERROR("TTSMgr","Cannot load voice model: " + st_modelname_path);
+        if (!tts_model) {
+            SYS_WARN("TTSMgr","Cannot load voice model: " + st_modelname_path);
+            return false;
+        }
 
         // Agregarlo a la lista de modelos disponibles del TTSMgr
         std::lock_guard<std::mutex> lock(models_mutex_);
         loaded_models_[st_modelname] = tts_model;
 
         // Todo correcto
+        return true;
+    }
+
+    bool TTSMgr::checkAvailableModel(std::filesystem::path modelAbsPath) {
+        // Rutas
+        std::string st_modelname_path, st_tokens_path, st_datadir_path, st_modelname;
+
+        // Iterar por los elementos de la carpeta
+        for (const auto& file : fs::directory_iterator(modelAbsPath)) {
+            fs::path p = file.path();
+            if (p.extension() == ".onnx") {
+                st_modelname_path = p.string();     // Ruta al onnx
+                st_modelname = p.stem().string();   // Nombre del modelo
+            }
+            else if (p.filename() == "tokens.txt")
+                st_tokens_path = p.string();        // Ruta al archivo tokens.txt
+            else if (p.filename() == "espeak-ng-data" && file.is_directory())
+                st_datadir_path = p.string();       // Ruta a la carpeta espeak-ng-data
+        }
+
+        // Si no se completan los tres campos, no sigue
+        if (st_modelname_path.empty() || st_tokens_path.empty() || st_datadir_path.empty()) 
+            return false;
+
+        /* else */
         return true;
     }
 

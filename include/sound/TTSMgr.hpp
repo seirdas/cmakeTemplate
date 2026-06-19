@@ -62,7 +62,8 @@ public:
      */
     bool isWorking() const;
 
-// Datos de los modelos ---------------------------------------------------------
+
+// Datos de modelos disponibles/cargados ------------------------------------------------
 
     /**
      * @brief Obtiene una lista con los nombres de los modelos disponibles
@@ -97,11 +98,11 @@ public:
     short numLoadedModels() const;
 
 
-// Datos y control de modelos -----------------------------------------------------------
+// Control de modelos individuales ------------------------------------------------------
 
     /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
-     * @param modelName Nombre del modelo que genera el audio
+     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
      * @param text El texto a convertir en audio.
      * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión wav).
      * @return true si la generación fue exitosa, false en caso de error.
@@ -110,32 +111,53 @@ public:
 
     /**
      * @brief Obtiene la frecuencia de muestreo del modelo de voz
+     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
      */
     int getSampleRate(std::string const& modelName) const;
 
     /**
      * @brief Obtiene el número de speakers (hablantes) del modelo de voz
+     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
      */
     int getNumSpeakers(std::string const& modelName) const;
 
     /**
      * @brief Devuelve el texto que está siendo procesado por el modelo
+     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
      */
     std::string getProccesingText(std::string const& modelName) const;
+
+    /**
+     * @brief Obtiene el nombre del modelo a partir de su ruta
+     * @note Devuelve un string vacío si no encuentra el modelo
+     * @param modelAbsPath Ruta absoluta de la carpeta con los ficheros del modelo vits
+     */
+    std::string getModelName(std::filesystem::path modelAbsPath) const;
 
 
 private:
 
 // Inicialización de modelos ------------------------------------------------------------
 
+    void loadModels();
+
     /**
-     * @brief Carga un modelo vits TTS 
+     * @brief Carga un modelo vits TTS
+     * @param modelAbsPath Ruta absoluta de la carpeta con los ficheros del modelo vits
      */
     bool load_vits_model(std::filesystem::path modelAbsPath);
 
     /**
+     * @brief Comprueba si un modelo vits es válido y se puede usar
+     *  Se hace comprobando los archivos .onnx, tokens.txt y espeak-ng-data
+     * @param modelAbsPath Ruta absoluta de la carpeta con los ficheros del modelo vits
+     */
+    bool checkAvailableModel(std::filesystem::path modelAbsPath);
+
+    /**
      * @brief Libera/Borra un modelo cargado
      * @details Esto se usará en debug y demás, no creo que sea necesario en ejecución normal.
+     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
      */
     bool unload_model(std::string const& modelName);
 
@@ -150,6 +172,7 @@ private:
     short                   num_available_models_;  ///< Número de modelos disponibles
     size_t                  num_threads_;           ///< Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       ///< Activa/desactiva la inicialización concurrente (experimental)
+    bool                    lazy_load_;             ///< Activa/desactiva la inicialización solo al usar un modelo
     std::string const       models_path_;           ///< Ruta de carpetas donde residen los modelos
     mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos
 
