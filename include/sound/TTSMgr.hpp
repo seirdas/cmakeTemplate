@@ -112,27 +112,31 @@ public:
     bool generate(std::string const& modelName, std::string const& text, std::string const& wavname);
 
     /**
-     * @brief Obtiene la frecuencia de muestreo del modelo de voz
-     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
+     * @brief Obtiene la frecuencia de muestreo del modelo de voz.
+     * @param modelName Nombre del modelo (nombre de la carpeta).
+     * @return Frecuencia de muestreo en Hz, o 0 si el modelo no está cargado.
      */
     int getSampleRate(std::string const& modelName) const;
 
     /**
-     * @brief Obtiene el número de speakers (hablantes) del modelo de voz
-     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
+     * @brief Obtiene el número de speakers (hablantes) del modelo de voz.
+     * @param modelName Nombre del modelo (nombre de la carpeta).
+     * @return Número de hablantes disponibles, o 0 si el modelo no está cargado.
      */
     int getNumSpeakers(std::string const& modelName) const;
 
     /**
-     * @brief Devuelve el texto que está siendo procesado por el modelo
-     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
+     * @brief Devuelve el texto que está siendo procesado actualmente por el modelo.
+     * @param modelName Nombre del modelo (nombre de la carpeta).
+     * @return Cadena de texto en proceso de síntesis, o un string vacío si no está activo.
      */
     std::string getProccesingText(std::string const& modelName) const;
 
     /**
-     * @brief Obtiene el nombre del modelo a partir de su ruta
-     * @note Devuelve un string vacío si no encuentra el modelo
-     * @param modelAbsPath Ruta absoluta de la carpeta con los ficheros del modelo vits
+     * @brief Obtiene el nombre identificativo del modelo a partir de su ruta absoluta.
+     * @details Busca el archivo con extensión `.onnx` dentro del directorio para extraer su stem.
+     * @param modelAbsPath Ruta absoluta de la carpeta contenedora del modelo VITS.
+     * @return Nombre del modelo, o un string vacío si no se encuentra ningún archivo `.onnx`.
      */
     std::string getModelName(std::filesystem::path modelAbsPath) const;
 
@@ -141,44 +145,70 @@ private:
 
 // Inicialización de modelos ------------------------------------------------------------
 
-    // #TODO
+    /**
+     * @brief Carga de manera masiva todos los modelos disponibles en la ruta de voces.
+     * @details Dependiendo de la configuración, realiza la carga de forma consecutiva 
+     * o concurrente distribuyendo la tarea en hilos independientes.
+     */
     void loadModels();
 
     /**
-     * @brief Carga un modelo vits TTS
-     * @param modelAbsPath Ruta absoluta de la carpeta con los ficheros del modelo vits
+     * @brief Carga e inicializa en memoria un modelo VITS TTS específico a través de la API de Sherpa-Onnx.
+     * @note Este método requiere que el hilo verifique primero si el sistema no está en proceso de parada.
+     * @param modelAbsPath Ruta absoluta de la carpeta que contiene los ficheros del modelo (`.onnx`, `tokens.txt`, etc.).
+     * @return @c true si el modelo se inicializó y registró correctamente en el mapa; @c false en caso contrario.
      */
     bool load_vits_model(std::filesystem::path modelAbsPath);
 
     /**
-     * @brief Comprueba si un modelo vits es válido y se puede usar
-     *  Se hace comprobando los archivos .onnx, tokens.txt y espeak-ng-data
-     * @param modelAbsPath Ruta absoluta de la carpeta con los ficheros del modelo vits
+     * @brief Comprueba la integridad estructural de la carpeta de un modelo antes de intentar cargarlo.
+     * @details Verifica que existan de manera simultánea el archivo `.onnx`, el fichero `tokens.txt` 
+     * y el directorio de fonemas `espeak-ng-data`.
+     * @param modelAbsPath Ruta absoluta de la carpeta que se va a evaluar.
+     * @return `true` si contiene todos los elementos mínimos requeridos; `false` si falta alguno.
      */
-    bool checkAvailableModel(std::filesystem::path modelAbsPath);
+    bool checkAvailableModel(std::filesystem::path modelAbsPath) const;
 
     /**
-     * @brief Libera/Borra un modelo cargado
-     * @details Esto se usará en debug y demás, no creo que sea necesario en ejecución normal.
-     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
+     * @brief Descarga un modelo específico liberando sus recursos asociados en memoria.
+     * @details Si `lazy_load_` está activo, el modelo se desvincula de Sherpa pero mantiene su slot 
+     * en el mapa como puntero nulo para permitir futuras recargas bajo demanda. Si está desactivado, 
+     * el modelo se elimina por completo del mapa.
+     * @param modelName Nombre del modelo que se desea descargar.
+     * @return `true` si el modelo existía y fue descargado con éxito (o ya era nulo); `false` si no se encontró.
      */
     bool unload_model(std::string const& modelName);
+
+    /**
+     * @brief Hilo de ejecución (Worker) encargado de la gestión Keep-Alive de los modelos.
+     * @details Monitoriza periódicamente el mapa de tiempos de último uso (`last_used_`). Si un modelo 
+     * supera el tiempo de inactividad programado en `keep_alive_time_` y no se encuentra retenido 
+     * por ninguna tarea activa de generación, invoca a `unload_model` de forma segura liberando la memoria.
+     */
+    void keepAliveWorker();
 
 
 /************ Variables ********************************************************/
 
     using TTSModelsMap  = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
     using TTSTextsMap   = std::unordered_map<std::string, std::string>; // Podría ser un struct con más datos
+    using TTSTimeMap    = std::unordered_map<std::string, std::chrono::steady_clock::time_point>;
 
     // Modelos de voz
     TTSModelsMap            loaded_models_;         ///< Mapa de modelos TTS cargados
     short                   num_available_models_;  ///< Número de modelos disponibles
     size_t                  num_threads_;           ///< Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       ///< Activa/desactiva la inicialización concurrente (experimental)
-    bool                    lazy_load_;             ///< Activa/desactiva la inicialización solo al usar un modelo
-    unsigned int            keep_alive_time;        ///< Tiempo de vida en segundos de los modelos cargados (con lazy_load=true)
     std::string const       models_path_;           ///< Ruta de carpetas donde residen los modelos
     mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos
+    
+    // Lazy Load (Carga modelo solo al usarlo, se descarga en un tiempo)
+    bool                    lazy_load_;             ///< Activa/desactiva la inicialización solo al usar un modelo
+    std::chrono::seconds    keep_alive_time_;       ///< Tiempo de vida en segundos de los modelos cargados con lazyload
+    TTSTimeMap              last_used_;             ///< Mapa de relación entre modelo - ultimo tiempo usado
+    std::thread             keepalive_thread_;      ///< Hilo reaper para matar los modelos que superan el tiempo de vida
+    std::mutex              keepalive_mtx_;         ///< Mutex para el acceso al mapa last_used
+    std::condition_variable keepalive_cv_;          ///< Condition variable para el acceso al hilo reaper keepalive_thread
 
     // Datos de modelos
     TTSTextsMap             processing_texts_;      ///< Relaciona modelo - texto que está procesando

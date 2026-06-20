@@ -25,6 +25,7 @@
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
         concurrent_init_(false),
         lazy_load_(true),
+        keep_alive_time_(20),
         models_path_(VOICES_PATH),
         num_available_models_(0),
         active_tasks_(0),
@@ -101,12 +102,21 @@
                 SYS_WARN("TTSMgr","Cannot load all models");
         }
 
+        // Si está lazy_load activo, activar el thread reaper
+        if (lazy_load_ && keep_alive_time_.count() > 0)
+            keepalive_thread_ = std::thread(&TTSMgr::keepAliveWorker, this);
+
         return !loaded_models_.empty();;
     }
 
     void TTSMgr::cerrar() {
         if (!running_) return;
         running_ = false;
+
+        // lazy_load, parar y unir el hilo reaper antes de tocar/destruir los modelos
+        keepalive_cv_.notify_all();
+        if (keepalive_thread_.joinable())
+            keepalive_thread_.join();
 
         // Esperar a que terminen las operaciones que se estaban ejecutando
         std::unique_lock<std::mutex> lock(exit_mtx_);
@@ -293,8 +303,15 @@
         }
 
         // (lazy_load) Si el modelo no está cargado, cargarlo ahora
-        if (loaded_models_[modelName] == nullptr)
-            load_vits_model(getModelPath(modelName));
+        if (loaded_models_[modelName] == nullptr) {
+            std::filesystem::path modpath = getModelPath(modelName);
+            if (!modpath.empty())
+                load_vits_model(modpath);
+            else {
+                SYS_WARN("TTSMgr","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
+                return false;
+            }
+        }
 
         // Inicia el proceso
         SYS_INFO("TTSMgr","Generating audio '" + wavname +".wav'  with model " + modelName + "...");
@@ -328,6 +345,8 @@
         // Comprobar si se ha generado audio
         if (!audio) {
             SYS_WARN("TTSMgr","Cannot generate audio.");
+            std::lock_guard<std::mutex> lock(processing_mtx_);
+            processing_texts_.erase(modelName);
             return false;
         }
 
@@ -341,6 +360,12 @@
         {
             std::lock_guard<std::mutex> lock(processing_mtx_);
             processing_texts_.erase(modelName);
+        }
+
+        // Para lazy_load, resetea el tiempo de vida del modelo
+        if(lazy_load_) {
+            std::lock_guard<std::mutex> klock(keepalive_mtx_);
+            last_used_[modelName] = std::chrono::steady_clock::now();
         }
 
         // Liberar memoria para evitar fugas
@@ -503,11 +528,17 @@
         std::lock_guard<std::mutex> lock(models_mutex_);
         loaded_models_[st_modelname] = tts_model;
 
+        // Activar el tiempo de vida del modelo
+        if (lazy_load_) {
+            std::lock_guard<std::mutex> klock(keepalive_mtx_);
+            last_used_[st_modelname] = std::chrono::steady_clock::now();
+        }
+
         // Todo correcto
         return true;
     }
 
-    bool TTSMgr::checkAvailableModel(std::filesystem::path modelAbsPath) {
+    bool TTSMgr::checkAvailableModel(std::filesystem::path modelAbsPath) const {
         // Rutas
         std::string st_modelname_path, st_tokens_path, st_datadir_path, st_modelname;
 
@@ -544,6 +575,10 @@
             return false;
         }
 
+        // Comprobar si el modelo no es nulo
+        if (!it->second)  
+            return true;
+
         // Descargar el modelo de la memoria
         SherpaOnnxDestroyOfflineTts(it->second);
 
@@ -551,9 +586,58 @@
             loaded_models_.erase(it);
         else                // Si lazy_load, solo ponerlo como puntero nulo
             it->second = nullptr;
-        
+
+        SYS_INFO("TTSMgr","Model '" + modelName + "' unloaded");
+
+        return true;
     }
-    
+
+    void TTSMgr::keepAliveWorker() {
+        std::unique_lock<std::mutex> lock(keepalive_mtx_);
+
+        while (running_) {
+
+            // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
+            auto poll_interval = std::max(std::chrono::seconds(1), keep_alive_time_ / 10);
+
+            // Espera hasta: cierre, haya algo que vigilar
+            keepalive_cv_.wait_for(lock, poll_interval, [this] {
+                return !running_ || !last_used_.empty();
+            });
+            if (!running_) break;
+            if (last_used_.empty()) continue; // nada que vigilar todavía, siguiente iteración
+
+            // Compara el tiempo de los modelos con el actual
+            auto now = std::chrono::steady_clock::now();
+            std::vector<std::string> candidatos;
+            for (auto const& [name, last_use] : last_used_)
+                if (now - last_use >= keep_alive_time_)
+                    candidatos.push_back(name);
+
+            // Soltar keepalive_mtx_ antes de tocar processing_mtx_/models_mutex_
+            lock.unlock();
+
+            // Descargar modelo si no está generando nada
+            std::vector<std::string> modelos_a_descargar;
+            for (auto const& name : candidatos) {
+                bool busy;
+                {
+                    std::lock_guard<std::mutex> plock(processing_mtx_);
+                    busy = processing_texts_.count(name) > 0;
+                }
+                if (!busy && unload_model(name))        //<- Aquí descarga el modelo
+                    modelos_a_descargar.push_back(name);
+            }
+
+            // Volver a bloquear keepalive_mtx_ para la siguiente iteración
+            lock.lock();
+
+            // Borrar los modelos de la lista de control de tiempos de modelos
+            for (auto const& name : modelos_a_descargar)
+                last_used_.erase(name);
+        }
+    }
+
 
 #else
 // ============================================================
@@ -575,6 +659,7 @@
 
     // Datos del módulo TTS -----------------------------------------------------------------
     std::vector<std::string> TTSMgr::getAvailableModels()       { return {}; }
+    std::vector<std::string> TTSMgr::getAvailableModelsPath()   { return {}; }
     std::vector<std::string> TTSMgr::getLoadedModels() const    { return {}; }
     std::string TTSMgr::getModelPath(std::string) const         { return ""; }
     short   TTSMgr::numAvailableModels() const                  { return 0; }
@@ -585,8 +670,12 @@
     int     TTSMgr::getSampleRate(std::string const&) const         { return 0; }
     int     TTSMgr::getNumSpeakers(std::string const&) const        { return 0; }
     std::string TTSMgr::getProccesingText(std::string const&) const { return ""; }
+    std::string TTSMgr::getModelName(std::filesystem::path)         { return ""; }
 
     // Inicialización de modelos ------------------------------------------------------------
+    void TTSMgr::loadModels()                                    { return;       }
     bool TTSMgr::load_vits_model(std::filesystem::path)          { return false; }
+    bool TTSMgr::checkAvailableModel(std::filesystem::path) const{ return false; }
     bool TTSMgr::unload_model(std::string const&)                { return false; }
+    void TTSMgr::keepAliveWorker()                               { return;       }
 #endif
