@@ -483,7 +483,7 @@ Symetrix::Symetrix() :
     supermatrix_ins_(20),
     kBootPreset_(0)
 {
-    SYS_WARN("Symetrix", "Symetrix class not compatible in non-Windows OS. Network bypassed.");
+    SYS_WARN("Symetrix", "Symetrix not compatible in non-Windows OS. Network bypassed.");
 }
 
 Symetrix::~Symetrix() {}

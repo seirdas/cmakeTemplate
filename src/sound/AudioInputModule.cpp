@@ -3,7 +3,6 @@
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
     #include <miniaudio.h>
-    #include <thread>               // Hilos
     #include <cmath>
     #include "system/SystemMgr.hpp"
     #include <cmath>

@@ -519,7 +519,7 @@ struct TotalMix::Impl {};
 
 // General ------------------------------------------------------------------------------
     TotalMix::TotalMix() : pimpl_(std::make_unique<Impl>()) {
-        SYS_WARN("GuiMgr", "Totalmix class not compatible in not Windows SO.");
+        SYS_WARN("GuiMgr", "Totalmix not compatible in non-Windows SO.");
     }
     TotalMix::~TotalMix() { }
     bool TotalMix::init(int localPort, const std::string& localIP,
