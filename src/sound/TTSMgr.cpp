@@ -76,7 +76,7 @@
             }
         }
 
-        short numLoaded     = numLoadedModels();
+        short numLoaded     = (lazy_load_) ? getLoadedModels().size() : numLoadedModels();  // con lazy_load, numLoaded es = 0
         short numAvailable  = numAvailableModels();
 
         // Salir de este init si se ha cerrado la app mientras cargaba modelos
@@ -84,10 +84,9 @@
 
         std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded";
         if (lazy_load_) msg += (" (lazy load enabled)");
-        if (numLoaded == numAvailable) {
+        if (numLoaded == numAvailable || lazy_load_) {
             SYS_INFO("TTSMgr", msg);
-        } else if (!lazy_load_) {
-
+        } else {
             // Intentar cargar los modelos faltantes si han fallado (varios intentos)
             SYS_WARN("TTSMgr", msg + " Trying to load missing models...");
             for (unsigned int i = 0; i < num_load_retries_; i++) {
