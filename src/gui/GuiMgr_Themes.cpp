@@ -637,7 +637,6 @@
         SYS_INFO("GuiMgr", "'AdobeInspired' theme applied.");
     }
 
-
     void GuiMgr::Style_DarkCyan() {
         
         StyleColorsDark();
