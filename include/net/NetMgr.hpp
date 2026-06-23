@@ -177,6 +177,10 @@ public:
      */
     std::vector<char> getDataFromSocket(unsigned short local_port);
 
+    /**
+     * @brief Número de paquetes de datos recibidos desde los sockets UDP en cola centralizada
+     * @return Número de paquetes
+     */
     size_t numUdpRcvElements();
 
 private:
