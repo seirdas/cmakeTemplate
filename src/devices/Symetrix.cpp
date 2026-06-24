@@ -5,10 +5,12 @@
 #ifdef WIN32
 
     // Definiciones por si no están definidos SYS_INFO ni SYS_WARN de SystemMgr
-    #ifndef SYS_INFO
+    #ifdef SYS_INFO
+        #include <iostream>
         #define SYS_INFO(module,msg) std::cout << module << msg << std::endl;
     #endif
     #ifndef SYS_WARN
+        #include <iostream>
         #define SYS_WARN(module,msg) std::cerr << module << msg << std::endl;
     #endif
 
@@ -42,8 +44,6 @@
 
     Symetrix::Symetrix() :
         pimpl_(std::make_unique<Impl>()),
-        m_lastPingTime_(std::chrono::steady_clock::now()),
-        m_waitingPingResponse_(false),
         wsaStarted_(false),
         connected_(false),
         initialized_(false),
@@ -176,35 +176,29 @@
         }
 
         // Truncamiento de valores máximo/mínimo
-        if (value < minValue) {
-            SYS_WARN("Symetrix","Value lower than min value range");
-            value = minValue;
-        }
-        if (value > maxValue) {
-            SYS_WARN("Symetrix","Value higher than max value range");
-            value = maxValue;
-        }
+        value = std::clamp(value, minValue, maxValue);
 
         // Obtener el valor en la escala de ticks de Symetrix
         const int ticks = ValueToTicks(value, minValue, maxValue);
 
         // Comprobar variación respecto a tolerancia para mandar o no
-        if (shouldSend(id, ticks) && sendCSQ(id, ticks)) {
+        if (!shouldSendCSQ(id, ticks))
+            return true;    // Considera enviado
 
-            // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
-            if (!isCached(id)) {
-                unsigned int toleranceTicks = 
-                    static_cast<unsigned int>(std::round((maxTickValue_ - minTickValue_) * (tolerance_percent_ / 100.0f)));
-                setToleranceTicks(id, toleranceTicks);
-            }
+        // Mandar comando por socket
+        if (!sendCSQ(id, ticks))
+            return false;
 
-            // Guardar el valor nuevo en la cache
-            cacheValue(id, ticks);
-            return true;
+        // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
+        if (!isCached(id)) {
+            unsigned int tolerance = 
+                static_cast<unsigned int>(std::round((maxTickValue_ - minTickValue_) * (tolerance_percent_ / 100.0f)));
+            setTolerance(id, tolerance);
         }
 
-        /* else */      // No se ha mandado el valor
-        return false;
+        // Guardar el valor nuevo en la cache
+        cacheValue(id, ticks);
+        return true;
     }
 
     bool Symetrix::setValue_dB(unsigned int id, float value, float minValue, float maxValue) {
@@ -227,14 +221,7 @@
         }
 
         // Truncamiento de valores máximo/mínimo
-        if (value < minValue) {
-            SYS_WARN("Symetrix","Value lower than min value range");
-            value = minValue;
-        }
-        if (value > maxValue) {
-            SYS_WARN("Symetrix","Value higher than max value range");
-            value = maxValue;
-        }
+        value = std::clamp(value, minValue, maxValue);
 
         // Normalización del valor de entrada a ratio 0 a 1
         float ratio = (value - minValue) / (maxValue - minValue);
@@ -247,22 +234,23 @@
         const int ticks = ValueToTicks(dbValue, SYM_GAIN_MIN, SYM_GAIN_MAX);
 
         // Comprobar variación respecto a tolerancia para mandar o no
-        if (shouldSend(id, ticks) && sendCSQ(id, ticks)) {
+        if (!shouldSendCSQ(id, ticks))
+            return true;    // Considera enviado
 
-            // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
-            if (!isCached(id)) {
-                unsigned int toleranceTicks = 
-                    static_cast<unsigned int>(std::round((maxTickValue_ - minTickValue_) * (tolerance_percent_ / 100.0f)));
-                setToleranceTicks(id, toleranceTicks);
-            }
+        // Mandar comando por socket
+        if (!sendCSQ(id, ticks))
+            return false;
 
-            // Guardar el valor nuevo en la cache
-            cacheValue(id, ticks);
-            return true;
+        // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
+        if (!isCached(id)) {
+            unsigned int tolerances = 
+                static_cast<unsigned int>(std::round((maxTickValue_ - minTickValue_) * (tolerance_percent_ / 100.0f)));
+            setTolerance(id, tolerances);
         }
 
-        /* else */      // No se ha mandado el valor
-        return false;
+        // Guardar el valor nuevo en la cache
+        cacheValue(id, ticks);
+        return true;
     }
 
     bool Symetrix::setButton(unsigned int id, bool selection) {
@@ -273,20 +261,15 @@
         // Obtener el valor en la escala de ticks de Symetrix, desde escala [0,1] (disable,enable)
         const int ticks = ValueToTicks( selection ? 1 : 0 , 0, 1);
 
-        // Comprobar variación respecto a tolerancia para mandar o no
-        if (sendCSQ(id, ticks)) {
+        /* No se comprueba tolerancia ni guarda caché, tolerancia a 0 para valores discretos */
 
-            // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
-            if (!isCached(id))
-                setToleranceTicks(id, 0);   // Tolerancia a 0 en valores binarios
+        // Mandar comando por socket
+        if (!sendCSQ(id, ticks))
+            return false;
 
-            // Guardar el valor nuevo en la cache
-            cacheValue(id, ticks);
-            return true;
-        }
-
-        /* else */      // No se ha mandado el valor
-        return false;
+        // Guardar el valor nuevo en la cache
+        cacheValue(id, ticks);
+        return true;
     }
 
 
@@ -295,59 +278,50 @@
     bool Symetrix::setSupermatrixValue(unsigned int in, unsigned int out, float volume, bool real_scale) {
         if (!connected_) return false;
 
-        // Calculo de valor segun si es escala real (dB) o porcentual (0 a 100)
-        float value = 0.0f;
-
-        if (real_scale) {
-            // dB directos truncados por el límite si sobrepasa
-            value = (volume > SYM_GAIN_MAX) ? SYM_GAIN_MAX : (volume < SYM_GAIN_MIN) ? SYM_GAIN_MIN : volume;
-        } else {
-
-            // Truncamiento de valores mínimo/máximo directo
-            if (volume >= 100) {
-                value = SYM_GAIN_MAX;
-            }
-            else if (volume <= 0) {
-                value = SYM_GAIN_MIN;
-            }
-            // Si 'volume' está en el rango, cálculo de dB con curva de ponderación
-            else {
-                // Normalización del valor de entrada a ratio 0 a 1
-                float ratio = std::clamp(volume, 0.0f, 100.0f) / 100.0f;
-                
-                // Interpolación usando la posición en la curva logarítmica
-                value = SYM_GAIN_MIN + (std::pow(ratio, dBcurve_gamma_) * (SYM_GAIN_MAX - SYM_GAIN_MIN));
-            }
+        // Comprobación de límites de supermatrix
+        if (in > supermatrix_ins_) {
+            SYS_WARN("Symetrix","setSupermatrixValue: IN value out of limits");
+            return false;
         }
-
-        // Formateo directo del valor flotante a string
-        char dbStr[16];
-        auto dbRes = std::format_to_n(dbStr, sizeof(dbStr), "{:.2f}", value);
-        std::string_view dbStrView(dbStr, dbRes.size);
-
-        // Construcción del comando. Formato: $q CMV Set [Nombre].{I<in>O<out>} <value>
-        char buf[128];
-        constexpr std::string_view componentName = "0.1.CPGain";    // Nombre de componente supermatrix
-        auto result = std::format_to_n(buf, sizeof(buf), "$q CMV Set {}.{{I{}O{}}} {}\r", 
-                                    componentName, in, out, dbStrView);
-
-        // Comprobación por overload de escritura en 'buf' (mucho texto)
-        if (result.size >= sizeof(buf)) {
-            SYS_WARN("Symetrix","setSupermatrixValue error: buffer command overload.");
+        if (out > supermatrix_outs_) {
+            SYS_WARN("Symetrix","setSupermatrixValue: OUT value out of limits");
             return false;
         }
 
-        // Envío
-        return send(pimpl_->socket, buf, static_cast<int>(result.size), 0) > 0;
+        // Obtener el valor en dB
+        float dbValue = 0.0f;
+
+        // Cálculo de valor en db si está dentro de los límites (y aplica)
+        float minVal = real_scale ? SYM_GAIN_MIN : 0;
+        float maxVal = real_scale ? SYM_GAIN_MAX : 100;
+        if (volume < maxVal && volume > minVal)
+            dbValue = real_scale ? volume : pct_to_dB(volume);
+        else    // Truncamiento de valor real si sobrepasa los límites (se queda con el extremo)
+            dbValue = std::clamp(volume, static_cast<float>(SYM_GAIN_MIN), static_cast<float>(SYM_GAIN_MAX));
+
+        // Obtiene un valor de id para la caché a partir de la entrada-salida
+        unsigned int id = (out << 16) | (in & 0xFFFF);
+
+        // No se manda el valor si no supera la tolerancia
+        if (!shouldSendCMV(id, dbValue)) 
+            return false;
+
+        // Mandar comando por socket
+        bool res = sendCMV(in, out, dbValue);
+
+        // Guardar el valor en la cache
+        cacheValue(id, dbValue);
+
+        return true;
     }
 
 
     // Tolerancias --------------------------------------------------------------------------
 
-    void Symetrix::updateTolerance(unsigned int newTolerancePercent, unsigned int id) {
+    void Symetrix::updateTolerancePct(unsigned int newTolerancePercent, unsigned int id) {
 
         // Comprobar rango
-        if (newTolerancePercent > 100 || newTolerancePercent < 0) {
+        if (newTolerancePercent > 100) {
             SYS_WARN("Symetrix", "New tolerance percent must be in the interval [0-100]");
             return;
         }
@@ -361,15 +335,15 @@
             auto it = cache_.find(id);
             if (it == cache_.end()) {
                 SYS_WARN("Symetrix","Updating tolerance to not cached value");
-                cache_[id].toleranceTick = tickTol;
+                cache_[id].tolerance = tickTol;
             }
-            cache_[id].toleranceTick = tickTol;
+            cache_[id].tolerance = tickTol;
         }
-        else {      // Aplica a todos los componentes antiguos y nuevos
+        else {      // Aplica a todos los componentes antiguos y nuevos (TAMBIÉN A VALORES CACHEADOS EN DB)
             tolerance_percent_ = newTolerancePercent;
             // Establecer el nuevo valor de tolerancia en todos los elementos de la cache
             for (auto & it : cache_)
-                it.second.toleranceTick = tickTol;
+                it.second.tolerance = tickTol;
         }
 
     }
@@ -474,7 +448,7 @@
     }
 
 
-    // Caché de datos de envío --------------------------------------------------------------
+    // Conversión de datos ------------------------------------------------------------------
 
     unsigned int Symetrix::ValueToTicks(float value, float minValue, float maxValue) {
         
@@ -483,7 +457,7 @@
             SYS_WARN("Symetrix","ValueToTicks: Min value greater or equal than max value.");
             return 0;   // Cuidado con esto que no es el valor esperado
         }
-        if (minValue >= maxValue) {
+        if (maxValue <= minValue) {
             SYS_WARN("Symetrix","ValueToTicks: Max value lower or equal than min value.");
             return 0;   // Cuidado con esto que no es el valor esperado
         }
@@ -492,43 +466,74 @@
         if (value <= minValue) return minTickValue_;
         if (value >= maxValue) return maxTickValue_;
 
-
         // Devolver el valor convertido escalado a la escala de destino (ticks)
         float fraction = (value - minValue) / (maxValue - minValue);
         return minTickValue_ + static_cast<unsigned int>(std::round(fraction * (maxTickValue_ - minTickValue_)));
     }
 
+    float Symetrix::pct_to_dB(float pct) {        
+        // Convertir el porcentaje a un ratio (0.0 a 1.0)
+        float ratio = std::clamp(pct, 0.0f, 100.0f) / 100.0f;
+        
+        // Aplicar la curva de ponderación: db = Min + ((pct/100)^gamma * (Max - Min))
+        float curve = std::pow(ratio, dBcurve_gamma_);
+        
+        // Calcular el valor en dB dentro del rango del DSP
+        return SYM_GAIN_MIN + (curve * static_cast<float>(SYM_GAIN_MAX - SYM_GAIN_MIN));
+    }
+
+    float Symetrix::dB_to_pct(float dbValue) {
+        // Asegurar que el dB esté dentro de los límites del DSP
+        float clampedDb = std::clamp(dbValue, static_cast<float>(SYM_GAIN_MIN), static_cast<float>(SYM_GAIN_MAX));
+        
+        // Normalizar: obtener el valor de la curva (de 0.0 a 1.0)
+        float curve = (clampedDb - SYM_GAIN_MIN) / static_cast<float>(SYM_GAIN_MAX - SYM_GAIN_MIN);
+        
+        // Invertir la curva: ratio = curve ^ (1 / gamma)
+        return std::pow(curve, 1.0f / dBcurve_gamma_) * 100;
+    }
+
+
+    // Caché de datos de envío --------------------------------------------------------------
+
     bool Symetrix::isCached(unsigned int id) const {
         return cache_.find(id) != cache_.end();
     }
 
-    void Symetrix::cacheValue(unsigned int id, unsigned int currentTick) {
-        cache_[id].cachedTicks = currentTick;
+    void Symetrix::cacheValue(unsigned int id, float value) {
+        cache_[id].cachedValue = value;
     }
 
+    int Symetrix::getCachedValue(unsigned int id) {
+        return cache_[id].cachedValue;
+    }
     
+    int Symetrix::getCachedTolerance(unsigned int id) {
+        return cache_[id].tolerance;
+    }
+
+
     // Tolerancias (privado) ----------------------------------------------------------------
 
-    void Symetrix::setToleranceTicks(unsigned int id, unsigned int newToleranceTicks) {
-        cache_[id].toleranceTick = newToleranceTicks;
+    void Symetrix::setTolerance(unsigned int id, unsigned int newTolerance) {
+        cache_[id].tolerance = newTolerance;
     }
 
 
     // Envío de datos -----------------------------------------------------------------------
 
-    bool Symetrix::shouldSend(unsigned int id, unsigned int newTicks) {
-
-        auto it = cache_.find(id);
+    bool Symetrix::shouldSendCSQ(unsigned int id, unsigned int newTicks) {
 
         // Si el valor no está cacheado, se debería enviar
-        if (it == cache_.end())
-        return true;
+        if (!isCached(id))
+            return true;
 
         // Comprobar si el cambio de valor supera la tolerancia
-        return std::abs(static_cast<int>(newTicks) - it->second.cachedTicks) >= it->second.toleranceTick;
+        return std::abs(static_cast<int>(newTicks) - getCachedValue(id)) >= getCachedTolerance(id);
     }
 
     bool Symetrix::sendCSQ(unsigned int id, unsigned int ticks) {
+        // Buffer para construir el comando
         char buf[32];
 
         // Este es el comando formateado con el valor de los ticks + id (e.g., "CSQ 302 1124")
@@ -551,6 +556,49 @@
         return true;
     }
 
+    bool Symetrix::shouldSendCMV(unsigned int id, float dbValue) {
+
+        // Si el valor no está cacheado, se debería enviar
+        if (!isCached(id))
+            return true;
+
+        // Calcular la tolerancia en dB
+        float valuedB_menos_tolerancia = pct_to_dB(std::max(0.0f, dB_to_pct(dbValue) - tolerance_percent_));
+        float toleranceDb = std::abs(dbValue - valuedB_menos_tolerancia);
+
+        // Comprobar si el valor está dentro del rango
+        return std::abs(dbValue - getCachedValue(id)) > toleranceDb;
+    }
+
+    bool Symetrix::sendCMV(unsigned int in, unsigned int out, float dbValue) {
+        // Buffer para construir el comando
+        char buf[64];
+
+        // Formateo directo del valor flotante a string
+        char dbStr[16];
+        auto dbRes = std::format_to_n(dbStr, sizeof(dbStr), "{:.2f}", dbValue);
+        std::string_view dbStrView(dbStr, dbRes.size);
+        
+        // Construcción del comando. Formato: $q CMV Set [Nombre].{I<in>O<out>} <value>
+        constexpr std::string_view componentName = "0.1.CPGain";    // Nombre de componente supermatrix
+        auto result = std::format_to_n(buf, sizeof(buf), "$q CMV Set {}.{{I{}O{}}} {}\r", 
+                                    componentName, in, out, dbStrView);
+
+        // Comprobación por overload de escritura en 'buf' (mucho texto)
+        if (result.size >= sizeof(buf)) {
+            SYS_WARN("Symetrix","sendCMV error: buffer command overload.");
+            return false;
+        }
+
+        // Envío
+        if (send(pimpl_->socket, buf, static_cast<int>(result.size), 0) > 0) {
+            SYS_WARN("Symetrix","sendCMV: Failed sending command by socket.");
+            return false;
+        }
+
+        return true;
+    }
+
 
 #else
 // ============================================================
@@ -562,8 +610,6 @@ struct Symetrix::Impl {};
 
 Symetrix::Symetrix() :
     pimpl_(std::make_unique<Impl>()),
-    m_lastPingTime_(),
-    m_waitingPingResponse_(false),
     wsaStarted_(false),
     connected_(false),
     initialized_(false),
@@ -610,7 +656,7 @@ bool Symetrix::isCached(unsigned int) const { return false; }
 void Symetrix::cacheValue(unsigned int, unsigned int) {}
 
 // Tolerancias (privado) ----------------------------------------------------------------
-void Symetrix::setToleranceTicks(unsigned int, unsigned int) {}
+void Symetrix::setTolerance(unsigned int, unsigned int) {}
 
 // Envío de datos -----------------------------------------------------------------------
 bool Symetrix::shouldSend(unsigned int, unsigned int) { return false; }

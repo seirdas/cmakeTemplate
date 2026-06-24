@@ -168,7 +168,7 @@ public:
      * @param newTolerance Nuevo valor o porcentaje de tolerancia a aplicar.
      * @param id Identificador único del componente en Symetrix. Si es @c 0, se aplica a todo el sistema.
      */
-    void updateTolerance(unsigned int newTolerance, unsigned int id = 0);
+    void updateTolerancePct(unsigned int newTolerance, unsigned int id = 0);
 
 
 private:
@@ -188,7 +188,7 @@ private:
     void net_cleanup();
 
 
-// Conversión de datos a ticks --------------------------------------------------------------
+// Conversión de datos ------------------------------------------------------------------
 
     /**
      * @brief Convierte un valor a su equivalente numérico en "ticks" (0-65535).
@@ -201,6 +201,20 @@ private:
      */
     unsigned int ValueToTicks(float value, float minValue, float maxValue);
 
+    /**
+     * @brief Convierte un valor porcentual (0-100) a decibelios (dB) aplicando la curva gamma.
+     * @param pct Valor de entrada en porcentaje [0, 100].
+     * @return El valor equivalente en dB dentro del rango [SYM_GAIN_MIN, SYM_GAIN_MAX].
+     */
+    float pct_to_dB(float pct);
+
+    /**
+     * @brief Convierte un valor en decibelios (dB) a su equivalente porcentual (0-100).
+     * @details Utiliza la operación inversa de la curva gamma para normalizar el valor.
+     * @param dbValue Valor en dB.
+     * @return Valor porcentual equivalente [0, 100].
+     */
+    float dB_to_pct(float dbValue);
 
 // Caché de datos de envío --------------------------------------------------------------
 
@@ -212,14 +226,31 @@ private:
     bool isCached(unsigned int id) const;
 
     /**
-     * @brief Actualiza el valor de "ticks" almacenado en una entrada específica de la caché.
+     * @brief Guarda el valor de "ticks" o "dB" almacenado en una entrada específica de la caché.
      * @details Sincroniza el estado local de la aplicación con el último valor 
      *  conocido o enviado al dispositivo.
      * @param id Identificador único del componente en la caché.
      * @param currentTick El nuevo valor en "ticks" a persistir en la caché.
      */
-    void cacheValue(unsigned int id, unsigned int currentTick);
+    void cacheValue(unsigned int id, float value);
 
+    /**
+     * @brief Obtiene el valor bruto almacenado en la caché para un ID específico.
+     * @note Esta función no verifica si el ID existe en el mapa de caché. Acceder a un ID 
+     * no existente provocará una inserción por defecto (default construction) en el std::map.
+     * @param id ID del componente.
+     * @return El valor almacenado como entero.
+     */
+    int getCachedValue(unsigned int id);
+
+    /**
+     * @brief Obtiene la tolerancia configurada para un ID específico en la caché.
+     * @note Esta función no verifica si el ID existe en la caché. Se recomienda llamar 
+     * a isCached() previamente si no se tiene certeza de la existencia del ID.
+     * @param id ID del componente.
+     * @return El valor de tolerancia en la escala correspondiente (ticks).
+     */
+    int getCachedTolerance(unsigned int id);
     
 // Tolerancias (privado) ----------------------------------------------------------------
 
@@ -232,7 +263,7 @@ private:
      * @param id Identificador único del componente o controlador remoto en Symetrix.
      * @param newToleranceTicks Margen de tolerancia bruto expresado directamente en la escala de ticks (0-65535).
      */
-    void setToleranceTicks(unsigned int id, unsigned int newToleranceTicks);
+    void setTolerance(unsigned int id, unsigned int newTolerance);
 
 
 // Envío de datos -----------------------------------------------------------------------
@@ -245,7 +276,7 @@ private:
      * @param newTicks El nuevo valor en "ticks" que se pretende evaluar.
      * @return @c true si se ha superado el umbral de tolerancia o no había registro previo, @c false si debe descartarse.
      */
-    bool shouldSend(unsigned int id, unsigned int newTicks);
+    bool shouldSendCSQ(unsigned int id, unsigned int newTicks);
 
     /**
      * @brief Envía un comando nativo CSQ (Change Controller Setting Quiet) al dispositivo Symetrix por UDP.
@@ -257,6 +288,25 @@ private:
      */
     bool sendCSQ(unsigned int id, unsigned int ticks);
 
+    /**
+     * @brief Determina si un cambio en el valor en dB debe enviarse al Supermatrix según la tolerancia dinámica.
+     * @details Calcula la tolerancia en dB de forma dinámica basándose en la posición actual 
+     * en la curva logarítmica y la compara con el valor en caché.
+     * @param id ID del componente (formateado para Supermatrix).
+     * @param dbValue Valor nuevo en dB que se pretende enviar.
+     * @return true si la diferencia es suficiente para requerir un nuevo envío, false si está dentro del umbral.
+     */
+    bool shouldSendCMV(unsigned int id, float dbValue);
+
+    /**
+     * @brief Envía el comando CMV (Command Matrix Value) al Supermatrix para un punto de cruce.
+     * @param in Índice de la entrada (0-indexed).
+     * @param out Índice de la salida (0-indexed).
+     * @param dbValue Valor de ganancia en dB a aplicar.
+     * @return true si el paquete se envió correctamente a través del socket, false en caso de error.
+     */
+    bool sendCMV(unsigned int in, unsigned int out, float dbValue);
+
 
 /************ Variables ********************************************************/
 
@@ -265,8 +315,8 @@ private:
 
     /** @brief Entrada de cache */
     struct CacheEntry {
-        int cachedTicks = 99999;        ///< Último valor mandado a Symetrix (valor por defecto fuera de rango)
-        int toleranceTick;              ///< Valor de tolerancia 
+        float cachedValue = 99999;      ///< Último valor mandado a Symetrix de ticks/dB (valor por defecto fuera de rango)
+        int tolerance;                  ///< Valor de tolerancia 
     };
 
     // --- Conexión de socket ---
@@ -279,22 +329,20 @@ private:
     unsigned long const connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
     unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
 
-    // --- Conversión de datos a ticks ---
+    // --- Conversión de datos ---
+    float           dBcurve_gamma_;                     ///< Valor de ponderación de escala porcentual a escala logarítmica
     unsigned int    minTickValue_    = 0;               ///< Valor mínimo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
     unsigned int    maxTickValue_    = 65535;           ///< Valor máximo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
     unsigned int    tolerance_percent_;                 ///< Porcentaje de tolerancia, si un valor cambia menos de este porcentaje respecto a su escala, no se mandará
     
     // --- Caché de Comandos de Control Único ---
     using CacheMap = std::unordered_map<unsigned int, CacheEntry>;
-    CacheMap        cache_;                         ///< Vector de caché local para evitar saturar el bus UDP con valores idénticos o dentro de tolerancia
-
-    // --- Conversión de valores porcentuales a dB ---
-    float           dBcurve_gamma_;                 ///< Valor de ponderación de escala porcentual a escala logarítmica
+    CacheMap        cache_;                             ///< Vector de caché local para evitar saturar el bus UDP con valores idénticos o dentro de tolerancia
 
     // --- Configuración y Estado de la SuperMatrix ---
-    int             supermatrix_ins_;               ///< Número de entradas lógicas de la SuperMatrix.
-    int             supermatrix_outs_;              ///< Número de salidas lógicas de la SuperMatrix.
+    int             supermatrix_ins_;                   ///< Número de entradas lógicas de la SuperMatrix.
+    int             supermatrix_outs_;                  ///< Número de salidas lógicas de la SuperMatrix.
 
     // --- Configuración Fija del Dispositivo ---
-    unsigned int const kBootPreset_;                ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
+    unsigned int const kBootPreset_;                    ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
 };
