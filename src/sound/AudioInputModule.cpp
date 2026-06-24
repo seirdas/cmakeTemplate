@@ -4,8 +4,8 @@
 
     #include <miniaudio.h>
     #include <cmath>
+    #include <limits>
     #include "system/SystemMgr.hpp"
-    #include <cmath>
 
     // Implementación de miembros y métodos de la librería externa
     struct AudioInputModule::Impl {
@@ -52,18 +52,27 @@
 
         // 1. NIVEL DE SEÑAL: Procesar frame de muestras de captura (normales) y limpiar buffer cuando se llene
         self->buffer_.insert(self->buffer_.end(), samples, samples + frameCount * self->channels_);
-        if (self->buffer_.size() >= self->processBufferSize_ * self->channels_) {
 
-            // Obtiene valor del RMS
-            float sum = 0.0f; // acumulador de la suma de cuadrado
-            for (ma_uint32 i = 0; i < frameCount * self->channels_; ++i) 
+        // Procesamos solo cuando el buffer acumulado alcance el tamaño deseado
+        ma_uint32 targetSize = self->processBufferSize_ * self->channels_;
+        if (self->buffer_.size() >= targetSize) {
+
+            // double para sumar muestras del buffer acumulado sin pérdidas de precisión
+            double sum = 0.0;
+            double sampleVal = 0;
+            for (unsigned int i = 0; i < targetSize; ++i) 
             {
-                // eleva cada muestra al cuadrado y acumula
-                sum += (float)samples[i] * samples[i];
-
-                // divide la suma entre el número de muestras → media de cuadrados → raíz cuadrada → RMS (max=2^16/2)
-                self->rmsLevel_ = std::sqrt(sum / (frameCount * self->channels_)) / 327.67f; // Normaliza entre 0 y 100
+                sampleVal = static_cast<double>(self->buffer_[i]);
+                sum += sampleVal * sampleVal;
             }
+            // La raiz es más eficiente hacerla fuera del bucle
+            double rms = std::sqrt(sum / targetSize);
+
+            // Normalizar entre 0 y 100, sobre el valor máximo del tipo int16_t
+            int16_t max_val = std::numeric_limits<int16_t>::max();
+            self->rmsLevel_ = static_cast<float>((rms / max_val) * 100.0);
+
+            // Limpieza de buffer
             self->buffer_.clear();
         }
 
