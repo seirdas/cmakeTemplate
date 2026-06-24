@@ -109,12 +109,26 @@ public:
      * @details Convierte el valor actual a la escala interna de ticks del dispositivo, 
      *  comprueba la tolerancia para evitar saturar la red y actualiza la caché si se envía.
      * @param id Identificador único del componente/controlador remoto en Symetrix.
-     * @param value Valor actual que se desea procesar y enviar.
+     * @param value Valor a establecer (dentro de escala de usuario).
      * @param minValue Límite inferior de la escala del parámetro original.
      * @param maxValue Límite superior de la escala del parámetro original.
      * @return @c true si el valor superó la tolerancia y se envió correctamente por red, @c false en caso contrario.
      */
     bool setValue(unsigned int id, float value, float minValue, float maxValue);
+
+    /**
+     * @brief Establece un valor para un componente Symetrix aplicando una curva de ponderación logarítmica.
+     * @details Esta función mapea un valor de entrada (dentro del rango definido por minValue y maxValue)
+     *  a la escala de ganancia en dB del DSP, utilizando una curva de corrección gamma
+     *  para emular el comportamiento natural de los faders de audio.
+     * @param id Identificador único del componente/controlador remoto en Symetrix.
+     * @param value Valor a establecer (dentro de escala de usuario).
+     * @param minValue Límite inferior de la escala del parámetro original.
+     * @param maxValue Límite superior de la escala del parámetro original.
+     * @return true si el valor fue enviado (o no requirió envío por estar dentro de la tolerancia), false en caso de error.
+     */
+    bool setValue_dB(unsigned int id, float value, float minValue, float maxValue);
+
 
     /**
      * @brief Activa/Desactiva el estado binario (botón) de un componente.
@@ -129,7 +143,17 @@ public:
 
 // Supermatrix --------------------------------------------------------------------------
 
-    // #TODO doxygen
+    /**
+     * @brief Establece el volumen de un punto específico de la supermatriz (Crosspoint).
+     * @details Permite enviar el valor de ganancia ya sea como un valor absoluto en dB o como un
+     *  porcentaje (0-100) que se traduce mediante una curva logarítmica de audio.
+     * @param in Índice de la entrada (0-indexed).
+     * @param out Índice de la salida (0-indexed).
+     * @param volume Valor de volumen: puede ser dB exactos o porcentaje (0-100).
+     * @param real_scale Si es true, trata 'volume' como dB directos. Si es false (por defecto), 
+     *  aplica una curva de ponderación logarítmica sobre el porcentaje.
+     * @return true si el comando fue procesado y enviado con éxito, false en caso de error.
+     */
     bool setSupermatrixValue(unsigned int in, unsigned int out, float volume, bool real_scale = false);
 
 
@@ -263,6 +287,9 @@ private:
     // --- Caché de Comandos de Control Único ---
     using CacheMap = std::unordered_map<unsigned int, CacheEntry>;
     CacheMap        cache_;                         ///< Vector de caché local para evitar saturar el bus UDP con valores idénticos o dentro de tolerancia
+
+    // --- Conversión de valores porcentuales a dB ---
+    float           dBcurve_gamma_;                 ///< Valor de ponderación de escala porcentual a escala logarítmica
 
     // --- Configuración y Estado de la SuperMatrix ---
     int             supermatrix_ins_;               ///< Número de entradas lógicas de la SuperMatrix.

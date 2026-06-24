@@ -50,6 +50,7 @@
         connection_ping_timeout_ms_(500),
         ComposerPort_(48631),
         tolerance_percent_(2),            // Por defecto tolerancias de un 2% sobre el rango
+        dBcurve_gamma_(0.415f),
         supermatrix_ins_(20),             // Por defecto para tener 20 entradas (se puede cambiar por método)
         supermatrix_outs_(20),            // Por defecto para tener 20 salidas (se puede cambiar por método)
         kBootPreset_(1)
@@ -79,10 +80,7 @@
         if(!initConnection(SymetrixIP))
             return false;
 
-        // Inicialización de variables de supermatrix
-        initSupermatrix();
-
-        // Cargar preset de boot
+        // Cargar preset de boot por defecto
         if (kBootPreset_ > 0)
             LoadPreset(kBootPreset_);
 
@@ -163,17 +161,90 @@
         // Comprobar si se pueden mandar los datos
         if (!connected_ || id == 0) return false;
 
+        // Comprobaciones de seguridad
+        if (minValue > maxValue) {
+            SYS_WARN("Symetrix","Max value lower than min value");
+            return false;
+        }
+        if (maxValue < minValue) {
+            SYS_WARN("Symetrix","Min value higher than max value");
+            return false;
+        }
+        if (maxValue == minValue) {
+            SYS_WARN("Symetrix","Min value equal to max value");
+            return false;
+        }
+
+        // Truncamiento de valores máximo/mínimo
         if (value < minValue) {
             SYS_WARN("Symetrix","Value lower than min value range");
-            return false;
+            value = minValue;
         }
         if (value > maxValue) {
             SYS_WARN("Symetrix","Value higher than max value range");
-            return false;
+            value = maxValue;
         }
 
         // Obtener el valor en la escala de ticks de Symetrix
         const int ticks = ValueToTicks(value, minValue, maxValue);
+
+        // Comprobar variación respecto a tolerancia para mandar o no
+        if (shouldSend(id, ticks) && sendCSQ(id, ticks)) {
+
+            // Si la entrada de cache no existe, guardar primero el valor de tolerancia por defecto
+            if (!isCached(id)) {
+                unsigned int toleranceTicks = 
+                    static_cast<unsigned int>(std::round((maxTickValue_ - minTickValue_) * (tolerance_percent_ / 100.0f)));
+                setToleranceTicks(id, toleranceTicks);
+            }
+
+            // Guardar el valor nuevo en la cache
+            cacheValue(id, ticks);
+            return true;
+        }
+
+        /* else */      // No se ha mandado el valor
+        return false;
+    }
+
+    bool Symetrix::setValue_dB(unsigned int id, float value, float minValue, float maxValue) {
+
+        // Comprobar si se pueden mandar los datos
+        if (!connected_ || id == 0) return false;
+
+        // Comprobaciones de seguridad
+        if (minValue > maxValue) {
+            SYS_WARN("Symetrix","Max value lower than min value");
+            return false;
+        }
+        if (maxValue < minValue) {
+            SYS_WARN("Symetrix","Min value higher than max value");
+            return false;
+        }
+        if (maxValue == minValue) {
+            SYS_WARN("Symetrix","Min value equal to max value");
+            return false;
+        }
+
+        // Truncamiento de valores máximo/mínimo
+        if (value < minValue) {
+            SYS_WARN("Symetrix","Value lower than min value range");
+            value = minValue;
+        }
+        if (value > maxValue) {
+            SYS_WARN("Symetrix","Value higher than max value range");
+            value = maxValue;
+        }
+
+        // Normalización del valor de entrada a ratio 0 a 1
+        float ratio = (value - minValue) / (maxValue - minValue);
+        ratio = std::clamp(ratio, 0.0f, 1.0f);
+
+        // Interpolación usando la posición en la curva logarítmica
+        float dbValue = SYM_GAIN_MIN + (std::pow(ratio, dBcurve_gamma_) * (SYM_GAIN_MAX - SYM_GAIN_MIN));
+
+        // Obtener el valor en la escala de ticks de Symetrix con escala de dBs de Symetrix
+        const int ticks = ValueToTicks(dbValue, SYM_GAIN_MIN, SYM_GAIN_MAX);
 
         // Comprobar variación respecto a tolerancia para mandar o no
         if (shouldSend(id, ticks) && sendCSQ(id, ticks)) {
@@ -225,8 +296,18 @@
         if (!connected_) return false;
 
         // Calculo de valor segun si es escala real (dB) o porcentual (0 a 100)
-        float value = (real_scale) ? volume : SYM_GAIN_MIN + (static_cast<float>(volume) / 100.0f * (SYM_GAIN_MAX - SYM_GAIN_MIN));
+        float value = 0.0f;
 
+        if (real_scale) {
+            // dB directos truncados por el límite si sobrepasa
+            value = (volume > SYM_GAIN_MAX) ? SYM_GAIN_MAX : (volume < SYM_GAIN_MIN) ? SYM_GAIN_MIN : volume;
+        } else {
+            // Normalización del valor de entrada a ratio 0 a 1
+            float ratio = std::clamp(volume, 0.0f, 100.0f) / 100.0f;
+            
+            // Interpolación usando la posición en la curva logarítmica
+            value = SYM_GAIN_MIN + (std::pow(ratio, dBcurve_gamma_) * (SYM_GAIN_MAX - SYM_GAIN_MIN));
+        }
         // Formateo directo del valor flotante a string
         char dbStr[16];
         auto dbRes = std::format_to_n(dbStr, sizeof(dbStr), "{:.2f}", value);
@@ -505,7 +586,6 @@ void Symetrix::updateTolerance(unsigned int, unsigned int) {}
 
 // Inicialización privada ---------------------------------------------------------------
 bool Symetrix::initConnection(std::wstring const&) { return false; }
-void Symetrix::initSupermatrix() {}
 void Symetrix::net_cleanup() {}
 
 // Conversión de datos a ticks ----------------------------------------------------------
