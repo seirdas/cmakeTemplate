@@ -424,33 +424,18 @@
 
     bool Symetrix::sendCSQ(unsigned int id, unsigned int ticks) {
         char buf[32];
-        char* p = buf;
-        char* const end = buf + sizeof(buf);
 
-        // Añadir prefijo "CSQ "
-        std::memcpy(p, "CSQ ", 4);
-        p += 4;
+        // Este es el comando formateado con el valor de los ticks + id (e.g., "CSQ 302 1124")
+        auto [ptr, count] = std::format_to_n(buf, sizeof(buf), "CSQ {} {}\r", id, ticks);
 
-        // Añadir ID
-        auto res_id = std::to_chars(p, end, id);
-        if (res_id.ec != std::errc{}) return false;
-        p = res_id.ptr;
-
-        // Añadir espacio
-        if (p >= end) return false;
-        *p++ = ' ';
-
-        // Añadir Ticks
-        auto res_ticks = std::to_chars(p, end, ticks);
-        if (res_ticks.ec != std::errc{}) return false;
-        p = res_ticks.ptr;
-
-        // Añadir retorno de carro
-        if (p >= end) return false;
-        *p++ = '\r';
+        // Si count es mayor o igual que el tamaño, significa que el comando se habría truncado
+        if (count >= sizeof(buf)) {
+            SYS_WARN("Symetrix", "sendCSQ: Buffer overflow prevented, command too long");
+            return false;
+        }
 
         // Envío
-        const int len = static_cast<int>(p - buf);
+        const int len = static_cast<int>(count);
         int sent = send(pimpl_->socket, buf, len, 0);
         if (sent == SOCKET_ERROR || sent != len) {
             SYS_WARN("Symetrix", "sendCSQ Error");
