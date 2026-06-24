@@ -302,26 +302,40 @@
             // dB directos truncados por el límite si sobrepasa
             value = (volume > SYM_GAIN_MAX) ? SYM_GAIN_MAX : (volume < SYM_GAIN_MIN) ? SYM_GAIN_MIN : volume;
         } else {
-            // Normalización del valor de entrada a ratio 0 a 1
-            float ratio = std::clamp(volume, 0.0f, 100.0f) / 100.0f;
-            
-            // Interpolación usando la posición en la curva logarítmica
-            value = SYM_GAIN_MIN + (std::pow(ratio, dBcurve_gamma_) * (SYM_GAIN_MAX - SYM_GAIN_MIN));
+
+            // Truncamiento de valores mínimo/máximo directo
+            if (volume >= 100) {
+                value = SYM_GAIN_MAX;
+            }
+            else if (volume <= 0) {
+                value = SYM_GAIN_MIN;
+            }
+            // Si 'volume' está en el rango, cálculo de dB con curva de ponderación
+            else {
+                // Normalización del valor de entrada a ratio 0 a 1
+                float ratio = std::clamp(volume, 0.0f, 100.0f) / 100.0f;
+                
+                // Interpolación usando la posición en la curva logarítmica
+                value = SYM_GAIN_MIN + (std::pow(ratio, dBcurve_gamma_) * (SYM_GAIN_MAX - SYM_GAIN_MIN));
+            }
         }
+
         // Formateo directo del valor flotante a string
         char dbStr[16];
         auto dbRes = std::format_to_n(dbStr, sizeof(dbStr), "{:.2f}", value);
         std::string_view dbStrView(dbStr, dbRes.size);
 
-        // Construcción del comando
+        // Construcción del comando. Formato: $q CMV Set [Nombre].{I<in>O<out>} <value>
         char buf[128];
-        
-        // Formato: $q CMV Set [Nombre].{I<in>O<out>} <value>
         constexpr std::string_view componentName = "0.1.CPGain";    // Nombre de componente supermatrix
         auto result = std::format_to_n(buf, sizeof(buf), "$q CMV Set {}.{{I{}O{}}} {}\r", 
                                     componentName, in, out, dbStrView);
 
-        if (result.size >= sizeof(buf)) return false;
+        // Comprobación por overload de escritura en 'buf' (mucho texto)
+        if (result.size >= sizeof(buf)) {
+            SYS_WARN("Symetrix","setSupermatrixValue error: buffer command overload.");
+            return false;
+        }
 
         // Envío
         return send(pimpl_->socket, buf, static_cast<int>(result.size), 0) > 0;
