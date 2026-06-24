@@ -307,11 +307,11 @@
             return false;
 
         // Mandar comando por socket
-        bool res = sendCMV(in, out, dbValue);
+        if(!sendCMV(in, out, dbValue))
+            return false;
 
         // Guardar el valor en la cache
         cacheValue(id, dbValue);
-
         return true;
     }
 
