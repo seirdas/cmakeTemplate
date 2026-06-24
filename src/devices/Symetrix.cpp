@@ -219,6 +219,34 @@
     }
 
 
+    // Supermatrix --------------------------------------------------------------------------
+
+    bool Symetrix::setSupermatrixValue(unsigned int in, unsigned int out, float volume, bool real_scale) {
+        if (!connected_) return false;
+
+        // Calculo de valor segun si es escala real (dB) o porcentual (0 a 100)
+        float value = (real_scale) ? volume : SYM_GAIN_MIN + (static_cast<float>(volume) / 100.0f * (SYM_GAIN_MAX - SYM_GAIN_MIN));
+
+        // Formateo directo del valor flotante a string
+        char dbStr[16];
+        auto dbRes = std::format_to_n(dbStr, sizeof(dbStr), "{:.2f}", value);
+        std::string_view dbStrView(dbStr, dbRes.size);
+
+        // Construcción del comando
+        char buf[128];
+        
+        // Formato: $q CMV Set [Nombre].{I<in>O<out>} <value>
+        constexpr std::string_view componentName = "0.1.CPGain";    // Nombre de componente supermatrix
+        auto result = std::format_to_n(buf, sizeof(buf), "$q CMV Set {}.{{I{}O{}}} {}\r", 
+                                    componentName, in, out, dbStrView);
+
+        if (result.size >= sizeof(buf)) return false;
+
+        // Envío
+        return send(pimpl_->socket, buf, static_cast<int>(result.size), 0) > 0;
+    }
+
+
     // Tolerancias --------------------------------------------------------------------------
 
     void Symetrix::updateTolerance(unsigned int newTolerancePercent, unsigned int id) {
@@ -335,23 +363,6 @@
 
         connected_ = true;
         return true;
-    }
-
-    void Symetrix::initSupermatrix() {
-        const size_t total = size_t(supermatrix_outs_ + 1) * size_t(supermatrix_ins_ + 1);
-
-        constexpr double gamma = 0.415;
-        constexpr int kOffCenti = -7200;
-        constexpr int kMinCenti = -7200;
-        constexpr int kMaxCenti = +1200;
-
-        stepToCentidB_[0] = kOffCenti;
-        for (int s = 1; s <= 100; ++s) {
-            const double x = static_cast<double>(s) / 100.0;
-            const double dB = -60.0 + 72.0 * std::pow(x, gamma);
-            long v = static_cast<long>(std::llround(dB * 100.0));
-            stepToCentidB_[s] = std::clamp(static_cast<int>(v), kMinCenti, kMaxCenti);
-        }
     }
 
     void Symetrix::net_cleanup() {

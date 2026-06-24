@@ -127,6 +127,12 @@ public:
     bool setButton(unsigned int id, bool selection);
 
 
+// Supermatrix --------------------------------------------------------------------------
+
+    // #TODO doxygen
+    bool setSupermatrixValue(unsigned int in, unsigned int out, float volume, bool real_scale = false);
+
+
 // Tolerancias --------------------------------------------------------------------------
 
     /**
@@ -151,12 +157,6 @@ private:
      * @return @c true si la conexión e intercambio inicial de buffers fue correcto, @c false en caso contrario.
      */
     bool initConnection(std::wstring const& hostIp);
-
-    /**
-     * @brief Inicializar la Tabla de búsqueda (LUT) de la SuperMatrix.
-     * @details Genera de forma matemática la curva Gamma logarítmica para la conversión a centi-dB.
-     */
-    void initSupermatrix();
 
     /**
      * @brief Limpia todos los elementos inicializados de la red (WSA, socket).
@@ -245,7 +245,7 @@ private:
         int toleranceTick;              ///< Valor de tolerancia 
     };
 
-    /** @brief Conexión de socket */
+    // --- Conexión de socket ---
     using TimePoint = std::chrono::steady_clock::time_point;
     TimePoint           m_lastPingTime_;                ///< Registro temporal del último comando de control o ping enviado al hardware.
     bool                m_waitingPingResponse_;         ///< Bandera que indica si estamos esperando que el socket reciba el ACK del ping pendiente.
@@ -254,7 +254,6 @@ private:
     bool                initialized_;                   ///< Bandera que indica si el sistema está inicializado.
     unsigned long const connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
     unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
-
 
     // --- Conversión de datos a ticks ---
     unsigned int    minTickValue_    = 0;               ///< Valor mínimo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
@@ -268,14 +267,6 @@ private:
     // --- Configuración y Estado de la SuperMatrix ---
     int             supermatrix_ins_;               ///< Número de entradas lógicas de la SuperMatrix.
     int             supermatrix_outs_;              ///< Número de salidas lógicas de la SuperMatrix.
-    int             stepToCentidB_[101];            ///< Tabla de búsqueda (LUT) para convertir pasos 0..100 a centi-dB.
-    std::vector<int>            PrevCenti_;         ///< Buffer histórico de ganancias de los cruces de la matriz guardado en centi-dB para control de cambios.
-    std::vector<unsigned short> ToleranceCenti_;    ///< Tolerancia de cambio guardada por celda expresada en centi-dB (extraída de m_offsets).
-
-    // --- Buffers Temporales de Optimización (Zero-Allocation en Ejecución) ---
-    std::vector<int>  m_tmpNewCenti;                ///< Array de almacenamiento temporal de valores objetivo en centi-dB durante el procesado por filas.
-    std::vector<char> m_tmpChanged;                 ///< Máscara booleana temporal para marcar qué entradas de una fila han cambiado de valor.
-    std::vector<int>  m_tmpUniq;                    ///< Lista temporal utilizada para agrupar y deduplicar valores de dB antes de empaquetar comandos agrupados.
 
     // --- Configuración Fija del Dispositivo ---
     unsigned int const kBootPreset_;                ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
