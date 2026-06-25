@@ -162,9 +162,9 @@
     
         SYS_INFO("SoundMgr", "Initializing capture device:" + name); 
 
-        // Crear AudioInputModule y le pasa toda la información
+        // Crear AudioInputModule
         std::unique_ptr<AudioInputModule> aim = std::make_unique<AudioInputModule>(
-            &pimpl_->snd_context_, 
+            &pimpl_->snd_context_,
             selectedDeviceInfo
         );
 
@@ -229,13 +229,13 @@
 }
 
     size_t SoundMgr::getInputBufferSize(unsigned int index) {
-        if (index >= inputs_.size()) return false;
+        if (index >= inputs_.size()) return 0;
         return inputs_[index]->getBufferSize();
     }
 
-    size_t SoundMgr::getInputRecBufferSize(unsigned int index) 
+    size_t SoundMgr::getInputRecBufferSize(unsigned int index)
     {
-        if (index >= inputs_.size()) return false;
+        if (index >= inputs_.size()) return 0;
         return inputs_[index]->getRecBufferSize();
     }
 
@@ -270,6 +270,11 @@
                 return pimpl_->pPlaybackDevInfos_[i].name;
 
         /*else*/ return "";
+    }
+
+    void SoundMgr::listAvailablePlaybacks() {
+        for (std::string const& name : getAvailablePlaybacks())
+            SYS_INFO("SoundMgr", "Playback: " + name);
     }
 
     bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) {
@@ -433,6 +438,7 @@
     // Playbacks ----------------------------------------------------------------------------
     std::vector<std::string> SoundMgr::getAvailablePlaybacks() const    { return {}; }
     std::string SoundMgr::getDefaultPlaybackDevice() const              { return {}; }
+    void        SoundMgr::listAvailablePlaybacks()                      { return;    }
     bool        SoundMgr::addPlaybackDevice(std::string const&, std::string const&) { return false; }
     bool        SoundMgr::removePlaybackDevice(unsigned short)          { return false; }
     bool        SoundMgr::playbackTest()                                { return false; }

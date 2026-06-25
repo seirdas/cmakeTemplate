@@ -85,24 +85,19 @@ public:
     float getInputRmsLevel(unsigned short index);
 
     /**
-     * @brief Obtiene el tamaño del buffer de captura
-     * @param index indice de dispositivo de captura
-     * @return el tamaño del buffer de captura
-     */
-    size_t getInputBufferSize(unsigned int index);
-    
-    /**
-     * @brief Obtiene el tamaño del buffer de grabación
-     * @param index indice de dispositivo de captura
-     * @return el tamaño del buffer de grabación
-     */
-    size_t getInputRecBufferSize(unsigned int index);
-
-    /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
      */
     bool isInputDeviceValid(unsigned short index) const;
 
+     /**
+      * @brief Tamaño del buffer del dispositivo de grabación
+      */
+    size_t getInputRecBufferSize(unsigned int index);
+    
+    /**
+      * @brief Tamaño del buffer del dispositivo de captura
+      */
+    size_t getInputBufferSize(unsigned int index);
 
 // Playbacks ----------------------------------------------------------------------------
 
