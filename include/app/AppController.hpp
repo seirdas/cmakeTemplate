@@ -15,7 +15,7 @@
     #include <nlohmann/json.hpp>
 #else
     // Definición vacía o "stub" para que el compilador no se queje
-    namespace nlohmann { class json {}; }
+    #include "files/jsonStub.hpp"
 #endif
 using json = nlohmann::json;
 

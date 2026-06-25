@@ -1,6 +1,5 @@
 #include "sound/TTSMgr.hpp"
 #include "system/SystemMgr.hpp"
-#include <nlohmann/json.hpp>
 
 // Macro de cmake al activar la librería
 #if defined SHERPA || defined SHERPA_VERSION
@@ -17,16 +16,6 @@
     #ifndef VOICES_PATH
         #define VOICES_PATH "tts-voices"
     #endif
-
-    // Comprobar si se puede usar la librería externa de json
-    #if defined JSON || defined JSON_VERSION
-        #include <nlohmann/json.hpp>
-    #else
-        // Definición vacía o "stub" para que el compilador no se queje
-        namespace nlohmann { class json {}; }
-    #endif
-    using json = nlohmann::json;
-    
 
     namespace fs = std::filesystem;
 
@@ -452,29 +441,31 @@
     // Carga de configuración ---------------------------------------------------------------
 
     void TTSMgr::loadConfig(json* config) {
-        // lazy_load
-        if (config->contains("lazy_load") && (*config)["lazy_load"].is_boolean())
-            lazy_load_ = (*config)["lazy_load"];
-        else
-            (*config)["lazy_load"] = lazy_load_;
+        #if defined JSON || defined JSON_VERSION
+            // lazy_load
+            if (config->contains("lazy_load") && (*config)["lazy_load"].is_boolean())
+                lazy_load_ = (*config)["lazy_load"];
+            else
+                (*config)["lazy_load"] = lazy_load_;
 
-        // concurrent_init
-        if (config->contains("concurrent_init") && (*config)["concurrent_init"].is_boolean())
-            concurrent_init_ = (*config)["concurrent_init"];
-        else
-            (*config)["concurrent_init"] = concurrent_init_;
+            // concurrent_init
+            if (config->contains("concurrent_init") && (*config)["concurrent_init"].is_boolean())
+                concurrent_init_ = (*config)["concurrent_init"];
+            else
+                (*config)["concurrent_init"] = concurrent_init_;
 
-        // num_load_retries
-        if (config->contains("num_load_retries") && (*config)["num_load_retries"].is_number_integer())
-            num_load_retries_ = (*config)["num_load_retries"];
-        else
-            (*config)["num_load_retries"] = num_load_retries_;
+            // num_load_retries
+            if (config->contains("num_load_retries") && (*config)["num_load_retries"].is_number_integer())
+                num_load_retries_ = (*config)["num_load_retries"];
+            else
+                (*config)["num_load_retries"] = num_load_retries_;
 
-        // keep_alive_time (serializado como segundos enteros)
-        if (config->contains("keep_alive_time") && (*config)["keep_alive_time"].is_number_integer())
-            keep_alive_time_ = std::chrono::seconds((*config)["keep_alive_time"].get<int>());
-        else
-            (*config)["keep_alive_time"] = static_cast<int>(keep_alive_time_.count());
+            // keep_alive_time (serializado como segundos enteros)
+            if (config->contains("keep_alive_time") && (*config)["keep_alive_time"].is_number_integer())
+                keep_alive_time_ = std::chrono::seconds((*config)["keep_alive_time"].get<int>());
+            else
+                (*config)["keep_alive_time"] = static_cast<int>(keep_alive_time_.count());
+        #endif
     }
 
     // Inicialización de modelos ------------------------------------------------------------

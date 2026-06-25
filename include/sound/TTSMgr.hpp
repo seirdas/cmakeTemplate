@@ -6,9 +6,14 @@
 #include <condition_variable>
 #include <filesystem>
 
-#include <nlohmann/json.hpp>
+// Comprobar si se puede usar la librería externa de json
+#if defined JSON || defined JSON_VERSION
+    #include <nlohmann/json.hpp>
+#else
+    // Definición vacía o "stub" para que el compilador no se queje
+    #include "files/jsonStub.hpp"
+#endif
 using json = nlohmann::json;
-
 
 // Declaración como estructura para evitar includes en hpp
 struct SherpaOnnxOfflineTts;
