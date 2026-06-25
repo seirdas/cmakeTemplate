@@ -6,6 +6,10 @@
 #include <condition_variable>
 #include <filesystem>
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+
 // Declaración como estructura para evitar includes en hpp
 struct SherpaOnnxOfflineTts;
 
@@ -40,7 +44,7 @@ public:
      * @note La macro VOICES_PATH se obtiene del toolchain para evitar duplicados
      * @return true si la inicialización fue exitosa, false en caso de error.
      */
-    bool init();
+    bool init(json config);
 
     /**
      * @brief Libera los recursos asociados a los modelos de voz cargados.
@@ -199,7 +203,7 @@ private:
     short                   num_available_models_;  ///< Número de modelos disponibles
     size_t                  num_threads_;           ///< Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       ///< Activa/desactiva la inicialización concurrente (experimental)
-    std::string const       models_path_;           ///< Ruta de carpetas donde residen los modelos
+    std::string             models_path_;           ///< Ruta de carpetas donde residen los modelos
     mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos
     
     // Lazy Load (Carga modelo solo al usarlo, se descarga en un tiempo)

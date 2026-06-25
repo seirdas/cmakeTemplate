@@ -1,0 +1,28 @@
+{
+  "snd": {
+    "aim": {
+      "channels": 2,
+      "sample_rate": 44100,
+      "process_buffer_size": 1024,
+      "rms_mode": "linear",
+      "dbfs": { 
+        "db_min": -60.0, 
+        "gate": 5.0 
+      },
+      "linear": { 
+        "norm": 231.6 
+      }
+    },
+    "apm": {
+      "propiedadfalsa" : 99999
+    }
+  },
+  "tts": {
+    "num_threads": 4,
+    "lazy_load": false,
+    "concurrent_init": true,
+    "keep_alive_time": 20,
+    "num_load_retries": 2,
+    "models_path": "voices"
+  }
+}

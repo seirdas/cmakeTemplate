@@ -1,5 +1,6 @@
 #include "sound/TTSMgr.hpp"
 #include "system/SystemMgr.hpp"
+#include <nlohmann/json.hpp>
 
 // Macro de cmake al activar la librería
 #if defined SHERPA || defined SHERPA_VERSION
@@ -43,7 +44,17 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool TTSMgr::init() {
+    bool TTSMgr::init(json config) {
+
+        // #TODO ¿Qué pasa si uno de los valores no existe en el json?????
+
+        // Rellenar valores de variables miembro a partir de la config pasada (json)
+        lazy_load_        = config.value("lazy_load",        lazy_load_);
+        concurrent_init_  = config.value("concurrent_init",  concurrent_init_);
+        keep_alive_time_  = std::chrono::seconds(config.value("keep_alive_time", (int)keep_alive_time_.count()));
+        num_load_retries_ = config.value("num_load_retries", num_load_retries_);
+        models_path_      = config.value("models_path",      models_path_);
+
         // Marcar como corriendo por si se destruye mientras carga modelos
         running_ = true;
 

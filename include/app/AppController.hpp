@@ -9,6 +9,8 @@
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver TotalmixFX
+#include <nlohmann/json.hpp>    // Clase (externa) para leer archivos config json
+
 
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
@@ -56,7 +58,15 @@ public:
      */
     int run();
 
+// Configuración ------------------------------------------------------------------------
 
+    /**
+     * @brief Configuracion de variables
+     * @return true si se ha leido bien el archivo, false en caso contrario
+     */
+    bool loadConfig(std::string filename);
+    
+    
 // Hilos --------------------------------------------------------------------------------
 
     /**
@@ -205,6 +215,10 @@ private:
     // Parámetros de entrada (igual que main)
     int         argc_;                          ///< Número de parámetros de entrada
     char**      argv_;                          ///< Texto de parámetro de entrada
+
+    // Archivos de configuración
+    using json = nlohmann::json;
+    json        j_config_;                      ///< Archivo json de configuración global
 
     // Módulos
     NetMgr      net_;                           ///< Gestor de sockets de red

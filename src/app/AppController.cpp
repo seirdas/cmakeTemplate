@@ -1,6 +1,7 @@
 #include "app/AppController.hpp"
 #include "system/SystemMgr.hpp"
 #include <chrono>               // Controla tiempos de espera
+#include <fstream>
 
 // General ------------------------------------------------------------------------------
 
@@ -46,10 +47,16 @@ AppController::~AppController() {
 bool AppController::init(int argc, char** argv) {
 
     SYS_INFO("AppController","Initializating application...");
-    
+
     // Obtiene los parámetros de entrada
     this->argc_ = argc;
     this->argv_ = argv;
+
+    // Guardar configuración del archivo json
+    if (!loadConfig("config.json")) {
+        SYS_ERROR("AppController","Cannot load config file");
+        return false;   // Si no tiene el archivo de config, fuera
+    }
 
     // Iniciar GUI, salir si no se carga bien
     SYS_INFO("AppController","GUI subsystem loading...");
@@ -120,6 +127,26 @@ int AppController::run() {
     return 0;
 }
 
+// Configuración ------------------------------------------------------------------------
+
+bool AppController::loadConfig(std::string filename) {
+
+    std::ifstream f(filename);
+
+    if (!f.is_open()) {
+        SYS_WARN("AppController", "config.json not found, using defaults.");
+        return false;
+    }
+    
+    try {
+        j_config_ = nlohmann::json::parse(f);
+    } catch (...) {
+        SYS_WARN("AppController", "Cannot parse config.json, using defaults.");
+        return false;
+    }
+
+    return true;
+}
 
 // Hilos --------------------------------------------------------------------------------
 
