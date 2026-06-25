@@ -201,6 +201,7 @@ std::unique_ptr<json> AppController::loadConfig(std::string const& filename) {
 }
 
 bool AppController::createConfigFile(std::string const& filename) {
+    #if defined JSON || defined JSON_VERSION
     // Crear archivo con json vacío
     std::ofstream newFile(filename, std::ios::out);
     if (!newFile.is_open()) {
@@ -211,6 +212,10 @@ bool AppController::createConfigFile(std::string const& filename) {
     newFile.close();
     SYS_INFO("AppController", "Created empty " + filename + ".");
     return true;
+    #else
+         // no hacer ningún archivo si no está disponible json
+        return false;
+    #endif
 }
 
 
