@@ -44,7 +44,7 @@ public:
      * @note La macro VOICES_PATH se obtiene del toolchain para evitar duplicados
      * @return true si la inicialización fue exitosa, false en caso de error.
      */
-    bool init(json config);
+    bool init(json* config);
 
     /**
      * @brief Libera los recursos asociados a los modelos de voz cargados.
@@ -146,6 +146,11 @@ public:
 
 
 private:
+
+// Carga de configuración ---------------------------------------------------------------
+
+    // #TODO doxy
+    void loadConfig(json* config);
 
 // Inicialización de modelos ------------------------------------------------------------
 

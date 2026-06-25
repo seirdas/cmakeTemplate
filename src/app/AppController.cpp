@@ -1,7 +1,8 @@
 #include "app/AppController.hpp"
 #include "system/SystemMgr.hpp"
 #include <chrono>               // Controla tiempos de espera
-#include <fstream>
+#include <fstream>              // Para i/o de archivos
+#include <memory>               // Necesario para std::unique_ptr
 
 // General ------------------------------------------------------------------------------
 
@@ -9,6 +10,8 @@ AppController::AppController() :
     argc_(0),
     argv_(nullptr),
     gui_(this),
+    config_filename_("config.json"),
+    configJson_(nullptr),
     net_initialized_(false),
     gui_initialized_(false),
     snd_initialized_(false),
@@ -53,10 +56,17 @@ bool AppController::init(int argc, char** argv) {
     this->argv_ = argv;
 
     // Guardar configuración del archivo json
-    if (!loadConfig("config.json")) {
-        SYS_ERROR("AppController","Cannot load config file");
-        return false;   // Si no tiene el archivo de config, fuera
+    configJson_ = loadConfig(config_filename_);
+    if (!configJson_) {
+        SYS_WARN("AppController","Cannot load config file. Generating new config file.");
+        if(createConfigFile(config_filename_)) {
+            configJson_= loadConfig(config_filename_);
+            if (configJson_) SYS_SOLVED("AppController","New config file created.");
+        }
+        else
+            SYS_ERROR("AppController","Cannot create new config file. Using defaults.");
     }
+
 
     // Iniciar GUI, salir si no se carga bien
     SYS_INFO("AppController","GUI subsystem loading...");
@@ -103,11 +113,43 @@ bool AppController::init(int argc, char** argv) {
     // Inicialización de TTS (en hilo para no bloquear)
     std::thread tLoadTTS([this]() {
             SYS_INFO("AppController","Starting TTS subsystem async load...");
-            tts_initialized_ = tts_.init();
+
+            if (!configJson_) {
+                SYS_WARN("AppController", "No config available for TTS, using defaults.");
+                json empty = json::object();
+                tts_initialized_ = tts_.init(&empty);
+                return;
+            }
+
+            // Extrae la sección "tts" (o vacío si no existe)
+            json tts_config = configJson_->contains("tts") ? (*configJson_)["tts"] : json::object();
+
+            // Snapshot antes del init para detectar cambios
+            json tts_config_before = tts_config;
+
+            // Inicialización TTS
+            tts_initialized_ = tts_.init(&tts_config);
+
+            // Volcar valores sobreescritos por tts (si han cambiado)
+            if (tts_config != tts_config_before) {
+                SYS_INFO("AppController", "TTS config was modified by init, dumping changes...");
+                std::unique_lock<std::mutex> lock(configFile_mtx_);
+                (*configJson_)["tts"] = tts_config;
+
+                // Opcional: escribir a disco
+                std::ofstream file(config_filename_, std::ios::out | std::ios::trunc);
+                if (file.is_open()) {
+                    file << configJson_->dump(4);
+                    SYS_INFO("AppController", "Config saved to " + config_filename_);
+                } else {
+                    SYS_WARN("AppController", "Could not save config to " + config_filename_);
+                }
+            }
+            
         }
     );
     tLoadTTS.detach();  // No necesitamos "esperar" a que termine
-    
+
 
     SYS_INFO("AppController","App initialized.");
     return true;
@@ -129,24 +171,48 @@ int AppController::run() {
 
 // Configuración ------------------------------------------------------------------------
 
-bool AppController::loadConfig(std::string filename) {
+std::unique_ptr<json> AppController::loadConfig(std::string const& filename) {
 
-    std::ifstream f(filename);
+    #if defined JSON || defined JSON_VERSION
+        
+        // Abrir archivo
+        std::unique_lock<std::mutex> lock(configFile_mtx_);
+        std::ifstream file(filename, std::ios::in);
+        if (!file.is_open()) {
+            SYS_WARN("AppController", "Cannot open " + filename + ".");
+            return nullptr;
+        }
 
-    if (!f.is_open()) {
-        SYS_WARN("AppController", "config.json not found, using defaults.");
+        // Leer archivo y "almacenar" en variable json
+        auto j = std::make_unique<json>();
+
+        *j = json::parse(file);
+
+        // Cerrar archivo (opcional)
+        if (!file.is_open())
+            file.close();
+
+        return j;
+
+    #else
+        // Devolver puntero nulo si no está disponible la librería
+        return nullptr;
+    #endif
+}
+
+bool AppController::createConfigFile(std::string const& filename) {
+    // Crear archivo con json vacío
+    std::ofstream newFile(filename, std::ios::out);
+    if (!newFile.is_open()) {
+        SYS_ERROR("AppController", "Cannot create " + filename + ".");
         return false;
     }
-    
-    try {
-        j_config_ = nlohmann::json::parse(f);
-    } catch (...) {
-        SYS_WARN("AppController", "Cannot parse config.json, using defaults.");
-        return false;
-    }
-
+    newFile << json::object().dump(4);
+    newFile.close();
+    SYS_INFO("AppController", "Created empty " + filename + ".");
     return true;
 }
+
 
 // Hilos --------------------------------------------------------------------------------
 

@@ -8,8 +8,16 @@
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
-#include "devices/Symetrix.hpp" // Clase para gestionar driver TotalmixFX
-#include <nlohmann/json.hpp>    // Clase (externa) para leer archivos config json
+#include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
+
+// Comprobar si se puede usar la librería externa de json
+#if defined JSON || defined JSON_VERSION
+    #include <nlohmann/json.hpp>
+#else
+    // Definición vacía o "stub" para que el compilador no se queje
+    namespace nlohmann { class json {}; }
+#endif
+using json = nlohmann::json;
 
 
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
@@ -62,10 +70,17 @@ public:
 
     /**
      * @brief Configuracion de variables
+     * @param filename nombre de archivo
      * @return true si se ha leido bien el archivo, false en caso contrario
      */
-    bool loadConfig(std::string filename);
+    std::unique_ptr<json> loadConfig(std::string const& filename);
     
+    /**
+     * @brief Crea un archivo de configuración json
+     * @param filename nombre de archivo
+     * @return true si se ha generado el archivo, false en caso contrario
+     */
+    bool createConfigFile(std::string const& filename);
     
 // Hilos --------------------------------------------------------------------------------
 
@@ -174,10 +189,7 @@ public:
     /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
      */
-
      virtual bool isInputDeviceValid(unsigned short index) noexcept override;
-
-
 
 
     // TTS ----------------------------------------------------------------------------
@@ -217,8 +229,9 @@ private:
     char**      argv_;                          ///< Texto de parámetro de entrada
 
     // Archivos de configuración
-    using json = nlohmann::json;
-    json        j_config_;                      ///< Archivo json de configuración global
+    std::string             config_filename_;   ///< Nombre de archivo de configuración
+    std::mutex              configFile_mtx_;    ///< Mutex para i/o de archivo config
+    std::unique_ptr<json>   configJson_;        ///< Archivo json de configuración global (formato json)
 
     // Módulos
     NetMgr      net_;                           ///< Gestor de sockets de red
