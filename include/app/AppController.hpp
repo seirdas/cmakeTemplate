@@ -66,6 +66,7 @@ public:
      */
     int run();
 
+
 // Configuración ------------------------------------------------------------------------
 
     /**
@@ -73,7 +74,7 @@ public:
      * @param filename nombre de archivo
      * @return true si se ha leido bien el archivo, false en caso contrario
      */
-    std::unique_ptr<json> loadConfig(std::string const& filename);
+    std::unique_ptr<json> loadConfigFile(std::string const& filename);
     
     /**
      * @brief Crea un archivo de configuración json
@@ -82,6 +83,7 @@ public:
      */
     bool createConfigFile(std::string const& filename);
     
+
 // Hilos --------------------------------------------------------------------------------
 
     /**
@@ -119,6 +121,7 @@ public:
      * @returns true = online, false = offline
      */
     bool isOnlineMode() const noexcept override;
+
 
     // Sockets --------------------------------------------------------------------------
 

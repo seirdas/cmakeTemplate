@@ -56,11 +56,11 @@ bool AppController::init(int argc, char** argv) {
     this->argv_ = argv;
 
     // Guardar configuración del archivo json
-    configJson_ = loadConfig(config_filename_);
+    configJson_ = loadConfigFile(config_filename_);
     if (!configJson_) {
         SYS_WARN("AppController","Cannot load config file. Generating new config file.");
         if(createConfigFile(config_filename_)) {
-            configJson_= loadConfig(config_filename_);
+            configJson_= loadConfigFile(config_filename_);
             if (configJson_) SYS_SOLVED("AppController","New config file created.");
         }
         else
@@ -171,7 +171,7 @@ int AppController::run() {
 
 // Configuración ------------------------------------------------------------------------
 
-std::unique_ptr<json> AppController::loadConfig(std::string const& filename) {
+std::unique_ptr<json> AppController::loadConfigFile(std::string const& filename) {
 
     #if defined JSON || defined JSON_VERSION
         
@@ -191,6 +191,19 @@ std::unique_ptr<json> AppController::loadConfig(std::string const& filename) {
         // Cerrar archivo (opcional)
         if (!file.is_open())
             file.close();
+
+
+        // "Aprovechar" y cargar los valores miembro de AppController
+        if (j) {
+
+            // Version
+            if (j->contains("version") && (*j)["version"].is_string()) {
+                version_ = (*j)["version"].get<std::string>();
+            } else {
+                (*j)["version"] = version_; // Escribe el string por defecto en el JSON
+            }
+
+        }
 
         return j;
 
