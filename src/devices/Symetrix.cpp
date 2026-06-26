@@ -304,7 +304,7 @@
 
         // No se manda el valor si no supera la tolerancia
         if (!shouldSendCMV(id, dbValue)) 
-            return false;
+            return true;    // Considera enviado
 
         // Mandar comando por socket
         if(!sendCMV(in, out, dbValue))
@@ -504,12 +504,14 @@
         cache_[id].cachedValue = value;
     }
 
-    int Symetrix::getCachedValue(unsigned int id) {
-        return cache_[id].cachedValue;
+    float Symetrix::getCachedValue(unsigned int id) const {
+        auto it = cache_.find(id);
+        return it != cache_.end() ? it->second.cachedValue : 0.0f;
     }
     
-    int Symetrix::getCachedTolerance(unsigned int id) {
-        return cache_[id].tolerance;
+    int Symetrix::getCachedTolerance(unsigned int id) const {
+        auto it = cache_.find(id);
+        return it != cache_.end() ? it->second.tolerance : 0;
     }
 
 
@@ -529,25 +531,24 @@
             return true;
 
         // Comprobar si el cambio de valor supera la tolerancia
-        return std::abs(static_cast<int>(newTicks) - getCachedValue(id)) >= getCachedTolerance(id);
+        return std::abs(static_cast<int>(newTicks) - static_cast<int>(getCachedValue(id)) ) >= getCachedTolerance(id);
     }
 
     bool Symetrix::sendCSQ(unsigned int id, unsigned int ticks) {
+
+        // Calcular tamaño de buffer redondeado a la siguiente potencia de 2 a partir del comando
+        const auto cmdSize = std::formatted_size("CSQ {} {}\r", id, ticks);
+        const std::size_t bufsize = std::bit_ceil(cmdSize);
+
         // Buffer para construir el comando
-        char buf[32];
+        std::vector<char> buf(bufsize);
 
-        // Este es el comando formateado con el valor de los ticks + id (e.g., "CSQ 302 1124")
-        auto [ptr, count] = std::format_to_n(buf, sizeof(buf), "CSQ {} {}\r", id, ticks);
-
-        // Si count es mayor o igual que el tamaño, significa que el comando se habría truncado
-        if (count >= sizeof(buf)) {
-            SYS_WARN("Symetrix", "sendCSQ: Buffer overflow prevented, command too long");
-            return false;
-        }
+        // Comando formateado con el valor de los ticks + id (e.g., "CSQ 302 1124")
+        auto [iter, written] = std::format_to_n(buf.data(), cmdSize, "CSQ {} {}\r", id, ticks);
 
         // Envío
-        const int len = static_cast<int>(count);
-        int sent = send(pimpl_->socket, buf, len, 0);
+        const int len = static_cast<int>(written);
+        int sent = send(pimpl_->socket, buf.data(), len, 0);
         if (sent == SOCKET_ERROR || sent != len) {
             SYS_WARN("Symetrix", "sendCSQ Error");
             return false;
@@ -571,28 +572,26 @@
     }
 
     bool Symetrix::sendCMV(unsigned int in, unsigned int out, float dbValue) {
-        // Buffer para construir el comando
-        char buf[64];
+        
+        // Definir nombre de componente supermatrix
+        constexpr std::string_view componentName = "0.1.CPGain";
 
-        // Formateo directo del valor flotante a string
-        char dbStr[16];
-        auto dbRes = std::format_to_n(dbStr, sizeof(dbStr), "{:.2f}", dbValue);
-        std::string_view dbStrView(dbStr, dbRes.size);
+        // Calcular tamaño de buffer redondeado a la siguiente potencia de 2 a partir del comando
+        const auto cmdSize = std::formatted_size("$q CMV Set {}.{{I{}O{}}} {:.2f}\r",
+            componentName, in, out, dbValue);
+        const std::size_t bufsize = std::bit_ceil(cmdSize);
+        
+        // Buffer para construir el comando
+        std::vector<char> buf(bufsize);
         
         // Construcción del comando. Formato: $q CMV Set [Nombre].{I<in>O<out>} <value>
-        constexpr std::string_view componentName = "0.1.CPGain";    // Nombre de componente supermatrix
-        auto result = std::format_to_n(buf, sizeof(buf), "$q CMV Set {}.{{I{}O{}}} {}\r", 
-                                    componentName, in, out, dbStrView);
-
-        // Comprobación por overload de escritura en 'buf' (mucho texto)
-        if (result.size >= sizeof(buf)) {
-            SYS_WARN("Symetrix","sendCMV error: buffer command overload.");
-            return false;
-        }
+        auto [iter, written] = std::format_to_n(buf.data(), cmdSize, "$q CMV Set {}.{{I{}O{}}} {:.2f}\r",
+            componentName, in, out, dbValue);
 
         // Envío
-        if (send(pimpl_->socket, buf, static_cast<int>(result.size), 0) > 0) {
-            SYS_WARN("Symetrix","sendCMV: Failed sending command by socket.");
+        const int sent = send(pimpl_->socket, buf, static_cast<int>(result.size), 0);
+        if (sent == SOCKET_ERROR || sent != static_cast<int>(result.size)) {
+            SYS_WARN("Symetrix", "sendCMV: Failed sending command by socket.");
             return false;
         }
 
@@ -642,7 +641,7 @@ bool Symetrix::setValue(unsigned int, float, float, float) { return false; }
 bool Symetrix::setButton(unsigned int, bool) { return false; }
 
 // Tolerancias --------------------------------------------------------------------------
-void Symetrix::updateTolerance(unsigned int, unsigned int) {}
+void Symetrix::updateTolerancePct(unsigned int, unsigned int) {}
 
 // Inicialización privada ---------------------------------------------------------------
 bool Symetrix::initConnection(std::wstring const&) { return false; }
@@ -652,14 +651,18 @@ void Symetrix::net_cleanup() {}
 unsigned int Symetrix::ValueToTicks(float, float, float) { return 0; }
 
 // Caché de datos de envío --------------------------------------------------------------
-bool Symetrix::isCached(unsigned int) const { return false; }
-void Symetrix::cacheValue(unsigned int, unsigned int) {}
+bool Symetrix::isCached(unsigned int) const             { return false; }
+void Symetrix::cacheValue(unsigned int, float)          { return; }
+float Symetrix::getCachedValue(unsigned int) const      { return 0; }
+int Symetrix::getCachedTolerance(unsigned int) const    { return 0; }
 
 // Tolerancias (privado) ----------------------------------------------------------------
 void Symetrix::setTolerance(unsigned int, unsigned int) {}
 
 // Envío de datos -----------------------------------------------------------------------
-bool Symetrix::shouldSend(unsigned int, unsigned int) { return false; }
-bool Symetrix::sendCSQ(unsigned int, unsigned int) { return false; }
+bool Symetrix::shouldSendCSQ(unsigned int, unsigned int)    { return false; }
+bool Symetrix::sendCSQ(unsigned int, unsigned int)          { return false; }
+bool Symetrix::shouldSendCMV(unsigned int, float)           { return false; }
+bool Symetrix::sendCMV(unsigned int, unsigned int, float)   { return false; }
 
 #endif

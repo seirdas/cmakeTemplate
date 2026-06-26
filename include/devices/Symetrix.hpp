@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <chrono>           ///< Herramientas para medición de tiempo, duraciones y relojes de alta resolución.
 #include <string>
 #include <unordered_map>    ///< Mapa para valores cacheados
@@ -241,7 +240,7 @@ private:
      * @param id ID del componente.
      * @return El valor almacenado como entero.
      */
-    int getCachedValue(unsigned int id);
+    float getCachedValue(unsigned int id) const;
 
     /**
      * @brief Obtiene la tolerancia configurada para un ID específico en la caché.
@@ -250,7 +249,7 @@ private:
      * @param id ID del componente.
      * @return El valor de tolerancia en la escala correspondiente (ticks).
      */
-    int getCachedTolerance(unsigned int id);
+    int getCachedTolerance(unsigned int id) const;
     
 // Tolerancias (privado) ----------------------------------------------------------------
 
