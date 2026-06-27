@@ -78,7 +78,8 @@
             // Iterar por todas las carpetas de modelos para marcar modelo como "cargado"
             std::lock_guard<std::mutex> lock(models_mutex_);
             for (std::filesystem::path const& modelDir : available_models) {
-                if (!running_) break;
+                if (!running_) break;                               // Salir si el tts no está corriendo (cierre prematuro)
+                if (!checkAvailableModel(modelDir)) continue;       // No crear entrada si faltan archivos
                 loaded_models_[getModelName(modelDir)] = nullptr;   // rellenar el vector con puntero nulo
             }
         }
@@ -89,6 +90,7 @@
         // Salir de este init si se ha cerrado la app mientras cargaba modelos
         if (!running_) return false;
 
+        // Mensaje de info: finalizando init
         std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded";
         if (lazy_load_) msg += (" (lazy load enabled)");
         if (numLoaded == numAvailable || lazy_load_) {
