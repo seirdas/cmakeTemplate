@@ -1,5 +1,6 @@
 #include "sound/TTSMgr.hpp"
 #include "system/SystemMgr.hpp"
+#include "files/JsonMgr.hpp"
 
 // Macro de cmake al activar la librería
 #if defined SHERPA || defined SHERPA_VERSION
@@ -43,13 +44,22 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool TTSMgr::init(json* config) {
+    bool TTSMgr::init(void* config) {
+
+        const json config_previa = *static_cast<json*>(config);
         
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
         else  // Puede llegar aquí cuando se hace reload()
             SYS_WARN("TTSMgr","Cannot load config. Using default values.");
+
+        // Comprobar si ha cambiado respecto a lo que entró
+        if (config_previa == *static_cast<json*>(config)) {
+            SYS_WARN("TTSMgr","LOS ARCHIVOS SON IGUALES");
+        } else {
+            SYS_WARN("TTSMgr","LOS ARCHIVOS SON DIFERENTES");
+        }
 
         // Marcar como corriendo por si se destruye mientras carga modelos
         running_ = true;
@@ -442,32 +452,24 @@
 
     // Carga de configuración ---------------------------------------------------------------
 
-    void TTSMgr::loadConfig(json* config) {
-        #if defined JSON || defined JSON_VERSION
-            // lazy_load
-            if (config->contains("lazy_load") && (*config)["lazy_load"].is_boolean())
-                lazy_load_ = (*config)["lazy_load"];
-            else
-                (*config)["lazy_load"] = lazy_load_;
+    void TTSMgr::loadConfig(void* config) {
 
-            // concurrent_init
-            if (config->contains("concurrent_init") && (*config)["concurrent_init"].is_boolean())
-                concurrent_init_ = (*config)["concurrent_init"];
-            else
-                (*config)["concurrent_init"] = concurrent_init_;
+        if (!config)
+            return;
 
-            // num_load_retries
-            if (config->contains("num_load_retries") && (*config)["num_load_retries"].is_number_integer())
-                num_load_retries_ = (*config)["num_load_retries"];
-            else
-                (*config)["num_load_retries"] = num_load_retries_;
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
 
-            // keep_alive_time (serializado como segundos enteros)
-            if (config->contains("keep_alive_time") && (*config)["keep_alive_time"].is_number_integer())
-                keep_alive_time_ = std::chrono::seconds((*config)["keep_alive_time"].get<int>());
-            else
-                (*config)["keep_alive_time"] = static_cast<int>(keep_alive_time_.count());
-        #endif
+        jsonMgr.get_or_set(cfg, "lazy_load",        lazy_load_);
+        jsonMgr.get_or_set(cfg, "concurrent_init",  concurrent_init_);
+        jsonMgr.get_or_set(cfg, "num_load_retries", num_load_retries_);
+
+        // numero a segundos
+        int keep_alive_raw = static_cast<int>(keep_alive_time_.count()); // default
+        jsonMgr.get_or_set(cfg, "keep_alive_time", keep_alive_raw);
+        keep_alive_time_ = std::chrono::seconds(keep_alive_raw);
+
     }
 
     // Inicialización de modelos ------------------------------------------------------------

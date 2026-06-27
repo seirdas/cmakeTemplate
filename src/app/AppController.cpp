@@ -112,18 +112,21 @@ bool AppController::init(int argc, char** argv) {
     
 
     // Inicialización de TTS (en hilo para no bloquear)
-    config_node = jsonMgr.getSubNode(config_filename_,"tts");
-    std::thread tLoadTTS([this, config_node, config]() {
+    std::thread tLoadTTS([this]() {
             SYS_INFO("AppController","Starting TTS subsystem async load...");
-            tts_initialized_ = tts_.init(config_node);
-            JsonMgr::instance().save(config_filename_, config);  
+
+            auto& jsonMgr = JsonMgr::instance();
+            json* tts_config_node = jsonMgr.getSubNode(config_filename_, "tts");
+
+            tts_initialized_ = tts_.init(tts_config_node);
+            JsonMgr::instance().update(config_filename_);  
         }
     );
     tLoadTTS.detach();  // No necesitamos "esperar" a que termine
 
 
     // Volcar datos que hayan escrito los módulos al config
-    jsonMgr.save(config_filename_, config);
+    jsonMgr.update(config_filename_);
 
 
     SYS_INFO("AppController","App initialized.");
@@ -182,6 +185,9 @@ void AppController::TWorker() {
 
         // Pide datos al socket para procesar
         data = net_.getNextUdpPacket();
+
+        // Salir si el programa se está cerrando (después de getpacket)
+        if (!running_) break;
 
         // Si no hay datos no hacer nada
         if (data.empty()) {

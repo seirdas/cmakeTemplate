@@ -6,14 +6,6 @@
 #include <condition_variable>
 #include <filesystem>
 
-// Comprobar si se puede usar la librería externa de json
-#if defined JSON || defined JSON_VERSION
-    #include <nlohmann/json.hpp>
-#else
-    // Definición vacía o "stub" para que el compilador no se queje
-    #include "files/jsonStub.hpp"
-#endif
-using json = nlohmann::json;
 
 // Declaración como estructura para evitar includes en hpp
 struct SherpaOnnxOfflineTts;
@@ -49,7 +41,7 @@ public:
      * @note La macro VOICES_PATH se obtiene del toolchain para evitar duplicados
      * @return true si la inicialización fue exitosa, false en caso de error.
      */
-    bool init(json* config);
+    bool init(void* config);
 
     /**
      * @brief Libera los recursos asociados a los modelos de voz cargados.
@@ -154,8 +146,16 @@ private:
 
 // Carga de configuración ---------------------------------------------------------------
 
-    // #TODO doxy
-    void loadConfig(json* config);
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
+    
 
 // Inicialización de modelos ------------------------------------------------------------
 

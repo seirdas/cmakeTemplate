@@ -53,7 +53,7 @@ json* JsonMgr::load(std::string const& filename) {
     return &cache_[filename];
 }
 
-bool JsonMgr::save(std::string const& filename, json* new_json, bool force) {
+bool JsonMgr::update(std::string const& filename) {
 
     std::unique_lock<std::mutex> lock(mtx_);
 
@@ -61,13 +61,11 @@ bool JsonMgr::save(std::string const& filename, json* new_json, bool force) {
     auto itSnap  = snapshot_.find(filename);
 
     // Si no existe el archivo en caché, no hacer nada
-    if (itCache == cache_.end() && !force)
+    if (itCache == cache_.end())
         return false;
 
-    const json& current = itCache->second;
-
     // Si no hay cambios no hacer nada
-    if (!force && itSnap != snapshot_.end() && itSnap->second == *new_json)
+    if (itSnap->second == itCache->second)
         return true;
 
     SYS_INFO("JsonMgr", "Saving config changes to file...");
@@ -80,11 +78,11 @@ bool JsonMgr::save(std::string const& filename, json* new_json, bool force) {
     }
 
     // Escribir los datos en el archivo
-    file << current.dump(4);
+    file << itCache->second.dump(4);
     SYS_INFO("JsonMgr", "Configuration successfully saved.");
 
     // Guardar los datos actuales en snapshot
-    snapshot_[filename] = *new_json;
+    snapshot_[filename] = itCache->second;
 
     return true;
 }

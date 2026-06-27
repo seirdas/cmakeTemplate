@@ -13,10 +13,8 @@
     }
 #endif
 
-
 using json = nlohmann::json;
 #include <unordered_map>
-
 
 /**
  * @class JsonMgr
@@ -47,13 +45,36 @@ public:
 // Gestión de archivo -------------------------------------------------------------------
 
     /**
-     * @brief Carga un archivo para usarlo como json en el código
-     * @details Se añade el estado actual a la caché por si hay cambios posteriores
+     * @brief Carga un archivo JSON desde el disco y lo almacena en la caché interna.
+     * @details Si el archivo no existe, crea un nuevo archivo JSON vacío en la ruta especificada.
+     * Los datos cargados se mantienen en memoria dentro de un @c std::unordered_map para
+     * acceso rápido.
+     * @param filename Ruta del archivo JSON a cargar.
+     * @return Puntero al objeto @c json contenido en la caché, o @c nullptr si el parseo falla.
+     * @note Si no encuentra el archivo, intentará crearlo.
      */
     json* load(std::string const& filename);
 
-    bool save(std::string const& filename, json* new_json, bool force = false);
+    /**
+     * @brief Sincroniza los cambios en memoria con el archivo físico en disco.
+     * @details Compara el estado actual (caché) con el último snapshot guardado. Si existen
+     * diferencias o se fuerza la actualización, escribe todo el contenido al archivo.
+     * @param filename Ruta del archivo a actualizar.
+     * @param force Si es @c true, omite la comprobación de cambios y fuerza la escritura a disco.
+     * @return @c true si la operación se realizó con éxito o no hubo cambios necesarios, 
+     * @c false si hubo error de escritura o el archivo no está en caché.
+     */
+    bool update(std::string const& filename);
     
+    /**
+     * @brief Obtiene un sub-nodo específico dentro del objeto JSON raíz.
+     * @details Si el nodo solicitado no existe, esta función lo crea automáticamente como un
+     * objeto vacío (@c json::object()) dentro de la estructura raíz para facilitar la
+     * inicialización jerárquica de módulos.
+     * @param filename Nombre del archivo asociado (debe estar previamente cargado en la caché).
+     * @param key Clave o nombre del sub-nodo a recuperar.
+     * @return Puntero al sub-nodo @c json solicitado, o @c nullptr si el archivo no está cargado.
+     */
     json* getSubNode(std::string const& filename, std::string const& key);
 
 
@@ -122,9 +143,10 @@ private:
 
     /************ Variables ********************************************************/
 
-    std::mutex mtx_;
-
+    using jsonMap = std::unordered_map<std::string, json>;
+    
     // Cache de archivos json
-    std::unordered_map<std::string, json> cache_;       ///< JSON's. Como se pasan como puntero, pueden ser modificados
-    std::unordered_map<std::string, json> snapshot_;    ///< Copia del json original, por si se modifica (para el `save`)
+    jsonMap cache_;         ///< JSON's. Como se pasan como puntero, pueden ser modificados
+    jsonMap snapshot_;      ///< Copia del json original, por si se modifica (para el `save`)
+    std::mutex mtx_;        ///< Mutex de acceso al json
 };
