@@ -131,7 +131,7 @@ bool AppController::init(int argc, char** argv) {
 
     // Iniciar conexión Symetrix
     SYS_INFO("AppController","Symetrix manager loading...");
-    sym_initialized_ = sym_.Init(L"192.168.7.21");
+    sym_initialized_ = sym_.init(L"192.168.7.21");
     if(!sym_initialized_)
         SYS_WARN("AppController","Symetrix manager FAIL");
     else SYS_INFO("AppController","Symetrix manager OK");

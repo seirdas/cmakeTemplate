@@ -65,7 +65,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool Symetrix::Init(std::wstring const& SymetrixIP, bool force) {
+    bool Symetrix::init(std::wstring const& SymetrixIP, bool force) {
 
         // No hacer nada si ya está inicializado y no se fuerza el init
         if (initialized_ && !force) return true;
@@ -572,7 +572,7 @@
     }
 
     bool Symetrix::sendCMV(unsigned int in, unsigned int out, float dbValue) {
-        
+
         // Calcular tamaño de buffer redondeado a la siguiente potencia de 2 a partir del comando
         constexpr std::string_view componentName = "0.1.CPGain";
         const std::size_t cmdSize = std::formatted_size("$q CMV Set {}.{{I{}O{}}} {:.2f}\r",
@@ -624,7 +624,7 @@ Symetrix::Symetrix() :
 Symetrix::~Symetrix() {}
 
 // Ejecución ----------------------------------------------------------------------------
-bool Symetrix::Init(const std::wstring&, bool) { return false; }
+bool Symetrix::init(const std::wstring&, bool) { return false; }
 void Symetrix::Destroy() {}
 bool Symetrix::isConnected() const { return false; }
 
