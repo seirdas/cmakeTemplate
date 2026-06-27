@@ -55,17 +55,44 @@ bool AppController::init(int argc, char** argv) {
     this->argc_ = argc;
     this->argv_ = argv;
 
-    // Guardar configuración del archivo json
-    configJson_ = loadConfigFile(config_filename_);
-    if (!configJson_) {
-        SYS_WARN("AppController","Cannot load config file. Generating new config file.");
-        if(createConfigFile(config_filename_)) {
-            configJson_= loadConfigFile(config_filename_);
-            if (configJson_) SYS_SOLVED("AppController","New config file created.");
+    // Lectura de archivo de configuración json
+    #if defined JSON || defined JSON_VERSION
+
+        // Guardar configuración del archivo json
+        configJson_ = loadConfigFile(config_filename_);
+        if (!configJson_) {
+            SYS_WARN("AppController","Cannot load config file. Generating new config file.");
+            if(createConfigFile(config_filename_)) {
+                configJson_= loadConfigFile(config_filename_);
+                if (configJson_) SYS_SOLVED("AppController","New config file created.");
+            }
+            else
+                SYS_ERROR("AppController","Cannot create new config file. Using defaults.");
         }
-        else
-            SYS_ERROR("AppController","Cannot create new config file. Using defaults.");
-    }
+
+
+        // Snapshot antes del init para detectar cambios
+        json configJson_before = *configJson_;
+
+        // Leer valores del json para AppController
+        loadConfig(configJson_.get());
+
+        // Volcar valores sobreescritos por tts (si han cambiado)
+        if (configJson_before != *configJson_.get()) {
+            SYS_INFO("AppController", "TTS config was modified by init, dumping changes...");
+            std::unique_lock<std::mutex> lock(configFile_mtx_);
+
+            // Opcional: escribir a disco
+            std::ofstream file(config_filename_, std::ios::out | std::ios::trunc);
+            if (file.is_open()) {
+                file << configJson_->dump(4);
+                SYS_INFO("AppController", "Config saved to " + config_filename_);
+            } else {
+                SYS_WARN("AppController", "Could not save config to " + config_filename_);
+            }
+        }
+
+    #endif
 
 
     // Iniciar GUI, salir si no se carga bien
@@ -173,8 +200,6 @@ int AppController::run() {
 
 std::unique_ptr<json> AppController::loadConfigFile(std::string const& filename) {
 
-    #if defined JSON || defined JSON_VERSION
-        
         // Abrir archivo
         std::unique_lock<std::mutex> lock(configFile_mtx_);
         std::ifstream file(filename, std::ios::in);
@@ -194,27 +219,13 @@ std::unique_ptr<json> AppController::loadConfigFile(std::string const& filename)
 
 
         // "Aprovechar" y cargar los valores miembro de AppController
-        if (j) {
-
-            // Version
-            if (j->contains("version") && (*j)["version"].is_string()) {
-                version_ = (*j)["version"].get<std::string>();
-            } else {
-                (*j)["version"] = version_; // Escribe el string por defecto en el JSON
-            }
-
-        }
+        
 
         return j;
 
-    #else
-        // Devolver puntero nulo si no está disponible la librería
-        return nullptr;
-    #endif
 }
 
 bool AppController::createConfigFile(std::string const& filename) {
-    #if defined JSON || defined JSON_VERSION
     // Crear archivo con json vacío
     std::ofstream newFile(filename, std::ios::out);
     if (!newFile.is_open()) {
@@ -225,10 +236,18 @@ bool AppController::createConfigFile(std::string const& filename) {
     newFile.close();
     SYS_INFO("AppController", "Created empty " + filename + ".");
     return true;
-    #else
-         // no hacer ningún archivo si no está disponible json
-        return false;
-    #endif
+}
+
+void AppController::loadConfig(json* config) {
+    if (!config)
+        return;
+
+    // Version
+    if (config->contains("version") && (*config)["version"].is_string())
+        version_ = (*config)["version"].get<std::string>();
+    else
+        (*config)["version"] = version_; // Escribe el string por defecto en el JSON
+
 }
 
 

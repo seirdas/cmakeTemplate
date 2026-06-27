@@ -82,6 +82,17 @@ public:
      * @return true si se ha generado el archivo, false en caso contrario
      */
     bool createConfigFile(std::string const& filename);
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración. 
+    * Si es nullptr, la función no realiza ninguna acción.
+    */
+    void loadConfig(json* config);
     
 
 // Hilos --------------------------------------------------------------------------------
