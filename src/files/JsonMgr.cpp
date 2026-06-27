@@ -47,7 +47,7 @@ json* JsonMgr::load(std::string const& filename) {
 
     // Como todo ha ido bien, guardar el json leído en la caché y en snapshot
     cache_[filename] = std::move(j);
-    snapshot_[filename] = std::move(j);
+    snapshot_[filename] = cache_[filename];
 
     // Devolver unique_ptr json
     return &cache_[filename];
@@ -61,9 +61,10 @@ bool JsonMgr::save(std::string const& filename, json* new_json, bool force) {
     auto itSnap  = snapshot_.find(filename);
 
     // Si no existe el archivo en caché, no hacer nada
-    auto it = cache_.find(filename);
-    if (it == cache_.end() && !force)
+    if (itCache == cache_.end() && !force)
         return false;
+
+    const json& current = itCache->second;
 
     // Si no hay cambios no hacer nada
     if (!force && itSnap != snapshot_.end() && itSnap->second == *new_json)
@@ -79,11 +80,10 @@ bool JsonMgr::save(std::string const& filename, json* new_json, bool force) {
     }
 
     // Escribir los datos en el archivo
-    file << new_json->dump(4);
+    file << current.dump(4);
     SYS_INFO("JsonMgr", "Configuration successfully saved.");
 
-    // Guardar los datos actuales en cache y snapshot
-    cache_[filename] = *new_json;
+    // Guardar los datos actuales en snapshot
     snapshot_[filename] = *new_json;
 
     return true;
