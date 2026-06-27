@@ -37,7 +37,6 @@
 #include <memory>
 #include <vector>
 #include <array>
-#include "files/JsonMgr.hpp"
 
 
 /**
@@ -78,16 +77,10 @@ public:
 
     /**
      * @brief Inicializa Winsock, crea el socket UDP y lo enlaza a la dirección local.
-     * @param localPort    Puerto UDP local al que se hace bind.
-     * @param localIP      Dirección IP local (ej. @c "127.0.0.1").
-     * @param remotePort   Puerto UDP de TotalMix FX (destino de los paquetes).
-     * @param remoteIP     Dirección IP del host donde corre TotalMix FX.
-     * @param numInputs    Número total de entradas físicas del dispositivo.
-     * @param numPlaybacks Número total de canales de playback del dispositivo.
-     * @param numOutputs   Número total de salidas físicas del dispositivo.
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true si la inicialización fue exitosa.
      */
-    bool init(json* config);
+    bool init(void* config = nullptr);
 
 
 // Control de volumen -----------------------------------------------------------------------
@@ -184,7 +177,7 @@ private:
 
 // Configuración ------------------------------------------------------------------------
 
-    void loadConfig(json* config);
+    void loadConfig(void* config = nullptr);
 
 // Envío de paquete OSC -----------------------------------------------------------------
 

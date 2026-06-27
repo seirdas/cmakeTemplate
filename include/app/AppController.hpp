@@ -3,13 +3,12 @@
 
 #include <thread>               // Hilos
 
-#include "gui/GuiMgr.hpp"          // Clase de gestión de ventana UI
+#include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
-#include "files/JsonMgr.hpp"    // Clase para gestionar archivos json
 
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
@@ -65,10 +64,9 @@ public:
     * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
     * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
     * esté completo y sincronizado.
-    * @param config Puntero al objeto JSON que contiene los parámetros de configuración. 
-    * Si es nullptr, la función no realiza ninguna acción.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
-    void loadConfig(json* config);
+    void loadConfig(void* config);
 
 
 // Hilos --------------------------------------------------------------------------------

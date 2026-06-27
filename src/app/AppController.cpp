@@ -2,6 +2,7 @@
 #include <chrono>               // Controla tiempos de espera
 #include <fstream>              // Para i/o de archivos
 #include <memory>               // Necesario para std::unique_ptr
+#include "files/JsonMgr.hpp"
 
 // General ------------------------------------------------------------------------------
 
@@ -146,15 +147,16 @@ int AppController::run() {
 
 // Configuración ------------------------------------------------------------------------
 
-void AppController::loadConfig(json* config) {
+void AppController::loadConfig(void* config) {
     if (!config)
         return;
 
-    // Version
-    if (config->contains("version") && (*config)["version"].is_string())
-        version_ = (*config)["version"].get<std::string>();
-    else
-        (*config)["version"] = version_; // Escribe el string por defecto en el JSON
+    // Se considera que la configuración se pasa como json
+    json* cfg = static_cast<json*>(config);
+    JsonMgr& jsonMgr = JsonMgr::instance();
+
+    jsonMgr.get_or_set(cfg, "version",  version_);
+
 }
 
 

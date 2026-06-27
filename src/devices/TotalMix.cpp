@@ -1,5 +1,6 @@
 #include "devices/TotalMix.hpp"
 #include "system/SystemMgr.hpp"
+#include "files/JsonMgr.hpp"
 
 // Totalmix solo se puede descargar para Windows/Mac. Se usan las funciones de socket de Windows directamente.
 #ifdef WIN32
@@ -47,7 +48,7 @@
 
     // Conexión a TotalMix ------------------------------------------------------------------
 
-    bool TotalMix::init(json* config) {
+    bool TotalMix::init(void* config) {
 
         // Leer configuración si se proporciona y es posible
         if (config)
@@ -181,19 +182,21 @@
 
     // Configuración ------------------------------------------------------------------------
 
-    void TotalMix::loadConfig(json* config) {
+    void TotalMix::loadConfig(void* config) {
         if (!config)
             return;
 
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
-        jsonMgr.get_or_set(config, "localIP",        localIP_);
-        jsonMgr.get_or_set(config, "localPort",      localPort_);
-        jsonMgr.get_or_set(config, "remoteIP",       remoteIP_);
-        jsonMgr.get_or_set(config, "remotePort",     remotePort_);
-        jsonMgr.get_or_set(config, "numInputs",      numInputs_);
-        jsonMgr.get_or_set(config, "numOutputs",     numOutputs_);
-        jsonMgr.get_or_set(config, "numPlaybacks",   numPlaybacks_);
+        jsonMgr.get_or_set(cfg, "localIP",        localIP_);
+        jsonMgr.get_or_set(cfg, "localPort",      localPort_);
+        jsonMgr.get_or_set(cfg, "remoteIP",       remoteIP_);
+        jsonMgr.get_or_set(cfg, "remotePort",     remotePort_);
+        jsonMgr.get_or_set(cfg, "numInputs",      numInputs_);
+        jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
+        jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
     }
 
 

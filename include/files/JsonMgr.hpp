@@ -21,7 +21,8 @@ using json = nlohmann::json;
 /**
  * @class JsonMgr
  * @brief Clase helper singleton para leer y escribir en archivos json usando nlohmann/json
- * @note Esta clase es para gestionar los métodos de la librería externa, no provee nada nuevo.
+ * @note Esta clase es para gestionar los métodos de la librería externa, 
+ *  no provee la implementación de lectura/escritura de json.
  *  Gestiona los retornos de las funciones si la librería no está activa, para que siga compilando
  * @note Para obtener la instancia "temporalmente", usar una de estas dos opciones
  * `JsonMgr& jsonMgr = JsonMgr::instance();`    (directo)
