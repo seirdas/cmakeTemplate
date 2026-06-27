@@ -136,7 +136,7 @@ public:
 
     /**
      * @brief Obtiene una referencia al strand que coordina las operaciones del receptor.
-     * * El strand garantiza que todos los handlers (lectura, inicio, parada) se ejecuten
+     * El strand garantiza que todos los handlers (lectura, inicio, parada) se ejecuten
      * de forma secuencial, incluso si el io_context dispone de un pool de múltiples hilos.
      * @note Devuelve 'asio::strand<asio::io_context::executor_type>&', pero está como void* para
      * evitar la inclusión de la librería externa en el hpp.

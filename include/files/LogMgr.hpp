@@ -41,7 +41,7 @@ public:
      * @brief Escribe un mensaje en el archivo de log.
      * El mensaje se guardará automáticamente con un timestamp al inicio.
      * Esta función es thread-safe mediante el uso de mutex.
-     * * @param txt Texto que se desea registrar.
+     * @param txt Texto que se desea registrar.
      */
     void write(std::string const& txt);
 

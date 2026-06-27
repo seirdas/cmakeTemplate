@@ -154,7 +154,15 @@ private:
 
 // Carga de configuración ---------------------------------------------------------------
 
-    // #TODO doxy
+    /**
+    * @brief Inicializa los parámetros del subsistema TTS a partir de la configuración JSON.
+    * Valida los tipos de datos de las entradas de configuración. Si alguna entrada falta 
+    * o el tipo es incorrecto, la función la sobrescribe en el objeto JSON con el valor 
+    * predeterminado actual del sistema.
+    * @note Esta función requiere que la librería nlohmann/json esté disponible.
+    * @param config Puntero al sub-apartado "tts" del JSON de configuración. 
+    * Si el puntero es válido, los valores faltantes serán rellenados.
+    */
     void loadConfig(json* config);
 
 // Inicialización de modelos ------------------------------------------------------------

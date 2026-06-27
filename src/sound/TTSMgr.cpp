@@ -465,6 +465,9 @@
                 keep_alive_time_ = std::chrono::seconds((*config)["keep_alive_time"].get<int>());
             else
                 (*config)["keep_alive_time"] = static_cast<int>(keep_alive_time_.count());
+        #else
+            // Si json no está implementado no hacer nada
+            return;
         #endif
     }
 
