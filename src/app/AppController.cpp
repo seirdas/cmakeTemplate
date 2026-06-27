@@ -77,7 +77,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar gestor de red
     SYS_INFO("AppController","Network subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"network");
-    net_initialized_ = net_.start();
+    net_initialized_ = net_.init();
     if(!net_initialized_)
         SYS_ERROR("AppController","Network subsystem FAIL");
     else SYS_INFO("AppController","Network subsystem OK");
