@@ -1,5 +1,4 @@
 #include "app/AppController.hpp"
-#include "system/SystemMgr.hpp"
 #include <chrono>               // Controla tiempos de espera
 #include <fstream>              // Para i/o de archivos
 #include <memory>               // Necesario para std::unique_ptr
@@ -11,7 +10,6 @@ AppController::AppController() :
     argv_(nullptr),
     gui_(this),
     config_filename_("config.json"),
-    configJson_(nullptr),
     net_initialized_(false),
     gui_initialized_(false),
     snd_initialized_(false),
@@ -19,7 +17,7 @@ AppController::AppController() :
     sym_initialized_(false),
     running_(false),
     online_mode_(true),
-    version_(std::to_string(VERSION))
+    version_("0.9")
 {
 
 }
@@ -55,48 +53,19 @@ bool AppController::init(int argc, char** argv) {
     this->argc_ = argc;
     this->argv_ = argv;
 
-    // Lectura de archivo de configuración json
-    #if defined JSON || defined JSON_VERSION
+    
+    // Leer valores del json para AppController
+    JsonMgr& jsonMgr = JsonMgr::instance();
+    json* config = jsonMgr.load(config_filename_);
+    loadConfig(config);
 
-        // Guardar configuración del archivo json
-        configJson_ = loadConfigFile(config_filename_);
-        if (!configJson_) {
-            SYS_WARN("AppController","Cannot load config file. Generating new config file.");
-            if(createConfigFile(config_filename_)) {
-                configJson_= loadConfigFile(config_filename_);
-                if (configJson_) SYS_SOLVED("AppController","New config file created.");
-            }
-            else
-                SYS_ERROR("AppController","Cannot create new config file. Using defaults.");
-        }
-
-
-        // Snapshot antes del init para detectar cambios
-        json configJson_before = *configJson_;
-
-        // Leer valores del json para AppController
-        loadConfig(configJson_.get());
-
-        // Volcar valores sobreescritos por tts (si han cambiado)
-        if (configJson_before != *configJson_.get()) {
-            SYS_INFO("AppController", "TTS config was modified by init, dumping changes...");
-            std::unique_lock<std::mutex> lock(configFile_mtx_);
-
-            // Opcional: escribir a disco
-            std::ofstream file(config_filename_, std::ios::out | std::ios::trunc);
-            if (file.is_open()) {
-                file << configJson_->dump(4);
-                SYS_INFO("AppController", "Config saved to " + config_filename_);
-            } else {
-                SYS_WARN("AppController", "Could not save config to " + config_filename_);
-            }
-        }
-
-    #endif
+    // Almacenamiento temporal de nodos de json para cada módulo
+    json* config_node = nullptr;    
 
 
     // Iniciar GUI, salir si no se carga bien
     SYS_INFO("AppController","GUI subsystem loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"gui");
     gui_initialized_ = gui_.init();
     if (!gui_initialized_) {
         SYS_ERROR("AppController","GUI subsystem FAIL");
@@ -107,6 +76,7 @@ bool AppController::init(int argc, char** argv) {
 
     // Iniciar gestor de red
     SYS_INFO("AppController","Network subsystem loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"network");
     net_initialized_ = net_.start();
     if(!net_initialized_)
         SYS_ERROR("AppController","Network subsystem FAIL");
@@ -115,6 +85,7 @@ bool AppController::init(int argc, char** argv) {
 
     // Iniciar gestor de sonidos
     SYS_INFO("AppController","Sound subsystem loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"sound");
     snd_initialized_ = snd_.init();
     if(!snd_initialized_)
         SYS_ERROR("AppController","Sound subsystem FAIL");
@@ -123,14 +94,16 @@ bool AppController::init(int argc, char** argv) {
 
     // Iniciar conexión Totalmix
     SYS_INFO("AppController","Totalmix manager loading...");
-    tmx_initialized_ = tmx_.init(12321,"127.0.0.1", 7001,"127.0.0.1",32,32,32);
+    config_node = jsonMgr.getSubNode(config_filename_,"totalmix");
+    tmx_initialized_ = tmx_.init(config_node);
     if(!tmx_initialized_)
         SYS_WARN("AppController","Totalmix manager FAIL");
     else SYS_INFO("AppController","Totalmix manager OK");
 
 
-    // Iniciar conexión Symetrix
+    // Iniciar conexión Symetrix    
     SYS_INFO("AppController","Symetrix manager loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"symetrix");
     sym_initialized_ = sym_.init(L"192.168.7.21");
     if(!sym_initialized_)
         SYS_WARN("AppController","Symetrix manager FAIL");
@@ -138,44 +111,18 @@ bool AppController::init(int argc, char** argv) {
     
 
     // Inicialización de TTS (en hilo para no bloquear)
-    std::thread tLoadTTS([this]() {
+    config_node = jsonMgr.getSubNode(config_filename_,"tts");
+    std::thread tLoadTTS([this, config_node, config]() {
             SYS_INFO("AppController","Starting TTS subsystem async load...");
-
-            if (!configJson_) {
-                SYS_WARN("AppController", "No config available for TTS, using defaults.");
-                json empty = json::object();
-                tts_initialized_ = tts_.init(&empty);
-                return;
-            }
-
-            // Extrae la sección "tts" (o vacío si no existe)
-            json tts_config = configJson_->contains("tts") ? (*configJson_)["tts"] : json::object();
-
-            // Snapshot antes del init para detectar cambios
-            json tts_config_before = tts_config;
-
-            // Inicialización TTS
-            tts_initialized_ = tts_.init(&tts_config);
-
-            // Volcar valores sobreescritos por tts (si han cambiado)
-            if (tts_config != tts_config_before) {
-                SYS_INFO("AppController", "TTS config was modified by init, dumping changes...");
-                std::unique_lock<std::mutex> lock(configFile_mtx_);
-                (*configJson_)["tts"] = tts_config;
-
-                // Opcional: escribir a disco
-                std::ofstream file(config_filename_, std::ios::out | std::ios::trunc);
-                if (file.is_open()) {
-                    file << configJson_->dump(4);
-                    SYS_INFO("AppController", "Config saved to " + config_filename_);
-                } else {
-                    SYS_WARN("AppController", "Could not save config to " + config_filename_);
-                }
-            }
-            
+            tts_initialized_ = tts_.init(config_node);
+            JsonMgr::instance().save(config_filename_, config);  
         }
     );
     tLoadTTS.detach();  // No necesitamos "esperar" a que termine
+
+
+    // Volcar datos que hayan escrito los módulos al config
+    jsonMgr.save(config_filename_, config);
 
 
     SYS_INFO("AppController","App initialized.");
@@ -196,47 +143,8 @@ int AppController::run() {
     return 0;
 }
 
+
 // Configuración ------------------------------------------------------------------------
-
-std::unique_ptr<json> AppController::loadConfigFile(std::string const& filename) {
-
-        // Abrir archivo
-        std::unique_lock<std::mutex> lock(configFile_mtx_);
-        std::ifstream file(filename, std::ios::in);
-        if (!file.is_open()) {
-            SYS_WARN("AppController", "Cannot open " + filename + ".");
-            return nullptr;
-        }
-
-        // Leer archivo y "almacenar" en variable json
-        auto j = std::make_unique<json>();
-
-        *j = json::parse(file);
-
-        // Cerrar archivo (opcional)
-        if (!file.is_open())
-            file.close();
-
-
-        // "Aprovechar" y cargar los valores miembro de AppController
-        
-
-        return j;
-
-}
-
-bool AppController::createConfigFile(std::string const& filename) {
-    // Crear archivo con json vacío
-    std::ofstream newFile(filename, std::ios::out);
-    if (!newFile.is_open()) {
-        SYS_ERROR("AppController", "Cannot create " + filename + ".");
-        return false;
-    }
-    newFile << json::object().dump(4);
-    newFile.close();
-    SYS_INFO("AppController", "Created empty " + filename + ".");
-    return true;
-}
 
 void AppController::loadConfig(json* config) {
     if (!config)
@@ -247,7 +155,6 @@ void AppController::loadConfig(json* config) {
         version_ = (*config)["version"].get<std::string>();
     else
         (*config)["version"] = version_; // Escribe el string por defecto en el JSON
-
 }
 
 

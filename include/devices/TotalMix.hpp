@@ -37,6 +37,8 @@
 #include <memory>
 #include <vector>
 #include <array>
+#include "files/JsonMgr.hpp"
+
 
 /**
  * @brief Controlador de RME TotalMix FX vía OSC/UDP.
@@ -85,9 +87,7 @@ public:
      * @param numOutputs   Número total de salidas físicas del dispositivo.
      * @return @c true si la inicialización fue exitosa.
      */
-    bool init(int localPort, const std::string& localIP,
-              int remotePort, const std::string& remoteIP,
-              int numInputs, int numPlaybacks, int numOutputs);
+    bool init(json* config);
 
 
 // Control de volumen -----------------------------------------------------------------------
@@ -181,6 +181,10 @@ private:
     enum class Bus;
     struct OscTimeTag;
 
+
+// Configuración ------------------------------------------------------------------------
+
+    void loadConfig(json* config);
 
 // Envío de paquete OSC -----------------------------------------------------------------
 
@@ -376,23 +380,25 @@ private:
     bool wsaStarted_ = false;           ///< true si WSAStartup ya fue llamado con éxito.
 
     // Socket
-    int         remotePort_ = 0;        ///< Puerto UDP de TotalMix FX (destino).
-    std::string remoteIP_;              ///< IP de TotalMix FX (destino).
+    std::string     localIP_;           ///< IP Local de socket de envío de datos a Totalmix
+    unsigned int    localPort_;         ///< Puerto local de socket de envío de datos a Totalmix
+    unsigned int    remotePort_;        ///< Puerto UDP de TotalMix FX (destino).
+    std::string     remoteIP_;          ///< IP de TotalMix FX (destino).
     struct Impl;                        ///< Estructura PIMPL para el socket, para no depender de Windows en el header
     std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de Windows (socket)
 
     // Número de canales
-    int numInputs_    = 0;                      ///< Número total de entradas del dispositivo.
-    int numPlaybacks_ = 0;                      ///< Número total de canales de playback del dispositivo.
-    int numOutputs_   = 0;                      ///< Número total de salidas del dispositivo.
+    int numInputs_;                     ///< Número total de entradas del dispositivo.
+    int numPlaybacks_;                  ///< Número total de canales de playback del dispositivo.
+    int numOutputs_;                    ///< Número total de salidas del dispositivo.
 
     // Banks
-    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosOutput_ = {};     ///< Posición dentro del bank OSC para cada salida (1-based).
-    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosInput_ = {};      ///< Posición dentro del bank OSC para cada entrada (1-based).
-    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosPlayback_ = {};   ///< Posición dentro del bank OSC para cada canal de playback (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosOutput_;     ///< Posición dentro del bank OSC para cada salida (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosInput_;      ///< Posición dentro del bank OSC para cada entrada (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosPlayback_;   ///< Posición dentro del bank OSC para cada canal de playback (1-based).
 
     // Buffer OSC
-    char      oscRaw_[OSC_BUF_SIZE]     = {};   ///< Array de bytes subyacente del buffer OSC.
+    char      oscRaw_[OSC_BUF_SIZE];            ///< Array de bytes subyacente del buffer OSC.
     OscBuffer oscBuf_;                          ///< Estructura de estado del buffer OSC en construcción.
 
 };

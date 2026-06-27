@@ -20,7 +20,15 @@
 
     // General ------------------------------------------------------------------------------
 
-    TotalMix::TotalMix() : pimpl_(std::make_unique<Impl>())
+    TotalMix::TotalMix() : 
+        pimpl_(std::make_unique<Impl>()),
+        localIP_("127.0.0.1"),
+        localPort_(12321),
+        remoteIP_("127.0.0.1"),
+        remotePort_(7001),
+        numInputs_(32),
+        numPlaybacks_(32),
+        numOutputs_(32)
     {
         // Inicialización del buffer OSC apuntando a oscRaw_
         oscBuf_.data = oscRaw_;
@@ -39,10 +47,12 @@
 
     // Conexión a TotalMix ------------------------------------------------------------------
 
-    bool TotalMix::init(int localPort, const std::string& localIP,
-                        int remotePort, const std::string& remoteIP,
-                        int numInputs, int numPlaybacks, int numOutputs)
-    {
+    bool TotalMix::init(json* config) {
+
+        // Leer configuración si se proporciona y es posible
+        if (config)
+            loadConfig(config);
+
         // Iniciar WSA (Contexto de red Windows)
         if (!wsaStarted_) {
             WSADATA wsaData;
@@ -59,29 +69,25 @@
             pimpl_->socket = INVALID_SOCKET;
         }
     
+        // Crear el socket
         pimpl_->socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (pimpl_->socket == INVALID_SOCKET) {
             SYS_WARN(MODULE,"Cannot create UDP Socket");
             return false;
         }
-    
+
+        // Bind socket
         sockaddr_in local{};
         local.sin_family      = AF_INET;
-        local.sin_port        = htons(static_cast<u_short>(localPort));
-
-        if (inet_pton(AF_INET, localIP.c_str(), &local.sin_addr) != 1) {
+        local.sin_port        = htons(static_cast<u_short>(localPort_));
+        if (inet_pton(AF_INET, localIP_.c_str(), &local.sin_addr) != 1) {
             closesocket(pimpl_->socket);
             pimpl_->socket = INVALID_SOCKET;
-            SYS_WARN(MODULE, "Invalid local IP address: " + localIP);
+            SYS_WARN(MODULE, "Invalid local IP address: " + localIP_);
             return false;
         }
     
-        remotePort_   = remotePort;
-        remoteIP_     = remoteIP;
-        numInputs_    = numInputs;
-        numPlaybacks_ = numPlaybacks;
-        numOutputs_   = numOutputs;
-    
+        // Cálculo de posiciones OSC
         BuildBankMaps();
         return true;
     }
@@ -170,6 +176,24 @@
         }
 
         return SendPacket();
+    }
+
+
+    // Configuración ------------------------------------------------------------------------
+
+    void TotalMix::loadConfig(json* config) {
+        if (!config)
+            return;
+
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        jsonMgr.get_or_set(config, "localIP",        localIP_);
+        jsonMgr.get_or_set(config, "localPort",      localPort_);
+        jsonMgr.get_or_set(config, "remoteIP",       remoteIP_);
+        jsonMgr.get_or_set(config, "remotePort",     remotePort_);
+        jsonMgr.get_or_set(config, "numInputs",      numInputs_);
+        jsonMgr.get_or_set(config, "numOutputs",     numOutputs_);
+        jsonMgr.get_or_set(config, "numPlaybacks",   numPlaybacks_);
     }
 
 
