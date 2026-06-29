@@ -1,20 +1,15 @@
 #pragma once
 
-// Comprobar si se puede usar la librería externa de json
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
+// Comprobar si se puede usar la librería externa de json
 #if defined JSON || defined JSON_VERSION
     #include <nlohmann/json.hpp>
-
 #else
     // Definición vacía o "stub" para que el compilador no se queje
-    namespace nlohmann { 
-        class json {
-
-        }; 
-    }
+    namespace nlohmann { class json {}; }
 #endif
 using json = nlohmann::json;
 
@@ -85,7 +80,7 @@ public:
 
     /**
      * @brief Obtiene un valor desde un nodo JSON específico, validando su tipo.
-     * * @tparam T Tipo de dato esperado (std::string, int, float, bool, etc.).
+     * @tparam T Tipo de dato esperado (std::string, int, float, bool, etc.).
      * @param config Puntero al objeto JSON que contiene la clave.
      * @param key Nombre de la clave a buscar.
      * @param value Referencia donde se almacenará el valor si la lectura es exitosa.
@@ -97,10 +92,10 @@ public:
 
     /**
      * @brief Intenta obtener un valor; si no existe, lo crea en el JSON con el valor por defecto.
-     * * @details Esta función es ideal para inicializar configuraciones. Si la clave no está 
+     * @details Esta función es ideal para inicializar configuraciones. Si la clave no está 
      * presente en el JSON, escribe el valor proporcionado en `value` dentro del objeto JSON,
      * permitiendo que los archivos de configuración se auto-rellenen.
-     * * @tparam T Tipo de dato.
+     * @tparam T Tipo de dato.
      * @param config Puntero al objeto JSON.
      * @param key Nombre de la clave.
      * @param value Valor por defecto (si no se encuentra la clave) o valor obtenido.
