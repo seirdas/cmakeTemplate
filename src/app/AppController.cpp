@@ -58,7 +58,12 @@ bool AppController::init(int argc, char** argv) {
     // Leer valores del json para AppController
     JsonMgr& jsonMgr = JsonMgr::instance();
     json* config = jsonMgr.load(config_filename_);
-    loadConfig(config);
+    // Validar y asignar valores de variables miembro a partir de la config pasada (json)
+    if (config)
+        loadConfig(config);
+    else
+        SYS_WARN("AppController","Cannot load config. Using default values.");
+
 
     // Almacenamiento temporal de nodos de json para cada módulo
     json* config_node = nullptr;    

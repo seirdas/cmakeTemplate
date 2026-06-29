@@ -2,10 +2,12 @@
 
 // Comprobar si se puede usar la librería externa de json
 #include <mutex>
+#include <string>
 #include <unordered_map>
 
 #if defined JSON || defined JSON_VERSION
     #include <nlohmann/json.hpp>
+
 #else
     // Definición vacía o "stub" para que el compilador no se queje
     namespace nlohmann { 
