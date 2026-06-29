@@ -218,7 +218,7 @@ private:
     
     // Lazy Load (Carga modelo solo al usarlo, se descarga en un tiempo)
     bool                    lazy_load_;             ///< Activa/desactiva la inicialización solo al usar un modelo
-    std::chrono::seconds    keep_alive_time_;       ///< Tiempo de vida en segundos de los modelos cargados con lazyload
+    std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida en segundos de los modelos cargados con lazyload
     TTSTimeMap              last_used_;             ///< Mapa de relación entre modelo - ultimo tiempo usado
     std::thread             keepalive_thread_;      ///< Hilo reaper para matar los modelos que superan el tiempo de vida
     std::mutex              keepalive_mtx_;         ///< Mutex para el acceso al mapa last_used

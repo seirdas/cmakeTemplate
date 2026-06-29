@@ -26,7 +26,7 @@
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
         concurrent_init_(false),
         lazy_load_(true),
-        keep_alive_time_(20),
+        keep_alive_seconds_(20),
         models_path_(VOICES_PATH),
         num_available_models_(0),
         active_tasks_(0),
@@ -113,7 +113,7 @@
         }
 
         // Si está lazy_load activo, activar el thread reaper
-        if (lazy_load_ && keep_alive_time_.count() > 0)
+        if (lazy_load_ && keep_alive_seconds_.count() > 0)
             keepalive_thread_ = std::thread(&TTSMgr::keepAliveWorker, this);
 
         return !loaded_models_.empty();;
@@ -458,9 +458,9 @@
         jsonMgr.get_or_set(cfg, "num_load_retries", num_load_retries_);
 
         // numero a segundos
-        int keep_alive_raw = static_cast<int>(keep_alive_time_.count()); // default
-        jsonMgr.get_or_set(cfg, "keep_alive_time", keep_alive_raw);
-        keep_alive_time_ = std::chrono::seconds(keep_alive_raw);
+        int keep_alive_raw = static_cast<int>(keep_alive_seconds_.count()); // default
+        jsonMgr.get_or_set(cfg, "keep_alive_seconds", keep_alive_raw);
+        keep_alive_seconds_ = std::chrono::seconds(keep_alive_raw);
 
     }
 
@@ -630,7 +630,7 @@
         while (running_) {
 
             // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
-            auto poll_interval = std::max(std::chrono::seconds(1), keep_alive_time_ / 10);
+            auto poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);
 
             // Espera hasta: cierre, haya algo que vigilar
             keepalive_cv_.wait_for(lock, poll_interval, [this] {
@@ -643,7 +643,7 @@
             auto now = std::chrono::steady_clock::now();
             std::vector<std::string> candidatos;
             for (auto const& [name, last_use] : last_used_)
-                if (now - last_use >= keep_alive_time_)
+                if (now - last_use >= keep_alive_seconds_)
                     candidatos.push_back(name);
 
             // Soltar keepalive_mtx_ antes de tocar processing_mtx_/models_mutex_
