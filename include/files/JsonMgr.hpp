@@ -1,7 +1,9 @@
 #pragma once
-#include "system/SystemMgr.hpp"
 
 // Comprobar si se puede usar la librería externa de json
+#include <mutex>
+#include <unordered_map>
+
 #if defined JSON || defined JSON_VERSION
     #include <nlohmann/json.hpp>
 #else
@@ -12,9 +14,8 @@
         }; 
     }
 #endif
-
 using json = nlohmann::json;
-#include <unordered_map>
+
 
 /**
  * @class JsonMgr
@@ -90,26 +91,7 @@ public:
      * @return false Si la clave no existe o el tipo es incompatible.
      */
     template<typename T>
-    bool get(json* config, std::string const& key, T& value) {
-        if (!config || !config->contains(key))
-            return false;
-
-        const json& node = (*config)[key];
-
-        // Comprobar tipo en tiempo de ejecución según T
-        if constexpr (std::is_same_v<T, std::string>) {
-            if (!node.is_string()) return false;
-        } else if constexpr (std::is_floating_point_v<T>) {
-            if (!node.is_number()) return false;        // acepta int y float del json
-        } else if constexpr (std::is_integral_v<T>) {
-            if (!node.is_number_integer()) return false;
-        } else if constexpr (std::is_same_v<T, bool>) {
-            if (!node.is_boolean()) return false;
-        }
-
-        value = node.get<T>();
-        return true;
-    }
+    bool get(json* config, std::string const& key, T& value);
 
     /**
      * @brief Intenta obtener un valor; si no existe, lo crea en el JSON con el valor por defecto.
@@ -124,13 +106,7 @@ public:
      * @return false Si no existía y se ha procedido a escribir el valor por defecto.
      */
     template<typename T>
-    bool get_or_set(json* config, std::string const& key, T& value) {
-        if (get<T>(config, key, value))
-            return true;        // leído del json
-
-        (*config)[key] = value; // write-back del default
-        return false;           // indica que se usó el default
-    }
+    bool get_or_set(json* config, std::string const& key, T& value);
 
 
 private:
@@ -150,3 +126,54 @@ private:
     jsonMap snapshot_;      ///< Copia del json original, por si se modifica (para el `save`)
     std::mutex mtx_;        ///< Mutex de acceso al json
 };
+
+
+// ==============================================================================
+// Implementación de Templates
+// ==============================================================================
+
+#if defined JSON || defined JSON_VERSION
+
+// Lectura de datos ---------------------------------------------------------------------
+
+    template<typename T>
+    bool JsonMgr::get(json* config, std::string const& key, T& value) {
+        if (!config || !config->contains(key))
+            return false;
+
+        const json& node = (*config)[key];
+
+        if constexpr (std::is_same_v<T, std::string>) {
+            if (!node.is_string()) return false;
+        } else if constexpr (std::is_floating_point_v<T>) {
+            if (!node.is_number()) return false;
+        } else if constexpr (std::is_integral_v<T>) {
+            if (!node.is_number_integer()) return false;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            if (!node.is_boolean()) return false;
+        }
+
+        value = node.get<T>();
+        return true;
+    }
+
+    template<typename T>
+    bool JsonMgr::get_or_set(json* config, std::string const& key, T& value) {
+        if (get<T>(config, key, value))
+            return true;
+
+        (*config)[key] = value; 
+        return false;           
+    }
+
+#else
+
+// Lectura de datos ---------------------------------------------------------------------
+
+    template<typename T>
+    bool JsonMgr::get(json* config, std::string const& key, T& value)  { return false; }
+
+    template<typename T>
+    bool JsonMgr::get_or_set(json* config, std::string const& key, T& value) { return false; }
+
+#endif
