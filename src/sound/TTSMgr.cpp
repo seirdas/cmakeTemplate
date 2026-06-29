@@ -453,14 +453,19 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
-        jsonMgr.get_or_set(cfg, "lazy_load",        lazy_load_);
-        jsonMgr.get_or_set(cfg, "concurrent_init",  concurrent_init_);
-        jsonMgr.get_or_set(cfg, "num_load_retries", num_load_retries_);
+        // Carga de la sección lazy
+        json* lazyCfg = jsonMgr.getSubNode(cfg, "lazy_load");
+        jsonMgr.get_or_set(lazyCfg, "active", lazy_load_);
 
-        // numero a segundos
-        int keep_alive_raw = static_cast<int>(keep_alive_seconds_.count()); // default
-        jsonMgr.get_or_set(cfg, "keep_alive_seconds", keep_alive_raw);
+        int keep_alive_raw = static_cast<int>(keep_alive_seconds_.count()); // numero a segundos
+        jsonMgr.get_or_set(lazyCfg, "keep_alive_seconds", keep_alive_raw);
         keep_alive_seconds_ = std::chrono::seconds(keep_alive_raw);
+
+
+        // Carga de la sección concurrent
+        json* concurrentCfg = jsonMgr.getSubNode(cfg, "concurrent_init_");
+        jsonMgr.get_or_set(concurrentCfg, "active", concurrent_init_);
+        jsonMgr.get_or_set(concurrentCfg, "num_load_retries", num_load_retries_);
 
     }
 

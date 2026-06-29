@@ -75,6 +75,15 @@ public:
      */
     json* getSubNode(std::string const& filename, std::string const& key);
 
+    /**
+    * @brief Obtiene un sub-nodo específico dentro de otro nodo JSON padre.
+    * @details Si el sub-nodo no existe, se crea automáticamente como un objeto vacío.
+    * @param parent Puntero al nodo JSON padre.
+    * @param key Clave o nombre del sub-nodo a recuperar o crear.
+    * @return Puntero al sub-nodo @c json, o @c nullptr si el padre es nulo.
+    */
+    json* getSubNode(json* parent, std::string const& key);
+
 
 // Lectura de datos ---------------------------------------------------------------------
 

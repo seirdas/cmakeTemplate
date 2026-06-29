@@ -111,6 +111,22 @@ JsonMgr& JsonMgr::instance() {
         return &root[key];
     }
 
+    json* JsonMgr::getSubNode(json* parent, std::string const& key) {
+        // Protección por si nos pasan un padre inválido
+        if (!parent) return nullptr;
+
+        // Nota: Si usas hilos concurrentes modificando el MISMO json a la vez,
+        // podrías querer proteger esto con std::unique_lock<std::mutex> lock(mtx_);
+        // Pero si solo se inicializa al arrancar en el hilo principal, no es crítico.
+        std::unique_lock<std::mutex> lock(mtx_); 
+
+        if (!parent->contains(key) || !(*parent)[key].is_object()) {
+            (*parent)[key] = json::object();
+        }
+
+        return &(*parent)[key];
+    }
+
     // Lectura de datos ---------------------------------------------------------------------
 
     /* Implementado en el hpp por los templates */
@@ -126,5 +142,6 @@ JsonMgr& JsonMgr::instance() {
     json* JsonMgr::load(std::string const&)     { return nullptr; }
     bool  JsonMgr::update(std::string const&)   { return false; }
     json* JsonMgr::getSubNode(std::string const&, std::string const&) { return nullptr; }
+    json* JsonMgr::getSubNode(json* parent, std::string const& key)   { return nullptr; }
 
 #endif
