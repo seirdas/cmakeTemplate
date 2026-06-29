@@ -1,4 +1,5 @@
 #include <chrono>               // Controla tiempos de espera
+#include <string>
 #include "app/AppController.hpp"
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
@@ -56,6 +57,7 @@ bool AppController::init(int argc, char** argv) {
 
     
     // Leer valores del json para AppController
+    SYS_INFO("AppController","Reading app config files...");
     JsonMgr& jsonMgr = JsonMgr::instance();
     json* config = jsonMgr.load(config_filename_);
     // Validar y asignar valores de variables miembro a partir de la config pasada (json)
@@ -66,7 +68,11 @@ bool AppController::init(int argc, char** argv) {
 
 
     // Almacenamiento temporal de nodos de json para cada módulo
-    json* config_node = nullptr;    
+    json* config_node = nullptr;
+
+
+    // Mostrar versión en log
+    SYS_INFO("AppController","Welcome to " + std::string(APP_NAME) + ", version " + version_ + "!");
 
 
     // Iniciar GUI, salir si no se carga bien
@@ -189,10 +195,14 @@ void AppController::TWorker() {
         lock.unlock();
 
         // Pide datos al socket para procesar
-        data = net_.getNextUdpPacket();
+        data = net_.getNextUdpPacket();         // <- BLOQUEANTE
 
         // Salir si el programa se está cerrando (después de getpacket)
         if (!running_) break;
+
+        // Si se ha puesto en modo offline, continuar (para bloquear en espera)
+        if (!online_mode_) 
+            continue;
 
         // Si no hay datos no hacer nada
         if (data.empty()) {

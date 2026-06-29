@@ -1,4 +1,5 @@
 #include "app/AppController.hpp"
+#include "system/SystemMgr.hpp"
 
 /* 
 * Aquí solo deberían ir acciones que se ejecuten sobre otros módulos
@@ -22,12 +23,16 @@ void AppController::setOnlineMode(bool nuevo_online_mode) noexcept {
     online_mode_=nuevo_online_mode;
     lock.unlock();
 
+    SYS_INFO("IAppControl", std::string(online_mode_ ? "ON_LINE" : "OFF_LINE") + " mode set.");
+
     if(online_mode_) {
         net_.start();
         online_cv_.notify_all();
     }
-    else
+    else {
         net_.stop();
+        online_cv_.notify_all();
+    }
 };
 
 bool AppController::isOnlineMode() const noexcept {
