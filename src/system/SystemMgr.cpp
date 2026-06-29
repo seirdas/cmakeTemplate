@@ -1,9 +1,9 @@
 #include "system/SystemMgr.hpp"
 #include <iostream>
-#include <thread>
 
 #ifdef _WIN32
     #include <windows.h>
+    #include <thread>
 #elif __linux__
     #include <unistd.h> // UNIX standard
     #include <cwchar> 

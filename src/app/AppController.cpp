@@ -1,8 +1,8 @@
-#include "app/AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
-#include <fstream>              // Para i/o de archivos
-#include <memory>               // Necesario para std::unique_ptr
+#include "app/AppController.hpp"
 #include "files/JsonMgr.hpp"
+#include "system/SystemMgr.hpp"
+
 
 // General ------------------------------------------------------------------------------
 
