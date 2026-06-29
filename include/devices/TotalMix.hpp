@@ -33,9 +33,7 @@
  */
 
 #include <string>
-#include <cmath>
 #include <memory>
-#include <vector>
 #include <array>
 
 
