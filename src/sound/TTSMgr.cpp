@@ -45,8 +45,6 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool TTSMgr::init(void* config) {
-
-        const json config_previa = *static_cast<json*>(config);
         
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
@@ -54,12 +52,6 @@
         else  // Puede llegar aquí cuando se hace reload()
             SYS_WARN("TTSMgr","Cannot load config. Using default values.");
 
-        // Comprobar si ha cambiado respecto a lo que entró
-        if (config_previa == *static_cast<json*>(config)) {
-            SYS_WARN("TTSMgr","LOS ARCHIVOS SON IGUALES");
-        } else {
-            SYS_WARN("TTSMgr","LOS ARCHIVOS SON DIFERENTES");
-        }
 
         // Marcar como corriendo por si se destruye mientras carga modelos
         running_ = true;
