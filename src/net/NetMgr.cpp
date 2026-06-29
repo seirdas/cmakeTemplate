@@ -213,7 +213,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool NetMgr::start() {
+    bool NetMgr::init() {
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {
             SYS_WARN("NetMgr","Commanded start() when is already running");
@@ -249,6 +249,10 @@
         SYS_INFO("NetMgr","Sockets running");
         sockets_running_ = true;
         return true;
+    }
+
+    bool NetMgr::start() {
+        return init();
     }
 
     void NetMgr::stop() {

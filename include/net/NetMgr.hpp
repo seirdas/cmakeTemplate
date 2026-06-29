@@ -115,6 +115,11 @@ public:
      * esperando datos en los sockets.
      * @returns true cuando termina
      */
+    bool init();
+
+    /**
+     * @brief Llama a init(), misma funcionalidad por compatibilidad.
+     */    
     bool start();
 
     /**

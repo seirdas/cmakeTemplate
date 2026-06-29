@@ -61,7 +61,7 @@ public:
      * @param force Fuerza la reinicialización de la red si ya estaba activo.
      * @return @c true cuando se ha inicializado y respondido al ping correctamente, @c false en caso contrario.
      */
-    bool Init(const std::wstring& SymetrixIP, bool force = false);
+    bool init(const std::wstring& SymetrixIP, bool force = false);
 
     /**
      * @brief Cierra y limpia todos los componentes de la clase.

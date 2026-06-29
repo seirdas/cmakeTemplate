@@ -38,6 +38,7 @@
 #include <vector>
 #include <array>
 
+
 /**
  * @brief Controlador de RME TotalMix FX vía OSC/UDP.
  *
@@ -76,18 +77,10 @@ public:
 
     /**
      * @brief Inicializa Winsock, crea el socket UDP y lo enlaza a la dirección local.
-     * @param localPort    Puerto UDP local al que se hace bind.
-     * @param localIP      Dirección IP local (ej. @c "127.0.0.1").
-     * @param remotePort   Puerto UDP de TotalMix FX (destino de los paquetes).
-     * @param remoteIP     Dirección IP del host donde corre TotalMix FX.
-     * @param numInputs    Número total de entradas físicas del dispositivo.
-     * @param numPlaybacks Número total de canales de playback del dispositivo.
-     * @param numOutputs   Número total de salidas físicas del dispositivo.
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true si la inicialización fue exitosa.
      */
-    bool init(int localPort, const std::string& localIP,
-              int remotePort, const std::string& remoteIP,
-              int numInputs, int numPlaybacks, int numOutputs);
+    bool init(void* config = nullptr);
 
 
 // Control de volumen -----------------------------------------------------------------------
@@ -181,6 +174,18 @@ private:
     enum class Bus;
     struct OscTimeTag;
 
+
+// Configuración ------------------------------------------------------------------------
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config = nullptr);
 
 // Envío de paquete OSC -----------------------------------------------------------------
 
@@ -376,23 +381,25 @@ private:
     bool wsaStarted_ = false;           ///< true si WSAStartup ya fue llamado con éxito.
 
     // Socket
-    int         remotePort_ = 0;        ///< Puerto UDP de TotalMix FX (destino).
-    std::string remoteIP_;              ///< IP de TotalMix FX (destino).
+    std::string     localIP_;           ///< IP Local de socket de envío de datos a Totalmix
+    unsigned int    localPort_;         ///< Puerto local de socket de envío de datos a Totalmix
+    unsigned int    remotePort_;        ///< Puerto UDP de TotalMix FX (destino).
+    std::string     remoteIP_;          ///< IP de TotalMix FX (destino).
     struct Impl;                        ///< Estructura PIMPL para el socket, para no depender de Windows en el header
     std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de Windows (socket)
 
     // Número de canales
-    int numInputs_    = 0;                      ///< Número total de entradas del dispositivo.
-    int numPlaybacks_ = 0;                      ///< Número total de canales de playback del dispositivo.
-    int numOutputs_   = 0;                      ///< Número total de salidas del dispositivo.
+    int numInputs_;                     ///< Número total de entradas del dispositivo.
+    int numPlaybacks_;                  ///< Número total de canales de playback del dispositivo.
+    int numOutputs_;                    ///< Número total de salidas del dispositivo.
 
     // Banks
-    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosOutput_ = {};     ///< Posición dentro del bank OSC para cada salida (1-based).
-    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosInput_ = {};      ///< Posición dentro del bank OSC para cada entrada (1-based).
-    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosPlayback_ = {};   ///< Posición dentro del bank OSC para cada canal de playback (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosOutput_;     ///< Posición dentro del bank OSC para cada salida (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosInput_;      ///< Posición dentro del bank OSC para cada entrada (1-based).
+    std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosPlayback_;   ///< Posición dentro del bank OSC para cada canal de playback (1-based).
 
     // Buffer OSC
-    char      oscRaw_[OSC_BUF_SIZE]     = {};   ///< Array de bytes subyacente del buffer OSC.
+    char      oscRaw_[OSC_BUF_SIZE];            ///< Array de bytes subyacente del buffer OSC.
     OscBuffer oscBuf_;                          ///< Estructura de estado del buffer OSC en construcción.
 
 };

@@ -65,7 +65,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool Symetrix::Init(std::wstring const& SymetrixIP, bool force) {
+    bool Symetrix::init(std::wstring const& SymetrixIP, bool force) {
 
         // No hacer nada si ya está inicializado y no se fuerza el init
         if (initialized_ && !force) return true;
@@ -537,7 +537,7 @@
     bool Symetrix::sendCSQ(unsigned int id, unsigned int ticks) {
 
         // Calcular tamaño de buffer redondeado a la siguiente potencia de 2 a partir del comando
-        const auto cmdSize = std::formatted_size("CSQ {} {}\r", id, ticks);
+        const std::size_t cmdSize = std::formatted_size("CSQ {} {}\r", id, ticks);
         const std::size_t bufsize = std::bit_ceil(cmdSize);
 
         // Buffer para construir el comando
@@ -572,12 +572,10 @@
     }
 
     bool Symetrix::sendCMV(unsigned int in, unsigned int out, float dbValue) {
-        
-        // Definir nombre de componente supermatrix
-        constexpr std::string_view componentName = "0.1.CPGain";
 
         // Calcular tamaño de buffer redondeado a la siguiente potencia de 2 a partir del comando
-        const auto cmdSize = std::formatted_size("$q CMV Set {}.{{I{}O{}}} {:.2f}\r",
+        constexpr std::string_view componentName = "0.1.CPGain";
+        const std::size_t cmdSize = std::formatted_size("$q CMV Set {}.{{I{}O{}}} {:.2f}\r",
             componentName, in, out, dbValue);
         const std::size_t bufsize = std::bit_ceil(cmdSize);
         
@@ -589,8 +587,9 @@
             componentName, in, out, dbValue);
 
         // Envío
-        const int sent = send(pimpl_->socket, buf, static_cast<int>(result.size), 0);
-        if (sent == SOCKET_ERROR || sent != static_cast<int>(result.size)) {
+        const int len = static_cast<int>(written);
+        const int sent = send(pimpl_->socket, buf.data(), len, 0);
+        if (sent == SOCKET_ERROR || sent != len) {
             SYS_WARN("Symetrix", "sendCMV: Failed sending command by socket.");
             return false;
         }
@@ -625,7 +624,7 @@ Symetrix::Symetrix() :
 Symetrix::~Symetrix() {}
 
 // Ejecución ----------------------------------------------------------------------------
-bool Symetrix::Init(const std::wstring&, bool) { return false; }
+bool Symetrix::init(const std::wstring&, bool) { return false; }
 void Symetrix::Destroy() {}
 bool Symetrix::isConnected() const { return false; }
 
