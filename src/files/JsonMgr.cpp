@@ -127,6 +127,19 @@ JsonMgr& JsonMgr::instance() {
         return &(*parent)[key];
     }
 
+    std::vector<json*> JsonMgr::getArrayElements(json* parent, const std::string& key) {
+        std::vector<json*> resultado;
+
+        if (parent != nullptr && parent->contains(key)) {
+            auto& elemento = (*parent)[key];
+            if (elemento.is_array())
+                for (auto& item : elemento)
+                    resultado.push_back(&item);
+        }
+
+        return resultado;
+    }
+
     // Lectura de datos ---------------------------------------------------------------------
 
     /* Implementado en el hpp por los templates */

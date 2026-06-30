@@ -84,6 +84,13 @@ public:
     */
     json* getSubNode(json* parent, std::string const& key);
 
+    /**
+     * @brief Obtiene una lista (array) de punteros a objetos JSON
+     * @param parent Puntero a json 
+     * @param key nombre de la clave.
+     */
+    std::vector<json*> getArrayElements(json* parent, const std::string& key);
+
 
 // Lectura de datos ---------------------------------------------------------------------
 
