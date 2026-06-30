@@ -1,28 +1,36 @@
 {
-  "snd": {
-    "aim": {
-      "channels": 2,
-      "sample_rate": 44100,
-      "process_buffer_size": 1024,
-      "rms_mode": "linear",
-      "dbfs": { 
-        "db_min": -60.0, 
-        "gate": 5.0 
-      },
-      "linear": { 
-        "norm": 231.6 
-      }
+    "gui": {},
+    "network": {
+        "udpSockets": [
+            {
+                "name": "host",
+                "port": 8001
+            }
+        ]
     },
-    "apm": {
-      "propiedadfalsa" : 99999
-    }
-  },
-  "tts": {
-    "num_threads": 4,
-    "lazy_load": false,
-    "concurrent_init": true,
-    "keep_alive_time": 20,
-    "num_load_retries": 2,
-    "models_path": "voices"
-  }
+    "sound": {
+        "Capture": [],
+        "Playback": []
+    },
+    "symetrix": {},
+    "totalmix": {
+        "localIP": "127.0.0.1",
+        "localPort": 12321,
+        "numInputs": 32,
+        "numOutputs": 32,
+        "numPlaybacks": 32,
+        "remoteIP": "127.0.0.1",
+        "remotePort": 7001
+    },
+    "tts": {
+        "concurrent_init_": {
+            "active": false,
+            "num_load_retries": 2
+        },
+        "lazy_load": {
+            "active": true,
+            "keep_alive_seconds": 20
+        }
+    },
+    "version": "0.9"
 }
