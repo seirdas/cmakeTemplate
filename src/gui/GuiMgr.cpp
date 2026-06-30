@@ -36,6 +36,8 @@
 	#include <implot.h>
 	#include "imgui-knobs.h"		// Soporte de knobs
 	#include "imspinner.h"			// Soporte de spinners de carga
+	#include "imspinner_dots.h"		// Spinners de puntos (SpinnerSwingDots, etc.)
+	#include "imspinner_bars.h"		// Spinners de barras (SpinnerBarChartRainbow, etc.)
 
 	// Sistema
 	#ifdef _WIN32
@@ -118,6 +120,9 @@
 		// Inicializa ImGui
 		IMGUI_CHECKVERSION();
 		CreateContext();
+
+		// Inicializa ImPlot
+		ImPlot::CreateContext();
 		
 		// Obtener puntero a style e io para poder modificarlo
 		style_ = &GetStyle();
@@ -194,6 +199,7 @@
 
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
+		ImPlot::DestroyContext();
 		DestroyContext();
 		if (window_)
 		{
@@ -689,9 +695,33 @@
 	
 								std::string cadena = std::to_string(ctrl_->getInputBufferSize(static_cast<unsigned short>(i)));
 								Text(cadena.c_str());
-	
+
 								std::string cadena_rec = std::to_string(ctrl_->getInputRecBufferSize(static_cast<unsigned short>(i)));
 								Text(cadena_rec.c_str());
+
+								SameLine();
+
+								// Medidor VU - barra vertical RMS
+								float LevelVal = ctrl_->getInputPeakLevel(static_cast<unsigned short>(i));
+
+								ImVec4 barColor;
+								if      (LevelVal < 60.f) barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
+								else if (LevelVal < 85.f) barColor = ImVec4(1.00f, 0.75f, 0.00f, 1.0f); // amarillo
+								else                    barColor = ImVec4(0.90f, 0.15f, 0.15f, 1.0f); // rojo
+
+								if (ImPlot::BeginPlot("##vu", ImVec2(30, 70),
+									ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText |
+									ImPlotFlags_NoMenus  | ImPlotFlags_NoTitle     | ImPlotFlags_NoFrame))
+								{
+									ImPlot::SetupAxes(nullptr, nullptr,
+										ImPlotAxisFlags_NoDecorations,
+										ImPlotAxisFlags_NoDecorations);
+									ImPlot::SetupAxisLimits(ImAxis_X1, 0.5, 1.5, ImGuiCond_Always);
+									ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, 100.0, ImGuiCond_Always);
+									ImPlot::SetNextFillStyle(barColor);
+									ImPlot::PlotBars("##bar", &LevelVal, 1, 0.9, 1.0);
+									ImPlot::EndPlot();
+								}
 							}
 
 
@@ -731,7 +761,6 @@
 						}
 						End();
 					}
-
 
 					EndTabItem();
 				}
