@@ -461,6 +461,8 @@
         // Se considera que la configuración se pasa como json    
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
+
+        /*
         
         if (!cfg->contains("udpSockets") || !(*cfg)["udpSockets"].is_array())
             return;
@@ -474,6 +476,9 @@
             if (!name.empty() && port > 0)
                 addUdpSocket(name, port, ip, packet_size);
         }
+                
+        */
+        
     }
 
 #else
