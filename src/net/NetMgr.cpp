@@ -6,6 +6,8 @@
     #include <asio.hpp>             // asio external lib
     #include "net/UdpSocket.hpp"    // Para conocer UdpSocket
     #include "net/netTypes.hpp"     // Para conocer NetPacket
+    #include "files/JsonMgr.hpp"    // Para conocer json
+
 
     using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
     using UDPSocketsVector = std::vector<std::shared_ptr<UdpSocket>>;
@@ -213,7 +215,9 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool NetMgr::init() {
+    bool NetMgr::init(void* config) {
+        if (config) loadConfig(config);
+
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {
             SYS_WARN("NetMgr","Commanded start() when is already running");
@@ -445,6 +449,31 @@
         // info y salir
         SYS_INFO("NetMgr","Socket deleted");
         return true;
+    }
+
+    // Carga de configuración ----------------------------------------------------------------
+
+    void NetMgr::loadConfig(void* config) {
+
+        if (!config) 
+            return;
+            
+        // Se considera que la configuración se pasa como json    
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+        
+        if (!cfg->contains("udpSockets") || !(*cfg)["udpSockets"].is_array())
+            return;
+
+        for (auto& s : (*cfg)["udpSockets"]) {
+            std::string    name        = s.value("name",        "");
+            unsigned short port        = s.value("port",        (unsigned short)0);
+            std::string    ip          = s.value("ip",          "");
+            unsigned int   packet_size = s.value("packet_size", 0u);
+
+            if (!name.empty() && port > 0)
+                addUdpSocket(name, port, ip, packet_size);
+        }
     }
 
 #else

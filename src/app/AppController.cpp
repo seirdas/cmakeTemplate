@@ -89,7 +89,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar gestor de red
     SYS_INFO("AppController","Network subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"network");
-    net_initialized_ = net_.init();
+    net_initialized_ = net_.init(config_node);
     if(!net_initialized_)
         SYS_ERROR("AppController","Network subsystem FAIL");
     else SYS_INFO("AppController","Network subsystem OK");
@@ -98,7 +98,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar gestor de sonidos
     SYS_INFO("AppController","Sound subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"sound");
-    snd_initialized_ = snd_.init();
+    snd_initialized_ = snd_.init(nullptr);
     if(!snd_initialized_)
         SYS_ERROR("AppController","Sound subsystem FAIL");
     else SYS_INFO("AppController","Sound subsystem OK");
@@ -116,7 +116,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar conexión Symetrix    
     SYS_INFO("AppController","Symetrix manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"symetrix");
-    sym_initialized_ = sym_.init(L"192.168.7.21");
+    sym_initialized_ = sym_.init(config_node);
     if(!sym_initialized_)
         SYS_WARN("AppController","Symetrix manager FAIL");
     else SYS_INFO("AppController","Symetrix manager OK");

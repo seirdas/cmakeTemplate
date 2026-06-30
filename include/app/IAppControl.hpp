@@ -135,25 +135,31 @@ public:
     virtual bool StopRecording(unsigned short index) noexcept = 0;
     
     /**
-     * @brief Obtiene el tamaño del buffer de captura
-     * @param index indice de dispositivo de captura
-     * @return el tamaño del buffer de captura
-     */
-    virtual size_t getInputBufferSize(unsigned short index) noexcept = 0;
-
-    /**
-     * @brief Obtiene el tamaño del buffer de grabación
-     * @param index indice de dispositivo de captura
-     * @return el tamaño del buffer de grabación
-     */
-    virtual size_t getInputRecBufferSize(unsigned short index) noexcept = 0;
-
-    /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
      */
      virtual bool isInputDeviceValid(unsigned short index) noexcept = 0;
 
+     /**
+      * @brief devuelve el valor del RMS
+      */
+     virtual float getInputRMSLevel(unsigned short index) noexcept = 0;
 
+     /**
+      * @brief devuelve el valor del pico
+      */
+     virtual float getInputPeakLevel(unsigned short index) noexcept = 0;
+
+     /**
+      * @brief Tamaño del buffer del dispositivo de captura
+      */
+     virtual size_t getInputBufferSize(unsigned short index) noexcept = 0; 
+    
+     /**
+      * @brief Tamaño del buffer del dispositivo de grabación
+      */
+     virtual size_t getInputRecBufferSize(unsigned short index) noexcept = 0; 
+
+     
 // TTS --------------------------------------------------------------------------------
 
     /**

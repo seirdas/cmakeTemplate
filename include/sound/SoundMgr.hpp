@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>                       // unique_ptr
 
+
 // Evita los includes de los módulos:
 class AudioInputModule;         // Evita el include de AudioInputModule
 class AudioPlaybackModule;      // Evita el include de AudioPlaybackModule
@@ -33,7 +34,7 @@ public:
      * @brief Inicialización del motor de audio.
      * @returns True si la inicialización ha sido correcta, false en caso contrario
      */
-    bool init();
+    bool init(void* config);
 
     /**
     * @brief Para el motor de audio.
@@ -46,6 +47,17 @@ public:
      */
     bool updateDevices();
 
+    // Carga de configuración ---------------------------------------------------------------
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
 
 // Capture Input ------------------------------------------------------------------------
 
@@ -83,6 +95,11 @@ public:
      * @brief Obtiene el nivel de RMS del audio
      */
     float getInputRmsLevel(unsigned short index);
+
+    /**
+     * @brief Obtiene el nivel del pico del audio
+     */
+    float getInputPeakLevel(unsigned short index);
 
     /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando

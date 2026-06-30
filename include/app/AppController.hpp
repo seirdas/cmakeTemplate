@@ -179,6 +179,17 @@ public:
      */
      virtual bool isInputDeviceValid(unsigned short index) noexcept override;
 
+    /**
+     * @brief devuelve el nivel del pico de audio
+     */
+    virtual float getInputPeakLevel(unsigned short index) noexcept;
+
+    /**
+     * @brief devuelve el nivel del RMS de audio
+     */
+    virtual float getInputRMSLevel(unsigned short index) noexcept;
+
+
 
     // TTS ----------------------------------------------------------------------------
 

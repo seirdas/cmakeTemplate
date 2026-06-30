@@ -7,6 +7,7 @@
 #include <atomic>
 #include <functional>           // Callback expuesto de frames de audio (hacia afuera)
 
+
 /**
  * @class AudioInputModule
  * @brief Clase para la captura de audio utilizando miniaudio.
@@ -22,7 +23,7 @@ public:
      * @param ctx Contexto de mini audio.
      * @param device_info Información del dispositivo de audio.
      */
-    AudioInputModule(void* ctx, const void* devInfo);
+   AudioInputModule(void* ctx, const void* devInfo);
 
     /**
      * @brief Destructor de AudioInputModule.
@@ -36,7 +37,7 @@ public:
      * @brief Inicializa el dispositivo de captura
      * @return true si arranca bien, false si no
      */
-    bool init();
+    bool init(void* config);
 
     /**
      * @brief Detiene la captura de audio y desinicializa el dispositivo
@@ -74,6 +75,18 @@ public:
      */
     size_t getBufferSize();
 
+    /**
+     * @brief Devuelve el nivel del pico del buffer de captura.
+     */
+    float getPeakLevel() const;
+
+
+    // Carga de configuración ---------------------------------------------------------------
+
+    /**
+     * @brief Carga 
+     */
+    void loadConfig(void* config);
 
     // Callback expuesto --------------------------------------------------------------------
     
@@ -147,6 +160,7 @@ private:
     void saveRecording();
 
 
+
 /************ Variables ********************************************************/
 
     // Estructura PIMPL para no depender de la librería en el header
@@ -170,7 +184,9 @@ private:
     std::string             deviceName_;          ///< Nombre del dispositivo
 
     // Captura
-    std::atomic<float>      rmsLevel_;            ///< guarda el nivel actual de RMS
+    const int16_t           max_int16_val_;       ///< Máximo valor de  Normalizar entre 0 y 100, sobre el valor máximo del tipo int16_t
+    std::atomic<float>      rmsLevel_;            ///< Nivel actual de señal (RMS o pico según usePeak_)
+    std::atomic<float>      peakLevel_;           ///< Nivel de pico (solo cuando usePeak_ == true)
     AudioCallback           onFrame_;             ///< Almacena la función de callback registrada externamente
-
 };
+

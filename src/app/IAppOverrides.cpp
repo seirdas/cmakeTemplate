@@ -96,6 +96,15 @@ bool AppController::isInputDeviceValid(unsigned short index) noexcept {
     return snd_.isInputDeviceValid(index);
 }
 
+float AppController::getInputRMSLevel(unsigned short index) noexcept {
+    return snd_.getInputRmsLevel(index);
+}
+
+float AppController::getInputPeakLevel(unsigned short index) noexcept {
+    return snd_.getInputPeakLevel(index);
+}
+
+
 
 // TTS ----------------------------------------------------------------------------
 

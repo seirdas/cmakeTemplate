@@ -61,7 +61,7 @@ public:
      * @param force Fuerza la reinicialización de la red si ya estaba activo.
      * @return @c true cuando se ha inicializado y respondido al ping correctamente, @c false en caso contrario.
      */
-    bool init(const std::wstring& SymetrixIP, bool force = false);
+    bool init(void* config = nullptr);
 
     /**
      * @brief Cierra y limpia todos los componentes de la clase.
@@ -176,10 +176,9 @@ private:
 
     /**
      * @brief Inicializar y comprobar la conexión de red con Symetrix mediante un intercambio de Ping.
-     * @param hostIp Dirección IP o nombre de host remoto.
      * @return @c true si la conexión e intercambio inicial de buffers fue correcto, @c false en caso contrario.
      */
-    bool initConnection(std::wstring const& hostIp);
+    bool initConnection();
 
     /**
      * @brief Limpia todos los elementos inicializados de la red (WSA, socket).
@@ -251,7 +250,21 @@ private:
      */
     int getCachedTolerance(unsigned int id) const;
     
-// Tolerancias (privado) ----------------------------------------------------------------
+
+    // Configuración ------------------------------------------------------------------------
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config = nullptr); 
+
+    
+    // Tolerancias (privado) ----------------------------------------------------------------
 
     /**
      * @brief Asigna el umbral de tolerancia directamente en unidades de "ticks" a un componente en la caché.
@@ -325,8 +338,9 @@ private:
     bool                wsaStarted_;                    ///< Indica si la capa de red del sistema Windows (WSAStartup) se inicializó correctamente.
     bool                connected_;                     ///< Estado actual de la comunicación (true = conectado y respondiendo pings).
     bool                initialized_;                   ///< Bandera que indica si el sistema está inicializado.
-    unsigned long const connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
+    unsigned long       connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
     unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
+    std::string         SymetrixIP_;                       ///< IP de Symetrix
 
     // --- Conversión de datos ---
     float           dBcurve_gamma_;                     ///< Valor de ponderación de escala porcentual a escala logarítmica
@@ -343,5 +357,5 @@ private:
     int             supermatrix_outs_;                  ///< Número de salidas lógicas de la SuperMatrix.
 
     // --- Configuración Fija del Dispositivo ---
-    unsigned int const kBootPreset_;                    ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
+    unsigned int    kBootPreset_;                    ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
 };

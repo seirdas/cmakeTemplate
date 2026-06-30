@@ -6,6 +6,7 @@
     #include <cmath>
     #include <limits>
     #include "system/SystemMgr.hpp"
+    #include <files/JsonMgr.hpp>
 
     // Implementación de miembros y métodos de la librería externa
     struct AudioInputModule::Impl {
@@ -57,22 +58,27 @@
         ma_uint32 targetSize = self->processBufferSize_ * self->channels_;
         if (self->buffer_.size() >= targetSize) {
 
-            // double para sumar muestras del buffer acumulado sin pérdidas de precisión
-            double sum = 0.0;
-            double sampleVal = 0;
-            for (unsigned int i = 0; i < targetSize; ++i) 
-            {
+            /* Valor de pico del buffer */
+            int16_t peak = 0;
+            for (unsigned int i = 0; i < targetSize; ++i) {
+                if (abs(self->buffer_[i]) > peak)
+                    peak = abs(self->buffer_[i]);
+            }
+            self->peakLevel_ = static_cast<float>((peak / static_cast<float>(self->max_int16_val_)) * 100.0f); //de 0 a 100
+
+
+            /* Valor RMS */
+            double sampleVal = 0.0f;
+            double sum = 0.0f;
+            for (unsigned int i = 0; i < targetSize; ++i) {
                 sampleVal = static_cast<double>(self->buffer_[i]);
                 sum += sampleVal * sampleVal;
             }
-            // La raiz es más eficiente hacerla fuera del bucle
-            double rms = std::sqrt(sum / targetSize);
-
-            // Normalizar entre 0 y 100, sobre el valor máximo del tipo int16_t
-            int16_t max_val = std::numeric_limits<int16_t>::max();
-            self->rmsLevel_ = static_cast<float>((rms / max_val) * 100.0);
-
-            // Limpieza de buffer
+            double rms = std::sqrt(sum / targetSize); // La raiz es más eficiente hacerla fuera del bucle
+            self->rmsLevel_  = static_cast<float>((rms  / self->max_int16_val_) * 100.0); // de 0 a 1
+            if (self->peakLevel_ > 100.0f) self->peakLevel_ = 100.0f;
+        
+            /* Limpieza de buffer */
             self->buffer_.clear();
         }
 
@@ -83,7 +89,6 @@
         // 3. CALLBACK: Envío de trama de datos de audio de entrada a "otro sitio" si el callback está definido
         if (self->onFrame_ != nullptr)
             self->onFrame_(samples, frameCount);
-
     }
 
     void AudioInputModule::Impl::notificationCallback_(const ma_device_notification* pNotification) {
@@ -106,15 +111,15 @@
     // General ------------------------------------------------------------------------------
 
     AudioInputModule::AudioInputModule(void* ctx, const void* devInfo) :
-        pimpl_(std::make_unique<Impl>(ctx, devInfo)),
-        channels_(2),
-        sampleRate_(44100),
-        processBufferSize_(1024),
-        codec_inited_(false),
-        recording_(false),
-        is_valid_(false),
-        rmsLevel_(0.0f),
-        onFrame_(nullptr)
+    pimpl_(std::make_unique<Impl>(ctx, devInfo)),
+    channels_(2),
+    sampleRate_(48000),
+    processBufferSize_(1024),
+    codec_inited_(false),
+    recording_(false),
+    is_valid_(false),
+    onFrame_(nullptr),
+    max_int16_val_(std::numeric_limits<int16_t>::max())
     {
         deviceName_ = pimpl_->device_info.name;
     }
@@ -126,9 +131,16 @@
 
     // Ejecución-----------------------------------------------------------------------------
 
-    bool AudioInputModule::init() {
+    bool AudioInputModule::init(void* config) {
+        
         if (is_valid_) return true; 
         ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
+
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
+        if (config)
+            loadConfig(config);
+        else  // Puede llegar aquí cuando se hace reload()
+            SYS_WARN("AIM","Cannot load config. Using default values.");
 
         deviceConfig.capture.format       = ma_format_s16;
         deviceConfig.capture.channels     = channels_;
@@ -187,10 +199,30 @@
     float AudioInputModule::getRmsLevel() const { 
         return rmsLevel_; 
     }
+
+    float AudioInputModule::getPeakLevel() const { 
+        return peakLevel_; 
+    }
     
     size_t AudioInputModule::getBufferSize() {
         return buffer_.size();
     };
+
+
+    // Carga de configuración ---------------------------------------------------------------
+
+    void AudioInputModule::loadConfig(void* config) {
+        if (!config)
+             return;
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        jsonMgr.get_or_set(cfg, "channels", channels_);
+        jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
+        jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
+    }
 
 
     // Grabación ----------------------------------------------------------------------------

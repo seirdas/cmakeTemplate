@@ -1,5 +1,6 @@
 #include "devices/Symetrix.hpp"
 #include "system/SystemMgr.hpp"
+#include "files/JsonMgr.hpp"
 
 // Symetrix Composer solo se puede descargar para Windows/Mac. Se usan las funciones de socket de Windows directamente.
 #ifdef WIN32
@@ -44,6 +45,7 @@
 
     Symetrix::Symetrix() :
         pimpl_(std::make_unique<Impl>()),
+        SymetrixIP_("192.168.7.21"),
         wsaStarted_(false),
         connected_(false),
         initialized_(false),
@@ -65,10 +67,12 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool Symetrix::init(std::wstring const& SymetrixIP, bool force) {
+    bool Symetrix::init(void* config) {
 
         // No hacer nada si ya está inicializado y no se fuerza el init
-        if (initialized_ && !force) return true;
+        if (initialized_) return true;
+
+        loadConfig(config);
 
         // Si entra aquí, se ha forzado la inicialización. Limpiar lo que hubiera
         if (initialized_) {
@@ -77,7 +81,7 @@
         }
 
         // Inicializar y probar conexión de red con Symetrix
-        if(!initConnection(SymetrixIP))
+        if(!initConnection())
             return false;
 
         // Cargar preset de boot por defecto
@@ -351,7 +355,7 @@
 
     // Inicialización privada ---------------------------------------------------------------
 
-    bool Symetrix::initConnection(std::wstring const& hostIp) {
+    bool Symetrix::initConnection() {
 
         // Si ya está conectado no hacer nada
         if (connected_)
@@ -388,24 +392,36 @@
         dest.sin_port = htons(ComposerPort_);
 
         // Probar conexión desde IP literal (si hostIP es una IP)
-        if (InetPtonW(AF_INET, hostIp.c_str(), &dest.sin_addr) != 1) {
-            SYS_WARN("Symetrix","Cannot bind with hostIP: " + std::string(hostIp.begin(),hostIp.end()) );
-            SYS_INFO("Symetrix","Trying to connect by IP alias...");
-            // Intenta conectar si hostIP es un alias (como por ejemplo DNS)
-            ADDRINFOW hints{};
-            hints.ai_family = AF_INET;
-            hints.ai_socktype = SOCK_DGRAM;
+        if (inet_pton(AF_INET, SymetrixIP_.c_str(), &dest.sin_addr) != 1) {
+            SYS_WARN("Symetrix", "Cannot bind as literal IP. Trying to resolve as hostname/alias: " + SymetrixIP_);
+
+            // Configurar las pistas (hints) para la resolución de DNS
+            addrinfo hints{};
+            hints.ai_family = AF_INET;       // IPv4
+            hints.ai_socktype = SOCK_DGRAM;  // UDP
             hints.ai_protocol = IPPROTO_UDP;
-            ADDRINFOW* res = nullptr;
-            if (GetAddrInfoW(hostIp.c_str(), nullptr, &hints, &res) != 0 || !res) {
-                SYS_WARN("Symetrix","Cannot connect to Symetrix: hostIP not recognized.");
+
+            addrinfo* res = nullptr;
+
+            // Utilizar getaddrinfo para resolver el hostname/alias
+            if (getaddrinfo(SymetrixIP_.c_str(), nullptr, &hints, &res) != 0 || !res) {
+                SYS_WARN("Symetrix", "Cannot connect to Symetrix: hostIP alias not recognized.");
                 net_cleanup();
                 return false;
             }
+
+            // Copiar la dirección encontrada a nuestra estructura 'dest'
             dest = *reinterpret_cast<sockaddr_in*>(res->ai_addr);
+            dest.sin_port = htons(ComposerPort_); // Asignar el puerto
+
+            SYS_SOLVED("Symetrix", "hostIP alias found and resolved correctly.");
+            
+            // Liberar la memoria asignada por getaddrinfo
+            freeaddrinfo(res);
+        } else {
+            // Si entró aquí, inet_pton funcionó. Solo falta asignar el puerto a la IP literal.
+            dest.sin_family = AF_INET;
             dest.sin_port = htons(ComposerPort_);
-            SYS_SOLVED("Symetrix","hostIP alias found and bind correctly.");
-            FreeAddrInfoW(res);
         }
 
         // Asociación "estática" del socket UDP: Ahora "send" y "recv" no necesitan especificar destino
@@ -514,6 +530,27 @@
         return it != cache_.end() ? it->second.tolerance : 0;
     }
 
+
+    // Configuración ------------------------------------------------------------------------
+
+    void Symetrix::loadConfig(void* config) {
+         if (!config)
+            return;
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        jsonMgr.get_or_set(cfg, "SymetrixIP",                   SymetrixIP_);
+        jsonMgr.get_or_set(cfg, "connection_ping_timeout_ms",   connection_ping_timeout_ms_);
+        jsonMgr.get_or_set(cfg, "ComposerPort",                 ComposerPort_);
+        jsonMgr.get_or_set(cfg, "tolerance_percent",            tolerance_percent_);            // Por defecto tolerancias de un 2% sobre el rango
+        jsonMgr.get_or_set(cfg, "dBcurve_gamma",                dBcurve_gamma_);
+        jsonMgr.get_or_set(cfg, "supermatrix_ins",              supermatrix_ins_);             // Por defecto para tener 20 entradas (se puede cambiar por método)
+        jsonMgr.get_or_set(cfg, "supermatrix_outs",             supermatrix_outs_);            // Por defecto para tener 20 salidas (se puede cambiar por método)
+        jsonMgr.get_or_set(cfg, "kBootPreset",                  kBootPreset_);
+    }
+    
 
     // Tolerancias (privado) ----------------------------------------------------------------
 

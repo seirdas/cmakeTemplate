@@ -33,7 +33,7 @@
         stop();
     }
 
-    bool SoundMgr::init() {
+    bool SoundMgr::init(void* config) {
 
         // No hacer nada si ya se ha iniciado
         if (ctx_initialized_) return true;
@@ -93,7 +93,7 @@
         for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
             if (aim->deviceName() == pimpl_->pCaptureDevInfos_[i].name)
                 for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++) // contador
-                   if (aim->init())
+                   if (aim->init(nullptr))
                         break;
                         
     }
@@ -169,7 +169,7 @@
         );
 
         // Intenta inicializar el AudioInputModule
-        if(!aim->init())
+        if(!aim->init(nullptr))
         {
             SYS_WARN("SoundMgr","Failed to initialize capture.");
             return false;
@@ -226,7 +226,12 @@
     float SoundMgr::getInputRmsLevel(unsigned short index) {
     if (index >= inputs_.size()) return 0.0f;
     return inputs_[index]->getRmsLevel();
-}
+    }
+
+    float SoundMgr::getInputPeakLevel(unsigned short index) {
+    if (index >= inputs_.size()) return 0.0f;
+    return inputs_[index]->getPeakLevel();
+    }
 
     size_t SoundMgr::getInputBufferSize(unsigned int index) {
         if (index >= inputs_.size()) return 0;
