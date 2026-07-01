@@ -182,6 +182,19 @@
         ma_device_uninit(&pimpl_->device);
         is_valid_ = false;
     }
+    
+    void AudioInputModule::loadConfig(void* config) {
+        if (!config)
+             return;
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        jsonMgr.get_or_set(cfg, "channels", channels_);
+        jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
+        jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
+    }
 
 
     // Información y parámetros -------------------------------------------------------------
@@ -193,6 +206,7 @@
     bool AudioInputModule::isValid() {
         return is_valid_;
     };
+
 
     // Captura ------------------------------------------------------------------------------
 
@@ -209,19 +223,10 @@
     };
 
 
-    // Carga de configuración ---------------------------------------------------------------
-
-    void AudioInputModule::loadConfig(void* config) {
-        if (!config)
-             return;
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        jsonMgr.get_or_set(cfg, "channels", channels_);
-        jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
-        jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
+    // Callback expuesto --------------------------------------------------------------------
+    
+    void AudioInputModule::setOnFrameCallback(AudioCallback cb) {
+        onFrame_ = std::move(cb); 
     }
 
 

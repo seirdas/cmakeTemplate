@@ -31,7 +31,7 @@ public:
     ~AudioInputModule();
 
 
-    //Ejecución -----------------------------------------------------------------------------
+    // Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Inicializa el dispositivo de captura
@@ -44,6 +44,16 @@ public:
      *  Si estaba grabando, deja de grabar y guarda lo grabado.
      */
     void stop();
+    
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
 
     
     // Información y parámetros -------------------------------------------------------------
@@ -81,13 +91,6 @@ public:
     float getPeakLevel() const;
 
 
-    // Carga de configuración ---------------------------------------------------------------
-
-    /**
-     * @brief Carga 
-     */
-    void loadConfig(void* config);
-
     // Callback expuesto --------------------------------------------------------------------
     
     /**
@@ -102,9 +105,7 @@ public:
      * para que sea ejecutada cada vez que el hilo de audio tenga nuevos datos disponibles.
      * * @param cb La función (o functor) que se ejecutará al recibir nuevos frames.
      */
-    void setOnFrameCallback(AudioCallback cb) {
-        onFrame_ = std::move(cb); 
-    }
+    void setOnFrameCallback(AudioCallback cb);
 
 
     // Grabación ----------------------------------------------------------------------------
