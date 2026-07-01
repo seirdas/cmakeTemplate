@@ -661,7 +661,7 @@ Symetrix::Symetrix() :
 Symetrix::~Symetrix() {}
 
 // Ejecución ----------------------------------------------------------------------------
-bool Symetrix::init(const std::wstring&, bool) { return false; }
+bool Symetrix::init(void*) { return false; }
 void Symetrix::Destroy() {}
 bool Symetrix::isConnected() const { return false; }
 
@@ -680,7 +680,7 @@ bool Symetrix::setButton(unsigned int, bool) { return false; }
 void Symetrix::updateTolerancePct(unsigned int, unsigned int) {}
 
 // Inicialización privada ---------------------------------------------------------------
-bool Symetrix::initConnection(std::wstring const&) { return false; }
+bool Symetrix::initConnection() { return false; }
 void Symetrix::net_cleanup() {}
 
 // Conversión de datos a ticks ----------------------------------------------------------
