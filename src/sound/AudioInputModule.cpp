@@ -313,17 +313,24 @@
 
 // General ------------------------------------------------------------------------------
 AudioInputModule::AudioInputModule(void*, const void*) {}
-AudioInputModule::~AudioInputModule() {}
+AudioInputModule::~AudioInputModule()   { return; }
 
 // Ejecución -----------------------------------------------------------------------------
-bool AudioInputModule::init() { return false; }
-void AudioInputModule::stop() { return; }
+bool AudioInputModule::init(void* config) { return false; }
+void AudioInputModule::stop()             { return; }
+void AudioInputModule::loadConfig()     { return; }
 
 // Información y parámetros --------------------------------------------------------------
 std::string AudioInputModule::deviceName() const { return ""; }
 bool AudioInputModule::isValid()                 { return false; }
-float AudioInputModule::getRmsLevel() const      { return 0.0f; }
-size_t AudioInputModule::getBufferSize()         { return 0; }
+
+// Captura ------------------------------------------------------------------------------
+float  AudioInputModule::getRmsLevel() const    { return 0.0f;  }
+size_t AudioInputModule::getBufferSize()        { return 0;     }
+float  AudioInputModule::getPeakLevel() const   { return 0;     }
+
+// Callback expuesto --------------------------------------------------------------------
+void AudioInputModule::setOnFrameCallback(AudioCallback cb);    { return; }
 
 // Grabación ----------------------------------------------------------------------------
 void AudioInputModule::StartRec(std::string const&) { return; }
