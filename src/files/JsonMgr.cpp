@@ -144,10 +144,16 @@ JsonMgr& JsonMgr::instance() {
         return resultado;
     }
 
+    
     // Lectura de datos ---------------------------------------------------------------------
 
-    /* Implementado en el hpp por los templates */
+    /* Implementado en el hpp por el template */
+    //template<typename T>
+    //bool JsonMgr::get(json* config, std::string const& key, T& value);
 
+    /* Implementado en el hpp por el template */
+    //template<typename T>
+    //bool JsonMgr::get_or_set(json* config, std::string const& key, T& value);
 
 
 #else 
