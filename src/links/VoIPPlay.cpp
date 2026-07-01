@@ -13,4 +13,5 @@ VoIPPlay::~VoIPPlay() {
 
 bool VoIPPlay::init() {
 
+    return false;
 }
