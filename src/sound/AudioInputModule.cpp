@@ -59,10 +59,12 @@
         if (self->buffer_.size() >= targetSize) {
 
             /* Valor de pico del buffer */
-            int16_t peak = 0;
+            int32_t peak = 0;       // 32 bits para evitar overflow con el valor -32768 
+            int32_t sampleAbs = 0;
             for (unsigned int i = 0; i < targetSize; ++i) {
-                if (abs(self->buffer_[i]) > peak)
-                    peak = abs(self->buffer_[i]);
+                sampleAbs = std::abs(static_cast<int32_t>(self->buffer_[i]));
+                if (sampleAbs > peak)
+                    peak = sampleAbs;
             }
             self->peakLevel_ = static_cast<float>((peak / static_cast<float>(self->max_int16_val_)) * 100.0f); //de 0 a 100
 
