@@ -9,15 +9,15 @@ constexpr int NUM_TX = 8;
 
 // Paquete de datos de audio VoIPRec legacy
 struct LegacyAudioPacket {
-    uint64_t txIds[8];
-    uint16_t coding;
-    uint16_t freq;
-    uint16_t b_s;
-    uint16_t nsec;
-    int32_t  timeStamp;
-    uint16_t spare;
-    uint16_t size;
-    int16_t  voice[250];   // _IPSendData = 250 muestras mono, igual que el sistema viejo
+    unsigned long long  txIds[8];
+    unsigned short      coding;
+    unsigned short      freq;
+    unsigned short      b_s;
+    unsigned short      nsec;
+    int                 timeStamp;
+    unsigned short      spare;
+    unsigned short      size;
+    short               voice[250];   // _IPSendData = 250 muestras mono, igual que el sistema viejo
 };
 
 
@@ -55,7 +55,7 @@ public:
 
     ~VoIPRec();
 
-    bool init();
+    bool init(void* config);
 
 // Estado -------------------------------------------------------------------------------
 
@@ -83,7 +83,7 @@ private:
     NetMgr*         net_;
 
     // Metadatos del paquete de audio
-    std::vector<int16_t>    audioBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)
+    std::vector<short>      audioBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)
     unsigned int            sampleRateHz_;      ///< Frecuencia de muestreo
     short                   channels_;          ///< Número de canales
     unsigned int            framesPerPacket_;   ///< _IPSendData del legacy
@@ -91,6 +91,6 @@ private:
     float                   voxThreshold_;      ///< Threshold de envío RMS normalizado 0-100
     int                     voxTailFrames_;     ///< paquetes de "silencio de cierre"
     listaTX                 txIds_;             ///< Metadatos de paquete legacy (IDTX)
-    uint16_t                nsec_ = 0;          ///< número de secuencia 0-127 (legacy)
+    unsigned short          nsec_ = 0;          ///< número de secuencia 0-127 (legacy)
 
 };

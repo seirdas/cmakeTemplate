@@ -22,7 +22,7 @@ VoIPRec::~VoIPRec() {
 
 }
 
-bool VoIPRec::init() {
+bool VoIPRec::init(void* config) {
 
     return false;
 }
