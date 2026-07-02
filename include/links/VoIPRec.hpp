@@ -1,8 +1,30 @@
 #pragma once
 
 #include <array>
+#include <atomic>
+#include <vector>
 
 constexpr int NUM_TX = 8;
+
+
+// Paquete de datos de audio VoIPRec legacy
+struct LegacyAudioPacket {
+    uint64_t txIds[8];
+    uint16_t coding;
+    uint16_t freq;
+    uint16_t b_s;
+    uint16_t nsec;
+    int32_t  timeStamp;
+    uint16_t spare;
+    uint16_t size;
+    int16_t  voice[250];   // _IPSendData = 250 muestras mono, igual que el sistema viejo
+};
+
+
+// Forward declaration para clases Mgr usadas
+class NetMgr;
+class SoundMgr;
+
 
 // Compatibilidad con DIS Signal PDU (IEEE 1278.1-2012, Table B-10)
 enum class AudioEncoding {
@@ -19,6 +41,10 @@ enum class AudioEncoding {
     Legacy_sendComs     = 0xFFFF    // Formato legacy (Voiprec)
 };
 
+/**
+ * @class VoIPRec
+ * @brief Enlace entre un dispositivo de audio y un socket UDP.
+ */
 class VoIPRec {
     
 public:
@@ -31,19 +57,40 @@ public:
 
     bool init();
 
-    
+// Estado -------------------------------------------------------------------------------
+
+    bool start();
+
+    bool stop();
+
+
 private:
+
+// Paquete de datos de audio ------------------------------------------------------------
+
+    std::vector<char> buildLegacyPacket();
+
 
     /************ Variables ********************************************************/
 
     using listaTX = std::array<unsigned int, NUM_TX>;
 
+    // Estado
+    std::atomic<bool>   running_;       ///< Estado del módulo (activo/desactivado)
+    
+    // Conexiones externas
+    SoundMgr*       snd_;
+    NetMgr*         net_;
+
     // Metadatos del paquete de audio
-    unsigned int    sampleRateHz_;      ///< Frecuencia de muestreo
-    short           channels_;          ///< Número de canales
-    unsigned int    framesPerPacket_;   ///< _IPSendData del legacy
-    AudioEncoding   encoding_;          ///< Codificación de envío
-    float           voxThreshold_;      ///< Threshold de envío RMS normalizado 0-100
-    int             voxTailFrames_;     ///< paquetes de "silencio de cierre"
-    listaTX         txIds_;             ///< Metadatos de paquete legacy (IDTX)
+    std::vector<int16_t>    audioBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)
+    unsigned int            sampleRateHz_;      ///< Frecuencia de muestreo
+    short                   channels_;          ///< Número de canales
+    unsigned int            framesPerPacket_;   ///< _IPSendData del legacy
+    AudioEncoding           encoding_;          ///< Codificación de envío
+    float                   voxThreshold_;      ///< Threshold de envío RMS normalizado 0-100
+    int                     voxTailFrames_;     ///< paquetes de "silencio de cierre"
+    listaTX                 txIds_;             ///< Metadatos de paquete legacy (IDTX)
+    uint16_t                nsec_ = 0;          ///< número de secuencia 0-127 (legacy)
+
 };
