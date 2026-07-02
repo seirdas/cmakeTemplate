@@ -98,12 +98,14 @@ JsonMgr& JsonMgr::instance() {
     json* JsonMgr::getSubNode(std::string const& filename, std::string const& key) {
         std::unique_lock<std::mutex> lock(mtx_);
 
+        // busca archivo en cache
         auto it = cache_.find(filename);
         if (it == cache_.end()) {
             SYS_WARN("JsonMgr", filename + " not loaded.");
             return nullptr;
         }
 
+        // crea el sub-nodo si no existe
         json& root = it->second;
         if (!root.contains(key) || !root[key].is_object())
             root[key] = json::object();
@@ -118,8 +120,9 @@ JsonMgr& JsonMgr::instance() {
         // Nota: Si usas hilos concurrentes modificando el MISMO json a la vez,
         // podrías querer proteger esto con std::unique_lock<std::mutex> lock(mtx_);
         // Pero si solo se inicializa al arrancar en el hilo principal, no es crítico.
-        std::unique_lock<std::mutex> lock(mtx_); 
+        std::unique_lock<std::mutex> lock(mtx_);
 
+        // crea el sub-nodo si no existe
         if (!parent->contains(key) || !(*parent)[key].is_object()) {
             (*parent)[key] = json::object();
         }
