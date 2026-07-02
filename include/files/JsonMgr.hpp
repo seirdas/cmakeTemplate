@@ -156,18 +156,18 @@ private:
 
         const json& node = (*config)[key];
 
-        if constexpr (std::is_same_v<T, bool>)
-            if (!node.is_boolean()) 
-                return false;
-        else if constexpr (std::is_same_v<T, std::string>)
-            if (!node.is_string()) 
-                return false;
-        else if constexpr (std::is_floating_point_v<T>)
-            if (!node.is_number()) 
-                return false;
-        else if constexpr (std::is_integral_v<T>)   // <- también entraría con bool
-            if (!node.is_number_integer()) 
-                return false;
+        if constexpr (std::is_same_v<T, bool>) {
+            if (!node.is_boolean()) return false;
+        } 
+        else if constexpr (std::is_same_v<T, std::string>) {
+            if (!node.is_string()) return false;
+        } 
+        else if constexpr (std::is_floating_point_v<T>) {
+            if (!node.is_number()) return false;
+        } 
+        else if constexpr (std::is_integral_v<T>) {   // <- también entraría con bool
+            if (!node.is_number_integer()) return false;
+        }
 
         value = node.get<T>();
         return true;
