@@ -87,8 +87,11 @@
             self->rec_buffer_.insert(self->rec_buffer_.end(), samples, samples + frameCount * self->channels_);
 
         // 3. CALLBACK: Envío de trama de datos de audio de entrada a "otro sitio" si el callback está definido
-        if (self->onFrame_ != nullptr)
-            self->onFrame_(samples, frameCount);
+        {
+            std::lock_guard<std::mutex> lk(self->onFrame_mtx_);
+            if (self->onFrame_ != nullptr)
+                self->onFrame_(samples, frameCount);
+        }
     }
 
     void AudioInputModule::Impl::notificationCallback_(const ma_device_notification* pNotification) {
@@ -226,7 +229,13 @@
     // Callback expuesto --------------------------------------------------------------------
     
     void AudioInputModule::setOnFrameCallback(AudioCallback cb) {
+        std::lock_guard<std::mutex> lk(onFrame_mtx_);
         onFrame_ = std::move(cb); 
+    }
+
+    void AudioInputModule::clearOnFrameCallback() {
+        std::lock_guard<std::mutex> lk(onFrame_mtx_);
+        onFrame_ = nullptr;
     }
 
 
