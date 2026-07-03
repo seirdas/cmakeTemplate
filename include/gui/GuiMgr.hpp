@@ -1,15 +1,17 @@
 #pragma once
 
+#include <memory>               // unique_ptr (pimpl)
 #include <string>
 #include <cstdint>              // uintptr_t
 #include <unordered_map>
-#include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
-// Para evitar añadir el include, declarar las estructuras indicando que existen
 
+// Forward declaration
 struct GLFWwindow;
 struct ImGuiStyle;
 struct ImGuiIO;
+class IAppControl;
+
 
 /**
   * @class GuiMgr
@@ -260,7 +262,9 @@ private:
     // Variables (MenuBar) ______________________
     float           MainMenuBar_Height_       = 0.0f;           ///< Almacena el alto de la barra de menú para ajustar la ventana principal
 
-    TTSData         datosTTS;
+    struct Impl;                        ///< Estructura PIMPL
+    std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de IAppController
+
 };
 
 /**** imgui knobs

@@ -12,32 +12,27 @@
 
 #include "gui/GuiMgr.hpp"			// Clase de gestión de UI
 #include <system/SystemMgr.hpp>
+#include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 
 #if defined IMGUILIB || defined IMGUILIB_VERSION
 
-	#include <cstring>
-
-	#if defined STB || defined STB_VERSION
-		#include <stb_image.h>          // Implementación para soporte de imágenes.
-	#endif
-
-	// GLFW / OpenGL
-	#include <GLFW/glfw3.h>
-	#include <backends/imgui_impl_glfw.h>
-	#include <backends/imgui_impl_opengl3.h>
-	#ifdef _WIN32
-		#include <GLFW/glfw3native.h>
-	#endif
-
-	// Imgui + plugins
-	#include <imgui.h>
-	#include <imgui_internal.h>
-	#include <implot.h>
+	#include <imgui.h>				// ImGui external lib
+	#include <imgui_internal.h>		// ImGui external lib
+	#include <implot.h>				// ImPlot external lib
 	#include "imgui-knobs.h"		// Soporte de knobs
 	#include "imspinner.h"			// Soporte de spinners de carga
 	#include "imspinner_dots.h"		// Spinners de puntos (SpinnerSwingDots, etc.)
 	#include "imspinner_bars.h"		// Spinners de barras (SpinnerBarChartRainbow, etc.)
+	#include <GLFW/glfw3.h>						// Gestor de ventanas GLFW
+	#include <backends/imgui_impl_glfw.h>		// Gestor de ventanas GLFW
+	#include <backends/imgui_impl_opengl3.h>	// Gestor GLFW/OpenGL
+	#ifdef _WIN32
+		#include <GLFW/glfw3native.h>
+	#endif
+	#if defined STB || defined STB_VERSION
+		#include <stb_image.h>          // Implementación para soporte de imágenes.
+	#endif
 
 	// Sistema
 	#ifdef _WIN32
@@ -50,17 +45,27 @@
 	#include "resources.h"  // icono
 	#include "fonts.h"		// Fuentes generadas en resources/
 
+	#include <cstring>
+
 
 	// Se puede evitar poner "ImGui::" para simplificar
 	using namespace ImGui;
 
+	// Implementación de miembros de declaraciones forward
+    struct GuiMgr::Impl {
+        TTSData         datosTTS;
+    };
+
 
 	// General ------------------------------------------------------------------------------
 
-	GuiMgr::GuiMgr(IAppControl* controller) : ctrl_(controller) {
+	GuiMgr::GuiMgr(IAppControl* controller) : 
+		ctrl_(controller),
+        pimpl_(std::make_unique<Impl>())
+	{
 		
 		// Avisa si se ha inicializado sin interfaz de comunicación para saber de otros módulos
-		if (ctrl_==nullptr)
+		if (!ctrl_)
 			SYS_WARN("GuiMgr","Cannot handle any controller.");
 
 		// Avisa si no tiene soporte STB para imágenes
@@ -346,7 +351,7 @@
 		static std::string TTS_text;
 		
 		// Coge datos de módulos
-		datosTTS = ctrl_->getTTSData();
+		pimpl_->datosTTS = ctrl_->getTTSData();
 	
 		
 		// COLUMNA IZQUIERDA
@@ -356,15 +361,15 @@
 			BeginChild("##F1", ImVec2(sizeX__Izq, GetContentRegionAvail().y), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_FrameStyle);
 
 			// Mostrar carga de TTS
-			if (datosTTS.init_percent < 100) {
+			if (pimpl_->datosTTS.init_percent < 100) {
 				ImSpinner::SpinnerPulsar("Pulsar",  6, 2, ImColor(.5f,.5f,.5f));
 				SameLine();
 				TTS_text = "Loading TTS voice models: ";
-				TTS_text += std::to_string(datosTTS.num_loaded_models) + "/" + std::to_string(datosTTS.num_available_models);
+				TTS_text += std::to_string(pimpl_->datosTTS.num_loaded_models) + "/" + std::to_string(pimpl_->datosTTS.num_available_models);
 			} else TTS_text = "TTS voice models loaded.";
 			
 			Text("%s", TTS_text.c_str());
-			ProgressBar(datosTTS.init_percent/100.0f, ImVec2(0.0f, 0.0f));
+			ProgressBar(pimpl_->datosTTS.init_percent/100.0f, ImVec2(0.0f, 0.0f));
 	
 			// Botón de modo
 			if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
@@ -575,7 +580,7 @@
 				if (BeginTabItem("TTS")) {
 					// --- CONFIGURACIÓN PREVIA ---
 					static int selected_idx = 0;
-					std::string current_model = (!datosTTS.loaded_models.empty()) ? datosTTS.loaded_models[selected_idx] : "";
+					std::string current_model = (!pimpl_->datosTTS.loaded_models.empty()) ? pimpl_->datosTTS.loaded_models[selected_idx] : "";
 	
 					static std::string proc_text;
 
@@ -625,10 +630,10 @@
 						if (is_online) BeginDisabled(); // Si es online, todo lo que sigue se deshabilita
 
 						SetNextItemWidth(-FLT_MIN); // Que ocupe todo el ancho del child
-						const char* preview_value = (datosTTS.loaded_models.empty()) ? "" : datosTTS.loaded_models[selected_idx].c_str();
+						const char* preview_value = (pimpl_->datosTTS.loaded_models.empty()) ? "" : pimpl_->datosTTS.loaded_models[selected_idx].c_str();
 						if (BeginCombo("##cb_model", preview_value)) {
-							for (int n = 0; n < static_cast<int>(datosTTS.loaded_models.size()); ++n) {
-								if (Selectable(datosTTS.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
+							for (int n = 0; n < static_cast<int>(pimpl_->datosTTS.loaded_models.size()); ++n) {
+								if (Selectable(pimpl_->datosTTS.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
 							}
 							EndCombo();
 						}
