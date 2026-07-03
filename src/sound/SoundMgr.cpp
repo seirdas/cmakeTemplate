@@ -49,8 +49,8 @@
             return false;
         }
 
-        //carga la configuración si existe, despues de iniciar el context
-        if(config) 
+        // Leer configuración si se proporciona y es posible
+        if (config)
             loadConfig(config);
 
         // Obtener dispositivos de captura/playback
@@ -172,12 +172,12 @@
         }
 
         // Obtener el nombre de la config
-        std::string device = "";
+        std::string deviceName = "";
         JsonMgr& jsonMgr = JsonMgr::instance();
-        jsonMgr.get_or_set(static_cast<json*>(config), "device", device);
+        jsonMgr.get_or_set(static_cast<json*>(config), "device", deviceName);
 
         // Comprobación del nombre
-        if (device.empty()) {
+        if (deviceName.empty()) {
             SYS_WARN("SoundMgr","addCaptureDevice: Device name is empty.");
             return false;
         }
@@ -186,34 +186,34 @@
         updateDevices();
 
         // bucle para encontrar el dispositivo cuyo nombre real contenga lo escrito en la config
-        short count = 0;
-        ma_device_info* selectedDeviceInfo = nullptr;                      // puntero al dispositivo encontrado, empieza en null (ninguno encontrado aún)
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {     // recorre todos los dispositivos de captura reales, uno a uno
-            std::string realName = pimpl_->pCaptureDevInfos_[i].name;  // coge el nombre real del dispositivo 
-            if (realName.find(device) != std::string::npos) {         // comprueba si "device" aparece dentro de "realName" (npos = "no encontrado")
-                selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];    // si coincide, guarda un puntero a ese dispositivo
+        short count = 0;                                                 // Contador para identificar nombre ambiguo
+        std::string realName = "";                                       // Almacena el nombre real del dispositivo
+        ma_device_info* selectedDeviceInfo = nullptr;                    // puntero al dispositivo encontrado, empieza en null (ninguno encontrado aún)
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {       // recorre todos los dispositivos de captura reales, uno a uno
+            realName = pimpl_->pCaptureDevInfos_[i].name;                // coge el nombre real del dispositivo 
+            if (realName.find(deviceName) != std::string::npos) {        // comprueba si "device" aparece dentro de "realName" (npos = "no encontrado")
+                selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];      // si coincide, guarda un puntero a ese dispositivo
                 count++;                                                 // y sale del bucle, ya no hace falta seguir buscando
             }
         }
 
-        // Se han encontrado varios con el mismo nombre
+        // Sale si se han encontrado varios con el mismo nombre
         if (count > 1) {
-            SYS_WARN("SoundMgr","Cannot initialize audio input: Ambiguous name specified.");
+            SYS_WARN("SoundMgr","Cannot initialize audio input: Ambiguous name specified: '" + deviceName + "'");
             return false;
         }
 
-        
         // Si no encuentra ningún nombre salta fallo
         if(!selectedDeviceInfo){
-            SYS_WARN("SoundMgr", "Failed to found device with name"); 
+            SYS_WARN("SoundMgr", "Failed to found device: '" + deviceName + "'"); 
             return false; 
         }
 
-        //corrige la config con el nombre completo real para que quede guardado igual
-        device = selectedDeviceInfo->name; 
-        jsonMgr.set(static_cast<json*>(config), "device", device);
+        // corrige la config con el nombre completo real para que quede guardado igual
+        deviceName = selectedDeviceInfo->name; 
+        jsonMgr.set(static_cast<json*>(config), "device", deviceName);
             
-        SYS_INFO("SoundMgr", "Initializing capture device:" + device); 
+        SYS_INFO("SoundMgr", "Initializing capture device: " + deviceName); 
 
         // Crear AudioInputModule
         std::unique_ptr<AudioInputModule> aim = std::make_unique<AudioInputModule>(
@@ -403,8 +403,8 @@
         }
 
         // Si no ha encontrado nada saltar fallo y return
-        if (selectedDeviceInfo == nullptr) {
-            SYS_WARN("SoundMgr","Failed to found device with name");
+        if (!selectedDeviceInfo) {
+            SYS_WARN("SoundMgr","Failed to found device" + deviceName);
             return false;
         }
         SYS_INFO("SoundMgr", "Using playback device: " + deviceName);
