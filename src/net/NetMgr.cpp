@@ -216,8 +216,9 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool NetMgr::init(void* config) {
-        //carga la configuración si existe
-        if (config) loadConfig(config);
+        // Leer configuración si se proporciona y es posible
+        if (config)
+            loadConfig(config);
 
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {
@@ -458,30 +459,36 @@
 
         if (!config) 
             return;
+
+            
             
         // Se considera que la configuración se pasa como json    
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
-        // hago un puntero que apunte al array dentro del nodo principal en el json
+        // hago un vector que apunte al array de los nodos json dentro del nodo principal
         std::vector<json*> config_net = jsonMgr.getArrayElements(cfg, "udpSockets");
 
-        // bucle que recorre los elementos de dentro del nodo
-        for (short i=0; i < config_net.size(); i++){
-            std::string name = ""; //inicializa el nombre
-            short port = 0; // inicializa el puerto
+        // Bucle que recorre los elementos de dentro del nodo
+        short port = 0;
+        std::string name = "";
+        for (short i = 0; i < config_net.size(); i++){
+            name = "";      // (re)inicializa el nombre
+            port = 0;       // (re)inicializa el puerto
 
             // usamos get_or_set para leerlo del json y si no está rellenar el json
-            jsonMgr.get_or_set(config_net[i], "name", name); //busca el nombre
-            jsonMgr.get_or_set(config_net[i], "port", port); //busca el puerto
+            jsonMgr.get_or_set(config_net[i], "name", name); // busca el nombre
+            jsonMgr.get_or_set(config_net[i], "port", port); // busca el puerto
 
             // si el nombre y el puerto no estan vacios, crea el socket
-            if(!name.empty() && port>0){
+            if(!name.empty() && port > 0) {
                 addUdpSocket(name, port);
-                printUdpSockets(); //compruebo que los ha leído y guardado bien
             }
         }
- 
+
+        // Comprobar que se han leído bien (al final)
+        printUdpSockets();
+
 
     }
 
