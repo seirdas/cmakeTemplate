@@ -176,10 +176,9 @@ private:
     // Configuración de entrada
     unsigned int            channels_;            ///< Canales del audio
     unsigned int            sampleRate_;          ///< Frecuencia de muestreo
-    std::vector<int16_t>    buffer_;              ///< Buffer que acumula las muestras de audio capturadas (formato s16)
-    unsigned int            processBufferSize_;   ///< frames por bloque de proceso
     std::string             name_;                ///< Nombre asociado al dispositivo de captura
     std::string             device_;              ///< Nombre del dispositivo de captura
+    bool                    is_valid_;            ///< Bandera para indicar si está inicializado el dispositivo
 
     // Grabación 
     std::vector<int16_t>    rec_buffer_;          ///< Buffer que acumula las muestras de audio capturadas para grabación (formato s16)
@@ -187,15 +186,13 @@ private:
     std::atomic<bool>       recording_;           ///< Flag para guardar samples de audio en el buffer de grabación
     std::string             rec_filename_;        ///< Nombre de archivo generado con la grabación (para INFO)
     
-    // Datos del dispositivo  
-    bool                    is_valid_;            ///< Bandera para indicar si está inicializado el dispositivo
-    std::string             deviceName_;          ///< Nombre del dispositivo
-
     // Captura
     const int16_t           max_int16_val_;       ///< Máximo valor de  Normalizar entre 0 y 100, sobre el valor máximo del tipo int16_t
     std::atomic<float>      rmsLevel_;            ///< Nivel actual de señal (RMS o pico según usePeak_)
     std::atomic<float>      peakLevel_;           ///< Nivel de pico (solo cuando usePeak_ == true)
-    
+    std::vector<int16_t>    captureBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)
+    unsigned int            processBufferSize_;   ///< frames por bloque de proceso
+
     // Callback
     AudioCallback           onFrame_;             ///< Almacena la función de callback registrada externamente
     mutable std::mutex      onFrame_mtx_;         ///< Mutex para acceso a la función onFrame callback

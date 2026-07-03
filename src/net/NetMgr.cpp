@@ -216,6 +216,7 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool NetMgr::init(void* config) {
+        //carga la configuración si existe
         if (config) loadConfig(config);
 
         // Evitar lanzar hilos si ya están corriendo
