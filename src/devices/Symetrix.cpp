@@ -2,18 +2,49 @@
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
 
+
+// General ------------------------------------------------------------------------------
+
+Symetrix::Symetrix() :
+    pimpl_(std::make_unique<Impl>()),
+    SymetrixIP_("192.168.7.21"),
+    wsaStarted_(false),
+    connected_(false),
+    initialized_(false),
+    connection_ping_timeout_ms_(500),
+    ComposerPort_(48631),
+    tolerance_percent_(2),            // Por defecto tolerancias de un 2% sobre el rango
+    dBcurve_gamma_(0.415f),
+    supermatrix_ins_(20),             // Por defecto para tener 20 entradas (se puede cambiar por método)
+    supermatrix_outs_(20),            // Por defecto para tener 20 salidas (se puede cambiar por método)
+    kBootPreset_(1)
+{
+
+}
+
+void Symetrix::loadConfig(void* config) {
+    if (!config)
+        return;
+
+    SYS_INFO("Symetrix","Reading config node...");
+
+    // Se considera que la configuración se pasa como json
+    json* cfg = static_cast<json*>(config);
+    JsonMgr& jsonMgr = JsonMgr::instance();
+
+    jsonMgr.get_or_set(cfg, "SymetrixIP",                   SymetrixIP_);
+    jsonMgr.get_or_set(cfg, "connection_ping_timeout_ms",   connection_ping_timeout_ms_);
+    jsonMgr.get_or_set(cfg, "ComposerPort",                 ComposerPort_);
+    jsonMgr.get_or_set(cfg, "tolerance_percent",            tolerance_percent_);            // Por defecto tolerancias de un 2% sobre el rango
+    jsonMgr.get_or_set(cfg, "dBcurve_gamma",                dBcurve_gamma_);
+    jsonMgr.get_or_set(cfg, "supermatrix_ins",              supermatrix_ins_);             // Por defecto para tener 20 entradas (se puede cambiar por método)
+    jsonMgr.get_or_set(cfg, "supermatrix_outs",             supermatrix_outs_);            // Por defecto para tener 20 salidas (se puede cambiar por método)
+    jsonMgr.get_or_set(cfg, "kBootPreset",                  kBootPreset_);
+}
+
+
 // Symetrix Composer solo se puede descargar para Windows/Mac. Se usan las funciones de socket de Windows directamente.
 #ifdef WIN32
-
-    // Definiciones por si no están definidos SYS_INFO ni SYS_WARN de SystemMgr
-    #ifdef SYS_INFO
-        #include <iostream>
-        #define SYS_INFO(module,msg) std::cout << module << msg << std::endl;
-    #endif
-    #ifndef SYS_WARN
-        #include <iostream>
-        #define SYS_WARN(module,msg) std::cerr << module << msg << std::endl;
-    #endif
 
     // Forzar definiciones de compilación necesarias si no están activas
     #ifndef WIN32_LEAN_AND_MEAN
@@ -25,12 +56,10 @@
 
     #include <winsock2.h>       ///< Proporciona la funcionalidad base de Windows Sockets API (Winsock 2).
     #include <ws2tcpip.h>       ///< Extensiones de Winsock para protocolos TCP/IP, incluye funciones como inet_pton.
-
     #include <charconv>         ///< Conversiones primitivas de bajo nivel entre números y cadenas (desde C++17).
     #include <cmath>            ///< Funciones matemáticas comunes (seno, coseno, potencia, etc.).
     #include <cstdlib>          ///< Utilidades generales de C (gestión de memoria, conversión de tipos, aleatorios).
     #include <cstring>          ///< Funciones para manipulación de cadenas y bloques de memoria al estilo C.
-
     #include <string>           ///< Clase std::string para manipulación de cadenas de texto.
     #include <vector>           ///< Contenedor de secuencia dinámica (std::vector).
     #include <algorithm>        ///< std::clamp
@@ -43,26 +72,15 @@
 
     // General ------------------------------------------------------------------------------
 
-    Symetrix::Symetrix() :
-        pimpl_(std::make_unique<Impl>()),
-        SymetrixIP_("192.168.7.21"),
-        wsaStarted_(false),
-        connected_(false),
-        initialized_(false),
-        connection_ping_timeout_ms_(500),
-        ComposerPort_(48631),
-        tolerance_percent_(2),            // Por defecto tolerancias de un 2% sobre el rango
-        dBcurve_gamma_(0.415f),
-        supermatrix_ins_(20),             // Por defecto para tener 20 entradas (se puede cambiar por método)
-        supermatrix_outs_(20),            // Por defecto para tener 20 salidas (se puede cambiar por método)
-        kBootPreset_(1)
-    {
-
-    }
+    /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
+    // Symetrix::Symetrix() {...}
 
     Symetrix::~Symetrix() {
         Destroy();
     }
+
+    /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
+    // Symetrix::loadConfig(void* config) {...}
 
 
     // Ejecución ----------------------------------------------------------------------------
@@ -72,7 +90,9 @@
         // No hacer nada si ya está inicializado y no se fuerza el init
         if (initialized_) return true;
 
-        loadConfig(config);
+        // Leer configuración si se proporciona y es posible
+        if (config)
+            loadConfig(config);
 
         // Si entra aquí, se ha forzado la inicialización. Limpiar lo que hubiera
         if (initialized_) {
@@ -531,27 +551,6 @@
     }
 
 
-    // Configuración ------------------------------------------------------------------------
-
-    void Symetrix::loadConfig(void* config) {
-         if (!config)
-            return;
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        jsonMgr.get_or_set(cfg, "SymetrixIP",                   SymetrixIP_);
-        jsonMgr.get_or_set(cfg, "connection_ping_timeout_ms",   connection_ping_timeout_ms_);
-        jsonMgr.get_or_set(cfg, "ComposerPort",                 ComposerPort_);
-        jsonMgr.get_or_set(cfg, "tolerance_percent",            tolerance_percent_);            // Por defecto tolerancias de un 2% sobre el rango
-        jsonMgr.get_or_set(cfg, "dBcurve_gamma",                dBcurve_gamma_);
-        jsonMgr.get_or_set(cfg, "supermatrix_ins",              supermatrix_ins_);             // Por defecto para tener 20 entradas (se puede cambiar por método)
-        jsonMgr.get_or_set(cfg, "supermatrix_outs",             supermatrix_outs_);            // Por defecto para tener 20 salidas (se puede cambiar por método)
-        jsonMgr.get_or_set(cfg, "kBootPreset",                  kBootPreset_);
-    }
-    
-
     // Tolerancias (privado) ----------------------------------------------------------------
 
     void Symetrix::setTolerance(unsigned int id, unsigned int newTolerance) {
@@ -643,25 +642,23 @@
 // Definición del struct de pimpl vacío
 struct Symetrix::Impl {};
 
-Symetrix::Symetrix() :
-    pimpl_(std::make_unique<Impl>()),
-    wsaStarted_(false),
-    connected_(false),
-    initialized_(false),
-    connection_ping_timeout_ms_(0),
-    ComposerPort_(48631),
-    tolerance_percent_(2),
-    supermatrix_outs_(20),
-    supermatrix_ins_(20),
-    kBootPreset_(0)
-{
-    SYS_WARN("Symetrix", "Symetrix not compatible in non-Windows OS. Network bypassed.");
-}
+// General ------------------------------------------------------------------------------
+
+/* Movido fuera el encapsulado WIN32, común en ambos sistemas */
+// Symetrix::Symetrix() {...}
 
 Symetrix::~Symetrix() {}
 
+/* Movido fuera el encapsulado WIN32, común en ambos sistemas */
+// Symetrix::loadConfig(void* config) {...}
+
+
 // Ejecución ----------------------------------------------------------------------------
-bool Symetrix::init(void*) { return false; }
+bool Symetrix::init(void* config) { 
+    SYS_WARN("Symetrix", "Symetrix not compatible in non-Windows OS.");
+    loadConfig(config); // Para leer/escribir en el json igualmente
+    return false; 
+}
 void Symetrix::Destroy() {}
 bool Symetrix::isConnected() const { return false; }
 

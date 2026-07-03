@@ -52,6 +52,16 @@ public:
      */
     ~Symetrix();
 
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config = nullptr); 
+
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -249,21 +259,8 @@ private:
      */
     int getCachedTolerance(unsigned int id) const;
     
-
-    // Configuración ------------------------------------------------------------------------
-
-    /**
-    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
-    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
-    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
-    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
-    * esté completo y sincronizado.
-    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
-    */
-    void loadConfig(void* config = nullptr); 
-
     
-    // Tolerancias (privado) ----------------------------------------------------------------
+// Tolerancias (privado) ----------------------------------------------------------------
 
     /**
      * @brief Asigna el umbral de tolerancia directamente en unidades de "ticks" a un componente en la caché.
