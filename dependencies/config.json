@@ -5,13 +5,42 @@
             {
                 "name": "host",
                 "port": 8001
+            },
+            {
+                "name": "tts",
+                "port": 8002
             }
         ]
     },
-    "sound": {
-        "Capture": [],
-        "Playback": []
+"sound": {
+    "Capture": [
+        {
+            "device": "mic",
+            "name": "PILOTO",
+            "numchannels": 2,
+            "process_buffer_size": 1024,
+            "sample_rate": 48000
+        },
+        {
+            "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
+            "name": "COPILOTO",
+            "numchannels": 2,
+            "process_buffer_size": 1024,
+            "sample_rate": 48000
+        },
+        {
+            "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
+            "name": "IOS",
+            "numchannels": 2,
+            "process_buffer_size": 1024,
+            "sample_rate": 48000
+        }
+    ],
+
+    "Playback": []
+
     },
+    
     "symetrix": {},
     "totalmix": {
         "localIP": "127.0.0.1",

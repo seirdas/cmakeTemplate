@@ -69,7 +69,7 @@ void AppController::refreshAudioDevices() noexcept {
 }
 
 bool AppController::addInputDevice(std::string const& name) noexcept {
-    return snd_.addCaptureDevice(name, 0);
+    return snd_.addCaptureDevice(name);
 }
 
 bool AppController::removeInputDevice(unsigned short index) noexcept {

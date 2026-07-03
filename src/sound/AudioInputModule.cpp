@@ -52,17 +52,19 @@
         const int16_t* samples = static_cast<const int16_t*>(pInput);
 
         // 1. NIVEL DE SEÑAL: Procesar frame de muestras de captura (normales) y limpiar buffer cuando se llene
-        self->buffer_.insert(self->buffer_.end(), samples, samples + frameCount * self->channels_);
+        self->captureBuffer_.insert(self->captureBuffer_.end(), samples, samples + frameCount * self->channels_);
 
         // Procesamos solo cuando el buffer acumulado alcance el tamaño deseado
         ma_uint32 targetSize = self->processBufferSize_ * self->channels_;
-        if (self->buffer_.size() >= targetSize) {
+        if (self->captureBuffer_.size() >= targetSize) {
 
             /* Valor de pico del buffer */
-            int16_t peak = 0;
+            int32_t peak = 0;       // 32 bits para evitar overflow con el valor -32768 
+            int32_t sampleAbs = 0;
             for (unsigned int i = 0; i < targetSize; ++i) {
-                if (abs(self->buffer_[i]) > peak)
-                    peak = abs(self->buffer_[i]);
+                sampleAbs = std::abs(static_cast<int32_t>(self->captureBuffer_[i]));
+                if (sampleAbs > peak)
+                    peak = sampleAbs;
             }
             self->peakLevel_ = static_cast<float>((peak / static_cast<float>(self->max_int16_val_)) * 100.0f); //de 0 a 100
 
@@ -71,7 +73,7 @@
             double sampleVal = 0.0f;
             double sum = 0.0f;
             for (unsigned int i = 0; i < targetSize; ++i) {
-                sampleVal = static_cast<double>(self->buffer_[i]);
+                sampleVal = static_cast<double>(self->captureBuffer_[i]);
                 sum += sampleVal * sampleVal;
             }
             double rms = std::sqrt(sum / targetSize); // La raiz es más eficiente hacerla fuera del bucle
@@ -79,7 +81,7 @@
             if (self->peakLevel_ > 100.0f) self->peakLevel_ = 100.0f;
         
             /* Limpieza de buffer */
-            self->buffer_.clear();
+            self->captureBuffer_.clear();
         }
 
         // 2. GRABACIÓN: Guarda los samples en el buffer de grabación si está grabando. Cada frame tiene una muestra por canal
@@ -87,8 +89,11 @@
             self->rec_buffer_.insert(self->rec_buffer_.end(), samples, samples + frameCount * self->channels_);
 
         // 3. CALLBACK: Envío de trama de datos de audio de entrada a "otro sitio" si el callback está definido
-        if (self->onFrame_ != nullptr)
-            self->onFrame_(samples, frameCount);
+        {
+            std::lock_guard<std::mutex> lk(self->onFrame_mtx_);
+            if (self->onFrame_ != nullptr)
+                self->onFrame_(samples, frameCount);
+        }
     }
 
     void AudioInputModule::Impl::notificationCallback_(const ma_device_notification* pNotification) {
@@ -121,7 +126,7 @@
     onFrame_(nullptr),
     max_int16_val_(std::numeric_limits<int16_t>::max())
     {
-        deviceName_ = pimpl_->device_info.name;
+        device_ = pimpl_->device_info.name;
     }
 
     AudioInputModule::~AudioInputModule() {
@@ -191,7 +196,12 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
-        jsonMgr.get_or_set(cfg, "channels", channels_);
+        jsonMgr.get_or_set(cfg, "name", name_);
+        
+        /* Esto ya llega en la inicialización, en devInfo del constructor */
+        //jsonMgr.get_or_set(cfg, "device", device_);
+        
+        jsonMgr.get_or_set(cfg, "numchannels", channels_);
         jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
         jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
     }
@@ -200,7 +210,7 @@
     // Información y parámetros -------------------------------------------------------------
 
     std::string AudioInputModule::deviceName() const { 
-        return deviceName_; 
+        return device_; 
     }
 
     bool AudioInputModule::isValid() {
@@ -219,14 +229,20 @@
     }
     
     size_t AudioInputModule::getBufferSize() {
-        return buffer_.size();
+        return captureBuffer_.size();
     };
 
 
     // Callback expuesto --------------------------------------------------------------------
     
     void AudioInputModule::setOnFrameCallback(AudioCallback cb) {
+        std::lock_guard<std::mutex> lk(onFrame_mtx_);
         onFrame_ = std::move(cb); 
+    }
+
+    void AudioInputModule::clearOnFrameCallback() {
+        std::lock_guard<std::mutex> lk(onFrame_mtx_);
+        onFrame_ = nullptr;
     }
 
 

@@ -122,6 +122,20 @@ public:
     bool get_or_set(json* config, std::string const& key, T& value);
 
 
+    /**
+     * @brief Escribe un valor en el JSON, sobrescribiendo la clave si ya existía.
+     * @details siempre asigna @p value a la clave indicada.
+     * @tparam T Tipo de dato.
+     * @param config Puntero al objeto JSON.
+     * @param key Nombre de la clave a escribir.
+     * @param value Valor a guardar en el JSON.
+     * @return true Si se ha escrito correctamente.
+     * @return false Si @p config es @c nullptr.
+     */
+    template<typename T>
+    bool set(json* config, std::string const& key, T& value);
+
+
 private:
 
 // Otros --------------------------------------------------------------------------------
@@ -156,18 +170,18 @@ private:
 
         const json& node = (*config)[key];
 
-        if constexpr (std::is_same_v<T, bool>)
-            if (!node.is_boolean()) 
-                return false;
-        else if constexpr (std::is_same_v<T, std::string>)
-            if (!node.is_string()) 
-                return false;
-        else if constexpr (std::is_floating_point_v<T>)
-            if (!node.is_number()) 
-                return false;
-        else if constexpr (std::is_integral_v<T>)   // <- también entraría con bool
-            if (!node.is_number_integer()) 
-                return false;
+        if constexpr (std::is_same_v<T, bool>) {
+            if (!node.is_boolean()) return false;
+        } 
+        else if constexpr (std::is_same_v<T, std::string>) {
+            if (!node.is_string()) return false;
+        } 
+        else if constexpr (std::is_floating_point_v<T>) {
+            if (!node.is_number()) return false;
+        } 
+        else if constexpr (std::is_integral_v<T>) {   // <- también entraría con bool
+            if (!node.is_number_integer()) return false;
+        }
 
         value = node.get<T>();
         return true;
@@ -175,11 +189,23 @@ private:
 
     template<typename T>
     bool JsonMgr::get_or_set(json* config, std::string const& key, T& value) {
+        if (!config)
+            return false;
+        
         if (get<T>(config, key, value))
             return true;
 
         (*config)[key] = value; 
         return false;           
+    }
+
+    template<typename T>
+    bool JsonMgr::set(json* config, std::string const& key, T& value) {
+        if (!config)
+            return false;
+        
+        (*config)[key] = value; 
+        return true;
     }
 
 #else

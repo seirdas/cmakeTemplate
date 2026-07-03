@@ -38,6 +38,16 @@ public:
     bool init(void* config);
 
     /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
+
+    /**
     * @brief Para el motor de audio.
     * @returns True si la parada ha sido correcta, false en caso contrario. 
     */
@@ -48,17 +58,6 @@ public:
      */
     bool updateDevices();
 
-    // Carga de configuración ---------------------------------------------------------------
-
-    /**
-    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
-    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
-    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
-    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
-    * esté completo y sincronizado.
-    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
-    */
-    void loadConfig(void* config);
 
 // Capture Input ------------------------------------------------------------------------
 
@@ -73,9 +72,18 @@ public:
     std::string getDefaultInputDevice() const;
 
     /**
-     * @brief Añadir como dispositivo de captura
+     * @brief Añadir un nuevo dispositivo de captura a partir de una config (json)
+     * @param config Puntero a parámetros de dispositivo (json)
+     * @return @c true Si se ha creado correctamente, @c false en caso contrario
+     */
+    bool addCaptureDevice(void* config);
+
+    /**
+     * @brief Añadir un nuevo dispositivo de captura con parámetros por defecto
+     * @param name Nombre de dispositivo de captura
+     * @return @c true Si se ha creado correctamente, @c false en caso contrario
      */ 
-    bool addCaptureDevice(std::string const& name, unsigned short index);
+    bool addCaptureDevice(std::string const& name);
 
     /**
      * @brief Eliminar el dispositivo de captura

@@ -98,7 +98,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar gestor de sonidos
     SYS_INFO("AppController","Sound subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"sound");
-    snd_initialized_ = snd_.init(nullptr);
+    snd_initialized_ = snd_.init(config_node);
     if(!snd_initialized_)
         SYS_ERROR("AppController","Sound subsystem FAIL");
     else SYS_INFO("AppController","Sound subsystem OK");

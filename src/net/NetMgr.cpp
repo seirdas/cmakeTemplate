@@ -216,6 +216,7 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool NetMgr::init(void* config) {
+        //carga la configuración si existe
         if (config) loadConfig(config);
 
         // Evitar lanzar hilos si ya están corriendo
@@ -462,23 +463,26 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
-        /*
-        
-        if (!cfg->contains("udpSockets") || !(*cfg)["udpSockets"].is_array())
-            return;
+        // hago un puntero que apunte al array dentro del nodo principal en el json
+        std::vector<json*> config_net = jsonMgr.getArrayElements(cfg, "udpSockets");
 
-        for (auto& s : (*cfg)["udpSockets"]) {
-            std::string    name        = s.value("name",        "");
-            unsigned short port        = s.value("port",        (unsigned short)0);
-            std::string    ip          = s.value("ip",          "");
-            unsigned int   packet_size = s.value("packet_size", 0u);
+        // bucle que recorre los elementos de dentro del nodo
+        for (short i=0; i < config_net.size(); i++){
+            std::string name = ""; //inicializa el nombre
+            short port = 0; // inicializa el puerto
 
-            if (!name.empty() && port > 0)
-                addUdpSocket(name, port, ip, packet_size);
+            // usamos get_or_set para leerlo del json y si no está rellenar el json
+            jsonMgr.get_or_set(config_net[i], "name", name); //busca el nombre
+            jsonMgr.get_or_set(config_net[i], "port", port); //busca el puerto
+
+            // si el nombre y el puerto no estan vacios, crea el socket
+            if(!name.empty() && port>0){
+                addUdpSocket(name, port);
+                printUdpSockets(); //compruebo que los ha leído y guardado bien
+            }
         }
-                
-        */
-        
+ 
+
     }
 
 #else
