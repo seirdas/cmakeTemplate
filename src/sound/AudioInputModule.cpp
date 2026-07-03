@@ -196,7 +196,9 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
-        jsonMgr.get_or_set(cfg, "channels", channels_);
+        jsonMgr.get_or_set(cfg, "name", name_);
+        jsonMgr.get_or_set(cfg, "device", device_);
+        jsonMgr.get_or_set(cfg, "numchannels", channels_);
         jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
         jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
     }

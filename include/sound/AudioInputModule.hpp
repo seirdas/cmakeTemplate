@@ -178,6 +178,8 @@ private:
     unsigned int            sampleRate_;          ///< Frecuencia de muestreo
     std::vector<int16_t>    buffer_;              ///< Buffer que acumula las muestras de audio capturadas (formato s16)
     unsigned int            processBufferSize_;   ///< frames por bloque de proceso
+    std::string             name_;                ///< Nombre asociado al dispositivo de captura
+    std::string             device_;              ///< Nombre del dispositivo de captura
 
     // Grabación 
     std::vector<int16_t>    rec_buffer_;          ///< Buffer que acumula las muestras de audio capturadas para grabación (formato s16)
