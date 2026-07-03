@@ -204,7 +204,7 @@
 
         
         // Si no encuentra ningún nombre salta fallo
-        if(selectedDeviceInfo==nullptr){
+        if(!selectedDeviceInfo){
             SYS_WARN("SoundMgr", "Failed to found device with name"); 
             return false; 
         }
@@ -256,7 +256,7 @@
         }
         
         // Si no encuentra ningún nombre salta fallo
-        if(selectedDeviceInfo==nullptr){
+        if(!selectedDeviceInfo){
             SYS_WARN("SoundMgr", "Failed to found device with name"); 
             return false; 
         }
