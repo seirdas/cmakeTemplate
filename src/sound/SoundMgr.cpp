@@ -10,6 +10,8 @@
     #include <chrono>
     #include <thread>
     #include "system/SystemMgr.hpp"
+    #include "files/JsonMgr.hpp"    // Para conocer json
+
 
     // Implementación de miembros de la clase de miniaudio (pimpl_)
     struct SoundMgr::Impl {
@@ -47,11 +49,32 @@
             return false;
         }
 
+        //carga la configuración si existe, despues de iniciar el context
+        if(config) 
+            loadConfig(config);
+
         // Obtener dispositivos de captura/playback
         if (!updateDevices())
             SYS_WARN("SoundMgr","Failed to get playback devices.");
 
         return ctx_initialized_;
+    }
+
+    void SoundMgr::loadConfig(void* config) {
+        if (!config) 
+            return;
+            
+        // Se considera que la configuración se pasa como json    
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        // obtener un array de punteros json
+        std::vector<json*> config_elements = jsonMgr.getArrayElements(cfg, "Capture");
+
+        // bucle que recorre los elementos de dentro del nodo
+        for (short i=0; i < config_elements.size(); i++) 
+            addCaptureDevice(config_elements[i]);
+        
     }
 
     bool SoundMgr::stop() {
@@ -134,7 +157,66 @@
         /*else*/ return "";
     }
     
-    bool SoundMgr::addCaptureDevice(std::string const& name, unsigned short index) {
+    bool SoundMgr::addCaptureDevice(void* config) {
+     
+        // Comprobar que el contexto está inicializado
+        if (!ctx_initialized_){
+            SYS_WARN("SoundMgr", "Audio context not initialized.");
+            return false; 
+        }
+
+        // Comprobar que existe la config
+        if (!config) {
+            SYS_WARN("SoundMgr","Cannot initialize audio input: empty config.");
+            return false;
+        }
+
+        // Obtener el nombre de la config
+        std::string device = "";
+        JsonMgr& jsonMgr = JsonMgr::instance();
+        jsonMgr.get_or_set(static_cast<json*>(config), "device", device);
+
+        // Refrescar lista de dispositivos disponibles
+        updateDevices(); 
+
+        // bucle para encontrar el nombre que hemos seleccionado
+        ma_device_info* selectedDeviceInfo = nullptr;
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {
+            if (device == pimpl_->pCaptureDevInfos_[i].name) {
+                selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];
+                break;
+            }
+        }
+        
+        // Si no encuentra ningún nombre salta fallo
+        if(selectedDeviceInfo==nullptr){
+            SYS_WARN("SoundMgr", "Failed to found device with name"); 
+            return false; 
+        }
+    
+        SYS_INFO("SoundMgr", "Initializing capture device:" + device); 
+
+        // Crear AudioInputModule
+        std::unique_ptr<AudioInputModule> aim = std::make_unique<AudioInputModule>(
+            &pimpl_->snd_context_,
+            selectedDeviceInfo
+        );
+
+        // Intenta inicializar el AudioInputModule
+        if(!aim->init(config))
+        {
+            SYS_WARN("SoundMgr","Failed to initialize capture.");
+            return false;
+        }
+
+        // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (inputs_).
+        inputs_.push_back(std::move(aim));
+        SYS_INFO("SoundMgr", "New input device loaded.");
+
+        return true;
+    }
+    
+    bool SoundMgr::addCaptureDevice(std::string const& name) {
         
         // Comprobar que el contexto está inicializado
         if (!ctx_initialized_){
@@ -182,7 +264,7 @@
         return true;
     }
 
-   bool SoundMgr::removeInputDevice(unsigned short index) {
+    bool SoundMgr::removeInputDevice(unsigned short index) {
 
         // comprobar si existe
         if (index >= inputs_.size()) {
