@@ -32,7 +32,8 @@ public:
 
     /**
      * @brief Inicialización del motor de audio.
-     * @returns True si la inicialización ha sido correcta, false en caso contrario
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config);
 

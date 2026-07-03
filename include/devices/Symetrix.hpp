@@ -57,9 +57,8 @@ public:
 
     /**
      * @brief Inicialización de la conexión a Symetrix por socket UDP.
-     * @param hostIp IP o alias DNS del dispositivo de destino.
-     * @param force Fuerza la reinicialización de la red si ya estaba activo.
-     * @return @c true cuando se ha inicializado y respondido al ping correctamente, @c false en caso contrario.
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config = nullptr);
 

@@ -39,7 +39,8 @@ public:
      * @brief Inicializa los módulos TTS cargando los modelos de voz.
      * @details Carga todos los modelos compatibles de ./VOICES_PATH
      * @note La macro VOICES_PATH se obtiene del toolchain para evitar duplicados
-     * @return true si la inicialización fue exitosa, false en caso de error.
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config);
 

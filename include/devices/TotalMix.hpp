@@ -76,7 +76,7 @@ public:
     /**
      * @brief Inicializa Winsock, crea el socket UDP y lo enlaza a la dirección local.
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
-     * @return @c true si la inicialización fue exitosa.
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config = nullptr);
 

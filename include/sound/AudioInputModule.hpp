@@ -35,7 +35,8 @@ public:
 
     /**
      * @brief Inicializa el dispositivo de captura
-     * @return true si arranca bien, false si no
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config);
 

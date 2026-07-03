@@ -113,7 +113,8 @@ public:
      * @details Toma por defecto el número máximo permitido por el sistema.
      * Esto no significa que no se puedan hacer más hilos, porque se quedan "idle" 
      * esperando datos en los sockets.
-     * @returns true cuando termina
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config = nullptr);
 
