@@ -45,6 +45,16 @@ public:
     bool init(void* config);
 
     /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
+    
+    /**
      * @brief Libera los recursos asociados a los modelos de voz cargados.
      */
     void cerrar();
@@ -144,19 +154,6 @@ public:
 
 
 private:
-
-// Carga de configuración ---------------------------------------------------------------
-
-    /**
-    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
-    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
-    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
-    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
-    * esté completo y sincronizado.
-    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
-    */
-    void loadConfig(void* config);
-    
 
 // Inicialización de modelos ------------------------------------------------------------
 

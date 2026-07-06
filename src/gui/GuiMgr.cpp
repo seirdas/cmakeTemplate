@@ -99,24 +99,6 @@
 		ctrl_ = controller;
 	}
 
-	void GuiMgr::loadConfig(void* config) {
-        if (!config)
-			return;
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-        
-        jsonMgr.get_or_set(cfg, "AppName", 		AppName_);
-        jsonMgr.get_or_set(cfg, "windowSizeX", 	windowSizeX_);
-        jsonMgr.get_or_set(cfg, "windowSizeY", 	windowSizeY_);
-        jsonMgr.get_or_set(cfg, "windowPosX", 	windowPosX_);
-        jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosY_);
-        jsonMgr.get_or_set(cfg, "fullscreen", 	fullscreen_);
-        jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
-        jsonMgr.get_or_set(cfg, "deviceRefreshInterval", 	deviceRefreshInterval_);
-    }
-
 	// Ejecución ----------------------------------------------------------------------------
 
 	bool GuiMgr::init(void* config) {
@@ -221,6 +203,26 @@
 		running_ = true;
 		return true;
 	}
+
+	void GuiMgr::loadConfig(void* config) {
+        if (!config)
+			return;
+
+        SYS_INFO("GuiMgr","Reading config node...");
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+        
+        jsonMgr.get_or_set(cfg, "AppName", 		AppName_);
+        jsonMgr.get_or_set(cfg, "windowSizeX", 	windowSizeX_);
+        jsonMgr.get_or_set(cfg, "windowSizeY", 	windowSizeY_);
+        jsonMgr.get_or_set(cfg, "windowPosX", 	windowPosX_);
+        jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosY_);
+        jsonMgr.get_or_set(cfg, "fullscreen", 	fullscreen_);
+        jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
+        jsonMgr.get_or_set(cfg, "deviceRefreshInterval", 	deviceRefreshInterval_);
+    }
 
 	void GuiMgr::run() {
 

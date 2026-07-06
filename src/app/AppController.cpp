@@ -188,6 +188,8 @@ void AppController::loadConfig(void* config) {
     if (!config)
         return;
 
+    SYS_INFO("AppController","Loading parameters from config...");
+
     // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();

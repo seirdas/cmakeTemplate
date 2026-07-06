@@ -117,6 +117,33 @@
 
         return !loaded_models_.empty();;
     }
+    
+    void TTSMgr::loadConfig(void* config) {
+
+        if (!config)
+            return;
+
+        SYS_INFO("TTSMgr","Reading config node...");
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        // Carga de la sección lazy
+        json* lazyCfg = jsonMgr.getSubNode(cfg, "lazy_load");
+        jsonMgr.get_or_set(lazyCfg, "active", lazy_load_);
+
+        int keep_alive_raw = static_cast<int>(keep_alive_seconds_.count()); // numero a segundos
+        jsonMgr.get_or_set(lazyCfg, "keep_alive_seconds", keep_alive_raw);
+        keep_alive_seconds_ = std::chrono::seconds(keep_alive_raw);
+
+
+        // Carga de la sección concurrent
+        json* concurrentCfg = jsonMgr.getSubNode(cfg, "concurrent_init_");
+        jsonMgr.get_or_set(concurrentCfg, "active", concurrent_init_);
+        jsonMgr.get_or_set(concurrentCfg, "num_load_retries", num_load_retries_);
+
+    }
 
     void TTSMgr::cerrar() {
         if (!running_) return;
@@ -440,33 +467,6 @@
         return st_modelname;
     }
 
-
-    // Carga de configuración ---------------------------------------------------------------
-
-    void TTSMgr::loadConfig(void* config) {
-
-        if (!config)
-            return;
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        // Carga de la sección lazy
-        json* lazyCfg = jsonMgr.getSubNode(cfg, "lazy_load");
-        jsonMgr.get_or_set(lazyCfg, "active", lazy_load_);
-
-        int keep_alive_raw = static_cast<int>(keep_alive_seconds_.count()); // numero a segundos
-        jsonMgr.get_or_set(lazyCfg, "keep_alive_seconds", keep_alive_raw);
-        keep_alive_seconds_ = std::chrono::seconds(keep_alive_raw);
-
-
-        // Carga de la sección concurrent
-        json* concurrentCfg = jsonMgr.getSubNode(cfg, "concurrent_init_");
-        jsonMgr.get_or_set(concurrentCfg, "active", concurrent_init_);
-        jsonMgr.get_or_set(concurrentCfg, "num_load_retries", num_load_retries_);
-
-    }
 
     // Inicialización de modelos ------------------------------------------------------------
 

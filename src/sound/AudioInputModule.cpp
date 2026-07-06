@@ -170,6 +170,26 @@
         is_valid_ = true;
         return true;
     }
+    
+    void AudioInputModule::loadConfig(void* config) {
+        if (!config)
+             return;
+
+        SYS_INFO("AudioInputModule","Reading config node...");
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        jsonMgr.get_or_set(cfg, "name", name_);
+        
+        /* Esto ya llega en la inicialización, en devInfo del constructor */
+        //jsonMgr.get_or_set(cfg, "device", device_);
+        
+        jsonMgr.get_or_set(cfg, "numchannels", channels_);
+        jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
+        jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
+    }
 
     void AudioInputModule::stop() {
 
@@ -186,24 +206,6 @@
         // Desinicializa el dispositivo
         ma_device_uninit(&pimpl_->device);
         is_valid_ = false;
-    }
-    
-    void AudioInputModule::loadConfig(void* config) {
-        if (!config)
-             return;
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        jsonMgr.get_or_set(cfg, "name", name_);
-        
-        /* Esto ya llega en la inicialización, en devInfo del constructor */
-        //jsonMgr.get_or_set(cfg, "device", device_);
-        
-        jsonMgr.get_or_set(cfg, "numchannels", channels_);
-        jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
-        jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
     }
 
 

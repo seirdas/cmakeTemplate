@@ -59,6 +59,114 @@
     }
 
 
+    // Ejecución ----------------------------------------------------------------------------
+
+    bool NetMgr::init(void* config) {
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
+        if (config)
+            loadConfig(config);
+        else
+            SYS_WARN("NetMgr","Cannot load config. Using default values.");
+
+        // Evitar lanzar hilos si ya están corriendo
+        if (sockets_running_) {
+            SYS_WARN("NetMgr","Commanded start() when is already running");
+            return true;
+        }
+
+        // Inicializar el io_context con varios hilos de recepción
+        if (!io_running_) {
+            pimpl_->io_context_.restart();
+            SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(thread_count_) + " threads...");
+            for (std::size_t i = 0; i < thread_count_; ++i) {
+                threads_.emplace_back([this]() {
+                    pimpl_->io_context_.run();
+                });
+            }
+            SYS_INFO("NetMgr","Network (io_context) running...");
+            io_running_=true;
+        }
+
+        // Iniciar (de nuevo si aplica) los sockets
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
+
+            // Iniciar sockets
+            for (auto& sock : pimpl_->udp_sockets_) {
+            asio::post(getAsioStrand(sock), [sock]{ 
+                    sock->start(); 
+                });
+            }
+        }
+
+        SYS_INFO("NetMgr","Sockets running");
+        sockets_running_ = true;
+        return true;
+    }
+
+    void NetMgr::loadConfig(void* config) {
+
+        if (!config) 
+            return;
+
+        SYS_INFO("NetMgr","Reading config node...");
+            
+        // Se considera que la configuración se pasa como json    
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        // hago un vector que apunte al array de los nodos json dentro del nodo principal
+        std::vector<json*> config_net = jsonMgr.getArrayElements(cfg, "udpSockets");
+
+        // Bucle que recorre los elementos de dentro del nodo
+        short port = 0;
+        std::string name = "";
+        for (short i = 0; i < config_net.size(); i++){
+            name = "";      // (re)inicializa el nombre
+            port = 0;       // (re)inicializa el puerto
+
+            // usamos get_or_set para leerlo del json y si no está rellenar el json
+            jsonMgr.get_or_set(config_net[i], "name", name); // busca el nombre
+            jsonMgr.get_or_set(config_net[i], "port", port); // busca el puerto
+
+            // si el nombre y el puerto no estan vacios, crea el socket
+            if(!name.empty() && port > 0) {
+                addUdpSocket(name, port);
+            }
+        }
+    }
+
+    bool NetMgr::start() {
+        return init();
+    }
+
+    void NetMgr::stop() {
+
+        // Si los sockets ya están inactivos, no hacer nada
+        if (!sockets_running_) return;
+
+        // Parar la recepción de los sockets
+        SYS_INFO("NetMgr","Stopping sockets...");
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
+
+            // Parar sockets (debería funcionar sin usar strand, parada directa)
+            for (auto& sock : pimpl_->udp_sockets_)
+                sock->stop(); 
+        }
+
+        sockets_running_ = false;
+        udp_rcv_data_cv_.notify_all();   // desbloquea getNextPacket()
+        SYS_INFO("NetMgr","All sockets stopped");
+    }
+
+    bool NetMgr::isRunning() const {
+        return sockets_running_;
+    }
+
+
     // Gestión de sockets -------------------------------------------------------------------
 
     bool NetMgr::addUdpSocket(
@@ -210,82 +318,6 @@
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket with port " + std::to_string(port) + "' not found.");
         return false;
-    }
-
-
-    // Ejecución ----------------------------------------------------------------------------
-
-    bool NetMgr::init(void* config) {
-        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
-        if (config)
-            loadConfig(config);
-        else
-            SYS_WARN("NetMgr","Cannot load config. Using default values.");
-
-        // Evitar lanzar hilos si ya están corriendo
-        if (sockets_running_) {
-            SYS_WARN("NetMgr","Commanded start() when is already running");
-            return true;
-        }
-
-        // Inicializar el io_context con varios hilos de recepción
-        if (!io_running_) {
-            pimpl_->io_context_.restart();
-            SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(thread_count_) + " threads...");
-            for (std::size_t i = 0; i < thread_count_; ++i) {
-                threads_.emplace_back([this]() {
-                    pimpl_->io_context_.run();
-                });
-            }
-            SYS_INFO("NetMgr","Network (io_context) running...");
-            io_running_=true;
-        }
-
-        // Iniciar (de nuevo si aplica) los sockets
-        {
-            // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
-
-            // Iniciar sockets
-            for (auto& sock : pimpl_->udp_sockets_) {
-            asio::post(getAsioStrand(sock), [sock]{ 
-                    sock->start(); 
-                });
-            }
-        }
-
-        SYS_INFO("NetMgr","Sockets running");
-        sockets_running_ = true;
-        return true;
-    }
-
-    bool NetMgr::start() {
-        return init();
-    }
-
-    void NetMgr::stop() {
-
-        // Si los sockets ya están inactivos, no hacer nada
-        if (!sockets_running_) return;
-
-        // Parar la recepción de los sockets
-        SYS_INFO("NetMgr","Stopping sockets...");
-        {
-            // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
-
-            // Parar sockets (debería funcionar sin usar strand, parada directa)
-            for (auto& sock : pimpl_->udp_sockets_)
-                sock->stop(); 
-        }
-
-        sockets_running_ = false;
-        udp_rcv_data_cv_.notify_all();   // desbloquea getNextPacket()
-        SYS_INFO("NetMgr","All sockets stopped");
-    }
-
-    bool NetMgr::isRunning() const {
-        return sockets_running_;
     }
 
 
@@ -455,44 +487,6 @@
         return true;
     }
 
-    // Carga de configuración ----------------------------------------------------------------
-
-    void NetMgr::loadConfig(void* config) {
-
-        if (!config) 
-            return;
-
-            
-            
-        // Se considera que la configuración se pasa como json    
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        // hago un vector que apunte al array de los nodos json dentro del nodo principal
-        std::vector<json*> config_net = jsonMgr.getArrayElements(cfg, "udpSockets");
-
-        // Bucle que recorre los elementos de dentro del nodo
-        short port = 0;
-        std::string name = "";
-        for (short i = 0; i < config_net.size(); i++){
-            name = "";      // (re)inicializa el nombre
-            port = 0;       // (re)inicializa el puerto
-
-            // usamos get_or_set para leerlo del json y si no está rellenar el json
-            jsonMgr.get_or_set(config_net[i], "name", name); // busca el nombre
-            jsonMgr.get_or_set(config_net[i], "port", port); // busca el puerto
-
-            // si el nombre y el puerto no estan vacios, crea el socket
-            if(!name.empty() && port > 0) {
-                addUdpSocket(name, port);
-            }
-        }
-
-        // Comprobar que se han leído bien (al final)
-        printUdpSockets();
-
-
-    }
 
 #else
 // ============================================================

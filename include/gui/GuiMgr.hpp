@@ -46,6 +46,15 @@ public:
      * @brief Establece el controlador que usa para manejar otras clases.
      */
     void setController(IAppControl* controller);
+    
+
+// Ejecución ----------------------------------------------------------------------------
+
+    /**
+     * @brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.
+     * @return	True si la inicialización fue exitosa, false si hubo algún error 
+     */
+    bool init(void* config);
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -56,15 +65,6 @@ public:
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
     void loadConfig(void* config);
-    
-
-// Ejecución ----------------------------------------------------------------------------
-
-    /**
-     * @brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.
-     * @return	True si la inicialización fue exitosa, false si hubo algún error 
-     */
-    bool init(void* config);
 
     /**
      * @brief Inicia el bucle principal de la ventana. 

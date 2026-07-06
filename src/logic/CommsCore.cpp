@@ -35,6 +35,8 @@ void CommsCore::loadConfig(void* config) {
     if (!config)
         return;
 
+    SYS_INFO("CommsCore","Reading config node...");
+
     // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();

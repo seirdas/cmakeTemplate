@@ -52,16 +52,6 @@ public:
      */
     ~Symetrix();
 
-    /**
-    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
-    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
-    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
-    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
-    * esté completo y sincronizado.
-    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
-    */
-    void loadConfig(void* config = nullptr); 
-
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -71,6 +61,16 @@ public:
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config = nullptr);
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config = nullptr); 
 
     /**
      * @brief Cierra y limpia todos los componentes de la clase.

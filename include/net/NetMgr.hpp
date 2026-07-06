@@ -52,6 +52,45 @@ public:
     ~NetMgr();
 
 
+// Ejecución ----------------------------------------------------------------------------
+
+    /**
+     * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
+     * @details Toma por defecto el número máximo permitido por el sistema.
+     * Esto no significa que no se puedan hacer más hilos, porque se quedan "idle" 
+     * esperando datos en los sockets.
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
+     */
+    bool init(void* config = nullptr);
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
+
+    /**
+     * @brief Llama a init(), misma funcionalidad por compatibilidad.
+     */    
+    bool start();
+
+    /**
+     * @brief Detiene todos los sockets.
+     */
+    void stop();
+
+    /**
+     * @brief Devuelve si la red está activa (los sockets están activos)
+     * @returns true si los sockets están activos, false en caso contrario
+     */
+    bool isRunning() const;
+    
+
 // Gestión de sockets -------------------------------------------------------------------
 
     /**
@@ -106,35 +145,6 @@ public:
     bool socketExists(unsigned short port);
 
 
-// Ejecución ----------------------------------------------------------------------------
-
-    /**
-     * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
-     * @details Toma por defecto el número máximo permitido por el sistema.
-     * Esto no significa que no se puedan hacer más hilos, porque se quedan "idle" 
-     * esperando datos en los sockets.
-     * @param config Datos de configuración (diseñado para recibir un puntero a json)
-     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
-     */
-    bool init(void* config = nullptr);
-
-    /**
-     * @brief Llama a init(), misma funcionalidad por compatibilidad.
-     */    
-    bool start();
-
-    /**
-     * @brief Detiene todos los sockets.
-     */
-    void stop();
-
-    /**
-     * @brief Devuelve si la red está activa (los sockets están activos)
-     * @returns true si los sockets están activos, false en caso contrario
-     */
-    bool isRunning() const;
-    
-
 // Envío --------------------------------------------------------------------------------
 
     /**
@@ -151,7 +161,7 @@ public:
         unsigned short           dest_port
     );
 
-        /**
+    /**
      * @brief Manda datos por un socket por puerto
      * @param local_port Puerto del socket por el que se van a mandar los datos
      * @param data vector de bytes de datos a mandar
@@ -190,18 +200,6 @@ public:
     size_t numUdpRcvElements();
 
 private:
-
-// Carga de configuración ---------------------------------------------------------------
- 
-    /**
-    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
-    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
-    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
-    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
-    * esté completo y sincronizado.
-    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
-    */
-    void loadConfig(void* config);
 
 // Datos de los sockets guardados -------------------------------------------------------
 

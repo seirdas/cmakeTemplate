@@ -46,7 +46,7 @@
         WSACleanup();
     }
 
-    // Conexión a TotalMix ------------------------------------------------------------------
+    // Ejecución ----------------------------------------------------------------------------
 
     bool TotalMix::init(void* config) {
 
@@ -95,8 +95,27 @@
         return true;
     }
 
+    void TotalMix::loadConfig(void* config) {
+        if (!config)
+            return;
 
-    // Control de volumen -----------------------------------------------------------------------
+        SYS_INFO("TotalMix","Reading config node...");
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        jsonMgr.get_or_set(cfg, "localIP",        localIP_);
+        jsonMgr.get_or_set(cfg, "localPort",      localPort_);
+        jsonMgr.get_or_set(cfg, "remoteIP",       remoteIP_);
+        jsonMgr.get_or_set(cfg, "remotePort",     remotePort_);
+        jsonMgr.get_or_set(cfg, "numInputs",      numInputs_);
+        jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
+        jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
+    }
+
+
+    // Control de volumen -------------------------------------------------------------------
 
     bool TotalMix::SetOutputVolume(int out, float value, bool in_dB_units)
     {
@@ -179,26 +198,6 @@
         }
 
         return SendPacket();
-    }
-
-
-    // Configuración ------------------------------------------------------------------------
-
-    void TotalMix::loadConfig(void* config) {
-        if (!config)
-            return;
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        jsonMgr.get_or_set(cfg, "localIP",        localIP_);
-        jsonMgr.get_or_set(cfg, "localPort",      localPort_);
-        jsonMgr.get_or_set(cfg, "remoteIP",       remoteIP_);
-        jsonMgr.get_or_set(cfg, "remotePort",     remotePort_);
-        jsonMgr.get_or_set(cfg, "numInputs",      numInputs_);
-        jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
-        jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
     }
 
 

@@ -79,9 +79,6 @@ void Symetrix::loadConfig(void* config) {
         Destroy();
     }
 
-    /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
-    // Symetrix::loadConfig(void* config) {...}
-
 
     // Ejecución ----------------------------------------------------------------------------
 
@@ -113,6 +110,9 @@ void Symetrix::loadConfig(void* config) {
         initialized_ = true;
         return true;
     }
+    
+    /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
+    // Symetrix::loadConfig(void* config) {...}
 
     void Symetrix::Destroy() {
 
