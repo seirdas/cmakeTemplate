@@ -94,12 +94,18 @@ private:
 
     /**
      * @struct st_sym
-     * @brief Estructura que agrupa los metadatos de entradas/salidas relacionados con Symetrix (Dante).
+     * @brief Estructura que agrupa los ids asociados de Symetrix Composer.
      */
     struct st_sym {
-        short in;           ///< Número de entrada dante asociada
-        short out;          ///< Número de salida dante asociada
-    }sym_;                  ///< Instancia de metadatos relacionados con entradas/salidas dante asociadas a symetrix
+        short sm_in;                ///< Número de entrada a Symetrix Supermatrix
+        short sm_out;               ///< Número de salida a Symetrix Supermatrix
+
+        short in_input_sel;         ///< ID de Input selector de entrada            (1-4)
+        short in_vox_threshold;     ///< ID de VOX Gate: Threshold de entrada       (ThresholdMin-ThresholdMax)
+        short in_fx_input_sel;      ///< ID de FX Input selector para fx de entrada (1-4)
+        short out_gain_fader;       ///< ID de ganancia de salida                   (GAIN_MIN-GAIN_MAX)
+        short out_gain_mute;        ///< ID de mute de ganancia de salida           (0-1)
+    }symID_;                        ///< Instancia de metadatos relacionados con entradas/salidas dante asociadas a symetrix
 
 
 // Identificadores de transmisión/recepción
