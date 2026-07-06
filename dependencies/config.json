@@ -1,5 +1,13 @@
 {
-    "gui": {},
+    "comms": {},
+    "gui": {
+        "fontSize": 16.0,
+        "fullscreen": false,
+        "windowPosX": 720,
+        "windowPosY": 0,
+        "windowSizeX": 1280,
+        "windowSizeY": 720
+    },
     "network": {
         "udpSockets": [
             {
