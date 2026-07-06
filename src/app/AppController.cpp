@@ -9,6 +9,7 @@
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
 #include "logic/CommsCore.hpp"  // Clase para lógica de comunicaciones
+#include "links/VoIPMgr.hpp"    // Clase para gestión Voiprec/Voipplay
 
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
@@ -26,6 +27,8 @@ AppController::AppController() :
     tts_(std::make_unique<TTSMgr>()),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
+    voip_(std::make_unique<VoIPMgr>()),
+    com_(std::make_unique<CommsCore>()),
     net_initialized_(false),
     gui_initialized_(false),
     snd_initialized_(false),
@@ -33,7 +36,7 @@ AppController::AppController() :
     sym_initialized_(false),
     running_(false),
     online_mode_(true),
-    version_("0.9")
+    version_("0.0.0")
 {
 
 }

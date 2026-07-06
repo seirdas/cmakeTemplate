@@ -15,6 +15,7 @@ class SoundMgr;
 class TTSMgr;
 class TotalMix;
 class Symetrix;
+class VoIPMgr;
 class CommsCore;
 
 /**
@@ -241,6 +242,7 @@ private:
     std::unique_ptr<TTSMgr>      tts_;          ///< Gestor módulo TTS
     std::unique_ptr<TotalMix>    tmx_;          ///< Gestor módulo Totalmix
     std::unique_ptr<Symetrix>    sym_;          ///< Gestor módulo Symetrix
+    std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay
     std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
 
     bool        net_initialized_;               ///< Indica si net está inicializado
