@@ -1,10 +1,11 @@
 #pragma once
 
+#include "system/SystemMgr.hpp"
+#include "files/JsonMgr.hpp"
 #include <memory>
 #include <unordered_map>
 #include <string>
-#include "system/SystemMgr.hpp"
-#include "files/JsonMgr.hpp"
+#include <functional>
 
 // Declaración implícita
 class IAppController;
@@ -70,14 +71,13 @@ public:
 // VoIPRec ------------------------------------------------------------------------------
 
 
-    bool add_voiprec() {
-
-        // comprobaciones
-
-        // inicializar voiprec
-
-        // añadir al vector
-
+    bool add_voiprec(const std::string& name, std::function<void(const std::vector<char>&)> send_cb) {
+        // Comprobaciones: Si ya existe, no crearlo
+        if (voiprecs_.find(name) != voiprecs_.end()) return false;
+        
+        // Añadir el nuevo VoIPRec al vector (faltaría inicializarlo)
+        voiprecs_[name] = std::make_unique<VoIPRec>(name, std::move(send_cb));
+        return true;
     }
 
     bool remove_voiprec(std::string name) { 

@@ -7,7 +7,7 @@
 
 // General ------------------------------------------------------------------------------
 
-VoIPRec::VoIPRec() : 
+VoIPRec::VoIPRec(const std::string& name, SendFn send_cb) : 
     sampleRateHz_(11025),    
     channels_(1),             // legacy: deintercalaba a mono
     framesPerPacket_(250),    // legacy: 250x2 = 500 bytes
