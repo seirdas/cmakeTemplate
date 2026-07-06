@@ -75,8 +75,8 @@ public:
         std::string name;
         std::string socketName;
         std::string audioSourceName;
-        for (short i = 0; i < config_voiprec.size(); i++) {
-            jsonMgr.get_or_set(config_voiprec[i], "name", name);
+        for (json* const cfg_node : config_voiprec) {
+            jsonMgr.get_or_set(cfg_node, "name", name);
 
             if(!name.empty())
                 createVoiprec_(name);   // Función inyectada para usar snd, net

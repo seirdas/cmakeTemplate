@@ -122,13 +122,13 @@
         // Bucle que recorre los elementos de dentro del nodo
         short port = 0;
         std::string name = "";
-        for (short i = 0; i < config_net.size(); i++){
+        for (json* const cfg_node : config_net) {
             name = "";      // (re)inicializa el nombre
             port = 0;       // (re)inicializa el puerto
 
             // usamos get_or_set para leerlo del json y si no está rellenar el json
-            jsonMgr.get_or_set(config_net[i], "name", name); // busca el nombre
-            jsonMgr.get_or_set(config_net[i], "port", port); // busca el puerto
+            jsonMgr.get_or_set(cfg_node, "name", name); // busca el nombre
+            jsonMgr.get_or_set(cfg_node, "port", port); // busca el puerto
 
             // si el nombre y el puerto no estan vacios, crea el socket
             if(!name.empty() && port > 0) {
