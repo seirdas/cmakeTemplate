@@ -1,8 +1,8 @@
 #include "logic/CommsCore.hpp"
 #include "logic/Persona.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
-
-
+#include "system/SystemMgr.hpp"
+#include "files/JsonMgr.hpp"
 
 // General ------------------------------------------------------------------------------
 
@@ -19,7 +19,29 @@ CommsCore::~CommsCore() {
 
 bool CommsCore::init(void* config) {
     
+    // #TODO
+
+
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
+    if (config)
+        loadConfig(config);
+    else  // Puede llegar aquí cuando se hace reload()
+        SYS_WARN("AIM","Cannot load config. Using default values.");
+
+    return false;
 }
+
+void CommsCore::loadConfig(void* config) {
+    if (!config)
+        return;
+
+    // Se considera que la configuración se pasa como json
+    json* cfg = static_cast<json*>(config);
+    JsonMgr& jsonMgr = JsonMgr::instance();
+    
+    // #TODO...
+}
+
 
 
 // Ejecución ----------------------------------------------------------------------------
