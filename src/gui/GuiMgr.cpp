@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------------
 
 #include "gui/GuiMgr.hpp"			// Clase de gestión de UI
-#include <system/SystemMgr.hpp>
+#include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 
@@ -33,6 +33,9 @@
 	#if defined STB || defined STB_VERSION
 		#include <stb_image.h>          // Implementación para soporte de imágenes.
 	#endif
+
+	#include "files/JsonMgr.hpp"
+	
 
 	// Sistema
 	#ifdef _WIN32
@@ -83,12 +86,33 @@
 		ctrl_ = controller;
 	}
 
+	void GuiMgr::loadConfig(void* config) {
+        if (!config)
+			return;
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+        
+        jsonMgr.get_or_set(cfg, "windowSizeX", 	windowSizeX_);
+        jsonMgr.get_or_set(cfg, "windowSizeY", 	windowSizeY_);
+        jsonMgr.get_or_set(cfg, "windowPosX", 	windowSizeY_);
+        jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosX_);
+        jsonMgr.get_or_set(cfg, "fullscreen", 	fullscreen_);
+        jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
+    }
 
 	// Ejecución ----------------------------------------------------------------------------
 
-	bool GuiMgr::init() {
+	bool GuiMgr::init(void* config) {
 
 		SYS_INFO("GuiMgr", "Initializating UI...");
+
+		// Validar y asignar valores de variables miembro a partir de la config pasada (json)
+        if (config)
+            loadConfig(config);
+        else  // Puede llegar aquí cuando se hace reload()
+            SYS_WARN("GuiMgr","Cannot load config. Using default values.");
 
 		// Identificación de posibles errores de inicialización
 		glfwSetErrorCallback([](int error, const char* description) {
