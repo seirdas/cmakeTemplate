@@ -201,11 +201,17 @@
         }
 
         // Detener la captura de audio
+        SYS_INFO("AudioInputModule","Stopping device...");
         ma_device_stop(&pimpl_->device);
 
         // Desinicializa el dispositivo
+        SYS_INFO("AudioInputModule","Uninit device...");
         ma_device_uninit(&pimpl_->device);
         is_valid_ = false;
+
+        // Limpia el callback
+        SYS_INFO("AudioInputModule","Clearing onframe callback injected...");
+        clearOnFrameCallback();
     }
 
 
@@ -243,6 +249,9 @@
     }
 
     void AudioInputModule::clearOnFrameCallback() {
+        if (!onFrame_) 
+            return;
+
         std::lock_guard<std::mutex> lk(onFrame_mtx_);
         onFrame_ = nullptr;
     }
