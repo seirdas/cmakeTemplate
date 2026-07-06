@@ -2,16 +2,20 @@
 #pragma once
 
 #include <thread>               // Hilos
-
-#include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
-#include "net/NetMgr.hpp"       // Clase para gestionar sockets
-#include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
-#include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
-#include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
+#include <memory>               // unique_ptr
+#include <mutex>
+#include <condition_variable>
 
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
+// Declaración implícita
+class NetMgr;
+class GuiMgr;
+class SoundMgr;
+class TTSMgr;
+class TotalMix;
+class Symetrix;
+class CommsCore;
 
 /**
   *  @class AppController
@@ -231,12 +235,13 @@ private:
     std::string             config_filename_;   ///< Nombre de archivo de configuración
 
     // Módulos
-    NetMgr      net_;                           ///< Gestor de sockets de red
-    GuiMgr      gui_;                           ///< Gestor de ventanas para la interfaz gráfica
-    SoundMgr    snd_;                           ///< Gestor de audio
-    TTSMgr      tts_;                           ///< Gestor módulo TTS
-    TotalMix    tmx_;                           ///< Gestor módulo Totalmix
-    Symetrix    sym_;                           ///< Gestor módulo Symetrix
+    std::unique_ptr<NetMgr>      net_;          ///< Gestor de sockets de red
+    std::unique_ptr<GuiMgr>      gui_;          ///< Gestor de ventanas para la interfaz gráfica
+    std::unique_ptr<SoundMgr>    snd_;          ///< Gestor de audio
+    std::unique_ptr<TTSMgr>      tts_;          ///< Gestor módulo TTS
+    std::unique_ptr<TotalMix>    tmx_;          ///< Gestor módulo Totalmix
+    std::unique_ptr<Symetrix>    sym_;          ///< Gestor módulo Symetrix
+    std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
 
     bool        net_initialized_;               ///< Indica si net está inicializado
     bool        gui_initialized_;               ///< Indica si gui está inicializado
@@ -244,6 +249,7 @@ private:
     bool        tts_initialized_;               ///< Indica si tts está inicializado
     bool        tmx_initialized_;               ///< Indica si tmx está inicializado
     bool        sym_initialized_;               ///< Indica si sym está inicializado
+    bool        com_initialized_;               ///< Indica si sym está inicializado
 
     // Gestión de hilos
     std::thread             hilo_test_;         ///< Hilo de pruebas

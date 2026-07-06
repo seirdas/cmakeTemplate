@@ -1,6 +1,15 @@
+#include "app/AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
 #include <string>
-#include "app/AppController.hpp"
+
+#include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
+#include "net/NetMgr.hpp"       // Clase para gestionar sockets
+#include "sound/SoundMgr.hpp"   // Clase para gestionar audio
+#include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
+#include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
+#include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
+#include "logic/CommsCore.hpp"  // Clase para lógica de comunicaciones
+
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
 
@@ -10,8 +19,13 @@
 AppController::AppController() :
     argc_(0),
     argv_(nullptr),
-    gui_(this),
     config_filename_("config.json"),
+    net_(std::make_unique<NetMgr>()),
+    gui_(std::make_unique<GuiMgr>(this)),
+    snd_(std::make_unique<SoundMgr>()),
+    tts_(std::make_unique<TTSMgr>()),
+    tmx_(std::make_unique<TotalMix>()),
+    sym_(std::make_unique<Symetrix>()),
     net_initialized_(false),
     gui_initialized_(false),
     snd_initialized_(false),
@@ -30,7 +44,7 @@ AppController::~AppController() {
     running_ = false;
 
     // Cerrar socket y worker esperando paquetes de red
-    net_.stop();
+    net_->stop();
     online_cv_.notify_all();
     SYS_INFO("AppController","Closing running threads...");
     if (hilo_consumer_.joinable())
@@ -40,9 +54,9 @@ AppController::~AppController() {
         hilo_test_.join();
 
     // Cerrar módulos (opcional, recomendado)
-    snd_.stop();
-    gui_.cerrar();
-    tts_.cerrar();
+    snd_->stop();
+    gui_->cerrar();
+    tts_->cerrar();
 
     SYS_INFO("AppController","AppController closed successfuly.");
 }
@@ -78,7 +92,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar GUI, salir si no se carga bien
     SYS_INFO("AppController","GUI subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"gui");
-    gui_initialized_ = gui_.init();
+    gui_initialized_ = gui_->init(config_node);
     if (!gui_initialized_) {
         SYS_ERROR("AppController","GUI subsystem FAIL");
         return false;   // Está diseñado para salir directamente si no hay GUI
@@ -89,7 +103,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar gestor de red
     SYS_INFO("AppController","Network subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"network");
-    net_initialized_ = net_.init(config_node);
+    net_initialized_ = net_->init(config_node);
     if(!net_initialized_)
         SYS_ERROR("AppController","Network subsystem FAIL");
     else SYS_INFO("AppController","Network subsystem OK");
@@ -98,7 +112,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar gestor de sonidos
     SYS_INFO("AppController","Sound subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"sound");
-    snd_initialized_ = snd_.init(config_node);
+    snd_initialized_ = snd_->init(config_node);
     if(!snd_initialized_)
         SYS_ERROR("AppController","Sound subsystem FAIL");
     else SYS_INFO("AppController","Sound subsystem OK");
@@ -107,7 +121,7 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar conexión Totalmix
     SYS_INFO("AppController","Totalmix manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"totalmix");
-    tmx_initialized_ = tmx_.init(config_node);
+    tmx_initialized_ = tmx_->init(config_node);
     if(!tmx_initialized_)
         SYS_WARN("AppController","Totalmix manager FAIL");
     else SYS_INFO("AppController","Totalmix manager OK");
@@ -116,10 +130,19 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar conexión Symetrix    
     SYS_INFO("AppController","Symetrix manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"symetrix");
-    sym_initialized_ = sym_.init(config_node);
+    sym_initialized_ = sym_->init(config_node);
     if(!sym_initialized_)
         SYS_WARN("AppController","Symetrix manager FAIL");
     else SYS_INFO("AppController","Symetrix manager OK");
+
+    
+    // Inicialización lógica Comms
+    SYS_INFO("AppController","Comms logic loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"comms");
+    com_initialized_ = com_->init(config_node);
+    if(!com_initialized_)
+        SYS_WARN("AppController","Comms logic FAIL");
+    else SYS_INFO("AppController","Comms logic OK");
     
 
     // Inicialización de TTS (en hilo para no bloquear)
@@ -129,7 +152,7 @@ bool AppController::init(int argc, char** argv) {
             auto& jsonMgr = JsonMgr::instance();
             json* tts_config_node = jsonMgr.getSubNode(config_filename_, "tts");
 
-            tts_initialized_ = tts_.init(tts_config_node);
+            tts_initialized_ = tts_->init(tts_config_node);
             JsonMgr::instance().update(config_filename_);  
         }
     );
@@ -154,7 +177,7 @@ int AppController::run() {
     // Hilo para cout de pruebas
     hilo_test_ = std::thread(&AppController::TPruebas, this);
 
-    gui_.run(); // ← Bloquea hasta cerrar
+    gui_->run(); // ← Bloquea hasta cerrar
     return 0;
 }
 
@@ -195,7 +218,7 @@ void AppController::TWorker() {
         lock.unlock();
 
         // Pide datos al socket para procesar
-        data = net_.getNextUdpPacket();         // <- BLOQUEANTE
+        data = net_->getNextUdpPacket();         // <- BLOQUEANTE
 
         // Salir si el programa se está cerrando (después de getpacket)
         if (!running_) break;
