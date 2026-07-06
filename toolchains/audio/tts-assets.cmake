@@ -147,7 +147,6 @@ function(link_tts_assets)
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo "---- Linking tts-assets to output folder..."
-        COMMAND ${CMAKE_COMMAND} -E echo "${SRC_NATIVE} --- $<TARGET_FILE_DIR:${PROJECT_NAME}>"
     )
 
     if(WIN32)
