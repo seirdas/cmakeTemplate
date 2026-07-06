@@ -7,6 +7,7 @@
 #include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
+#include "links/VoIPMgr.hpp"    // Clase para gestión Voiprec/Voipplay
 
 /* 
 * Aquí solo deberían ir acciones que se ejecuten sobre otros módulos
@@ -142,3 +143,43 @@ TTSData AppController::getTTSData() noexcept {
 std::string AppController::getTTSProcessingText(std::string modelName) const noexcept {
     return tts_->getProccesingText(modelName);
 }
+
+
+// VoIP ---------------------------------------------------------------------------------
+
+bool AppController::addVoiprec(
+    std::string const&  voiprecName,
+    bool                isPlaybackSource,
+    std::string const&  audioSourceName,
+    const std::string   socketName, 
+    std::string const&  ipDest,
+    unsigned short      portDest) noexcept 
+    {
+        // 1. Definimos la acción de red mediante una lambda capturando 'this'
+        // Así VoIPRec invocará de forma indirecta a NetMgr sin conocerlo.
+        auto networkSendLambda = [this, socketName, ipDest, portDest](const std::vector<char>& packet) {
+            // Suponiendo que conoces IP/Puerto destino de antemano o están asociados al socketName
+            this->net_->sendData(socketName, packet, ipDest, portDest);
+        };
+
+        // Añadir el VoIPRec pasándole el puente de red
+        
+        //voip_->add_voiprec(voiprecName, networkSendLambda);
+
+        // Conectar el flujo de audio de SoundMgr hacia ese VoIPRec específico
+        // Usamos el callback expuesto de AudioInputModule implementado
+        // (Nota: Tendrás que añadir un método en SoundMgr para acceder al dispositivo o setear el callback por índice/nombre)
+        
+        /* Suponiendo que SoundMgr te permite hacer esto: */
+        
+        /*
+        
+            this->snd_->setInputCallback(audioSourceName, [this, voiprecName](const int16_t* samples, unsigned int frameCount) {
+                this->voip_.feedAudioToRec(voiprecName, samples, frameCount);
+            });
+        
+        */
+
+        // (de momento no funciona)
+        return false;
+    }

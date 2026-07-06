@@ -226,6 +226,16 @@ public:
      */
     std::string getTTSProcessingText(std::string modelName) const noexcept override;
 
+
+    // VoIP ---------------------------------------------------------------------------------
+
+    bool addVoiprec(
+    std::string const&  voiprecName,
+    bool                isPlaybackSource,
+    std::string const&  audioSourceName,
+    const std::string   socketName, 
+    std::string const&  ipDest,
+    unsigned short      port) noexcept override;
     
     // Añadir aquí métodos de IAppControl...
 
