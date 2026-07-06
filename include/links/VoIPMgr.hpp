@@ -27,7 +27,9 @@ public:
 
 // General ------------------------------------------------------------------------------
 
-    VoIPMgr() {
+    VoIPMgr() :
+        createVoiprec_(nullptr)
+    {
 
     }
 
@@ -65,11 +67,25 @@ public:
 
         /* Aquí cargar la config, iniciar los voiprec/plays, etc... */
         // #TODO
+
+        // hago un vector que apunte al array de los nodos json dentro del nodo principal
+        std::vector<json*> config_voiprec = jsonMgr.getArrayElements(cfg, "voiprec");
+
+        // Datos para crear Voiprec (WIP)
+        std::string name;
+        std::string socketName;
+        std::string audioSourceName;
+        for (short i = 0; i < config_voiprec.size(); i++) {
+            jsonMgr.get_or_set(config_voiprec[i], "name", name);
+
+            if(!name.empty())
+                createVoiprec_(name);   // Función inyectada para usar snd, net
+        }
+
     }
 
 
 // VoIPRec ------------------------------------------------------------------------------
-
 
     bool add_voiprec(const std::string& name, std::function<void(const std::vector<char>&)> send_cb) {
         // Comprobaciones: Si ya existe, no crearlo
@@ -83,10 +99,16 @@ public:
     bool remove_voiprec(std::string name) { 
 
         // buscar voiprec (nombre en map)
+        auto it = voiprecs_.find(name);
+        if (it == voiprecs_.end())
+            return false;
 
         // parar voiprec
+        if (it->second)
+            it->second->stop(); 
 
         // eliminar del vector
+        voiprecs_.erase(it);
     }
 
 
@@ -119,5 +141,7 @@ private:
 
     std::unordered_map<std::string, std::unique_ptr<VoIPRec>>   voiprecs_;
     std::unordered_map<std::string, std::unique_ptr<VoIPPlay>>  voipplays_;
+
+    std::function<void(std::string name)>  createVoiprec_;     ///< Función inyectada para usar snd, net
 
 };
