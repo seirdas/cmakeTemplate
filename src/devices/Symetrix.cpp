@@ -90,9 +90,11 @@ void Symetrix::loadConfig(void* config) {
         // No hacer nada si ya está inicializado y no se fuerza el init
         if (initialized_) return true;
 
-        // Leer configuración si se proporciona y es posible
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
+        else
+            SYS_WARN("Symetrix","Cannot load config. Using default values.");
 
         // Si entra aquí, se ha forzado la inicialización. Limpiar lo que hubiera
         if (initialized_) {

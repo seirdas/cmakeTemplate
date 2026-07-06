@@ -49,9 +49,8 @@
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
-        else  // Puede llegar aquí cuando se hace reload()
-            SYS_WARN("TTSMgr","Cannot load config. Using default values.");
-
+        else // Puede llegar aquí si se hace reload()
+            SYS_WARN("AppController","Cannot load config. Using default values.");
 
         // Marcar como corriendo por si se destruye mientras carga modelos
         running_ = true;

@@ -49,9 +49,11 @@
             return false;
         }
 
-        // Leer configuración si se proporciona y es posible
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
+        else
+            SYS_WARN("SoundMgr","Cannot load config. Using default values.");
 
         // Obtener dispositivos de captura/playback
         if (!updateDevices())

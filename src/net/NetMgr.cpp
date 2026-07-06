@@ -216,9 +216,11 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool NetMgr::init(void* config) {
-        // Leer configuración si se proporciona y es posible
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
+        else
+            SYS_WARN("NetMgr","Cannot load config. Using default values.");
 
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {

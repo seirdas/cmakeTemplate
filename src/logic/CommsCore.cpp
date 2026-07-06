@@ -26,7 +26,7 @@ bool CommsCore::init(void* config) {
     if (config)
         loadConfig(config);
     else  // Puede llegar aquí cuando se hace reload()
-        SYS_WARN("AIM","Cannot load config. Using default values.");
+        SYS_WARN("CommsCore","Cannot load config. Using default values.");
 
     return false;
 }

@@ -50,9 +50,11 @@
 
     bool TotalMix::init(void* config) {
 
-        // Leer configuración si se proporciona y es posible
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
+        else
+            SYS_WARN("Totalmix","Cannot load config. Using default values.");
 
         // Iniciar WSA (Contexto de red Windows)
         if (!wsaStarted_) {
