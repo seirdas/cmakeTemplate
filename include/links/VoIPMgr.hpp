@@ -51,7 +51,7 @@ public:
         voipplays_.clear();
     }
 
-    bool loadConfig(void* config) {
+    void loadConfig(void* config) {
 
         if (!config) 
             return;
