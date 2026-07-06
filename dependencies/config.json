@@ -12,36 +12,42 @@
             }
         ]
     },
-"sound": {
-    "Capture": [
-        {
-            "device": "mic",
-            "name": "PILOTO",
-            "numchannels": 2,
-            "process_buffer_size": 1024,
-            "sample_rate": 48000
-        },
-        {
-            "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
-            "name": "COPILOTO",
-            "numchannels": 2,
-            "process_buffer_size": 1024,
-            "sample_rate": 48000
-        },
-        {
-            "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
-            "name": "IOS",
-            "numchannels": 2,
-            "process_buffer_size": 1024,
-            "sample_rate": 48000
-        }
-    ],
-
-    "Playback": []
-
+    "sound": {
+        "Capture": [
+            {
+                "device": "mic",
+                "name": "PILOTO",
+                "numchannels": 2,
+                "process_buffer_size": 1024,
+                "sample_rate": 48000
+            },
+            {
+                "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
+                "name": "COPILOTO",
+                "numchannels": 2,
+                "process_buffer_size": 1024,
+                "sample_rate": 48000
+            },
+            {
+                "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
+                "name": "IOS",
+                "numchannels": 2,
+                "process_buffer_size": 1024,
+                "sample_rate": 48000
+            }
+        ],
+        "Playback": []
     },
-    
-    "symetrix": {},
+    "symetrix": {
+        "ComposerPort": 48631,
+        "SymetrixIP": "192.168.7.21",
+        "connection_ping_timeout_ms": 500,
+        "dBcurve_gamma": 0.415,
+        "kBootPreset": 1,
+        "supermatrix_ins": 20,
+        "supermatrix_outs": 20,
+        "tolerance_percent": 2
+    },
     "totalmix": {
         "localIP": "127.0.0.1",
         "localPort": 12321,
@@ -61,5 +67,5 @@
             "keep_alive_seconds": 20
         }
     },
-    "version": "0.9"
+    "version": "0.10.0"
 }
