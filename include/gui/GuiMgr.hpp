@@ -237,25 +237,25 @@ private:
 /************ Variables ********************************************************/
     
     // Propiedades de la ventana ________________
-    ImGuiStyle*     style_          = nullptr;                  ///< Modificar ajustes de estilo
-    ImGuiIO*        io_             = nullptr;                  ///< Manejar entrada/salida
-    bool            captureKeys_    = false;                    ///< Modo Debug para detección de teclas en consola
+    ImGuiStyle*     style_;             ///< Modificar ajustes de estilo
+    ImGuiIO*        io_;                ///< Manejar entrada/salida
+    bool            captureKeys_;       ///< Modo Debug para detección de teclas en consola
 
-    std::string     AppName_        = "Demo";                   ///< Nombre de la aplicación/ventana
-    unsigned int    windowSizeX_    = 1280;                     ///< Tamaño horizontal (x) de la ventana
-    unsigned int    windowSizeY_    = 720;                      ///< Tamaño vertical (y) de la ventana
-    unsigned int    windowPosX_     = 0;                        ///< Posición horizontal (x) de la ventana
-    unsigned int    windowPosY_     = 0;                        ///< Posición vertical (y) de la ventana
-    bool            fullscreen_     = false;                    ///< Modo ventana completa activo
+    std::string     AppName_;           ///< Nombre de la aplicación/ventana
+    unsigned int    windowSizeX_;       ///< Tamaño horizontal (x) de la ventana
+    unsigned int    windowSizeY_;       ///< Tamaño vertical (y) de la ventana
+    unsigned int    windowPosX_;        ///< Posición horizontal (x) de la ventana
+    unsigned int    windowPosY_;        ///< Posición vertical (y) de la ventana
+    bool            fullscreen_;        ///< Modo ventana completa activo
 
-    float              fontSize_      = 16.0f;                  ///< Tamaño de fuente predeterminado
-    unsigned int const MAX_FONT_SIZE_ = 30;                     ///< Tamaño de fuente máximo permitido
-    unsigned int const MIN_FONT_SIZE_ = 14;                     ///< Tamaño de fuente mínimo permitido
-    float deviceRefreshInterval_      = 5.0f;                   ///< Tiempo de refrescar los dispositivos de entrada
+    float              fontSize_;           ///< Tamaño de fuente predeterminado
+    unsigned int const MAX_FONT_SIZE_ = 30; ///< Tamaño de fuente máximo permitido
+    unsigned int const MIN_FONT_SIZE_ = 14; ///< Tamaño de fuente mínimo permitido
+    float deviceRefreshInterval_;           ///< Tiempo de refrescar los dispositivos de entrada
 
-    GLFWwindow*     window_         = nullptr;                  ///< Puntero a la ventana GLFW
-    IAppControl*    ctrl_           = nullptr;                  ///< Puntero al controlador de la aplicación para comunicación entre miembros
-    bool            running_        = false;                    ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
+    GLFWwindow*     window_;            ///< Puntero a la ventana GLFW
+    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
+    bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
     
     // Imágenes _________________________________
 

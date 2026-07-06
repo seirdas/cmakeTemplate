@@ -63,8 +63,21 @@
 	// General ------------------------------------------------------------------------------
 
 	GuiMgr::GuiMgr(IAppControl* controller) : 
+        pimpl_(std::make_unique<Impl>()),
+		style_(nullptr),
+		io_(nullptr),
+		captureKeys_(false),
+		AppName_("Demo"),
+		windowSizeX_(1280),
+		windowSizeY_(720),
+		windowPosX_(0),
+		windowPosY_(0),
+		fullscreen_(false),
+		fontSize_(16),
+		deviceRefreshInterval_(5),
+		window_(nullptr),
 		ctrl_(controller),
-        pimpl_(std::make_unique<Impl>())
+		running_(false)
 	{
 		
 		// Avisa si se ha inicializado sin interfaz de comunicación para saber de otros módulos
@@ -94,12 +107,14 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
         
+        jsonMgr.get_or_set(cfg, "AppName", 		AppName_);
         jsonMgr.get_or_set(cfg, "windowSizeX", 	windowSizeX_);
         jsonMgr.get_or_set(cfg, "windowSizeY", 	windowSizeY_);
-        jsonMgr.get_or_set(cfg, "windowPosX", 	windowSizeY_);
-        jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosX_);
+        jsonMgr.get_or_set(cfg, "windowPosX", 	windowPosX_);
+        jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosY_);
         jsonMgr.get_or_set(cfg, "fullscreen", 	fullscreen_);
         jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
+        jsonMgr.get_or_set(cfg, "deviceRefreshInterval", 	deviceRefreshInterval_);
     }
 
 	// Ejecución ----------------------------------------------------------------------------

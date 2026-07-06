@@ -1,7 +1,9 @@
 {
     "comms": {},
     "gui": {
-        "fontSize": 16.0,
+        "AppName": "Audio Control Center",
+        "deviceRefreshInterval": 5,
+        "fontSize": 16,
         "fullscreen": false,
         "windowPosX": 720,
         "windowPosY": 0,
