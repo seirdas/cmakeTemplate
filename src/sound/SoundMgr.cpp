@@ -4,22 +4,22 @@
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
     #include <miniaudio.h>
-    #include "sound/AudioInputModule.hpp"
-    #include "sound/AudioPlaybackModule.hpp"
     #include <memory>
     #include <chrono>
     #include <thread>
+    #include "sound/AudioInputModule.hpp"
+    #include "sound/AudioPlaybackModule.hpp"
     #include "system/SystemMgr.hpp"
     #include "files/JsonMgr.hpp"    // Para conocer json
 
 
     // Implementación de miembros de la clase de miniaudio (pimpl_)
     struct SoundMgr::Impl {
-        ma_context snd_context_;                            // Contexto (motor) de audio
-        ma_device_info* pPlaybackDevInfos_   = nullptr;     // Información de dispositivos playback
-        ma_uint32       PlaybackDevCount_    = 0;           // Número de dispositivos playback
-        ma_device_info* pCaptureDevInfos_ = nullptr;        // Información de dispositivos de captura
-        ma_uint32       captureDevCount_  = 0;              // Número de dispositivos de captura
+        ma_context      snd_context_;                       ///< Contexto (motor) de audio
+        ma_device_info* pPlaybackDevInfos_  = nullptr;      ///< Información de dispositivos playback
+        ma_uint32       PlaybackDevCount_   = 0;            ///< Número de dispositivos playback
+        ma_device_info* pCaptureDevInfos_   = nullptr;      ///< Información de dispositivos de captura
+        ma_uint32       captureDevCount_    = 0;            ///< Número de dispositivos de captura
     };
 
     // General ------------------------------------------------------------------------------
@@ -87,7 +87,7 @@
         SYS_INFO("SoundMgr", "Closing sound engine and modules...");
 
         // Limpieza (destruir) los módulos creados
-        inputs_.clear();
+        captures_.clear();
         playbacks_.clear();
 
         // Desinicializar el contexto global
@@ -110,19 +110,15 @@
 
     if (res != MA_SUCCESS) return false;
 
-    std::string name; 
     // Si hay algun dispositivo con is_valid = false se reinicializa
-    for (auto& aim : inputs_) {
-        name = aim->deviceName(); 
+    for (auto& [name, aim] : captures_) {
         if (aim->isValid()) continue;
 
-        
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
-            if (aim->deviceName() == pimpl_->pCaptureDevInfos_[i].name)
-                for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++) // contador
-                   if (aim->init(nullptr))
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) 
+            if (aim->deviceName() == pimpl_->pCaptureDevInfos_[i].name) 
+                for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++) 
+                    if (aim->init(nullptr))
                         break;
-                        
     }
 
     return true;
@@ -146,7 +142,14 @@
         // Devolver la lista de dispositivos
         return devlist;
     }
- 
+
+    std::vector<std::string> SoundMgr::getManagedCaptures() const {
+        std::vector<std::string> cap;
+        for (auto& it : captures_)
+            cap.push_back(it.first);
+        return cap;
+    }
+
     std::string SoundMgr::getDefaultInputDevice() const {
         // Si no está inicializado no se puede hacer nada
         if (!ctx_initialized_) return {};
@@ -177,12 +180,21 @@
 
         // Obtener el nombre de la config
         std::string deviceName = "";
+        std::string captureName = "";
         JsonMgr& jsonMgr = JsonMgr::instance();
         jsonMgr.get_or_set(static_cast<json*>(config), "device", deviceName);
+        jsonMgr.get_or_set(static_cast<json*>(config), "name", captureName);
 
         // Comprobación del nombre
         if (deviceName.empty()) {
             SYS_WARN("SoundMgr","addCaptureDevice: Device name is empty.");
+            return false;
+        }
+
+        // comprobar si ya existe con ese nombre de captura
+        auto it = captures_.find(captureName);
+        if (it == captures_.end()) {
+            SYS_WARN("SoundMgr", "Selected device '" + captureName + "' already created.");
             return false;
         }
 
@@ -232,14 +244,14 @@
             return false;
         }
 
-        // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (inputs_).
-        inputs_.push_back(std::move(aim));
-        SYS_INFO("SoundMgr", "New input device loaded.");
+        // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (captures_).
+        captures_[captureName] = std::move(aim);
+        SYS_INFO("SoundMgr", "New input device: '" + captureName + "' (" + deviceName + ")");
 
         return true;
     }
     
-    bool SoundMgr::addCaptureDevice(std::string const& name) {
+    bool SoundMgr::addCaptureDevice(std::string const& captureName, std::string const& deviceName) {
         
         // Comprobar que el contexto está inicializado
         if (!ctx_initialized_){
@@ -248,24 +260,40 @@
         }
 
         // Refrescar lista de dispositivos disponibles
-        updateDevices(); 
+        updateDevices();
 
-        // bucle para encontrar el nombre que hemos seleccionado
-        ma_device_info* selectedDeviceInfo = nullptr;
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {
-            if (name == pimpl_->pCaptureDevInfos_[i].name) {
+        // comprobar si ya existe con ese nombre de captura
+        auto it = captures_.find(captureName);
+        if (it == captures_.end()) {
+            SYS_WARN("SoundMgr", "Selected device '" + captureName + "' already created.");
+            return false;
+        }
+
+        // bucle para encontrar el dispositivo cuyo nombre real contenga el deviceName
+        short count = 0;                                           
+        std::string realName = "";                                 
+        ma_device_info* selectedDeviceInfo = nullptr;              
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) { 
+            realName = pimpl_->pCaptureDevInfos_[i].name;          
+            if (realName.find(deviceName) != std::string::npos) {  
                 selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];
-                break;
+                count++;
             }
+        }
+
+        // Sale si se han encontrado varios con el mismo nombre
+        if (count > 1) {
+            SYS_WARN("SoundMgr","Cannot initialize audio input: Ambiguous name specified: '" + deviceName + "'");
+            return false;
         }
         
         // Si no encuentra ningún nombre salta fallo
         if(!selectedDeviceInfo){
-            SYS_WARN("SoundMgr", "Failed to found device with name"); 
+            SYS_WARN("SoundMgr", "Failed to found device with name '" + deviceName + "'"); 
             return false; 
         }
     
-        SYS_INFO("SoundMgr", "Initializing capture device:" + name); 
+        SYS_INFO("SoundMgr", "Initializing capture device:" + deviceName); 
 
         // Crear AudioInputModule
         std::unique_ptr<AudioInputModule> aim = std::make_unique<AudioInputModule>(
@@ -280,81 +308,79 @@
             return false;
         }
 
-        // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (inputs_).
-        inputs_.push_back(std::move(aim));
-        SYS_INFO("SoundMgr", "New input device loaded.");
+        // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (captures_).
+        captures_[deviceName] = std::move(aim);
+        SYS_INFO("SoundMgr", "New input device: '" + captureName + "' (" + deviceName + ")");
 
         return true;
     }
 
-    bool SoundMgr::removeInputDevice(unsigned short index) {
+    bool SoundMgr::removeInputDevice(std::string const& name) {
 
         // comprobar si existe
-        if (index >= inputs_.size()) {
-            SYS_WARN("SoundMgr","Selected index " + std::to_string(index) +
-                " out of bounds (" + std::to_string(inputs_.size()) + ")");;
+        auto it = captures_.find(name);
+        if (it == captures_.end()) {
+            SYS_WARN("SoundMgr", "Selected device '" + name + "' not found.");
             return false;
         }
-        
-        // Obtener el módulo de reproducción
-        AudioInputModule* aim = inputs_[index].get();
 
         // Detener las operaciones del módulo de reproducción
-        aim->stop();
+        it->second->stop();
 
         // Borrar el elemento del vector usando iterator
-        inputs_.erase(inputs_.begin() + index);
+        captures_.erase(it);
 
         // Notificar y salir
         SYS_INFO("SoundMgr", "Deleted Capture Device.");
         return true;
     }
 
-    bool SoundMgr::startRec_snd(unsigned short index){
-        if (index >= inputs_.size()) return false;
+    bool SoundMgr::startRec_snd(std::string const& name){
+        auto it = captures_.find(name);
+        if (it == captures_.end()) return false;
 
-        std::string filename = "grabacion_" + std::to_string(index);
-        inputs_[index]->StartRec(filename);
-
-        return true;
-    }
-
-    bool SoundMgr::stopRec_snd(unsigned short index){
-        if (index >= inputs_.size()) return false;
-
-        AudioInputModule* aim = inputs_[index].get();
-        aim->StopRec();
+        std::string filename = "grabacion_" + name;
+        it->second->StartRec(filename);
 
         return true;
     }
 
-    float SoundMgr::getInputRmsLevel(unsigned short index) {
-    if (index >= inputs_.size()) return 0.0f;
-    return inputs_[index]->getRmsLevel();
+    bool SoundMgr::stopRec_snd(std::string const& name){
+        auto it = captures_.find(name);
+        if (it == captures_.end()) return false;
+
+        it->second->StopRec();
+        return true;
     }
 
-    float SoundMgr::getInputPeakLevel(unsigned short index) {
-    if (index >= inputs_.size()) return 0.0f;
-    return inputs_[index]->getPeakLevel();
+    float SoundMgr::getInputRmsLevel(std::string const& name) {
+        auto it = captures_.find(name);
+        if (it == captures_.end()) return 0.0f;
+        return it->second->getRmsLevel();
     }
 
-    size_t SoundMgr::getInputBufferSize(unsigned int index) {
-        if (index >= inputs_.size()) return 0;
-        return inputs_[index]->getBufferSize();
+    float SoundMgr::getInputPeakLevel(std::string const& name) {
+        auto it = captures_.find(name);
+        if (it == captures_.end()) return 0.0f;
+        return it->second->getPeakLevel();
     }
 
-    size_t SoundMgr::getInputRecBufferSize(unsigned int index)
-    {
-        if (index >= inputs_.size()) return 0;
-        return inputs_[index]->getRecBufferSize();
+    size_t SoundMgr::getInputBufferSize(std::string const& name) {
+        auto it = captures_.find(name);
+        if (it == captures_.end()) return 0;
+        return it->second->getBufferSize();
     }
 
-    bool SoundMgr::isInputDeviceValid(unsigned short index) const 
-    {
-        // Comprueba que el índice que pides existe.
-        if (index >= inputs_.size()) return false;
-        // comprueba si es valido
-        return inputs_[index]->isValid();
+    size_t SoundMgr::getInputRecBufferSize(std::string const& name) {
+        auto it = captures_.find(name);
+        if (it == captures_.end()) return 0;
+        return it->second->getRecBufferSize();
+    }
+
+    bool SoundMgr::isInputDeviceValid(std::string const& name) const {
+        auto it = captures_.find(name);
+        if (it == captures_.end()) return false;
+        return it->second->isValid();
     }
 
 
@@ -429,29 +455,26 @@
         }
 
         // Insertar en el vector
-        playbacks_.push_back(std::move(apm));
+        playbacks_[deviceName] = std::move(apm);
         SYS_INFO("SoundMgr", "Playback loaded. ");
 
         return true;
     }
 
-    bool SoundMgr::removePlaybackDevice(unsigned short index) {
+    bool SoundMgr::removePlaybackDevice(std::string const& name) {
 
         // comprobar si existe
-        if (index >= playbacks_.size()) {
-            SYS_WARN("SoundMgr","Selected index " + std::to_string(index) +
-                " out of bounds (" + std::to_string(playbacks_.size()) + ")");;
+        auto it = playbacks_.find(name);
+        if (it == playbacks_.end()) {
+            SYS_WARN("SoundMgr", "Selected playback device '" + name + "' not found.");
             return false;
         }
         
-        // Obtener el módulo de reproducción
-        AudioPlaybackModule* apm = playbacks_[index].get();
-
         // Detener las operaciones del módulo de reproducción
-        apm->stop();
+        it->second->stop();
 
         // Borrar el elemento del vector usando iterator
-        playbacks_.erase(playbacks_.begin() + index);
+        playbacks_.erase(it);
 
         // Notificar y salir
         SYS_INFO("SoundMgr", "Deleted Playback.");
@@ -468,19 +491,20 @@
         // Actualizar dispositivos disponibles
         updateDevices();
 
-        // Tomar el PRIMER dispositivo de audio
-        std::vector<std::string> list = getAvailablePlaybacks();
-        if (list.empty())
-            return false;
-        //addPlaybackDevice(list[0], "audio");        // <-- Aquí se hace también start()
-
         // Voy a probar tomando el dispositivo de audio predeterminado
-        addPlaybackDevice(getDefaultPlaybackDevice(), "audioTest");
+        std::string defDevice = getDefaultPlaybackDevice();
+        if (defDevice.empty()) return false;
+        
+        // Añade el nuevo dispositivo playback
+        addPlaybackDevice(defDevice, "audioTest");
+
+        // Confirma que se ha agregado bien
+        auto it = playbacks_.find(defDevice);
+        if (it == playbacks_.end()) 
+            return false;
 
         // puntero al APM que acabamos de meter
-        if (playbacks_.empty()) 
-            return false;
-        AudioPlaybackModule* ultimoAPM = playbacks_.back().get();
+        AudioPlaybackModule* ultimoAPM = it->second.get();
         SYS_INFO("SoundMgr", "Testing device: " + ultimoAPM->deviceName());
 
         /* precarga opcional */
@@ -514,7 +538,7 @@
         ultimoAPM->stop();
 
         // Remover el APM de la lista
-        removePlaybackDevice(static_cast<unsigned short>(playbacks_.size() - 1));
+        removePlaybackDevice(defDevice);
 
         return true;
     }

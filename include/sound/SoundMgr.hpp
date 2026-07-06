@@ -2,7 +2,7 @@
 
 #include <atomic>
 #include <string>
-#include <vector>
+#include <unordered_map>
 #include <memory>                       // unique_ptr
 
 
@@ -66,6 +66,11 @@ public:
      */
     std::vector<std::string> getAvailableInputs() const;
 
+    /**
+     * @brief Devuelve una lista con los nombres de todos las capturas agregadas
+     */
+    std::vector<std::string> getManagedCaptures() const;
+
     /** 
      * @brief Devuelve el nombre del micrófono que tiene Windows marcado como predeterminado.
      */
@@ -83,47 +88,47 @@ public:
      * @param name Nombre de dispositivo de captura
      * @return @c true Si se ha creado correctamente, @c false en caso contrario
      */ 
-    bool addCaptureDevice(std::string const& name);
+    bool addCaptureDevice(std::string const& captureName, std::string const& deviceName);
 
     /**
      * @brief Eliminar el dispositivo de captura
      */ 
-    bool removeInputDevice(unsigned short index); 
+    bool removeInputDevice(std::string const& name); 
 
     /**
      * @brief Empieza a grabar
      */
-    bool startRec_snd(unsigned short index);
+    bool startRec_snd(std::string const& name);
 
     /**
      * @brief Para de grabar
      */
-    bool stopRec_snd(unsigned short index);
+    bool stopRec_snd(std::string const& name);
 
     /**
      * @brief Obtiene el nivel de RMS del audio
      */
-    float getInputRmsLevel(unsigned short index);
+    float getInputRmsLevel(std::string const& name);
 
     /**
      * @brief Obtiene el nivel del pico del audio
      */
-    float getInputPeakLevel(unsigned short index);
+    float getInputPeakLevel(std::string const& name);
 
     /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
      */
-    bool isInputDeviceValid(unsigned short index) const;
+    bool isInputDeviceValid(std::string const& name) const;
 
      /**
       * @brief Tamaño del buffer del dispositivo de grabación
       */
-    size_t getInputRecBufferSize(unsigned int index);
+    size_t getInputRecBufferSize(std::string const& name);
     
     /**
       * @brief Tamaño del buffer del dispositivo de captura
       */
-    size_t getInputBufferSize(unsigned int index);
+    size_t getInputBufferSize(std::string const& name);
 
 // Playbacks ----------------------------------------------------------------------------
 
@@ -135,7 +140,7 @@ public:
 
     bool addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
 
-    bool removePlaybackDevice(unsigned short index);
+    bool removePlaybackDevice(std::string const& name);
 
     bool playbackTest();
 
@@ -144,18 +149,18 @@ private:
 
 /************ Variables ****************************************************************/
 
-    using PlaybacksVector = std::vector<std::unique_ptr<AudioPlaybackModule>>;
-    using InputsVector = std::vector<std::unique_ptr<AudioInputModule>>;
+    using CapturesList  = std::unordered_map<std::string, std::unique_ptr<AudioInputModule>>;
+    using PlaybacksList = std::unordered_map<std::string, std::unique_ptr<AudioPlaybackModule>>;
 
     // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
     std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de la librería externa
 
     // Módulos de audio
-    InputsVector    inputs_;            ///< Vector con dispositivos inicializados de captura
-    PlaybacksVector playbacks_;         ///< Vector con dispositivos inicializados de playback
+    CapturesList    captures_;          ///< Vector con dispositivos inicializados de captura
+    PlaybacksList   playbacks_;         ///< Vector con dispositivos inicializados de playback
 
     // Estado del módulo
-    std::atomic<bool> ctx_initialized_; ///< Flag para saber si el motor de audio está inicializado.
-    int MAX_REINIT_ATTEMPTS = 3;        ///< Número de reintentos para reinicializar dispositivo de entrada
+    std::atomic<bool>   ctx_initialized_;           ///< Flag para saber si el motor de audio está inicializado.
+    unsigned short      MAX_REINIT_ATTEMPTS = 3;    ///< Número de reintentos para reinicializar dispositivo de entrada
 };

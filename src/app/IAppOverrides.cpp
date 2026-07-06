@@ -66,6 +66,10 @@ std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
     return snd_->getAvailableInputs();
 }
 
+std::vector<std::string> AppController::getManagedCaptures() noexcept {
+    return snd_->getManagedCaptures();
+}
+
 std::vector<std::string> AppController::getAvailablePlaybackDevices() noexcept {
     return snd_->getAvailablePlaybacks();
 }
@@ -75,45 +79,45 @@ void AppController::refreshAudioDevices() noexcept {
     return;
 }
 
-bool AppController::addInputDevice(std::string const& name) noexcept {
-    return snd_->addCaptureDevice(name);
+bool AppController::addInputDevice(std::string const& captureName, std::string const& deviceName) noexcept {
+    return snd_->addCaptureDevice(captureName, deviceName);
 }
 
-bool AppController::removeInputDevice(unsigned short index) noexcept {
-    return snd_->removeInputDevice(index);
+bool AppController::removeInputDevice(std::string const& captureName) noexcept {
+    return snd_->removeInputDevice(captureName);
 }
 
-bool AppController::StartRecording(unsigned short index) noexcept{
-    return snd_->startRec_snd(index); 
+bool AppController::StartRecording(std::string const& captureName) noexcept{
+    return snd_->startRec_snd(captureName); 
 }
 
-bool AppController::StopRecording(unsigned short index) noexcept{
-    return snd_->stopRec_snd(index); 
+bool AppController::StopRecording(std::string const& captureName) noexcept{
+    return snd_->stopRec_snd(captureName); 
 }
 
-size_t AppController::getInputBufferSize(unsigned short index) noexcept {
-    return snd_->getInputBufferSize(index); 
+size_t AppController::getInputBufferSize(std::string const& captureName) noexcept {
+    return snd_->getInputBufferSize(captureName); 
 }
 
-size_t AppController::getInputRecBufferSize(unsigned short index) noexcept {
-    return snd_->getInputRecBufferSize(index); 
+size_t AppController::getInputRecBufferSize(std::string const& captureName) noexcept {
+    return snd_->getInputRecBufferSize(captureName); 
 }
 
-bool AppController::isInputDeviceValid(unsigned short index) noexcept {
-    return snd_->isInputDeviceValid(index);
+bool AppController::isInputDeviceValid(std::string const& captureName) noexcept {
+    return snd_->isInputDeviceValid(captureName);
 }
 
-float AppController::getInputRMSLevel(unsigned short index) noexcept {
-    return snd_->getInputRmsLevel(index);
+float AppController::getInputRMSLevel(std::string const& captureName) noexcept {
+    return snd_->getInputRmsLevel(captureName);
 }
 
-float AppController::getInputPeakLevel(unsigned short index) noexcept {
-    return snd_->getInputPeakLevel(index);
+float AppController::getInputPeakLevel(std::string const& captureName) noexcept {
+    return snd_->getInputPeakLevel(captureName);
 }
 
 
 
-// TTS ----------------------------------------------------------------------------
+// TTS ----------------------------------------------------------------------------------
 
 bool AppController::TTSgenerate(
     std::string const& modelName, 

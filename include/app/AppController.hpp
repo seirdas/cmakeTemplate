@@ -141,6 +141,11 @@ public:
     std::vector<std::string> getAvailableInputDevices() noexcept override;
 
     /**
+     * @brief Devuelve una lista con los nombres de todos las capturas agregadas
+     */
+    std::vector<std::string> getManagedCaptures() noexcept override;
+    
+    /**
      * @brief Devuelve la lista con los dispositivos de reproducción disponibles.
      */
     std::vector<std::string> getAvailablePlaybackDevices() noexcept override;
@@ -148,55 +153,55 @@ public:
     /**
      * @brief Añade un dispositivo de captura por nombre.
      */
-    bool addInputDevice(std::string const& name) noexcept override;
+    bool addInputDevice(std::string const& captureName, std::string const& deviceName) noexcept override;
 
     /**
      * @brief Elimina un dispositivo de captura por índice.
      */
-    bool removeInputDevice(unsigned short index) noexcept override;
+    bool removeInputDevice(std::string const& captureName) noexcept override;
     
     /**
      * @brief Manda que se empiece a grabar
      */
-    bool StartRecording(unsigned short index) noexcept override;
+    bool StartRecording(std::string const& captureName) noexcept override;
 
     /**
      * @brief Manda que pare de grabar
      */
-    virtual bool StopRecording(unsigned short index) noexcept override;
+    bool StopRecording(std::string const& captureName) noexcept override;
 
     /**
      * @brief Obtiene el tamaño del buffer de captura
      * @param index indice de dispositivo de captura
      * @return el tamaño del buffer de captura
      */
-    virtual size_t getInputBufferSize(unsigned short index) noexcept override;
+    size_t getInputBufferSize(std::string const& captureName) noexcept override;
 
     /**
      * @brief Obtiene el tamaño del buffer de grabación
      * @param index indice de dispositivo de captura
      * @return el tamaño del buffer de grabación
      */
-    virtual size_t getInputRecBufferSize(unsigned short index) noexcept override;
+    size_t getInputRecBufferSize(std::string const& captureName) noexcept override;
 
     /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
      */
-     virtual bool isInputDeviceValid(unsigned short index) noexcept override;
+    bool isInputDeviceValid(std::string const& captureName) noexcept override;
 
     /**
      * @brief devuelve el nivel del pico de audio
      */
-    virtual float getInputPeakLevel(unsigned short index) noexcept;
+    float getInputPeakLevel(std::string const& captureName) noexcept;
 
     /**
      * @brief devuelve el nivel del RMS de audio
      */
-    virtual float getInputRMSLevel(unsigned short index) noexcept;
+    float getInputRMSLevel(std::string const& captureName) noexcept;
 
 
 
-    // TTS ----------------------------------------------------------------------------
+    // TTS ----------------------------------------------------------------------------------
 
     /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.

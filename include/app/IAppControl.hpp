@@ -110,6 +110,11 @@ public:
     virtual std::vector<std::string> getAvailableInputDevices() noexcept = 0;
     
     /**
+     * @brief Devuelve una lista con los nombres de todos las capturas agregadas
+     */
+    virtual std::vector<std::string> getManagedCaptures() noexcept = 0;
+    
+    /**
      * @brief Devuelve la lista con los dispositivos de reproducción disponibles.
      */
     virtual std::vector<std::string> getAvailablePlaybackDevices() noexcept = 0;
@@ -117,47 +122,47 @@ public:
     /**
      * @brief Añade un dispositivo de captura por nombre.
      */
-    virtual bool addInputDevice(std::string const& name) noexcept = 0;
+    virtual bool addInputDevice(std::string const& captureName, std::string const& deviceName) noexcept = 0;
 
     /**
      * @brief Elimina un dispositivo de captura por índice.
      */
-    virtual bool removeInputDevice(unsigned short index) noexcept = 0;
+    virtual bool removeInputDevice(std::string const& captureName) noexcept = 0;
 
     /**
      * @brief Manda que se empiece a grabar
      */
-    virtual bool StartRecording(unsigned short index) noexcept = 0;
+    virtual bool StartRecording(std::string const& captureName) noexcept = 0;
 
     /**
      * @brief Manda que pare de grabar
      */
-    virtual bool StopRecording(unsigned short index) noexcept = 0;
+    virtual bool StopRecording(std::string const& captureName) noexcept = 0;
     
     /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
      */
-     virtual bool isInputDeviceValid(unsigned short index) noexcept = 0;
+     virtual bool isInputDeviceValid(std::string const& captureName) noexcept = 0;
 
      /**
       * @brief devuelve el valor del RMS
       */
-     virtual float getInputRMSLevel(unsigned short index) noexcept = 0;
+     virtual float getInputRMSLevel(std::string const& captureName) noexcept = 0;
 
      /**
       * @brief devuelve el valor del pico
       */
-     virtual float getInputPeakLevel(unsigned short index) noexcept = 0;
+     virtual float getInputPeakLevel(std::string const& captureName) noexcept = 0;
 
      /**
       * @brief Tamaño del buffer del dispositivo de captura
       */
-     virtual size_t getInputBufferSize(unsigned short index) noexcept = 0; 
+     virtual size_t getInputBufferSize(std::string const& captureName) noexcept = 0; 
     
      /**
       * @brief Tamaño del buffer del dispositivo de grabación
       */
-     virtual size_t getInputRecBufferSize(unsigned short index) noexcept = 0; 
+     virtual size_t getInputRecBufferSize(std::string const& captureName) noexcept = 0; 
 
      
 // TTS --------------------------------------------------------------------------------
@@ -184,5 +189,15 @@ public:
      * @brief Obtiene el texto procesado por un modelo TTS 
      */
     virtual std::string getTTSProcessingText(std::string modelName) const noexcept = 0;
+
+// VoIP ---------------------------------------------------------------------------------
+
+    virtual bool addVoiprec(
+    std::string const&  voiprecName,
+    bool                isPlaybackSource,
+    std::string const&  audioSourceName,
+    const std::string   socketName, 
+    std::string const&  ipDest,
+    unsigned short      port) noexcept = 0;
 
 };
