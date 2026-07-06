@@ -700,7 +700,8 @@
 					std::vector<std::string> entradas = ctrl_->getAvailableInputDevices();
 
 					// Lista con los nombres de los dispositivos que el usuario ha activado
-					static std::vector<std::string> dispositivos_activos;
+					static std::vector<std::string> dispositivos_activos = ctrl_->getManagedCaptures();
+
 					// Flag para abrir/cerrar la ventana flotante del selector
 					static bool show_device_selector = false;
 
@@ -710,50 +711,49 @@
 						TextDisabled("  (ninguno)");   // Si no hay ninguno, muestra texto gris
 					} else {
 
-						for (int i = 0; i < static_cast<int>(dispositivos_activos.size()); i++) {
+						short i = 0;
+						for (std::string const& captureName : dispositivos_activos) {
 							PushID(i);
 
 							// Si el dispositivo se ha desconectado, mostrar aviso en rojo
-							if (!ctrl_->isInputDeviceValid(static_cast<unsigned short>(i))) {
-								TextColored(ImVec4(1, 0, 0, 1), "  [%d] %s - DESCONECTADO", i + 1, dispositivos_activos[i].c_str());
+							if (!ctrl_->isInputDeviceValid(captureName)) {
+								TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
 								SameLine();
-								if (SmallButton("x")) {
-									ctrl_->removeInputDevice(static_cast<unsigned short>(i));
-									dispositivos_activos.erase(dispositivos_activos.begin() + i--);
-								}
+								if (SmallButton("x")) 
+									ctrl_->removeInputDevice(captureName);
+								
 								
 							} else {
 								
-								Text("  [%d] %s", i + 1, dispositivos_activos[i].c_str());
+								Text("%s", captureName.c_str());
 								SameLine();
 								if (SmallButton("Grabar"))
-									ctrl_->StartRecording(static_cast<unsigned short>(i));
+									ctrl_->StartRecording(captureName);
 								SameLine();
 								if (SmallButton("Parar"))
-									ctrl_->StopRecording(static_cast<unsigned short>(i));
+									ctrl_->StopRecording(captureName);
 								SameLine();
-								if (SmallButton("x")) {
-									ctrl_->removeInputDevice(static_cast<unsigned short>(i));
-									dispositivos_activos.erase(dispositivos_activos.begin() + i--);
-								}
+								if (SmallButton("x"))
+									ctrl_->removeInputDevice(captureName);
+								
 	
 								SameLine();
 	
-								std::string cadena = std::to_string(ctrl_->getInputBufferSize(static_cast<unsigned short>(i)));
+								std::string cadena = std::to_string(ctrl_->getInputBufferSize(captureName));
 								Text(cadena.c_str());
 
-								std::string cadena_rec = std::to_string(ctrl_->getInputRecBufferSize(static_cast<unsigned short>(i)));
+								std::string cadena_rec = std::to_string(ctrl_->getInputRecBufferSize(captureName));
 								Text(cadena_rec.c_str());
 
 								SameLine();
 
 								// Medidor VU - barra vertical RMS
-								float LevelVal = ctrl_->getInputPeakLevel(static_cast<unsigned short>(i));
+								float LevelVal = ctrl_->getInputPeakLevel(captureName);
 
 								ImVec4 barColor;
-								if      (LevelVal < 60.f) barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
-								else if (LevelVal < 85.f) barColor = ImVec4(1.00f, 0.75f, 0.00f, 1.0f); // amarillo
-								else                    barColor = ImVec4(0.90f, 0.15f, 0.15f, 1.0f); // rojo
+								if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
+								else if (LevelVal < 85.f) 	barColor = ImVec4(1.00f, 0.75f, 0.00f, 1.0f); // amarillo
+								else						barColor = ImVec4(0.90f, 0.15f, 0.15f, 1.0f); // rojo
 
 								if (ImPlot::BeginPlot("##vu", ImVec2(30, 70),
 									ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText |
@@ -771,7 +771,7 @@
 							}
 
 
-							
+							i++;
 							PopID();
 						}
 					}
@@ -793,13 +793,8 @@
 								TextDisabled("No hay dispositivos disponibles.");
 							} else {
 								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
-									// Si ya está en la lista activa, no lo muestra
-									bool ya_activo = std::find(dispositivos_activos.begin(), dispositivos_activos.end(), entradas[n]) != dispositivos_activos.end();
-									if (ya_activo) continue;
-
 									if (Selectable(entradas[n].c_str())) {
-										ctrl_->addInputDevice(entradas[n]);         // Inicializa el dispositivo en SoundMgr
-										dispositivos_activos.push_back(entradas[n]); // Lo añade a la lista visual
+										ctrl_->addInputDevice("DEFAULT", entradas[n]);         // Inicializa el dispositivo en SoundMgr
 										show_device_selector = false;               // Cierra el popup
 									}
 								}
