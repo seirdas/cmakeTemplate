@@ -1,12 +1,6 @@
 #pragma once
 
-
-#include <string>
-#include <memory>
-#include <unordered_map>
-
-class TTSPlayer;
-
+#include <memory>   // unique_ptr
 
 
 class TTSPlayerMgr {
@@ -32,9 +26,21 @@ public:
 
     void loadConfig(void* config);
 
+    void Ejecutar();
+
+
+// Gestión de reproductores TTS ---------------------------------------------------------
+
+    bool add_tts_player(std::string name);
+
+    bool remove_tts_player(std::string name);
+
+
 
 private:
 
-    std::unordered_map<std::string, std::unique_ptr<TTSPlayer>>   ttsPlayers_;
+    // Pointer to implementation
+    struct Impl;
+    std::unique_ptr<Impl> pimpl_;
 
 };
