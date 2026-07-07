@@ -5,7 +5,7 @@
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "sound/TTSMgr.hpp"     // Clase para gestionar TTS
+#include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
 #include "logic/CommsCore.hpp"  // Clase para lógica de comunicaciones
