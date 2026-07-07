@@ -445,7 +445,7 @@
 				"Kazam's Cherry",
 				"Light Orange",
 				"Quick Minimal Look",
-				"Moderm",
+				"Modern",
 				"Microfrost",
 				"Moonlight",
 				"Sonic Riders",
