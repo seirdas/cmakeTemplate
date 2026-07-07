@@ -204,9 +204,13 @@
 		ImGui_ImplOpenGL3_Init("#version 130");     // Versión de OpenGL
 
 		// marcar que está inicializado
-		running_ = true;
+		initialized_ = true;
 		return true;
 	}
+
+	bool GuiMgr::isInitialized() {
+        return initialized_;
+    }
 
 	void GuiMgr::loadConfig(void* config) {
         if (!config)
@@ -230,6 +234,8 @@
     }
 
 	void GuiMgr::run() {
+
+		running_ = true;
 
 		while (isRunning())
 			BuclePrincipal();		// <-- Se queda aqui hasta cerrar

@@ -38,9 +38,8 @@ public:
     
     /**
      * @brief Destructor. Llama a cerrar() para liberar recursos.
-     * @note Virtual para evitar comportamientos inesperados en clases derivadas.
      */
-    virtual ~GuiMgr();
+    ~GuiMgr();
     
     /**
      * @brief Establece el controlador que usa para manejar otras clases.
@@ -55,6 +54,12 @@ public:
      * @return	True si la inicialización fue exitosa, false si hubo algún error 
      */
     bool init(void* config);
+    
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized();
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -270,6 +275,7 @@ private:
     GLFWwindow*     window_;            ///< Puntero a la ventana GLFW
     IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
     bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
+    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
     
     // Imágenes _________________________________
 
