@@ -260,11 +260,6 @@ private:
     std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay
     std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
 
-    bool        net_initialized_;               ///< Indica si net está inicializado
-    bool        gui_initialized_;               ///< Indica si gui está inicializado
-    bool        snd_initialized_;               ///< Indica si snd está inicializado
-    bool        tts_initialized_;               ///< Indica si tts está inicializado
-    bool        tmx_initialized_;               ///< Indica si tmx está inicializado
     bool        sym_initialized_;               ///< Indica si sym está inicializado
     bool        com_initialized_;               ///< Indica si sym está inicializado
 

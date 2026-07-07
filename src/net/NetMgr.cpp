@@ -35,6 +35,7 @@
 
     NetMgr::NetMgr(std::size_t const& thread_count) :
         pimpl_(std::make_unique<Impl>()),
+        initialized_(false),
         io_running_(false),
         sockets_running_(false),
         thread_count_(thread_count == 0 ? 1 : thread_count)
@@ -102,7 +103,12 @@
 
         SYS_INFO("NetMgr","Sockets running");
         sockets_running_ = true;
+        initialized_ = true;
         return true;
+    }
+
+    bool NetMgr::isInitialized() {
+        return initialized_;
     }
 
     void NetMgr::loadConfig(void* config) {

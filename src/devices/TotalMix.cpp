@@ -46,6 +46,8 @@ void TotalMix::loadConfig(void* config) {
 
     TotalMix::TotalMix() : 
         pimpl_(std::make_unique<Impl>()),
+        initialized_(false),
+        wsaStarted_(false),
         localIP_("127.0.0.1"),
         localPort_(12321),
         remoteIP_("127.0.0.1"),
@@ -60,8 +62,7 @@ void TotalMix::loadConfig(void* config) {
         OscReset();
     }
 
-    TotalMix::~TotalMix()
-    {
+    TotalMix::~TotalMix() {
         if (pimpl_->socket != INVALID_SOCKET) {
             closesocket(pimpl_->socket);
             pimpl_->socket = INVALID_SOCKET;
@@ -115,7 +116,12 @@ void TotalMix::loadConfig(void* config) {
     
         // Cálculo de posiciones OSC
         BuildBankMaps();
+        initialized_ = true;
         return true;
+    }
+
+    bool NetMgr::isInitialized() {
+        return initialized_;
     }
 
     /* Movido fuera el encapsulado WIN32, común en ambos sistemas */

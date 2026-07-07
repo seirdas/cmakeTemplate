@@ -117,6 +117,10 @@
 
         return !loaded_models_.empty();;
     }
+
+    bool TTSCore::isInitialized() {
+        return initialized_;
+    }
     
     void TTSCore::loadConfig(void* config) {
 

@@ -45,6 +45,12 @@ public:
     bool init(void* config);
 
     /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized();
+
+    /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
     * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
     * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
@@ -205,6 +211,9 @@ private:
     using TTSModelsMap  = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
     using TTSTextsMap   = std::unordered_map<std::string, std::string>; // Podría ser un struct con más datos
     using TTSTimeMap    = std::unordered_map<std::string, std::chrono::steady_clock::time_point>;
+
+    // Inicialización
+    bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
 
     // Modelos de voz
     TTSModelsMap            loaded_models_;         ///< Mapa de modelos TTS cargados

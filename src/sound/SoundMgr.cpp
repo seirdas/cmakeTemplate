@@ -26,7 +26,7 @@
 
     SoundMgr::SoundMgr() : 
         pimpl_(std::make_unique<Impl>()),
-        ctx_initialized_(false)
+        initialized_(false)
     {
 
     }
@@ -38,13 +38,13 @@
     bool SoundMgr::init(void* config) {
 
         // No hacer nada si ya se ha iniciado
-        if (ctx_initialized_) return true;
+        if (initialized_) return true;
         SYS_INFO("SoundMgr", "Initializating sound context...");
 
         // Inicializar sistema de audio
         ma_result res = ma_context_init(NULL, 0, NULL, &pimpl_->snd_context_);
-        ctx_initialized_ = (res == MA_SUCCESS) ? true : false;
-        if (!ctx_initialized_) {
+        initialized_ = (res == MA_SUCCESS) ? true : false;
+        if (!initialized_) {
             SYS_ERROR("SoundMgr","Cannot initialize audio system (ma_context_init).");
             return false;
         }
@@ -59,7 +59,11 @@
         if (!updateDevices())
             SYS_WARN("SoundMgr","Failed to get playback devices.");
 
-        return ctx_initialized_;
+        return initialized_;
+    }
+
+    bool SoundMgr::isInitialized() {
+        return initialized_;
     }
 
     void SoundMgr::loadConfig(void* config) {
@@ -83,7 +87,7 @@
 
     bool SoundMgr::stop() {
         // No hacer nada si ya se ha cerrado.
-        if (!ctx_initialized_) return true;
+        if (!initialized_) return true;
         SYS_INFO("SoundMgr", "Closing sound engine and modules...");
 
         // Limpieza (destruir) los módulos creados
@@ -92,7 +96,7 @@
 
         // Desinicializar el contexto global
         ma_context_uninit(&pimpl_->snd_context_);
-        ctx_initialized_ = false;
+        initialized_ = false;
 
         // Notificar y salir
         SYS_INFO("SoundMgr", "Sound system stopped successfully.");
@@ -101,7 +105,7 @@
 
     bool SoundMgr::updateDevices() {
         // Comprobar que el contexto está inicializado
-        if (!ctx_initialized_) return false;
+        if (!initialized_) return false;
 
         // Obtener los dispositivos de reproducción y captura
         ma_result res = ma_context_get_devices(&pimpl_->snd_context_,
@@ -130,7 +134,7 @@
     std::vector<std::string> SoundMgr::getAvailableInputs() const {
 
         // Si no está inicializado no se puede hacer nada
-        if (!ctx_initialized_) return {};
+        if (!initialized_) return {};
 
         // Crea un vector de strings devlist
         std::vector<std::string> devlist;
@@ -152,7 +156,7 @@
 
     std::string SoundMgr::getDefaultInputDevice() const {
         // Si no está inicializado no se puede hacer nada
-        if (!ctx_initialized_) return {};
+        if (!initialized_) return {};
 
         // Recorre todos los dispositivos de captura 
         for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
@@ -167,7 +171,7 @@
     bool SoundMgr::addCaptureDevice(void* config) {
      
         // Comprobar que el contexto está inicializado
-        if (!ctx_initialized_){
+        if (!initialized_){
             SYS_WARN("SoundMgr", "Audio context not initialized.");
             return false; 
         }
@@ -264,7 +268,7 @@
     bool SoundMgr::addCaptureDevice(std::string const& captureName, std::string const& deviceName) {
         
         // Comprobar que el contexto está inicializado
-        if (!ctx_initialized_){
+        if (!initialized_){
             SYS_WARN("SoundMgr", "Audio context not initialized.");
             return false; 
         }
@@ -408,7 +412,7 @@
 
     std::vector<std::string> SoundMgr::getAvailablePlaybacks() const {
         // Si no está inicializado no se puede hacer nada
-        if (!ctx_initialized_) return {};
+        if (!initialized_) return {};
 
         std::vector<std::string> devlist;
         for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) 
@@ -418,7 +422,7 @@
 
     std::string SoundMgr::getDefaultPlaybackDevice() const {
         // Si no está inicializado no se puede hacer nada
-        if (!ctx_initialized_) return {};
+        if (!initialized_) return {};
 
         // Popular vector con dispositivos disponibles
         for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i)
@@ -435,7 +439,7 @@
 
     bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) {
         // Comprobar que el contexto está inicializado
-        if (!ctx_initialized_) {
+        if (!initialized_) {
             SYS_WARN("SoundMgr","Audio context not initialized.");
             return false;
         }
@@ -503,7 +507,7 @@
 
     bool SoundMgr::playbackTest() {
 
-        if (!ctx_initialized_) {
+        if (!initialized_) {
             SYS_WARN("SoundMgr","Audio context not initialized.");
             return false;
         }

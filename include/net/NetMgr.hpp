@@ -65,6 +65,12 @@ public:
     bool init(void* config = nullptr);
 
     /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized();
+
+    /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
     * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
     * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
@@ -233,6 +239,9 @@ private:
 
 
 /************ Variables ****************************************************************/
+
+    // Inicialización
+    bool                        initialized_;       ///< Bandera para indicar inicialización exitosa
 
     // Pointer to implementation
     struct Impl;                                    ///< Declaración de estructura PIMPL para no depender de la librería en el header
