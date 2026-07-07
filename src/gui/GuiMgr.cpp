@@ -432,14 +432,24 @@
 
 			Text("Tema:"); SameLine();
 			static const char* theme_items[] = {
-				"Default Light",
+				"Adobe Inspired",
+				"Ayu Dark",
+				"Confy",
+				"Dark Cyan",
 				"Default Dark",
-				"Confy", 
-				"FutureDark", 
-				"Moonlight",
-				"VisualStudio",
+				"Default Light",
+				"Everforest",
+				"FutureDark",
+				"Gold",
+				"Hazy Dark",
+				"Kazam's Cherry",
+				"Light Orange",
+				"Quick Minimal Look",
+				"Moderm",
 				"Microfrost",
-				"Adobe Inspired"
+				"Moonlight",
+				"Sonic Riders",
+				"VisualStudio"
 			};
 			static int item_selected_idx;
 			if (BeginCombo("##cbth", theme_items[item_selected_idx]))
@@ -457,14 +467,25 @@
 						// ----> ACCIÓN A EJECUTAR ----
 						// Por ejemplo:
 						switch(n){
-							case 0: Style_DefaultLight(); 	break;
-							case 1: Style_DefaultDark();	break;
-							case 2: Style_Confy(); 			break;
-							case 3: Style_FutureDark(); 	break;
-							case 4: Style_Moonlight(); 		break;
-							case 5: Style_VisualStudio(); 	break;
-							case 6: Style_Microfrost(); 	break;
-							case 7: Style_AdobeInspired(); 	break;
+							case 0: Style_AdobeInspired(); 		break;
+							case 1: Style_AyuDark(); 			break;
+							case 2: Style_Confy(); 				break;
+							case 3: Style_DarkCyan(); 			break;
+							case 4: Style_DefaultDark(); 		break;
+							case 5: Style_DefaultLight();		break;
+							case 6: Style_Everforest(); 		break;
+							case 7: Style_FutureDark(); 		break;
+							case 8: Style_Gold(); 				break;
+							case 9: Style_HazyDark(); 			break;
+							case 10: Style_KazamsCherry(); 		break;
+							case 11: Style_LightOrange(); 		break;
+							case 12: Style_QuickMinimalLook(); 	break;
+							case 13: Style_Modern(); 			break;
+							case 14: Style_Microfrost(); 		break;
+							case 15: Style_Moonlight(); 		break;
+							case 16: Style_SonicRiders(); 		break;
+							case 17: Style_VisualStudio(); 		break;
+						
 						}
 					}
 
