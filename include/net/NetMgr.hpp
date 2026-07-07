@@ -6,7 +6,7 @@
 #include <vector>               // Vectores
 #include <thread>               // Hilos
 #include <memory>               // unique_ptr
-#include <queue>                // Cola de datos de los sockets
+
 
 // Para no mezclar includes, declaración implícita
 class UdpSocket;
