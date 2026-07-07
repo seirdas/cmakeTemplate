@@ -194,6 +194,27 @@ private:
     void saveConfig();
 
     /**
+     * @brief Dark - AdobeInspired style by nexacopic from ImThemes
+     */
+    void Style_AdobeInspired();
+
+    /**
+     * @brief Dark - Ayu-dark style by usrnatc from ImThemes
+     * 
+     */
+    void Style_AyuDark();
+
+    /**
+     * @brief Dark - Comfy style by Giuseppe from ImThemes
+     */
+    void Style_Confy();
+
+    /**
+     * @brief Dark - Comfortable Dark Cyan style by SouthCraftX from ImThemes
+     */
+    void Style_DarkCyan();
+
+    /**
      * @brief Tema oscuro por defecto ImGui con bordes estilizados
      */
     void Style_DefaultDark();
@@ -204,9 +225,9 @@ private:
     void Style_DefaultLight();
 
     /**
-     * @brief Dark - Comfy style by Giuseppe from ImThemes
+     * @brief Dark - Everforest style by DestroyerDarkNess from ImThemes
      */
-    void Style_Confy();
+    void Style_Everforest();
 
     /**
      * @brief Dark - Future Dark style by rewrking from ImThemes
@@ -214,34 +235,61 @@ private:
     void Style_FutureDark();
 
     /**
-     * @brief Dark - Moonlight style by rewrking from ImThemes
+     * @brief Dark - Gold style by CookiePLMonster from ImThemes
+     * 
      */
-    void Style_Moonlight();
-    
+    void Style_Gold();
+
     /**
-     * @brief Dark - Rounded Visual Studio style by RedNicStone from ImThemes
+     * @brief Dark - Hazy Dark style by kaitabuchi314 from ImThemes
+     * 
      */
-    void Style_VisualStudio();
-    
+    void Style_HazyDark();
+
+    /**
+     * @brief Dark - Kazam's Cherry style by coyoteclan from ImThemes 
+     * 
+     */
+    void Style_KazamsCherry();
+
+    /**
+     * @brief Light - Comfortable Light Orange style by SouthCraftX from ImThemes
+     */
+    void Style_LightOrange();
+
+    /**
+     * @brief Dark - Quick minimal look style by 90th from ImThemes
+     * 
+     */
+    void Style_QuickMinimalLook();
+
+    /**
+     * @brief Dark - Modern style by LousyBook-01 from ImThemes 
+     * 
+     */
+    void Style_Modern();
+
     /**
      * @brief Light - Microsoft style by usernameiwantedwasalreadytaken from ImThemes
      */
     void Style_Microfrost();
 
     /**
-     * @brief Dark - AdobeInspired style by nexacopic from ImThemes
+     * @brief Dark - Moonlight style by rewrking from ImThemes
      */
-    void Style_AdobeInspired();
+    void Style_Moonlight();
 
     /**
-     * @brief Dark - Comfortable Dark Cyan style by SouthCraftX from ImThemes
+     * @brief Dark - Sonic Riders style by Sewer56 from ImThemes
+     * 
      */
-    void Style_DarkCyan();
+    void Style_SonicRiders();
+    
 
     /**
-     * @brief Light - Comfortable Light Orange style by SouthCraftX from ImThemes
+     * @brief Dark - Rounded Visual Studio style by RedNicStone from ImThemes
      */
-    void Style_LightOrange();
+    void Style_VisualStudio();
 
     
 /************ Variables ********************************************************/
