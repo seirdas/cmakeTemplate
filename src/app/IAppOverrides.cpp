@@ -1,13 +1,9 @@
 #include "app/AppController.hpp"
 #include "system/SystemMgr.hpp"
 
-#include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
-#include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
-#include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
-#include "links/VoIPMgr.hpp"    // Clase para gestión Voiprec/Voipplay
+#include "tts/TTSCore.hpp"     // Clase para gestionar TTS
 
 /* 
 * Aquí solo deberían ir acciones que se ejecuten sobre otros módulos

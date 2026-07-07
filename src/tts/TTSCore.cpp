@@ -1,4 +1,4 @@
-#include "tts/TTSMgr.hpp"
+#include "tts/TTSCore.hpp"
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
 
@@ -22,7 +22,7 @@
 
     // General ------------------------------------------------------------------------------
 
-    TTSMgr::TTSMgr(std::size_t const& num_threads_) :
+    TTSCore::TTSCore(std::size_t const& num_threads_) :
         num_threads_(num_threads_ == 0 ? 1 : num_threads_),
         concurrent_init_(false),
         lazy_load_(true),
@@ -37,14 +37,14 @@
 
     };
 
-    TTSMgr::~TTSMgr() {
+    TTSCore::~TTSCore() {
         cerrar();
     };
 
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool TTSMgr::init(void* config) {
+    bool TTSCore::init(void* config) {
         
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
@@ -57,7 +57,7 @@
 
         // Comprobar que existe el directorio de modelos de voz
         if (!fs::is_directory(models_path_)) {
-            SYS_WARN("TTSMgr","Path '" + models_path_ + "' not found.");
+            SYS_WARN("TTSCore","Path '" + models_path_ + "' not found.");
             return {};
         }
 
@@ -72,7 +72,7 @@
             std::vector<std::filesystem::path> available_models(av_models_str.begin(), av_models_str.end());
 
             if (available_models.empty()) {
-                SYS_WARN("TTSMgr", "Cannot read any TTS voice models");
+                SYS_WARN("TTSCore", "Cannot read any TTS voice models");
                 return false;
             }
 
@@ -95,10 +95,10 @@
         std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded";
         if (lazy_load_) msg += (" (lazy load enabled)");
         if (numLoaded == numAvailable || lazy_load_) {
-            SYS_INFO("TTSMgr", msg);
+            SYS_INFO("TTSCore", msg);
         } else {
             // Intentar cargar los modelos faltantes si han fallado (varios intentos)
-            SYS_WARN("TTSMgr", msg + " Trying to load missing models...");
+            SYS_WARN("TTSCore", msg + " Trying to load missing models...");
             for (unsigned int i = 0; i < num_load_retries_; i++) {
                 loadMissingModels();
                 numLoaded     = numLoadedModels();
@@ -106,24 +106,24 @@
                     break;
             }
             if (numLoaded == numAvailable)
-                SYS_SOLVED("TTSMgr","Missing TTS models loaded (" + std::to_string(numLoadedModels()) + "/" + std::to_string(numAvailableModels()) + ")" );
+                SYS_SOLVED("TTSCore","Missing TTS models loaded (" + std::to_string(numLoadedModels()) + "/" + std::to_string(numAvailableModels()) + ")" );
             else
-                SYS_WARN("TTSMgr","Cannot load all models");
+                SYS_WARN("TTSCore","Cannot load all models");
         }
 
         // Si está lazy_load activo, activar el thread reaper
         if (lazy_load_ && keep_alive_seconds_.count() > 0)
-            keepalive_thread_ = std::thread(&TTSMgr::keepAliveWorker, this);
+            keepalive_thread_ = std::thread(&TTSCore::keepAliveWorker, this);
 
         return !loaded_models_.empty();;
     }
     
-    void TTSMgr::loadConfig(void* config) {
+    void TTSCore::loadConfig(void* config) {
 
         if (!config)
             return;
 
-        SYS_INFO("TTSMgr","Reading config node...");
+        SYS_INFO("TTSCore","Reading config node...");
 
         // Se considera que la configuración se pasa como json
         json* cfg = static_cast<json*>(config);
@@ -145,7 +145,7 @@
 
     }
 
-    void TTSMgr::cerrar() {
+    void TTSCore::cerrar() {
         if (!running_) return;
         running_ = false;
 
@@ -156,7 +156,7 @@
 
         // Esperar a que terminen las operaciones que se estaban ejecutando
         std::unique_lock<std::mutex> lock(exit_mtx_);
-        SYS_INFO("TTSMgr","Waiting for unfinished jobs... ");
+        SYS_INFO("TTSCore","Waiting for unfinished jobs... ");
         exit_cv_.wait(lock, [this] {
             return active_tasks_ == 0;
         });
@@ -165,18 +165,18 @@
         std::lock_guard<std::mutex> lock2(models_mutex_);
         for (auto& [name,model] : loaded_models_) {
             if (!model) continue;
-            SYS_INFO("TTSMgr","Unloading model " + name);
+            SYS_INFO("TTSCore","Unloading model " + name);
             SherpaOnnxDestroyOfflineTts(model);
         }
         loaded_models_.clear();
     }
 
-    void TTSMgr::reload() {
+    void TTSCore::reload() {
         cerrar();
         init(nullptr);
     }
 
-    void TTSMgr::loadMissingModels() {
+    void TTSCore::loadMissingModels() {
 
         // No cargar modelos restantes si se está cerrrando
         if(!running_) return;
@@ -221,14 +221,14 @@
         return;
     }
 
-    bool TTSMgr::isWorking() const {
+    bool TTSCore::isWorking() const {
         return active_tasks_>0;
     }
 
 
     // Datos de modelos disponibles/cargados ------------------------------------------------
 
-    std::vector<std::string> TTSMgr::getAvailableModels() {
+    std::vector<std::string> TTSCore::getAvailableModels() {
 
         // Comprobar que existe el directorio de modelos de voz
         if (!fs::is_directory(models_path_))
@@ -247,7 +247,7 @@
         return available_models;
     }
 
-    std::vector<std::string> TTSMgr::getAvailableModelsPath() {
+    std::vector<std::string> TTSCore::getAvailableModelsPath() {
 
         // Comprobar que existe el directorio de modelos de voz
         if (!fs::is_directory(models_path_)) 
@@ -266,7 +266,7 @@
         return available_models;
     }
 
-    std::vector<std::string> TTSMgr::getLoadedModels() const {
+    std::vector<std::string> TTSCore::getLoadedModels() const {
         std::vector<std::string> models;
 
         // Rellena la lista de modelos inicializados y lo devuelve
@@ -276,7 +276,7 @@
         return models;
     }
 
-    std::string TTSMgr::getModelPath(std::string model) const {
+    std::string TTSCore::getModelPath(std::string model) const {
 
         // Comprobar que existe el directorio de modelos de voz
         if (!fs::is_directory(models_path_))
@@ -291,11 +291,11 @@
         return {};
     }
 
-    short TTSMgr::numAvailableModels() const {
+    short TTSCore::numAvailableModels() const {
         return num_available_models_;
     }
 
-    short TTSMgr::numLoadedModels() const {
+    short TTSCore::numLoadedModels() const {
         std::lock_guard<std::mutex> lock(models_mutex_);
 
         // en lazy_load, solo devolver el número de los modelos cargados de verdad
@@ -312,19 +312,19 @@
 
     // Control de modelos individuales ------------------------------------------------------
 
-    bool TTSMgr::generate(std::string const& modelName, std::string const& text, std::string const& wavname) {
+    bool TTSCore::generate(std::string const& modelName, std::string const& text, std::string const& wavname) {
         if (!running_) return false;
 
         // Comprobar que el texto contiene algo para generar
         if (text == "") {
-            SYS_WARN("TTSMgr", "Generate function called with empty string");
+            SYS_WARN("TTSCore", "Generate function called with empty string");
             return false;
         }
 
         // Comprobar los modelos disponibles
         std::vector<std::string> models_names = getLoadedModels();
         if (models_names.empty()) {
-            SYS_WARN("TTSMgr","Cannot load any model");
+            SYS_WARN("TTSCore","Cannot load any model");
             return false;
         }
 
@@ -333,7 +333,7 @@
             std::lock_guard<std::mutex> lock(models_mutex_);
             auto it = loaded_models_.find(modelName);
             if (it == loaded_models_.end()) {
-                SYS_ERROR("Model not found or loaded: " + modelName, "TTSMgr");
+                SYS_ERROR("Model not found or loaded: " + modelName, "TTSCore");
                 return false;
             }
         }
@@ -344,13 +344,13 @@
             if (!modpath.empty())
                 load_vits_model(modpath);
             else {
-                SYS_WARN("TTSMgr","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
+                SYS_WARN("TTSCore","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
                 return false;
             }
         }
 
         // Inicia el proceso
-        SYS_INFO("TTSMgr","Generating audio '" + wavname +".wav'  with model " + modelName + "...");
+        SYS_INFO("TTSCore","Generating audio '" + wavname +".wav'  with model " + modelName + "...");
         active_tasks_++;
 
         // Guardar el texto en proceso por el modelo
@@ -380,14 +380,14 @@
         
         // Comprobar si se ha generado audio
         if (!audio) {
-            SYS_WARN("TTSMgr","Cannot generate audio.");
+            SYS_WARN("TTSCore","Cannot generate audio.");
             std::lock_guard<std::mutex> lock(processing_mtx_);
             processing_texts_.erase(modelName);
             return false;
         }
 
         // Generar archivo de audio
-        SYS_INFO("TTSMgr","Writing to file...");
+        SYS_INFO("TTSCore","Writing to file...");
         SherpaOnnxWriteWave(audio->samples, audio->n, audio->sample_rate, (wavname+".wav").c_str());
         active_tasks_--;
         exit_cv_.notify_all();
@@ -405,54 +405,54 @@
         }
 
         // Liberar memoria para evitar fugas
-        SYS_INFO("TTSMgr","Freeing memory...");
+        SYS_INFO("TTSCore","Freeing memory...");
         SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
 
         // Mensaje de info
-        SYS_INFO("TTSMgr","Audio generated: " + wavname + ".wav"); 
+        SYS_INFO("TTSCore","Audio generated: " + wavname + ".wav"); 
         return true;
     };
 
-    int TTSMgr::getSampleRate(std::string const& modelName) const {
+    int TTSCore::getSampleRate(std::string const& modelName) const {
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName);
         if (it == loaded_models_.end()) {
-            SYS_WARN("TTSMgr","Cannot get sample rate: Model '" + modelName + "' not found.");
+            SYS_WARN("TTSCore","Cannot get sample rate: Model '" + modelName + "' not found.");
             return 0;
         }
         
         return SherpaOnnxOfflineTtsSampleRate(it->second);
     }
 
-    int TTSMgr::getNumSpeakers(std::string const& modelName) const {
+    int TTSCore::getNumSpeakers(std::string const& modelName) const {
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName);
         if (it == loaded_models_.end()) {
-            SYS_WARN("TTSMgr","Cannot get num speakers: Model '" + modelName + "' not found.");
+            SYS_WARN("TTSCore","Cannot get num speakers: Model '" + modelName + "' not found.");
             return 0;
         }
 
         return SherpaOnnxOfflineTtsNumSpeakers(it->second);
     }
 
-    std::string TTSMgr::getProccesingText(std::string const& modelName) const {
+    std::string TTSCore::getProccesingText(std::string const& modelName) const {
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(processing_mtx_);
         auto it = processing_texts_.find(modelName);
         if (it == processing_texts_.end()) {
-            SYS_WARN("TTSMgr","Cannot get proccesing text: Model '" + modelName + "' not found.");
+            SYS_WARN("TTSCore","Cannot get proccesing text: Model '" + modelName + "' not found.");
             return "";
         }
 
         return it->second;
     }
 
-    std::string TTSMgr::getModelName(std::filesystem::path modelAbsPath) const {
+    std::string TTSCore::getModelName(std::filesystem::path modelAbsPath) const {
         // Rutas
         std::string st_modelname = "";
 
@@ -470,14 +470,14 @@
 
     // Inicialización de modelos ------------------------------------------------------------
 
-    void TTSMgr::loadModels() {
+    void TTSCore::loadModels() {
 
         // obtener la lista de rutas de los modelos de la ruta models_path_
         std::vector<std::string> av_models_str = getAvailableModelsPath();
         std::vector<std::filesystem::path> available_models(av_models_str.begin(), av_models_str.end());
 
         if (available_models.empty()) {
-            SYS_WARN("TTSMgr", "Cannot read any TTS voice models");
+            SYS_WARN("TTSCore", "Cannot read any TTS voice models");
             return;
         }
 
@@ -487,7 +487,7 @@
             // Realizar la inicialización de cada modelo en hilos independientes 
             std::vector<std::thread> workers;
             for (const auto& modelDir : available_models)
-                workers.emplace_back(&TTSMgr::load_vits_model, this, modelDir);    // Un hilo por cada inicialización
+                workers.emplace_back(&TTSCore::load_vits_model, this, modelDir);    // Un hilo por cada inicialización
 
             // Esperar a que todos los hilos terminen
             for (auto& t : workers) 
@@ -505,7 +505,7 @@
         loading_ = false;
     }
 
-    bool TTSMgr::load_vits_model(std::filesystem::path modelAbsPath) {
+    bool TTSCore::load_vits_model(std::filesystem::path modelAbsPath) {
         // No inicializar si se está cerrando
         if (!running_) 
             return false;
@@ -548,7 +548,7 @@
         #endif  // Fallback a CPU en caso contrario
 
         // Inicializa el modelo con la configuración (tarda un poco)
-        SYS_INFO("TTSMgr","Initializating voice model " + st_modelname);
+        SYS_INFO("TTSCore","Initializating voice model " + st_modelname);
         active_tasks_++;
         const SherpaOnnxOfflineTts* tts_model = SherpaOnnxCreateOfflineTts(&config);
         active_tasks_--;
@@ -556,11 +556,11 @@
 
         // Comprueba si se ha generado bien
         if (!tts_model) {
-            SYS_WARN("TTSMgr","Cannot load voice model: " + st_modelname_path);
+            SYS_WARN("TTSCore","Cannot load voice model: " + st_modelname_path);
             return false;
         }
 
-        // Agregarlo a la lista de modelos disponibles del TTSMgr
+        // Agregarlo a la lista de modelos disponibles del TTSCore
         std::lock_guard<std::mutex> lock(models_mutex_);
         loaded_models_[st_modelname] = tts_model;
 
@@ -574,7 +574,7 @@
         return true;
     }
 
-    bool TTSMgr::checkAvailableModel(std::filesystem::path modelAbsPath) const {
+    bool TTSCore::checkAvailableModel(std::filesystem::path modelAbsPath) const {
         // Rutas
         std::string st_modelname_path, st_tokens_path, st_datadir_path, st_modelname;
 
@@ -599,7 +599,7 @@
         return true;
     }
 
-    bool TTSMgr::unload_model(std::string const& modelName) {
+    bool TTSCore::unload_model(std::string const& modelName) {
 
         // Busca el modelo y lo borra
         std::lock_guard<std::mutex> lock(models_mutex_);
@@ -607,7 +607,7 @@
 
         // Comprobar si el modelo existe
         if (it == loaded_models_.end()) {
-            SYS_WARN("TTSMgr", "Cannot unload model: Model '" + modelName + "' not found");
+            SYS_WARN("TTSCore", "Cannot unload model: Model '" + modelName + "' not found");
             return false;
         }
 
@@ -623,12 +623,12 @@
         else                // Si lazy_load, solo ponerlo como puntero nulo
             it->second = nullptr;
 
-        SYS_INFO("TTSMgr","Model '" + modelName + "' unloaded");
+        SYS_INFO("TTSCore","Model '" + modelName + "' unloaded");
 
         return true;
     }
 
-    void TTSMgr::keepAliveWorker() {
+    void TTSCore::keepAliveWorker() {
         std::unique_lock<std::mutex> lock(keepalive_mtx_);
 
         while (running_) {
@@ -681,37 +681,37 @@
 // ============================================================
 
     // General ------------------------------------------------------------------------------
-    TTSMgr::TTSMgr(std::size_t const&) {
-		SYS_WARN("TTSMgr", "Sherpa TTS library has not been implemented.");
+    TTSCore::TTSCore(std::size_t const&) {
+		SYS_WARN("TTSCore", "Sherpa TTS library has not been implemented.");
     };
-    TTSMgr::~TTSMgr() {};
+    TTSCore::~TTSCore() {};
 
     // Ejecución ----------------------------------------------------------------------------
-    bool TTSMgr::init()              { return false; };
-    void TTSMgr::cerrar()            { return; };
-    void TTSMgr::reload()            { return; }
-    void TTSMgr::loadMissingModels() { return; }
-    bool TTSMgr::isWorking() const   { return false; }
+    bool TTSCore::init()              { return false; };
+    void TTSCore::cerrar()            { return; };
+    void TTSCore::reload()            { return; }
+    void TTSCore::loadMissingModels() { return; }
+    bool TTSCore::isWorking() const   { return false; }
 
     // Datos del módulo TTS -----------------------------------------------------------------
-    std::vector<std::string> TTSMgr::getAvailableModels()       { return {}; }
-    std::vector<std::string> TTSMgr::getAvailableModelsPath()   { return {}; }
-    std::vector<std::string> TTSMgr::getLoadedModels() const    { return {}; }
-    std::string TTSMgr::getModelPath(std::string) const         { return ""; }
-    short   TTSMgr::numAvailableModels() const                  { return 0; }
-    short   TTSMgr::numLoadedModels() const                     { return 0; }
+    std::vector<std::string> TTSCore::getAvailableModels()       { return {}; }
+    std::vector<std::string> TTSCore::getAvailableModelsPath()   { return {}; }
+    std::vector<std::string> TTSCore::getLoadedModels() const    { return {}; }
+    std::string TTSCore::getModelPath(std::string) const         { return ""; }
+    short   TTSCore::numAvailableModels() const                  { return 0; }
+    short   TTSCore::numLoadedModels() const                     { return 0; }
 
     // Datos y control de modelos -----------------------------------------------------------
-    bool    TTSMgr::generate(std::string const&, std::string const&, std::string const&) { return false; }
-    int     TTSMgr::getSampleRate(std::string const&) const         { return 0; }
-    int     TTSMgr::getNumSpeakers(std::string const&) const        { return 0; }
-    std::string TTSMgr::getProccesingText(std::string const&) const { return ""; }
-    std::string TTSMgr::getModelName(std::filesystem::path)         { return ""; }
+    bool    TTSCore::generate(std::string const&, std::string const&, std::string const&) { return false; }
+    int     TTSCore::getSampleRate(std::string const&) const         { return 0; }
+    int     TTSCore::getNumSpeakers(std::string const&) const        { return 0; }
+    std::string TTSCore::getProccesingText(std::string const&) const { return ""; }
+    std::string TTSCore::getModelName(std::filesystem::path)         { return ""; }
 
     // Inicialización de modelos ------------------------------------------------------------
-    void TTSMgr::loadModels()                                    { return;       }
-    bool TTSMgr::load_vits_model(std::filesystem::path)          { return false; }
-    bool TTSMgr::checkAvailableModel(std::filesystem::path) const{ return false; }
-    bool TTSMgr::unload_model(std::string const&)                { return false; }
-    void TTSMgr::keepAliveWorker()                               { return;       }
+    void TTSCore::loadModels()                                    { return;       }
+    bool TTSCore::load_vits_model(std::filesystem::path)          { return false; }
+    bool TTSCore::checkAvailableModel(std::filesystem::path) const{ return false; }
+    bool TTSCore::unload_model(std::string const&)                { return false; }
+    void TTSCore::keepAliveWorker()                               { return;       }
 #endif

@@ -15,22 +15,22 @@ struct SherpaOnnxOfflineTts;
  * @note Voices downloaded from https://k2-fsa.github.io/sherpa/onnx/tts/all/index.html
  * @see lib-sherpaonnx.cmake
  */
-class TTSMgr {
+class TTSCore {
 
 public:
     
 // General ------------------------------------------------------------------------------
 
     /**
-     * @brief Constructor de TTSMgr. Recibe el número de hilos a usar para la generación de audios.
+     * @brief Constructor de TTSCore. Recibe el número de hilos a usar para la generación de audios.
      * @param num_threads_ Número de hilos a usar para la generación de audios.
      */
-    TTSMgr(std::size_t const& num_threads_ = std::thread::hardware_concurrency());
+    TTSCore(std::size_t const& num_threads_ = std::thread::hardware_concurrency());
 
     /**
-     * @brief Destructor de TTSMgr.
+     * @brief Destructor de TTSCore.
      */
-    ~TTSMgr();
+    ~TTSCore();
 
     
 // Ejecución ----------------------------------------------------------------------------
@@ -231,6 +231,6 @@ private:
     unsigned short          num_load_retries_;  ///< Número máximo de reintentos para recargar modelos que fallaron al cargar
     std::atomic<bool>       running_;           ///< Indica si no se ha comandado destruir la clase
     std::atomic<bool>       loading_;           ///< Indica si está cargando modelos
-    std::mutex              exit_mtx_;          ///< Evita destruir TTSMgr si hay algo ejecutándose
+    std::mutex              exit_mtx_;          ///< Evita destruir TTSCore si hay algo ejecutándose
     std::condition_variable exit_cv_;           ///< Notifica cuándo paran las tareas
 };

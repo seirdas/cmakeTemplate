@@ -5,11 +5,11 @@
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
+#include "tts/TTSCore.hpp"      // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
 #include "logic/CommsCore.hpp"  // Clase para lógica de comunicaciones
-#include "links/VoIPMgr.hpp"    // Clase para gestión Voiprec/Voipplay
+#include "voip/VoIPMgr.hpp"    // Clase para gestión Voiprec/Voipplay
 
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
@@ -24,7 +24,7 @@ AppController::AppController() :
     net_(std::make_unique<NetMgr>()),
     gui_(std::make_unique<GuiMgr>(this)),
     snd_(std::make_unique<SoundMgr>()),
-    tts_(std::make_unique<TTSMgr>()),
+    tts_(std::make_unique<TTSCore>()),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     voip_(std::make_unique<VoIPMgr>()),

@@ -12,7 +12,7 @@
 class NetMgr;
 class GuiMgr;
 class SoundMgr;
-class TTSMgr;
+class TTSCore;
 class TotalMix;
 class Symetrix;
 class VoIPMgr;
@@ -254,7 +254,7 @@ private:
     std::unique_ptr<NetMgr>      net_;          ///< Gestor de sockets de red
     std::unique_ptr<GuiMgr>      gui_;          ///< Gestor de ventanas para la interfaz gráfica
     std::unique_ptr<SoundMgr>    snd_;          ///< Gestor de audio
-    std::unique_ptr<TTSMgr>      tts_;          ///< Gestor módulo TTS
+    std::unique_ptr<TTSCore>      tts_;          ///< Gestor módulo TTS
     std::unique_ptr<TotalMix>    tmx_;          ///< Gestor módulo Totalmix
     std::unique_ptr<Symetrix>    sym_;          ///< Gestor módulo Symetrix
     std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay
