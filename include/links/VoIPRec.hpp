@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <vector>
+#include <functional>
 
 constexpr int NUM_TX = 8;
 
@@ -51,7 +52,9 @@ public:
 
 // General ------------------------------------------------------------------------------
 
-    VoIPRec();
+    using SendFn = std::function<void(const std::vector<char>&)>;
+
+    VoIPRec(const std::string& name, SendFn send_cb);
 
     ~VoIPRec();
 

@@ -316,7 +316,7 @@ function(configure_sherpa_deps)
 
         # Log en build de lo que va a hacer...
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} <<===>> $<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} --- $<TARGET_FILE_DIR:${PROJECT_NAME}>"
         )
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
