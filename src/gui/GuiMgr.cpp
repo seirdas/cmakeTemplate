@@ -64,6 +64,7 @@
 
 	GuiMgr::GuiMgr(IAppControl* controller) : 
         pimpl_(std::make_unique<Impl>()),
+		config_(nullptr),
 		style_(nullptr),
 		io_(nullptr),
 		captureKeys_(false),
@@ -73,6 +74,7 @@
 		windowPosX_(0),
 		windowPosY_(0),
 		fullscreen_(false),
+		theme_selected_("DefaultLight"),
 		fontSize_(16),
 		deviceRefreshInterval_(5),
 		window_(nullptr),
@@ -106,8 +108,10 @@
 		SYS_INFO("GuiMgr", "Initializating UI...");
 
 		// Validar y asignar valores de variables miembro a partir de la config pasada (json)
-        if (config)
+        if (config) {
             loadConfig(config);
+			config_ = config;
+		}
         else  // Puede llegar aquí cuando se hace reload()
             SYS_WARN("GuiMgr","Cannot load config. Using default values.");
 
@@ -168,8 +172,8 @@
 			io_->Fonts->GetGlyphRangesDefault()
 		);
 
-		// Configuración de estilo por defecto
-		Style_DefaultLight();
+		// Configuración de estilo por defecto, según config
+		ApplyTheme();
 
 		// Propiedades de ventana de windows
 		#ifdef _WIN32
@@ -221,7 +225,8 @@
         jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosY_);
         jsonMgr.get_or_set(cfg, "fullscreen", 	fullscreen_);
         jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
-        jsonMgr.get_or_set(cfg, "deviceRefreshInterval", 	deviceRefreshInterval_);
+        jsonMgr.get_or_set(cfg, "deviceRefreshInterval", deviceRefreshInterval_);
+        jsonMgr.get_or_set(cfg, "theme_selected", theme_selected_);
     }
 
 	void GuiMgr::run() {

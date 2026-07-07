@@ -4,6 +4,7 @@
         "AppName": "Audio Control Center",
         "deviceRefreshInterval": 5,
         "fontSize": 16,
+        "theme_selected": "DefaultLight",
         "fullscreen": false,
         "windowPosX": 720,
         "windowPosY": 0,

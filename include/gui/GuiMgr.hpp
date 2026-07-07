@@ -184,6 +184,16 @@ private:
 // Temas --------------------------------------------------------------------------------
 
     /**
+     * @brief Aplica el tema definido en la variable theme_selected_
+     */
+    void ApplyTheme();
+
+    /**
+     * @brief Guarda el tema en la configuración pasado como parámetro (considerado json)
+     */
+    void saveConfig();
+
+    /**
      * @brief Tema oscuro por defecto ImGui con bordes estilizados
      */
     void Style_DefaultDark();
@@ -236,6 +246,9 @@ private:
     
 /************ Variables ********************************************************/
     
+    // Configuración
+    void*           config_;            ///< Configuración del módulo (considerado json)
+
     // Propiedades de la ventana ________________
     ImGuiStyle*     style_;             ///< Modificar ajustes de estilo
     ImGuiIO*        io_;                ///< Manejar entrada/salida
@@ -247,6 +260,7 @@ private:
     unsigned int    windowPosX_;        ///< Posición horizontal (x) de la ventana
     unsigned int    windowPosY_;        ///< Posición vertical (y) de la ventana
     bool            fullscreen_;        ///< Modo ventana completa activo
+    std::string     theme_selected_;    ///< Tema seleccionado
 
     float              fontSize_;           ///< Tamaño de fuente predeterminado
     unsigned int const MAX_FONT_SIZE_ = 30; ///< Tamaño de fuente máximo permitido

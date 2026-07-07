@@ -4,13 +4,55 @@
 #if defined IMGUILIB || defined IMGUILIB_VERSION
 
     #include <imgui.h>
+    #include "files/JsonMgr.hpp"
 
     // Se puede evitar poner "ImGui::" para simplificar
     using namespace ImGui;
 
 	// Temas --------------------------------------------------------------------------------
-
     
+    void GuiMgr::ApplyTheme() {
+        if (theme_selected_ == "DefaultLight") {
+            Style_DefaultLight();
+        } else if (theme_selected_ == "DefaultDark") {
+            Style_DefaultDark();
+        } else if (theme_selected_ == "Confy") {
+            Style_Confy();
+        } else if (theme_selected_ == "FutureDark") {
+            Style_FutureDark();
+        } else if (theme_selected_ == "Moonlight") {
+            Style_Moonlight();
+        } else if (theme_selected_ == "VisualStudio") {
+            Style_VisualStudio();
+        } else if (theme_selected_ == "Microfrost") {
+            Style_Microfrost();
+        } else if (theme_selected_ == "AdobeInspired") {
+            Style_AdobeInspired();
+        } else if (theme_selected_ == "DarkCyan") {
+            Style_DarkCyan();
+        } else if (theme_selected_ == "LightOrange") {
+            Style_LightOrange();
+        }
+        // Tema por defecto si no coincide
+        else {
+            SYS_WARN("GuiMgr","Theme '" + theme_selected_ + "' not found. Using default.");
+            Style_DefaultLight();
+        }
+    }
+
+    void GuiMgr::saveConfig() {
+
+        // #TODO
+        /* Pendiente de gestionar o la configuración del módulo o del propio GuiMgr */
+
+        if (!config_) return;
+        
+        // Toma la configuración con la que se ha inicializado el módulo
+        json* cfg = static_cast<json*>(config_);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+        jsonMgr.get_or_set(cfg, "theme_selected", theme_selected_);
+    }
+
     void GuiMgr::Style_DefaultDark() {
 
         style_->Alpha                       = 1.0000f;
