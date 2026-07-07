@@ -2,6 +2,29 @@
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
 
+
+// Ejecución ----------------------------------------------------------------------------
+
+void TotalMix::loadConfig(void* config) {
+    if (!config)
+        return;
+
+    SYS_INFO("TotalMix","Reading config node...");
+
+    // Se considera que la configuración se pasa como json
+    json* cfg = static_cast<json*>(config);
+    JsonMgr& jsonMgr = JsonMgr::instance();
+
+    jsonMgr.get_or_set(cfg, "localIP",        localIP_);
+    jsonMgr.get_or_set(cfg, "localPort",      localPort_);
+    jsonMgr.get_or_set(cfg, "remoteIP",       remoteIP_);
+    jsonMgr.get_or_set(cfg, "remotePort",     remotePort_);
+    jsonMgr.get_or_set(cfg, "numInputs",      numInputs_);
+    jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
+    jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
+}
+
+
 // Totalmix solo se puede descargar para Windows/Mac. Se usan las funciones de socket de Windows directamente.
 #ifdef WIN32
 
@@ -95,24 +118,8 @@
         return true;
     }
 
-    void TotalMix::loadConfig(void* config) {
-        if (!config)
-            return;
-
-        SYS_INFO("TotalMix","Reading config node...");
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        jsonMgr.get_or_set(cfg, "localIP",        localIP_);
-        jsonMgr.get_or_set(cfg, "localPort",      localPort_);
-        jsonMgr.get_or_set(cfg, "remoteIP",       remoteIP_);
-        jsonMgr.get_or_set(cfg, "remotePort",     remotePort_);
-        jsonMgr.get_or_set(cfg, "numInputs",      numInputs_);
-        jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
-        jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
-    }
+    /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
+    // Symetrix::loadConfig(void* config) {...}
 
 
     // Control de volumen -------------------------------------------------------------------
@@ -543,14 +550,31 @@
 // ============================================================
 
 // Definición del struct de pimpl vacío
-struct TotalMix::Impl {};
+    struct TotalMix::Impl {};
 
 // General ------------------------------------------------------------------------------
-    TotalMix::TotalMix() : pimpl_(std::make_unique<Impl>()) {
-        SYS_WARN("GuiMgr", "Totalmix not compatible in non-Windows SO.");
+
+    TotalMix::TotalMix() : 
+        pimpl_(std::make_unique<Impl>()),
+        localIP_("127.0.0.1"),
+        localPort_(12321),
+        remoteIP_("127.0.0.1"),
+        remotePort_(7001),
+        numInputs_(32),
+        numPlaybacks_(32),
+        numOutputs_(32)
+    {
+        
     }
     TotalMix::~TotalMix() { }
-    bool TotalMix::init(void*)                               { return false; }    
+    bool TotalMix::init(void* config) {
+        SYS_WARN("GuiMgr", "Totalmix not compatible in non-Windows SO.");
+        loadConfig(config); // Para leer/escribir en el json igualmente
+        return false;
+    }
+
+    /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
+    // Symetrix::loadConfig(void* config) {...}
     
 // Control de volumen -------------------------------------------------------
     bool TotalMix::SetOutputVolume(int, float, bool)         { return false; }
