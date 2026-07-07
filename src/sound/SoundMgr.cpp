@@ -193,7 +193,7 @@
 
         // comprobar si ya existe con ese nombre de captura
         auto it = captures_.find(captureName);
-        if (it == captures_.end()) {
+        if (it != captures_.end()) {
             SYS_WARN("SoundMgr", "Selected device '" + captureName + "' already created.");
             return false;
         }
@@ -201,22 +201,32 @@
         // Refrescar lista de dispositivos disponibles
         updateDevices();
 
-        // bucle para encontrar el dispositivo cuyo nombre real contenga lo escrito en la config
-        short count = 0;                                                 // Contador para identificar nombre ambiguo
-        std::string realName = "";                                       // Almacena el nombre real del dispositivo
-        ma_device_info* selectedDeviceInfo = nullptr;                    // puntero al dispositivo encontrado, empieza en null (ninguno encontrado aún)
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) {       // recorre todos los dispositivos de captura reales, uno a uno
-            realName = pimpl_->pCaptureDevInfos_[i].name;                // coge el nombre real del dispositivo 
-            if (realName.find(deviceName) != std::string::npos) {        // comprueba si "device" aparece dentro de "realName" (npos = "no encontrado")
-                selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];      // si coincide, guarda un puntero a ese dispositivo
-                count++;                                                 // y sale del bucle, ya no hace falta seguir buscando
+        // BUGFIX: Si encuentra un dispositivo con el nombre entero literal, no busca si contiene el nombre                             
+        ma_device_info* selectedDeviceInfo = nullptr;
+        bool found = false;
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
+            if (deviceName == pimpl_->pCaptureDevInfos_[i].name) {  
+                selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];
+                found = true;
+                break;
             }
-        }
+        if (!found) {
+            // bucle para encontrar el dispositivo cuyo nombre real contenga el deviceName
+            short count = 0;
+            std::string realName = "";           
+            for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) { 
+                realName = pimpl_->pCaptureDevInfos_[i].name;          
+                if (realName.find(deviceName) != std::string::npos) {  
+                    selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];
+                    count++;
+                }
+            }
 
-        // Sale si se han encontrado varios con el mismo nombre
-        if (count > 1) {
-            SYS_WARN("SoundMgr","Cannot initialize audio input: Ambiguous name specified: '" + deviceName + "'");
-            return false;
+            // Sale si se han encontrado varios con el mismo nombre
+            if (count > 1) {
+                SYS_WARN("SoundMgr","Cannot initialize audio input: Ambiguous name specified: '" + deviceName + "'");
+                return false;
+            }
         }
 
         // Si no encuentra ningún nombre salta fallo
@@ -264,27 +274,37 @@
 
         // comprobar si ya existe con ese nombre de captura
         auto it = captures_.find(captureName);
-        if (it == captures_.end()) {
+        if (it != captures_.end()) {
             SYS_WARN("SoundMgr", "Selected device '" + captureName + "' already created.");
             return false;
         }
 
-        // bucle para encontrar el dispositivo cuyo nombre real contenga el deviceName
-        short count = 0;                                           
-        std::string realName = "";                                 
-        ma_device_info* selectedDeviceInfo = nullptr;              
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) { 
-            realName = pimpl_->pCaptureDevInfos_[i].name;          
-            if (realName.find(deviceName) != std::string::npos) {  
+        // BUGFIX: Si encuentra un dispositivo con el nombre entero literal, no busca si contiene el nombre                             
+        ma_device_info* selectedDeviceInfo = nullptr;
+        bool found = false;
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
+            if (deviceName == pimpl_->pCaptureDevInfos_[i].name) {  
                 selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];
-                count++;
+                found = true;
+                break;
             }
-        }
+        if (!found) {
+            // bucle para encontrar el dispositivo cuyo nombre real contenga el deviceName
+            short count = 0;
+            std::string realName = "";           
+            for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) { 
+                realName = pimpl_->pCaptureDevInfos_[i].name;          
+                if (realName.find(deviceName) != std::string::npos) {  
+                    selectedDeviceInfo = &pimpl_->pCaptureDevInfos_[i];
+                    count++;
+                }
+            }
 
-        // Sale si se han encontrado varios con el mismo nombre
-        if (count > 1) {
-            SYS_WARN("SoundMgr","Cannot initialize audio input: Ambiguous name specified: '" + deviceName + "'");
-            return false;
+            // Sale si se han encontrado varios con el mismo nombre
+            if (count > 1) {
+                SYS_WARN("SoundMgr","Cannot initialize audio input: Ambiguous name specified: '" + deviceName + "'");
+                return false;
+            }
         }
         
         // Si no encuentra ningún nombre salta fallo
