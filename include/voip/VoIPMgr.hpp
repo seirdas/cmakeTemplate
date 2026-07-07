@@ -13,8 +13,8 @@ class VoIPRec;
 class VoIPPlay;
 
 // añadido temporalmente, después se pasa al cpp
-#include "links/VoIPPlay.hpp"
-#include "links/VoIPRec.hpp"
+#include "voip/VoIPPlay.hpp"
+#include "voip/VoIPRec.hpp"
 
 
 /**
@@ -145,3 +145,4 @@ private:
     std::function<void(std::string name)>  createVoiprec_;     ///< Función inyectada para usar snd, net
 
 };
+ 
