@@ -1,5 +1,5 @@
-#include "logic/CommsCore.hpp"
-#include "logic/Persona.hpp"
+#include "comms/CommsCore.hpp"
+#include "comms/Persona.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
