@@ -1,6 +1,8 @@
 #pragma once
 
+#include <string>
 
+class TTSCore;
 
 class TTSPlayer {
 
@@ -11,7 +13,7 @@ public:
     /**
      * @brief Constructor 
      */
-    TTSPlayer();
+    TTSPlayer(TTSCore& ttsCore, std::string AIM_name);
     
     /**
      * @brief Destructor 
@@ -28,6 +30,6 @@ public:
 
 private:
 
-    bool    is_busy_;
+    bool                is_busy_;
 
 };

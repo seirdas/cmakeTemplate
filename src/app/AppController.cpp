@@ -8,7 +8,7 @@
 #include "tts/TTSCore.hpp"      // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
-#include "logic/CommsCore.hpp"  // Clase para lógica de comunicaciones
+#include "comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
 #include "voip/VoIPMgr.hpp"    // Clase para gestión Voiprec/Voipplay
 
 #include "files/JsonMgr.hpp"

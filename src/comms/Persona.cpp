@@ -1,4 +1,4 @@
-#include "logic/Persona.hpp"
+#include "comms/Persona.hpp"
 #include "system/SystemMgr.hpp"
 
 // General ------------------------------------------------------------------------------
