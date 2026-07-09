@@ -54,10 +54,59 @@ message(STATUS "Compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 # Configuración del proyecto (código fuente propio)
 # ==============================
 
-# Encontrar todos los archivos .cpp, .h y .hpp
-file(GLOB_RECURSE SOURCES   CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-file(GLOB_RECURSE HEADERS   CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
-file(GLOB_RECURSE RESOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
+# Carpeta del src y del include que será compilada con compatibilidad CLI .NET
+set(CLINET_FOLDER "CLI.NET")
+
+# Sources:
+file(GLOB_RECURSE SOURCES     CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+# Separar los cpps que necesitan la compatibilidad .NET (CLI, /clr)
+list(FILTER SOURCES EXCLUDE REGEX ".*src/${CLINET_FOLDER}/.*")
+
+# Headers:
+file(GLOB_RECURSE HEADERS     CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
+list(FILTER HEADERS EXCLUDE REGEX ".*include/${CLINET_FOLDER}/.*")
+
+if(MSVC)
+    # Separar los cpps que necesitan la compatibilidad .NET (CLI, /clr)
+    file(GLOB_RECURSE CLI_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/${CLINET_FOLDER}/*.cpp")
+    file(GLOB_RECURSE CLI_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/${CLINET_FOLDER}/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/${CLINET_FOLDER}/*.hpp")
+    
+    # Aplicar propiedades de MSVC/CLR
+    set_source_files_properties(${CLI_SOURCES} PROPERTIES COMPILE_FLAGS "/clr /EHa /Zi")
+else()
+    # Si NO es MSVC (MinGW/Clang), eliminamos los archivos CLI de las listas
+    set(CLI_SOURCES "")
+    set(CLI_HEADERS "")
+endif()
+
+# Resources:
+file(GLOB_RECURSE RESOURCES   CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/*.rc")
+
+
+# ==============================
+# Crear librería estática con código fuente de CLI.NET
+# ==============================
+
+set(HAVE_CLI_MANAGED OFF)
+
+if (MSVC AND CLI_SOURCES)
+    add_library(CliWrapper STATIC ${CLI_SOURCES} ${CLI_HEADERS})
+    target_include_directories(CliWrapper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+    # Target completo managed - MSBuild pondrá CLRSupport=true en todo el .vcxproj de CliWrapper
+    set_property(TARGET CliWrapper PROPERTY COMMON_LANGUAGE_RUNTIME "")
+
+    # Flags propias, SIN /RTC1, /ZI ni /MP (incompatibles con /clr)
+    target_compile_options(CliWrapper PRIVATE
+        /EHa
+        $<$<CONFIG:Debug>:/Od /Zi>
+        $<$<CONFIG:Release>:/O2 /Oi>
+    )
+    target_compile_options(CliWrapper PRIVATE "/AI${CMAKE_CURRENT_SOURCE_DIR}/.NET")
+
+    set(HAVE_CLI_MANAGED ON)
+    message(STATUS "CLI managed sources found, target CliWrapper created")
+endif()
 
 
 # ===============================
@@ -198,11 +247,15 @@ endif()
 # ===============================
 
 if(MSVC)
+  # =====================================================================
+  # CONFIGURACIÓN PARA C++/CLI (.NET)
+  # =====================================================================
+
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
     /W4                       # Nivel de advertencia 4
     /w44062                   # Advertencia cuando falta un caso en switch de enum
-    /EHsc                     # Manejo de excepciones estándar en C++
+    /EHa                     # Manejo de excepciones asíncronas en C++ (compatible con .NET)
     /MP                       # Compilación multiproceso
     # /WX                     # Tratar warnings como errores
 
@@ -250,12 +303,16 @@ if(MSVC)
   source_group("Include"    FILES ${HEADERS})
   source_group("Source"     FILES ${SOURCES})
   source_group("Resources"  FILES ${RESOURCES})
+  if(CLI_SOURCES)
+    source_group("Source\\CLI.NET" FILES ${CLI_SOURCES})
+  endif()
+  if(CLI_HEADERS)
+    source_group("Include\\CLI.NET" FILES ${CLI_HEADERS})
+  endif()
 
-  # Determinar el nombre de la DLL según la configuración actual (Debug o Release)
+  # Localizar las dependencias msvcp140(d) y vcruntime140d usando el path del compilador según la configuración actual (Debug o Release)
   set(MSVCP_NAME "$<IF:$<CONFIG:Debug>,msvcp140d.dll,msvcp140.dll>")
   set(VCRUNTIME_NAME "$<IF:$<CONFIG:Debug>,vcruntime140d.dll,vcruntime140.dll>")
-
-  # Localizar las librerías usando el path del compilador
   get_filename_component(MSVC_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
   find_file(MSVCP_DLL_PATH NAMES ${MSVCP_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
   find_file(VCRUNTIME_DLL_PATH NAMES ${VCRUNTIME_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
@@ -343,6 +400,12 @@ endif()
 # ==============================
 # Enlazar con las librerías externas
 # ==============================
+
+# Enlazado con la librería estática del código CLI.NET (si aplica)
+if (HAVE_CLI_MANAGED)
+    target_link_libraries(${PROJECT_NAME} PRIVATE CliWrapper)
+endif()
+
 
 # Enlazar las librerías externas activas creadas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
