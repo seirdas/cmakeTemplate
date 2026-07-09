@@ -316,20 +316,20 @@
 
     // Control de modelos individuales ------------------------------------------------------
 
-    bool TTSCore::generate(std::string const& modelName, std::string const& text, std::string const& wavname) {
-        if (!running_) return false;
+    AudioData TTSCore::generate(std::string const& modelName, std::string const& text) {
+        if (!running_) return {};
 
         // Comprobar que el texto contiene algo para generar
         if (text == "") {
             SYS_WARN("TTSCore", "Generate function called with empty string");
-            return false;
+            return {};
         }
 
         // Comprobar los modelos disponibles
         std::vector<std::string> models_names = getLoadedModels();
         if (models_names.empty()) {
             SYS_WARN("TTSCore","Cannot load any model");
-            return false;
+            return {};
         }
 
         // Comprobar que el modelo "seleccionado" por param existe
@@ -337,24 +337,22 @@
             std::lock_guard<std::mutex> lock(models_mutex_);
             auto it = loaded_models_.find(modelName);
             if (it == loaded_models_.end()) {
-                SYS_ERROR("Model not found or loaded: " + modelName, "TTSCore");
-                return false;
+                SYS_WARN("TTSCore", "generate: Model not found or loaded: " + modelName);
+                return {};
             }
-        }
-
-        // (lazy_load) Si el modelo no está cargado, cargarlo ahora
-        if (loaded_models_[modelName] == nullptr) {
-            std::filesystem::path modpath = getModelPath(modelName);
-            if (!modpath.empty())
-                load_vits_model(modpath);
-            else {
-                SYS_WARN("TTSCore","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
-                return false;
+            
+            // (lazy_load) Si el modelo no está cargado, cargarlo ahora
+            if (it->second == nullptr) {
+                std::filesystem::path modpath = getModelPath(modelName);
+                if (!modpath.empty() && !load_vits_model(modpath)) {
+                    SYS_WARN("TTSCore","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
+                    return {};
+                }
             }
         }
 
         // Inicia el proceso
-        SYS_INFO("TTSCore","Generating audio '" + wavname +".wav'  with model " + modelName + "...");
+        SYS_INFO("TTSCore","Generating audio with model " + modelName + "...");
         active_tasks_++;
 
         // Guardar el texto en proceso por el modelo
@@ -379,27 +377,20 @@
             nullptr
         );
 
-        // Notifica al terminar de generar
-        exit_cv_.notify_all();
-        
-        // Comprobar si se ha generado audio
-        if (!audio) {
-            SYS_WARN("TTSCore","Cannot generate audio.");
-            std::lock_guard<std::mutex> lock(processing_mtx_);
-            processing_texts_.erase(modelName);
-            return false;
-        }
-
-        // Generar archivo de audio
-        SYS_INFO("TTSCore","Writing to file...");
-        SherpaOnnxWriteWave(audio->samples, audio->n, audio->sample_rate, (wavname+".wav").c_str());
-        active_tasks_--;
-        exit_cv_.notify_all();
-
-        // Limpiar el texto que está generando el modelo (ya ha terminado de generar)
+        // Limpiar el texto que está generando el modelo
         {
             std::lock_guard<std::mutex> lock(processing_mtx_);
             processing_texts_.erase(modelName);
+        }
+
+        // Termina la generación
+        active_tasks_--;
+
+        // Comprobar que se ha generado audio correctamente
+        if (!audio) {
+            SYS_WARN("TTSCore", "SherpaOnnx failed to generate audio.");
+            exit_cv_.notify_all();
+            return {};
         }
 
         // Para lazy_load, resetea el tiempo de vida del modelo
@@ -408,14 +399,44 @@
             last_used_[modelName] = std::chrono::steady_clock::now();
         }
 
-        // Liberar memoria para evitar fugas
-        SYS_INFO("TTSCore","Freeing memory...");
+        // Notifica al terminar de generar
+        exit_cv_.notify_all();
+
+        // Retornar el audio generado copiando samples y sample_rate a un AudioData
+        AudioData out_audio;
+        out_audio.samples.assign(audio->samples, audio->samples + audio->n);
+        out_audio.sample_rate = audio->sample_rate;
+
+        // Liberar el audio (ya guardado en AudioData)
         SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
+
+        return out_audio;
+    };
+
+    bool TTSCore::generateWav(std::string const& modelName, std::string const& text, std::string wavname) {
+        
+        // Generar audio
+        AudioData audio = generate(modelName, text);
+
+        // Comprobar si se ha generado audio
+        if (audio.empty()) {
+            SYS_WARN("TTSCore", "Cannot generate audio for WAV file: Empty audio generated");
+            return false;
+        }
+
+        // Generar archivo de audio
+        SYS_INFO("TTSCore","Writing to file...");
+        SherpaOnnxWriteWave(
+            audio.samples.data(), 
+            static_cast<int32_t>(audio.samples.size()), 
+            audio.sample_rate, 
+            (wavname + ".wav").c_str()
+        );
 
         // Mensaje de info
         SYS_INFO("TTSCore","Audio generated: " + wavname + ".wav"); 
         return true;
-    };
+    }
 
     int TTSCore::getSampleRate(std::string const& modelName) const {
 

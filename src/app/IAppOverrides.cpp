@@ -121,7 +121,7 @@ bool AppController::TTSgenerate(
     std::string const& text, 
     std::string const& wavname)
     noexcept {
-        return tts_->generate(modelName, text, wavname);
+        return tts_->generateWav(modelName, text, wavname);
     };
 
 TTSData AppController::getTTSData() noexcept {

@@ -7,6 +7,15 @@
 #include <filesystem>
 
 
+struct AudioData {
+    std::vector<float> samples;
+    int32_t sample_rate = 0;
+
+    // Método utilitario para saber si está vacío
+    bool empty() const { return samples.empty(); }
+};
+
+
 // Declaración como estructura para evitar includes en hpp
 struct SherpaOnnxOfflineTts;
 
@@ -121,13 +130,21 @@ public:
 // Control de modelos individuales ------------------------------------------------------
 
     /**
+     * @brief Genera un audio a partir de un texto usando un modelo de voz especificado.
+     * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
+     * @param text El texto a convertir en audio.
+     * @return audio
+     */
+    AudioData generate(std::string const& modelName, std::string const& text);
+
+    /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
      * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
      * @param text El texto a convertir en audio.
      * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión wav).
      * @return true si la generación fue exitosa, false en caso de error.
      */
-    bool generate(std::string const& modelName, std::string const& text, std::string const& wavname);
+    bool generateWav(std::string const& modelName, std::string const& text, std::string wavname);
 
     /**
      * @brief Obtiene la frecuencia de muestreo del modelo de voz.
