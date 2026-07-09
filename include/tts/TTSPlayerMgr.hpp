@@ -3,6 +3,9 @@
 #include <memory>   // unique_ptr
 #include <string>
 
+// Declaración implícita
+class TTSCore;
+
 class TTSPlayerMgr {
 
 public:
@@ -12,7 +15,7 @@ public:
     /**
      * @brief Constructor 
      */
-    TTSPlayerMgr();
+    TTSPlayerMgr(TTSCore& tts);
     
     /**
      * @brief Destructor 
@@ -46,5 +49,8 @@ private:
     // Pointer to implementation
     struct Impl;
     std::unique_ptr<Impl> pimpl_;
+
+    // Clase gestor de TTS
+    TTSCore& tts_;
 
 };

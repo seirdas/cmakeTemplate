@@ -2,6 +2,7 @@
 #include "tts/TTSPlayerMgr.hpp"
 #include "tts/TTSPlayer.hpp"
 #include "tts/TTSData.hpp"
+#include "tts/TTSCore.hpp"
 
 #include <string>
 #include <memory>
@@ -19,9 +20,41 @@ struct TTSPlayerMgr::Impl {
     std::condition_variable queue_cv_;
 };
 
+// General ------------------------------------------------------------------------------
 
-TTSPlayerMgr::TTSPlayerMgr() :
-    pimpl_(std::make_unique<Impl>()) 
+TTSPlayerMgr::TTSPlayerMgr(TTSCore& tts) :
+    pimpl_(std::make_unique<Impl>()),
+    tts_(tts)
 {
+
+}
+
+TTSPlayerMgr::~TTSPlayerMgr() {
+
+}
+
+
+// Ejecución ----------------------------------------------------------------------------
+
+bool TTSPlayerMgr::init(void* config) {
+
+}
+
+void TTSPlayerMgr::loadConfig(void* config) {
+
+}
+
+void TTSPlayerMgr::Ejecutar() {
+
+}
+
+
+// Gestión de reproductores TTS ---------------------------------------------------------
+
+bool TTSPlayerMgr::add_tts_player(std::string name) {
+
+}
+
+bool TTSPlayerMgr::remove_tts_player(std::string name) {
 
 }
