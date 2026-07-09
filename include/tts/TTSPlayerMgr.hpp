@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>   // unique_ptr
-
+#include <string>
 
 class TTSPlayerMgr {
 
@@ -35,6 +35,10 @@ public:
 
     bool remove_tts_player(std::string name);
 
+
+// iComm --------------------------------------------------------------------------------
+
+    
 
 
 private:
