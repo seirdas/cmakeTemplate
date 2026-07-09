@@ -12,7 +12,7 @@
  * @class iCommWrapper
  * @brief Managed wrapper (C++/CLI) for .NET iComm dll
  *   Clase para compatibilidad con .NET de iComm
- *  especial para manejar los eventos y las funciones delegadas de la librer�a iComm
+ *  especial para manejar los eventos y las funciones delegadas de la librería iComm
  *   Compatibilidad con iComm de .NET, clase autogestionada (managed) con el _ref class_
  *   Administrada con gc (garbage collector)
  *   Le pasa los datos necesarios a la logica del TTS.
