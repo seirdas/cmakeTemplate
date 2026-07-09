@@ -120,7 +120,7 @@ void TotalMix::loadConfig(void* config) {
         return true;
     }
 
-    bool NetMgr::isInitialized() {
+    bool TotalMix::isInitialized() {
         return initialized_;
     }
 
