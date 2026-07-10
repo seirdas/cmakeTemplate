@@ -35,31 +35,60 @@ public:
 
     bool init(std::string const& pbName) {
         playbackName_ = pbName;
+        return true;
     }
 
     bool play(std::string const& modelName, std::string const& text) {
+
+        // Comprobaciones previas
+        if (modelName.empty()) {
+            SYS_WARN("TTSPlayer","Cannot play: ModelName empty.");
+            return false;
+        }
+        if (text.empty()) {
+            SYS_WARN("TTSPlayer","Cannot play: Text empty.");
+            return false;
+        }
         if (!fn_textToAudio || !fn_audioToPlayback) {
             SYS_WARN("TTSPlayer","Cannot generate audio: Callback functions don't exist.");
             return false;
         }
 
-        active_tasks_++;
+        // Lanzamos en un hilo para no bloquear al caller
+        std::thread([this, modelName, text]() {
+            // Incrementar contador de tareas activas de la clase
+            active_tasks_++;
+            // Generar audio usando función inyectada de tts
+            std::vector<float> audio = fn_textToAudio(modelName, text);
+            if (audio.empty()) {
+                SYS_WARN("TTSPlayer","Empty audio generated from " + modelName);
+                return false;
+            }
+            // Reproducir audio por el playback
+            bool result = fn_audioToPlayback(audio, playbackName_);
+            // Decrementar contador de tareas activas de la clase
+            active_tasks_--;
 
-        // Generar audio usando función inyectada de tts
-        std::vector<float> audio = fn_textToAudio(modelName, text);
+            if (!result) {
+                SYS_WARN("TTSPlayer","Cannot reproduce audio through playback '" + playbackName_ + "'");
+                return false;
+            }
 
-        // Reproducir audio por el playback
-        fn_audioToPlayback(audio, playbackName_);
+            // Notificar que ha terminado de reproducir
+            /* #TODO */
+        }).detach();
 
-        // #TODO notificar que ha terminado de reproducir
-
-        active_tasks_--;
+        return true;
     }
 
 // Datos --------------------------------------------------------------------------------
 
     void setPlaybackDev(std::string const& pbName) {
         playbackName_ = pbName;
+    }
+
+    bool isBusy() {
+        return (active_tasks_ > 0);
     }
 
 // Inyección de funciones ---------------------------------------------------------------
@@ -81,17 +110,11 @@ public:
      * @param audio Audio a reproducir (obtenido del tts)
      * @param playbackName Nombre del dispositivo playback por el que reproducir el audio
      */
-    using PlaybackFunction = std::function<void(std::vector<float> audio, std::string const& playbackName)>;
+    using PlaybackFunction = std::function<bool(std::vector<float>& audio, std::string const& playbackName)>;
 
 
     void setPlaybackCallback(PlaybackFunction fn) {
         fn_audioToPlayback = std::move(fn);
-    }
-
-
-
-    bool isBusy() {
-        return (active_tasks_ > 0);
     }
 
 
