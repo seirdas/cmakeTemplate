@@ -55,14 +55,12 @@ public:
 
     /**
      * @brief Sincroniza los cambios en memoria con el archivo físico en disco.
-     * @details Compara el estado actual (caché) con el último snapshot guardado. Si existen
-     * diferencias o se fuerza la actualización, escribe todo el contenido al archivo.
-     * @param filename Ruta del archivo a actualizar.
-     * @param force Si es @c true, omite la comprobación de cambios y fuerza la escritura a disco.
+     * @details Compara el estado actual (caché) con el último snapshot guardado 
+     * de todos los json en caché. Si existen diferencias, escribe el contenido al archivo.
      * @return @c true si la operación se realizó con éxito o no hubo cambios necesarios, 
      * @c false si hubo error de escritura o el archivo no está en caché.
      */
-    bool update(std::string const& filename);
+    bool update();
     
     /**
      * @brief Obtiene un sub-nodo específico dentro del objeto JSON raíz.

@@ -61,37 +61,38 @@ JsonMgr& JsonMgr::instance() {
         return &cache_[filename];
     }
 
-    bool JsonMgr::update(std::string const& filename) {
+    bool JsonMgr::update() {
+
+        // Marca si todos los json se han volcado correctamente
+        bool allSuccess = true;
 
         std::unique_lock<std::mutex> lock(mtx_);
+        for (auto const& [filename, cacheContent] : cache_) {
 
-        auto itCache = cache_.find(filename);
-        auto itSnap  = snapshot_.find(filename);
+            // Buscar el snapshot asociado
+            auto itSnap = snapshot_.find(filename);
 
-        // Si no existe el archivo en caché, no hacer nada
-        if (itCache == cache_.end())
-            return false;
+            // Si existe en snapshot y no hay cambios, nos lo saltamos
+            if (itSnap != snapshot_.end() && itSnap->second == cacheContent)
+                continue; 
 
-        // Si no hay cambios no hacer nada
-        if (itSnap->second == itCache->second)
-            return true;
+            SYS_INFO("JsonMgr", "Saving config changes to ..." + filename);
+            
+            // Abrir archivo para escritura
+            std::ofstream file(filename, std::ios::out);
+            if (!file.is_open()) {
+                SYS_WARN("JsonMgr", "Failed to save configuration to " + filename);
+                allSuccess = false;
+                return false;
+            }
 
-        SYS_INFO("JsonMgr", "Saving config changes to file...");
-        
-        // Abrir archivo para escritura
-        std::ofstream file(filename, std::ios::out);
-        if (!file.is_open()) {
-            SYS_WARN("JsonMgr", "Failed to save configuration to " + filename);
-            return false;
+            // Escribir los datos en el archivo
+            file << cacheContent.dump(4);
+            SYS_INFO("JsonMgr", "Configuration successfully saved.");
+
+            // Guardar los datos actuales en snapshot
+            snapshot_[filename] = cacheContent;
         }
-
-        // Escribir los datos en el archivo
-        file << itCache->second.dump(4);
-        SYS_INFO("JsonMgr", "Configuration successfully saved.");
-
-        // Guardar los datos actuales en snapshot
-        snapshot_[filename] = itCache->second;
-
         return true;
     }
 
