@@ -3,7 +3,8 @@
 
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "tts/TTSCore.hpp"     // Clase para gestionar TTS
+#include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
+#include "tts/TTSData.hpp"
 
 /* 
 * Aquí solo deberían ir acciones que se ejecuten sobre otros módulos
@@ -124,8 +125,8 @@ bool AppController::TTSgenerate(
         return tts_->generateWav(modelName, text, wavname);
     };
 
-TTSData AppController::getTTSData() noexcept {
-    TTSData data;
+TTSCoreData AppController::getTTSData() noexcept {
+    TTSCoreData data;
 
     data.available_models     = tts_->getAvailableModels();
     data.loaded_models        = tts_->getLoadedModels();
@@ -136,9 +137,6 @@ TTSData AppController::getTTSData() noexcept {
     return data;
 }
 
-std::string AppController::getTTSProcessingText(std::string modelName) const noexcept {
-    return tts_->getProccesingText(modelName);
-}
 
 
 // VoIP ---------------------------------------------------------------------------------

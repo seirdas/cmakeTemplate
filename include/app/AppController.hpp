@@ -12,7 +12,7 @@
 class NetMgr;
 class GuiMgr;
 class SoundMgr;
-class TTSCore;
+class TTSMgr;
 class TotalMix;
 class Symetrix;
 class VoIPMgr;
@@ -219,12 +219,7 @@ public:
     /**
      * @brief Obtiene los datos de módulo TTS
      */
-    TTSData getTTSData() noexcept override; 
-
-    /**
-     * @brief Obtiene el texto procesado por un modelo TTS 
-     */
-    std::string getTTSProcessingText(std::string modelName) const noexcept override;
+    TTSCoreData getTTSData() noexcept override; 
 
 
     // VoIP ---------------------------------------------------------------------------------
@@ -241,7 +236,7 @@ public:
 
 private:
 
-    /************ Variables ********************************************************/
+/************ Variables ********************************************************/
 
     // Parámetros de entrada (igual que main)
     int         argc_;                          ///< Número de parámetros de entrada
@@ -254,7 +249,7 @@ private:
     std::unique_ptr<NetMgr>      net_;          ///< Gestor de sockets de red
     std::unique_ptr<GuiMgr>      gui_;          ///< Gestor de ventanas para la interfaz gráfica
     std::unique_ptr<SoundMgr>    snd_;          ///< Gestor de audio
-    std::unique_ptr<TTSCore>     tts_;          ///< Gestor módulo TTS
+    std::unique_ptr<TTSMgr>      tts_;          ///< Gestor módulo TTS
     std::unique_ptr<TotalMix>    tmx_;          ///< Gestor módulo Totalmix
     std::unique_ptr<Symetrix>    sym_;          ///< Gestor módulo Symetrix
     std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay

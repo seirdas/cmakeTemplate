@@ -50,7 +50,7 @@
         if (config)
             loadConfig(config);
         else // Puede llegar aquí si se hace reload()
-            SYS_WARN("AppController","Cannot load config. Using default values.");
+            SYS_WARN("TTSCore","Cannot load config. Using default values.");
 
         // Marcar como corriendo por si se destruye mientras carga modelos
         running_ = true;

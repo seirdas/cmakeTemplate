@@ -14,6 +14,7 @@
 #include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
+#include "tts/TTSData.hpp"
 
 #if defined IMGUILIB || defined IMGUILIB_VERSION
 
@@ -56,7 +57,7 @@
 
 	// Implementación de miembros de declaraciones forward
     struct GuiMgr::Impl {
-        TTSData         datosTTS;
+        TTSCoreData         datosTTS;
     };
 
 

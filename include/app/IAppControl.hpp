@@ -3,16 +3,7 @@
 #include <string>               // Maneja cadenas de texto
 #include <vector>
 
-/**
- * @brief Datos del módulo TTS
- */
-struct TTSData {
-    short init_percent;
-    short num_available_models;
-    short num_loaded_models;
-    std::vector<std::string> available_models;
-    std::vector<std::string> loaded_models;
-};
+class TTSCoreData;
 
 /**
  * @brief Interfaz de intercomunicación entre los miembros de la aplicación.
@@ -183,12 +174,9 @@ public:
     /**
      * @brief Obtiene los datos de módulo TTS
      */
-    virtual TTSData getTTSData() noexcept = 0; 
+    virtual TTSCoreData getTTSData() noexcept = 0; 
 
-    /**
-     * @brief Obtiene el texto procesado por un modelo TTS 
-     */
-    virtual std::string getTTSProcessingText(std::string modelName) const noexcept = 0;
+
 
 // VoIP ---------------------------------------------------------------------------------
 

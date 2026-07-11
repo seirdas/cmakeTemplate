@@ -1,5 +1,5 @@
 
-#include "tts/TTSPlayerMgr.hpp"
+#include "tts/TTSMgr.hpp"
 #include "tts/TTSPlayer.hpp"
 #include "tts/TTSData.hpp"
 #include "tts/TTSCore.hpp"

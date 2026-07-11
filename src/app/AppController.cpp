@@ -5,11 +5,11 @@
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "tts/TTSCore.hpp"      // Clase para gestionar TTS
+#include "tts/TTSMgr.hpp"       // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
 #include "comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
-#include "voip/VoIPMgr.hpp"    // Clase para gestión Voiprec/Voipplay
+#include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
 
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
@@ -24,7 +24,7 @@ AppController::AppController() :
     net_(std::make_unique<NetMgr>()),
     gui_(std::make_unique<GuiMgr>(this)),
     snd_(std::make_unique<SoundMgr>()),
-    tts_(std::make_unique<TTSCore>()),
+    tts_(std::make_unique<TTSMgr>(*snd_)),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     voip_(std::make_unique<VoIPMgr>()),
@@ -128,6 +128,13 @@ bool AppController::init(int argc, char** argv) {
         SYS_WARN("AppController","Symetrix manager FAIL");
     else SYS_INFO("AppController","Symetrix manager OK");
 
+    // Inicialización de TTS
+    SYS_INFO("AppController","TTS manager loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"tts");
+    if(!tts_->init(config_node))
+        SYS_WARN("AppController","TTS manager FAIL");
+    else SYS_INFO("AppController","TTS manager OK");
+
     
     // Inicialización lógica Comms
     SYS_INFO("AppController","Comms logic loading...");
@@ -137,25 +144,8 @@ bool AppController::init(int argc, char** argv) {
     else SYS_INFO("AppController","Comms logic OK");
     
 
-    // Inicialización de TTS (en hilo para no bloquear)
-    std::thread tLoadTTS([this]() {
-            SYS_INFO("AppController","Starting TTS subsystem async load...");
-
-            auto& jsonMgr = JsonMgr::instance();
-            json* tts_config_node = jsonMgr.getSubNode(config_filename_, "tts");
-
-            if(!tts_->init(tts_config_node))
-                SYS_WARN("AppController","TTS subsystem FAIL");
-            else SYS_INFO("AppController","TTS subsystem OK");
-
-            JsonMgr::instance().update(config_filename_);  
-        }
-    );
-    tLoadTTS.detach();  // No necesitamos "esperar" a que termine
-
-
     // Volcar datos que hayan escrito los módulos al config
-    jsonMgr.update(config_filename_);
+    jsonMgr.update();
 
 
     SYS_INFO("AppController","App initialized.");
