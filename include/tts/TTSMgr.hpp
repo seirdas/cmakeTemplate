@@ -106,16 +106,18 @@ public:
 
         // Notifica el estado de cerrado (para threads, etc.)
         running_ = false;
+        queue_cv_.notify_all();
 
         // Cierra el núcleo de TTS
         SYS_INFO("TTSMgr","Closing ttsCore...");
         ttsCore_.cerrar();
 
         // Espera a que se cierren los hilos
-        SYS_INFO("TTSMgr","Waiting for running threads...");
+        SYS_INFO("TTSMgr","Waiting for consumer thread...");
         if (hilo_consumer_.joinable())
             hilo_consumer_.join();
 
+        SYS_INFO("TTSMgr","Waiting for TTSCore thread...");
         if (hilo_ttscore_.joinable())
             hilo_ttscore_.join();
 
