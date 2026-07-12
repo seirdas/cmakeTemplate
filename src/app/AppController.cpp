@@ -24,7 +24,7 @@ AppController::AppController() :
     net_(std::make_unique<NetMgr>()),
     gui_(std::make_unique<GuiMgr>(this)),
     snd_(std::make_unique<SoundMgr>()),
-    tts_(std::make_unique<TTSMgr>(*snd_)),
+    tts_(std::make_unique<TTSMgr>(snd_.get())),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     voip_(std::make_unique<VoIPMgr>()),
