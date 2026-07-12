@@ -54,7 +54,7 @@ public:
     json* load(std::string const& filename);
 
     /**
-     * @brief Sincroniza los cambios en memoria con el archivo físico en disco.
+     * @brief Sincroniza los cambios en memoria de todos los json en caché con los archivos físicos en disco.
      * @details Compara el estado actual (caché) con el último snapshot guardado 
      * de todos los json en caché. Si existen diferencias, escribe el contenido al archivo.
      * @return @c true si la operación se realizó con éxito o no hubo cambios necesarios, 
@@ -105,6 +105,19 @@ public:
     bool get(json* config, std::string const& key, T& value);
 
     /**
+     * @brief Escribe un valor en el JSON, sobrescribiendo la clave si ya existía.
+     * @details siempre asigna @p value a la clave indicada.
+     * @tparam T Tipo de dato.
+     * @param config Puntero al objeto JSON.
+     * @param key Nombre de la clave a escribir.
+     * @param value Valor a guardar en el JSON.
+     * @return true Si se ha escrito correctamente.
+     * @return false Si @p config es @c nullptr.
+     */
+    template<typename T>
+    bool set(json* config, std::string const& key, T& value);
+
+    /**
      * @brief Intenta obtener un valor; si no existe, lo crea en el JSON con el valor por defecto.
      * @details Esta función es ideal para inicializar configuraciones. Si la clave no está 
      * presente en el JSON, escribe el valor proporcionado en `value` dentro del objeto JSON,
@@ -118,20 +131,6 @@ public:
      */
     template<typename T>
     bool get_or_set(json* config, std::string const& key, T& value);
-
-
-    /**
-     * @brief Escribe un valor en el JSON, sobrescribiendo la clave si ya existía.
-     * @details siempre asigna @p value a la clave indicada.
-     * @tparam T Tipo de dato.
-     * @param config Puntero al objeto JSON.
-     * @param key Nombre de la clave a escribir.
-     * @param value Valor a guardar en el JSON.
-     * @return true Si se ha escrito correctamente.
-     * @return false Si @p config es @c nullptr.
-     */
-    template<typename T>
-    bool set(json* config, std::string const& key, T& value);
 
 
 private:
@@ -154,7 +153,8 @@ private:
 
 
 // ==============================================================================
-// Implementación de Templates
+// Implementación de funciones con template
+// (No pueden ir en cpp)
 // ==============================================================================
 
 #if defined JSON || defined JSON_VERSION
@@ -186,24 +186,24 @@ private:
     }
 
     template<typename T>
-    bool JsonMgr::get_or_set(json* config, std::string const& key, T& value) {
-        if (!config)
-            return false;
-        
-        if (get<T>(config, key, value))
-            return true;
-
-        (*config)[key] = value; 
-        return false;           
-    }
-
-    template<typename T>
     bool JsonMgr::set(json* config, std::string const& key, T& value) {
         if (!config)
             return false;
         
         (*config)[key] = value; 
         return true;
+    }
+
+    template<typename T>
+    bool JsonMgr::get_or_set(json* config, std::string const& key, T& value) {
+        if (!config)
+            return false;
+        
+        if (get<T>(config, key, value))
+            return true;        // true porque sí ha hecho su función get_or_set (get)
+
+        (*config)[key] = value; 
+            return true;        // true porque sí ha hecho su función get_or_set (set)
     }
 
 #else
