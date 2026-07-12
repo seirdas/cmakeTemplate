@@ -94,11 +94,13 @@ public:
 
     /**
      * @brief Obtiene una lista con los nombres de los modelos disponibles
+     * @note Los nombres SÍ incluyen el tipo de modelo (ej. "vits-piper-*")
      */
     std::vector<std::string> getAvailableModels();
       
     /**
      * @brief Obtiene una lista con las rutas de los modelos disponibles
+     * @note Los nombres NO incluyen el tipo de modelo (ej. "vits-piper-*")
      */
     std::vector<std::string> getAvailableModelsPath();
 

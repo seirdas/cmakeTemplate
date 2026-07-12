@@ -54,11 +54,11 @@ public:
             SYS_WARN("TTSMgr","Cannot load config. Using default values.");
         
         // Inicialización de TTSCore (en hilo para no bloquear)
-        SYS_INFO("AppController","Starting TTS subsystem async load...");
+        SYS_INFO("AppController","Starting TTSCore async load...");
         std::thread tLoadTTS([this, config]() {
                 if(!ttsCore_.init(config))
-                    SYS_WARN("AppController","TTS subsystem FAIL");
-                else SYS_INFO("AppController","TTS subsystem OK");
+                    SYS_WARN("AppController","TTSCore FAIL");
+                else SYS_INFO("AppController","TTSCore OK");
 
                 JsonMgr::instance().update();
             }
@@ -103,7 +103,7 @@ public:
     }
 
     std::vector<std::string> getLoadedModels() {
-        return ttsCore_.getAvailableModels();
+        return ttsCore_.getLoadedModels();
     }
 
     short numLoadedModels() {

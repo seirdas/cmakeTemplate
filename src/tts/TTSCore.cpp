@@ -334,7 +334,7 @@
 
         // Comprobar que el modelo "seleccionado" por param existe
         {
-            std::lock_guard<std::mutex> lock(models_mutex_);
+            std::unique_lock<std::mutex> lock(models_mutex_);
             auto it = loaded_models_.find(modelName);
             if (it == loaded_models_.end()) {
                 SYS_WARN("TTSCore", "generate: Model not found or loaded: " + modelName);
@@ -344,9 +344,16 @@
             // (lazy_load) Si el modelo no está cargado, cargarlo ahora
             if (it->second == nullptr) {
                 std::filesystem::path modpath = getModelPath(modelName);
-                if (!modpath.empty() && !load_vits_model(modpath)) {
-                    SYS_WARN("TTSCore","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
-                    return {};
+                if (!modpath.empty()) {
+
+                    // Se va a bloquear 'loaded_models' otra vez en la función load_vits_model
+                    lock.unlock();
+                    
+                    if(!load_vits_model(modpath)) {
+                        SYS_WARN("TTSCore","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
+                        return {};
+                    }
+                    
                 }
             }
         }
