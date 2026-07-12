@@ -733,7 +733,8 @@
 					std::vector<std::string> entradas = ctrl_->getAvailableInputDevices();
 
 					// Lista con los nombres de los dispositivos que el usuario ha activado
-					static std::vector<std::string> dispositivos_activos = ctrl_->getManagedCaptures();
+					static std::vector<std::string> dispositivos_activos;
+					dispositivos_activos = ctrl_->getManagedCaptures();
 
 					// Flag para abrir/cerrar la ventana flotante del selector
 					static bool show_device_selector = false;
