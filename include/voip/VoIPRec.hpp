@@ -77,16 +77,17 @@ private:
 
     /************ Variables ********************************************************/
 
+// Aliases
     using listaTX = std::array<unsigned int, NUM_TX>;
 
-    // Estado
+// Inicialización y ejecución
     std::atomic<bool>   running_;       ///< Estado del módulo (activo/desactivado)
     
-    // Conexiones externas
+// Conexiones externas
     SoundMgr*       snd_;
     NetMgr*         net_;
 
-    // Metadatos del paquete de audio
+// Metadatos del paquete de audio
     std::vector<short>      audioBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)
     unsigned int            sampleRateHz_;      ///< Frecuencia de muestreo
     short                   channels_;          ///< Número de canales

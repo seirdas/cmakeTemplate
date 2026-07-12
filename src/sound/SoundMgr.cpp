@@ -26,7 +26,8 @@
 
     SoundMgr::SoundMgr() : 
         pimpl_(std::make_unique<Impl>()),
-        initialized_(false)
+        initialized_(false),
+        MAX_REINIT_ATTEMPTS(3)
     {
 
     }
@@ -62,7 +63,7 @@
         return initialized_;
     }
 
-    bool SoundMgr::isInitialized() {
+    bool SoundMgr::isInitialized() const {
         return initialized_;
     }
 

@@ -6,7 +6,11 @@
 
 // General ------------------------------------------------------------------------------
 
-CommsCore::CommsCore(IAppControl* ctrl_) {
+CommsCore::CommsCore(IAppControl* ctrl) :
+    initialized_(false),
+    ctrl_(ctrl),
+    last_packet_hash_(0)
+{
 
 }
 
@@ -27,8 +31,16 @@ bool CommsCore::init(void* config) {
 
 
     // #TODO
+
+    // Temp vamos marcando que esto está todo ok (mentira)
+    initialized_ = true;
+
     SYS_WARN("CommsCore","Comms logic not yet implemented");
     return false;
+}
+
+bool CommsCore::isInitialized() const {
+    return initialized_;
 }
 
 void CommsCore::loadConfig(void* config) {

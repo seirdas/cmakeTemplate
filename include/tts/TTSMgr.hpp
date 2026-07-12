@@ -243,24 +243,25 @@ private:
 
 /************ Variables ********************************************************/
 
+// Aliases
     using TTSPlayers = std::unordered_map<std::string, std::unique_ptr<TTSPlayer>>;
     
-    // Ejecución
+// Inicialización y ejecución
     std::atomic<bool>           running_;       ///< flag de aplicación corriendo (para hilos)
     bool                        initialized_;   ///< Bandera para indicar inicialización exitosa
     std::thread                 hilo_ttscore_;  ///< Hilo inicializador de TTSCore
 
-    // Cola de datos
+// Cola de datos
     std::thread                 hilo_consumer_; ///< Hilo consumidor de datos TTS (queue)
     std::queue<TTSDataPacket>   queue_;         ///< Cola de comandos
     std::mutex                  queue_mtx_;     ///< Mutex de cola de comandos
     std::condition_variable     queue_cv_;      ///< Conditional variable para mutex de cola
 
-    // Módulos
+// Módulos
     SoundMgr*                   snd_;           ///< Puntero a clase de gestión de audio
     TTSCore                     ttsCore_;       ///< Clase núcleo de tts
 
-    // Reproductores TTS (usan playback de soundmgr)
+// Reproductores TTS (usan playback de soundmgr)
     TTSPlayers                  ttsPlayers_;    ///< Lista de reproductores TTS
 
 };

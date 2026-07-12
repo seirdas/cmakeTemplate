@@ -141,9 +141,15 @@ private:
 
 /************ Variables ********************************************************/
 
-    std::unordered_map<std::string, std::unique_ptr<VoIPRec>>   voiprecs_;
-    std::unordered_map<std::string, std::unique_ptr<VoIPPlay>>  voipplays_;
+// Aliases
+    using RecsList  = std::unordered_map<std::string, std::unique_ptr<VoIPRec>>;
+    using PlaysList = std::unordered_map<std::string, std::unique_ptr<VoIPPlay>>;
 
+// Módulos VoIPRec / VoIPPlay
+    RecsList   voiprecs_;
+    PlaysList  voipplays_;
+
+// Funciones inyectadas
     std::function<void(std::string name)>  createVoiprec_;     ///< Función inyectada para usar snd, net
 
 };

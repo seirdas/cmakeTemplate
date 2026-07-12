@@ -59,7 +59,7 @@ public:
      * @brief Devuelve si la inicialización ha sido exitosa
      * @return @c true Si ha iniciado bien, @c false en caso contrario
      */
-    bool isInitialized();
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -290,7 +290,6 @@ private:
      */
     void Style_SonicRiders();
     
-
     /**
      * @brief Dark - Rounded Visual Studio style by RedNicStone from ImThemes
      */
@@ -299,14 +298,23 @@ private:
     
 /************ Variables ********************************************************/
     
-    // Configuración
-    void*           config_;            ///< Configuración del módulo (considerado json)
+// Pointer to implementation
+    struct Impl;                        ///< Estructura PIMPL
+    std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de IAppController
 
-    // Propiedades de la ventana ________________
+// Inicialización y ejecución
+    void*           config_;            ///< Configuración del módulo (considerado json)
+    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
+    bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
+    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
+
+// Propiedades de la ventana
+    GLFWwindow*     window_;            ///< Puntero a la ventana GLFW
     ImGuiStyle*     style_;             ///< Modificar ajustes de estilo
     ImGuiIO*        io_;                ///< Manejar entrada/salida
     bool            captureKeys_;       ///< Modo Debug para detección de teclas en consola
 
+// Parámetros de la ventana
     std::string     AppName_;           ///< Nombre de la aplicación/ventana
     unsigned int    windowSizeX_;       ///< Tamaño horizontal (x) de la ventana
     unsigned int    windowSizeY_;       ///< Tamaño vertical (y) de la ventana
@@ -315,33 +323,26 @@ private:
     bool            fullscreen_;        ///< Modo ventana completa activo
     std::string     theme_selected_;    ///< Tema seleccionado
 
+// Parámetros de fuente de letra
     float              fontSize_;           ///< Tamaño de fuente predeterminado
     unsigned int const MAX_FONT_SIZE_ = 30; ///< Tamaño de fuente máximo permitido
     unsigned int const MIN_FONT_SIZE_ = 14; ///< Tamaño de fuente mínimo permitido
+
+// Tiempos de refresco
     float deviceRefreshInterval_;           ///< Tiempo de refrescar los dispositivos de entrada
 
-    GLFWwindow*     window_;            ///< Puntero a la ventana GLFW
-    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
-    bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
-    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
-    
-    // Imágenes _________________________________
-
+// Imágenes
     struct imageData {      ///< Datos de imagen
         uintptr_t tex = 0;  ///< Puntero a textura (lo que usa imgui)
         int x = 0;          ///< resolución width (ancho)
         int y = 0;          ///< resolución height (alto)
         int channels = 0;   ///< Canales de color (no se usa)
     };
-    // Cargar las imágenes en la función loadImages
     std::unordered_map<std::string, imageData> images_;         ///< Mapa de imágenes cargadas
     uintptr_t defaultTexture_ = 0;                              ///< Textura generada por defecto (mosaico blaco/rosa)
 
-    // Variables (MenuBar) ______________________
+// Variables (MenuBar)
     float           MainMenuBar_Height_       = 0.0f;           ///< Almacena el alto de la barra de menú para ajustar la ventana principal
-
-    struct Impl;                        ///< Estructura PIMPL
-    std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de IAppController
 
 };
 

@@ -19,7 +19,7 @@ public:
     /**
      * @brief Constructor estándar
      */
-    CommsCore(IAppControl* ctrl_ = nullptr);
+    CommsCore(IAppControl* ctrl = nullptr);
 
     /**
      * @brief Destructor estándar
@@ -35,6 +35,12 @@ public:
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool init(void* config);
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -60,6 +66,9 @@ public:
 private:
 
 /************ Variables ********************************************************/
+
+// Inicialización y ejecución
+    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
 
 // Conexión con AppController (y módulos)
     IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros

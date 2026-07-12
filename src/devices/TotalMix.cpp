@@ -122,7 +122,7 @@ void TotalMix::loadConfig(void* config) {
         return true;
     }
 
-    bool TotalMix::isInitialized() {
+    bool TotalMix::isInitialized() const {
         return initialized_;
     }
 

@@ -57,7 +57,7 @@ public:
      * @brief Devuelve si la inicialización ha sido exitosa
      * @return @c true Si ha iniciado bien, @c false en caso contrario
      */
-    bool isInitialized();
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -227,14 +227,17 @@ private:
 
 /************ Variables ********************************************************/
 
+// Aliases
     using TTSModelsMap  = std::unordered_map<std::string, const SherpaOnnxOfflineTts*>;
     using TTSTextsMap   = std::unordered_map<std::string, std::string>; // Podría ser un struct con más datos
     using TTSTimeMap    = std::unordered_map<std::string, std::chrono::steady_clock::time_point>;
 
-    // Inicialización
+// Inicialización y ejecución
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
+    std::atomic<bool>       running_;               ///< Indica si no se ha comandado destruir la clase
+    std::atomic<short>      active_tasks_;          ///< Indica si hay algo en ejecución
 
-    // Modelos de voz
+// Modelos de voz
     TTSModelsMap            loaded_models_;         ///< Mapa de modelos TTS cargados
     short                   num_available_models_;  ///< Número de modelos disponibles
     size_t                  num_threads_;           ///< Número de hilos con los que se generarán los audios
@@ -242,7 +245,7 @@ private:
     std::string             models_path_;           ///< Ruta de carpetas donde residen los modelos
     mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos
     
-    // Lazy Load (Carga modelo solo al usarlo, se descarga en un tiempo)
+// Lazy Load (Carga modelo solo al usarlo, se descarga en un tiempo)
     bool                    lazy_load_;             ///< Activa/desactiva la inicialización solo al usar un modelo
     std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida en segundos de los modelos cargados con lazyload
     TTSTimeMap              last_used_;             ///< Mapa de relación entre modelo - ultimo tiempo usado
@@ -250,15 +253,14 @@ private:
     std::mutex              keepalive_mtx_;         ///< Mutex para el acceso al mapa last_used
     std::condition_variable keepalive_cv_;          ///< Condition variable para el acceso al hilo reaper keepalive_thread
 
-    // Datos de modelos
+// Datos de modelos
     TTSTextsMap             processing_texts_;      ///< Relaciona modelo - texto que está procesando
     mutable std::mutex      processing_mtx_;        ///< Mutex para proteger el acceso al mapa (mutable para métodos const)
 
-    // Datos del modulo TTS
-    std::atomic<short>      active_tasks_;      ///< Indica si hay algo en ejecución
+// Datos del modulo TTS
     unsigned short          num_load_retries_;  ///< Número máximo de reintentos para recargar modelos que fallaron al cargar
-    std::atomic<bool>       running_;           ///< Indica si no se ha comandado destruir la clase
     std::atomic<bool>       loading_;           ///< Indica si está cargando modelos
     std::mutex              exit_mtx_;          ///< Evita destruir TTSCore si hay algo ejecutándose
     std::condition_variable exit_cv_;           ///< Notifica cuándo paran las tareas
+
 };

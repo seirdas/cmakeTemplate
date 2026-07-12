@@ -7,14 +7,17 @@
 
 Symetrix::Symetrix() :
     pimpl_(std::make_unique<Impl>()),
-    SymetrixIP_("192.168.7.21"),
+    initialized_(false),
     wsaStarted_(false),
     connected_(false),
-    initialized_(false),
+    m_waitingPingResponse_(false),
     connection_ping_timeout_ms_(500),
     ComposerPort_(48631),
-    tolerance_percent_(2),            // Por defecto tolerancias de un 2% sobre el rango
+    SymetrixIP_("192.168.7.21"),
     dBcurve_gamma_(0.415f),
+    minTickValue_(0),
+    maxTickValue_(65535),
+    tolerance_percent_(2),            // Por defecto tolerancias de un 2% sobre el rango
     supermatrix_ins_(20),             // Por defecto para tener 20 entradas (se puede cambiar por método)
     supermatrix_outs_(20),            // Por defecto para tener 20 salidas (se puede cambiar por método)
     kBootPreset_(1)
@@ -111,6 +114,10 @@ void Symetrix::loadConfig(void* config) {
 
         initialized_ = true;
         return true;
+    }
+
+    bool Symetrix::isInitialized() const {
+        return initialized_;
     }
     
     /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
@@ -663,6 +670,7 @@ bool Symetrix::init(void* config) {
     loadConfig(config); // Para leer/escribir en el json igualmente
     return false; 
 }
+bool Symetrix::isInitialized() const { return false; }
 void Symetrix::Destroy() {}
 bool Symetrix::isConnected() const { return false; }
 

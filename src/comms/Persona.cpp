@@ -3,7 +3,11 @@
 
 // General ------------------------------------------------------------------------------
 
-Persona::Persona() {
+Persona::Persona() :
+    name_(""),
+    is_instructor_(false),
+    spk_vol(0)
+{
 
 }
 

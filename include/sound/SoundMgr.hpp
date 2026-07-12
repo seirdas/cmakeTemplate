@@ -42,7 +42,7 @@ public:
      * @brief Devuelve si la inicialización ha sido exitosa
      * @return @c true Si ha iniciado bien, @c false en caso contrario
      */
-    bool isInitialized();
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -156,21 +156,20 @@ private:
 
 /************ Variables ****************************************************************/
 
+// Aliases
     using CapturesList  = std::unordered_map<std::string, std::unique_ptr<AudioInputModule>>;
     using PlaybacksList = std::unordered_map<std::string, std::unique_ptr<AudioPlaybackModule>>;
 
-    // Inicialización
-    bool                initialized_;   ///< Bandera para indicar inicialización exitosa
-
-    // Estructura PIMPL para no depender de la librería en el header
+// Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;
-    std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de la librería externa
+    std::unique_ptr<Impl>   pimpl_;         ///< Miembros dependientes de la librería externa
 
-    // Módulos de audio
-    CapturesList    captures_;          ///< Vector con dispositivos inicializados de captura
-    PlaybacksList   playbacks_;         ///< Vector con dispositivos inicializados de playback
+// Inicialización y ejecución
+    bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
+    unsigned short          MAX_REINIT_ATTEMPTS;    ///< Número de reintentos para reinicializar dispositivo de entrada
 
-    // Estado del módulo
-    std::atomic<bool>   ctx_initialized_;           ///< Flag para saber si el motor de audio está inicializado.
-    unsigned short      MAX_REINIT_ATTEMPTS = 3;    ///< Número de reintentos para reinicializar dispositivo de entrada
+// Módulos de audio
+    CapturesList            captures_;      ///< Vector con dispositivos inicializados de captura
+    PlaybacksList           playbacks_;     ///< Vector con dispositivos inicializados de playback
+
 };

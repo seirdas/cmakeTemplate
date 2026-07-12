@@ -68,7 +68,7 @@ public:
      * @brief Devuelve si la inicialización ha sido exitosa
      * @return @c true Si ha iniciado bien, @c false en caso contrario
      */
-    bool isInitialized();
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -240,27 +240,28 @@ private:
 
 /************ Variables ****************************************************************/
 
-    // Inicialización
-    bool                        initialized_;       ///< Bandera para indicar inicialización exitosa
-
-    // Pointer to implementation
+// Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;                                    ///< Declaración de estructura PIMPL para no depender de la librería en el header
     std::unique_ptr<Impl>       pimpl_;             ///< Miembros dependientes de la librería externa
 
-    // Contexto de operaciones asíncronas
+// Inicialización
+    bool                        initialized_;       ///< Bandera para indicar inicialización exitosa
+
+// Contexto de operaciones asíncronas
     std::atomic<bool>           io_running_;        ///< Flag para saber si la red (io_context) está en funcionamiento
     
-    // Sockets
+// Sockets
     mutable std::mutex          udp_sockets_mtx_;   ///< Mutex para gestion del vector de sockets
     std::atomic<bool>           sockets_running_;   ///< Flag para saber si la red (io_context) está en funcionamiento
 
-    // Cola global de datos de socket
+// Cola global de datos de socket
     /* std::queue<NetPacket>    udp_rcv_data_; */   ///< Implementado en Impl de cpp, donde se incluye UdpSocket con NetPacket
     mutable std::mutex          udp_rcv_data_mtx_;  ///< Mutex para cola de datos de sockets
     std::condition_variable     udp_rcv_data_cv_;   ///< Condition variable para cola de datos de sockets
     const std::size_t           MAX_QUEUE_ELEMENTS_ = 100;    ///< Número máximo de elementos en la cola
 
-    // Hilos de trabajo
+// Hilos de trabajo
     std::vector<std::thread>    threads_;           ///< Hilos procesando operaciones asíncronas.
     std::size_t                 thread_count_;      ///< Numero máximo de hilos gestionando operaciones asíncronas.
+
 };

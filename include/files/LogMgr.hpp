@@ -79,6 +79,7 @@ private:
 
 /************ Variables ****************************************************************/
 
+// Archivo
 	std::ofstream 			file_;			///< Archivo (literalmente)
 	std::filesystem::path	filepath_;		///< Ruta del archivo
 	std::string 			name_;			///< Nombre del archivo

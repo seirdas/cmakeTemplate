@@ -28,7 +28,7 @@ void AppController::setOnlineMode(bool nuevo_online_mode) noexcept {
     online_mode_=nuevo_online_mode;
     lock.unlock();
 
-    SYS_INFO("IAppControl", std::string(online_mode_ ? "ON_LINE" : "OFF_LINE") + " mode set.");
+    SYS_INFO("IAppControl", std::string(online_mode_ ? "ONLINE" : "OFFLINE") + " mode set.");
 
     if(online_mode_) {
         net_->start();

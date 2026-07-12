@@ -209,7 +209,7 @@
 		return true;
 	}
 
-	bool GuiMgr::isInitialized() {
+	bool GuiMgr::isInitialized() const{
         return initialized_;
     }
 

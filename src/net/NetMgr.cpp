@@ -66,8 +66,7 @@
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
-        else
-            SYS_WARN("NetMgr","Cannot load config. Using default values.");
+        // No hago else para que no se queje si vuelve de OFFLINE->ONLINE
 
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {
@@ -107,7 +106,7 @@
         return true;
     }
 
-    bool NetMgr::isInitialized() {
+    bool NetMgr::isInitialized() const {
         return initialized_;
     }
 

@@ -246,24 +246,27 @@ private:
 
 /************ Variables ****************************************************************/
 
-    // Estructura PIMPL para no depender de la librería en el header
+// Estructura PIMPL para no depender de la librería en el header
     struct Impl;
     std::unique_ptr<Impl>           pimpl_;             ///< Miembros dependientes de la librería externa
 
-    // Configuración y estado del receptor UDP
+// Inicialización y ejecución
+    std::atomic<bool>               initialized_;       ///< Socket inicializado
+    std::atomic<bool>               running_;           ///< Socket corriendo
+
+// Configuración y estado del receptor UDP
     std::string                     name_;              ///< Nombre dado al socket para identificarlo
     std::vector<char>               recv_buffer_;       ///< Buffer para almacenar los datos recibidos
     unsigned int                    rcv_packet_size_;   ///< Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
 
+// Función inyectada
     std::function<void(NetPacket)>  on_receive_cb_;     ///< Función callback para mandar paquete recibido a cola centralizada de gestor de red
 
-    std::atomic<bool>               initialized_;       ///< Socket inicializado
-    std::atomic<bool>               running_;           ///< Socket corriendo
-
-    // Cola de datos recibidos
+// Cola de datos recibidos
     std::queue<std::vector<char>>   queue_;                     ///< Cola de datos recibidos
     mutable std::mutex              mutex_;                     ///< Mutex para proteger el acceso a la cola
     std::condition_variable         condition_;                 ///< Condición para notificar al main que hay datos nuevos
     const std::size_t               MAX_QUEUE_ELEMENTS = 20;    ///< Número máximo de elementos en la cola
     bool                            ignore_dupe_;               ///< Flag para eliminar duplicados
+
 };

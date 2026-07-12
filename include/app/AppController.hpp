@@ -238,14 +238,19 @@ private:
 
 /************ Variables ********************************************************/
 
-    // Parámetros de entrada (igual que main)
+// Inicialización y ejecución
+    std::atomic<bool>       running_;           ///< flag de aplicación corriendo (para hilos)
+    std::atomic<bool>       online_mode_;       ///< Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
+    std::string             version_;           ///< Versión de la aplicación
+    
+// Parámetros de entrada (igual que main)
     int         argc_;                          ///< Número de parámetros de entrada
     char**      argv_;                          ///< Texto de parámetro de entrada
 
-    // Archivos de configuración
+// Archivos de configuración
     std::string             config_filename_;   ///< Nombre de archivo de configuración
 
-    // Módulos
+// Módulos
     std::unique_ptr<NetMgr>      net_;          ///< Gestor de sockets de red
     std::unique_ptr<GuiMgr>      gui_;          ///< Gestor de ventanas para la interfaz gráfica
     std::unique_ptr<SoundMgr>    snd_;          ///< Gestor de audio
@@ -255,17 +260,10 @@ private:
     std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay
     std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
 
-    bool        sym_initialized_;               ///< Indica si sym está inicializado
-    bool        com_initialized_;               ///< Indica si sym está inicializado
-
-    // Gestión de hilos
+// Gestión de hilos
     std::thread             hilo_test_;         ///< Hilo de pruebas
     std::thread             hilo_consumer_;     ///< Hilo consumidor de paquetes de red
     std::mutex              online_mtx_;        ///< Mutex para dejar en espera al hilo
     std::condition_variable online_cv_;         ///< Reacciona al cambio de estado para el hilo consumidor
 
-    // Estado de aplicación
-    std::atomic<bool>       running_;           ///< flag de aplicación corriendo (para hilos)
-    std::atomic<bool>       online_mode_;       ///< Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
-    std::string             version_;           ///< Versión de la aplicación
 };

@@ -141,14 +141,15 @@ private:
     ~JsonMgr() = default;   ///< Destructor privado
 
 
-    /************ Variables ********************************************************/
+/************ Variables ********************************************************/
 
+// Aliases
     using jsonMap = std::unordered_map<std::string, json>;
     
-    // Cache de archivos json
-    jsonMap cache_;         ///< JSON's. Como se pasan como puntero, pueden ser modificados
-    jsonMap snapshot_;      ///< Copia del json original, por si se modifica (para el `save`)
-    std::mutex mtx_;        ///< Mutex de acceso al json
+// Cache de archivos json
+    jsonMap     cache_;     ///< JSON's. Como se pasan como puntero, pueden ser modificados
+    jsonMap     snapshot_;  ///< Copia del json original, por si se modifica (para el `save`)
+    std::mutex  mtx_;       ///< Mutex de acceso al json
 };
 
 

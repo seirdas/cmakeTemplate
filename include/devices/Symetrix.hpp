@@ -63,6 +63,12 @@ public:
     bool init(void* config = nullptr);
 
     /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
     * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
     * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
@@ -70,7 +76,7 @@ public:
     * esté completo y sincronizado.
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
-    void loadConfig(void* config = nullptr); 
+    void loadConfig(void* config = nullptr);
 
     /**
      * @brief Cierra y limpia todos los componentes de la clase.
@@ -318,40 +324,43 @@ private:
 
 /************ Variables ********************************************************/
 
+// Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;                        ///< Estructura PIMPL para el socket, para no depender de Windows en el header
     std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de Windows (socket)
 
+// Inicialización y ejecución
+    bool                initialized_;                   ///< Bandera que indica si el sistema está inicializado.
+    bool                wsaStarted_;                    ///< Indica si la capa de red del sistema Windows (WSAStartup) se inicializó correctamente.
+
+// Conexión de socket
+    using TimePoint = std::chrono::steady_clock::time_point;
+    bool                connected_;                     ///< Estado actual de la comunicación (true = conectado y respondiendo pings).
+    TimePoint           m_lastPingTime_;                ///< Registro temporal del último comando de control o ping enviado al hardware.
+    bool                m_waitingPingResponse_;         ///< Bandera que indica si estamos esperando que el socket reciba el ACK del ping pendiente.
+    unsigned long       connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
+    unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
+    std::string         SymetrixIP_;                    ///< IP de Symetrix
+
+// Conversión de datos
+    float               dBcurve_gamma_;                 ///< Valor de ponderación de escala porcentual a escala logarítmica
+    unsigned int const  minTickValue_;                  ///< Valor mínimo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
+    unsigned int const  maxTickValue_;                  ///< Valor máximo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
+    unsigned int        tolerance_percent_;             ///< Porcentaje de tolerancia, si un valor cambia menos de este porcentaje respecto a su escala, no se mandará
+    
+// Caché de Comandos de Control Único
     /** @brief Entrada de cache */
     struct CacheEntry {
         float cachedValue = 99999;      ///< Último valor mandado a Symetrix de ticks/dB (valor por defecto fuera de rango)
         int tolerance;                  ///< Valor de tolerancia 
     };
-
-    // --- Conexión de socket ---
-    using TimePoint = std::chrono::steady_clock::time_point;
-    TimePoint           m_lastPingTime_;                ///< Registro temporal del último comando de control o ping enviado al hardware.
-    bool                m_waitingPingResponse_;         ///< Bandera que indica si estamos esperando que el socket reciba el ACK del ping pendiente.
-    bool                wsaStarted_;                    ///< Indica si la capa de red del sistema Windows (WSAStartup) se inicializó correctamente.
-    bool                connected_;                     ///< Estado actual de la comunicación (true = conectado y respondiendo pings).
-    bool                initialized_;                   ///< Bandera que indica si el sistema está inicializado.
-    unsigned long       connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
-    unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
-    std::string         SymetrixIP_;                       ///< IP de Symetrix
-
-    // --- Conversión de datos ---
-    float           dBcurve_gamma_;                     ///< Valor de ponderación de escala porcentual a escala logarítmica
-    unsigned int    minTickValue_    = 0;               ///< Valor mínimo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
-    unsigned int    maxTickValue_    = 65535;           ///< Valor máximo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
-    unsigned int    tolerance_percent_;                 ///< Porcentaje de tolerancia, si un valor cambia menos de este porcentaje respecto a su escala, no se mandará
-    
-    // --- Caché de Comandos de Control Único ---
     using CacheMap = std::unordered_map<unsigned int, CacheEntry>;
     CacheMap        cache_;                             ///< Vector de caché local para evitar saturar el bus UDP con valores idénticos o dentro de tolerancia
 
-    // --- Configuración y Estado de la SuperMatrix ---
+// Configuración y Estado de SuperMatrix
     int             supermatrix_ins_;                   ///< Número de entradas lógicas de la SuperMatrix.
     int             supermatrix_outs_;                  ///< Número de salidas lógicas de la SuperMatrix.
 
-    // --- Configuración Fija del Dispositivo ---
-    unsigned int    kBootPreset_;                    ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
+// Configuración Fija del Dispositivo
+    unsigned int    kBootPreset_;                       ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
+
 };

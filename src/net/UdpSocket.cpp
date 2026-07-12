@@ -20,25 +20,41 @@
         asio::ip::udp::endpoint     remote_endpoint_;   ///< Endpoint remoto desde el que se reciben los datos
 
         // El constructor recibe la referencia del io_context general
-        Impl(asio::io_context& io) 
-            : strand_(asio::make_strand(io)), 
-            socket_(io)
-        {}
+
+        /**
+         * @brief Constructor de Impl
+         *  El constructor del Impl hace el cast de los punteros opacos 
+         * @param io (asio::io_context*) Contexto de red de asio
+         */
+        Impl(void* io);
     };
+
+    // Implementación de métodos PIMPL ------------------------------------------------------
+    
+    UdpSocket::Impl::Impl(void* io) :
+        strand_(asio::make_strand(*static_cast<asio::io_context*>(io))),
+        socket_(static_cast<asio::io_context*>(io)->get_executor()),
+        local_endpoint_(),
+        remote_endpoint_()
+    {
+        
+    }
 
 
     // General ------------------------------------------------------------------------------
 
     UdpSocket::UdpSocket(std::string const& name, void* io) :
         name_(name), 
-        pimpl_(std::make_unique<Impl>(*static_cast<asio::io_context*>(io))),
+        pimpl_(std::make_unique<Impl>(io)),
         rcv_packet_size_(0),
         initialized_(false), 
         running_    (false),
         ignore_dupe_(true)
     {
-        if(io == nullptr)
-            SYS_WARN("UdpSocket","Initialized socket without network io_context. Unexpected behaviour may happen.");
+        if(!io)
+            SYS_ERROR("UdpSocket","Initialized socket without network io_context.");
+        else
+            pimpl_ = std::make_unique<Impl>(io);
     }
 
     UdpSocket::~UdpSocket() {

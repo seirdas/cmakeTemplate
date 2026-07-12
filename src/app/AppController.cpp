@@ -18,6 +18,9 @@
 // General ------------------------------------------------------------------------------
 
 AppController::AppController() :
+    running_(false),
+    online_mode_(true),
+    version_("0.0.0"),
     argc_(0),
     argv_(nullptr),
     config_filename_("config.json"),
@@ -28,10 +31,7 @@ AppController::AppController() :
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     voip_(std::make_unique<VoIPMgr>()),
-    com_(std::make_unique<CommsCore>()),
-    running_(false),
-    online_mode_(true),
-    version_("0.0.0")
+    com_(std::make_unique<CommsCore>())
 {
 
 }

@@ -84,7 +84,7 @@ public:
      * @brief Devuelve si la inicialización ha sido exitosa
      * @return @c true Si ha iniciado bien, @c false en caso contrario
      */
-    bool isInitialized();
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -337,11 +337,13 @@ private:
 
 /************ Variables ****************************************************************/
 
+// Defines
     static constexpr int OSC_MAX_BUNDLE_NESTING = 32;   ///< Máximo nivel de anidamiento de bundles OSC.
     static constexpr int OSC_STRING_ALIGN       = 4;    ///< Alineación de strings en el protocolo OSC (4 bytes).
     static constexpr int MAX_TOTAL_CHANNELS     = 256;  ///< Para los bankPos
-    static constexpr int OSC_BUF_SIZE           = 1024; ///< Aumentado para mayor seguridad en paquetes complejos
+    static constexpr int OSC_BUF_SIZE           = 1024; ///< Tamaño del buffer temporal de envío de paquetes
 
+// Estructuras y enumerados
     /** @brief Timestamp OSC de 64 bits (segundos + fracción en formato NTP). */
     struct OscTimeTag {
         unsigned int seconds  = 0; ///< Parte entera en segundos.
@@ -378,29 +380,31 @@ private:
         Playback  ///< Bus de canales de playback (software).
     };
 
-    // Inicialización y ejecución
-    bool            wsaStarted_;        ///< true si WSAStartup ya fue llamado con éxito.
-    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
-
-    // Socket
-    std::string     localIP_;           ///< IP Local de socket de envío de datos a Totalmix
-    unsigned int    localPort_;         ///< Puerto local de socket de envío de datos a Totalmix
-    unsigned int    remotePort_;        ///< Puerto UDP de TotalMix FX (destino).
-    std::string     remoteIP_;          ///< IP de TotalMix FX (destino).
+// Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;                        ///< Estructura PIMPL para el socket, para no depender de Windows en el header
     std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de Windows (socket)
 
-    // Número de canales
-    int numInputs_;                     ///< Número total de entradas del dispositivo.
-    int numPlaybacks_;                  ///< Número total de canales de playback del dispositivo.
-    int numOutputs_;                    ///< Número total de salidas del dispositivo.
+// Inicialización y ejecución
+    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
+    bool            wsaStarted_;        ///< true si WSAStartup ya fue llamado con éxito.
 
-    // Banks
+// Socket
+    std::string     localIP_;           ///< IP Local de socket de envío de datos a Totalmix
+    unsigned int    localPort_;         ///< Puerto local de socket de envío de datos a Totalmix
+    std::string     remoteIP_;          ///< IP de TotalMix FX (destino).
+    unsigned int    remotePort_;        ///< Puerto UDP de TotalMix FX (destino).
+
+// Número de canales
+    unsigned short numInputs_;          ///< Número total de entradas del dispositivo.
+    unsigned short numPlaybacks_;       ///< Número total de canales de playback del dispositivo.
+    unsigned short numOutputs_;         ///< Número total de salidas del dispositivo.
+
+// Banks
     std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosOutput_;     ///< Posición dentro del bank OSC para cada salida (1-based).
     std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosInput_;      ///< Posición dentro del bank OSC para cada entrada (1-based).
     std::array<int, MAX_TOTAL_CHANNELS + 1> bankPosPlayback_;   ///< Posición dentro del bank OSC para cada canal de playback (1-based).
 
-    // Buffer OSC
+// Buffer OSC
     char      oscRaw_[OSC_BUF_SIZE];            ///< Array de bytes subyacente del buffer OSC.
     OscBuffer oscBuf_;                          ///< Estructura de estado del buffer OSC en construcción.
 

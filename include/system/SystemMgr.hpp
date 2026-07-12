@@ -103,8 +103,11 @@ private:
 
 /************ Variables ****************************************************************/
 
+// Logs de aplicación
     LogMgr log_;             ///< Log de ejecución de aplicación
     LogMgr errlog_;          ///< Log de errores de las ejecuciones (persistente)
 
+// Sincronización de mensajes
     std::mutex  console_mtx;     ///< Mutex para evitar solapamientos de mensajes en paralelo
+
 };

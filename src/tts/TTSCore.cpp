@@ -118,7 +118,7 @@
         return !loaded_models_.empty();;
     }
 
-    bool TTSCore::isInitialized() {
+    bool TTSCore::isInitialized() const{
         return initialized_;
     }
     
