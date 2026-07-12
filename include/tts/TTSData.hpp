@@ -4,7 +4,7 @@
 /**
  * @brief Datos del paquete de envío al TTSMgr
  */
-struct TTSData {
+struct TTSDataPacket {
     unsigned long long ID;          ///< Identificador único de la petición
     std::string text;               ///< Texto a sintetizar
     std::string VoiceModel;         ///< Modelo de voz a utilizar
