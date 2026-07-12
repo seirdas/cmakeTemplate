@@ -304,7 +304,7 @@
 
         // en lazy_load, solo devolver el número de los modelos cargados de verdad
         if (lazy_load_) {
-            unsigned int num = 0;
+            unsigned short num = 0;
             for(const auto& [name, model] : loaded_models_)
                 if (model) 
                     num++;
@@ -313,6 +313,13 @@
         else return loaded_models_.size();
     };
 
+    bool TTSCore::isModelLoaded(std::string const& modelName) const {
+        std::unique_lock<std::mutex> lock(models_mutex_);
+        auto it = loaded_models_.find(modelName);
+        if (it == loaded_models_.end()) 
+            return false;
+        else return true;
+    }
 
     // Control de modelos individuales ------------------------------------------------------
 
@@ -342,7 +349,7 @@
             }
             
             // (lazy_load) Si el modelo no está cargado, cargarlo ahora
-            if (it->second == nullptr) {
+            if (lazy_load_ && it->second == nullptr) {
                 std::filesystem::path modpath = getModelPath(modelName);
                 if (!modpath.empty()) {
 
@@ -350,7 +357,7 @@
                     lock.unlock();
                     
                     if(!load_vits_model(modpath)) {
-                        SYS_WARN("TTSCore","Cannot generate: Model '"+modelName+"' couldn't be loaded.");
+                        SYS_WARN("TTSCore","Cannot generate: Model '" + modelName + "' couldn't be loaded.");
                         return {};
                     }
                     

@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <thread>
 #include <chrono>
+#include <vector>
 /************************************/
 
 
@@ -160,16 +161,26 @@ public:
 
 // Gestión de reproductores TTS ---------------------------------------------------------
 
-    bool add_tts_player(std::string const& name) {
+    bool add_tts_player(std::string const& TTSPlayerName, std::string const& playbackName = "") {
         std::lock_guard<std::mutex> lock(queue_mtx_);
         
-        if (ttsPlayers_.find(name) != ttsPlayers_.end()) {
+        if (ttsPlayers_.find(TTSPlayerName) != ttsPlayers_.end()) {
             return false; // Ya existe un reproductor para ese canal/dispositivo
+        }
+
+        // No interesa crear nada si no hay módulo de sonidos para asignar playbacks
+        if (!snd_) {
+            SYS_WARN("TTSMgr","Cannot create TTSPlayer: Sound module not defined");
+            return false;
         }
 
         // Creamos el reproductor dedicado
         std::unique_ptr<TTSPlayer> player = std::make_unique<TTSPlayer>();
-        player->init(name);
+        player->init(TTSPlayerName);
+
+        // Establece el dispositivo de reproducción si se ha indicado
+        if (!playbackName.empty())
+            player->setPlaybackDev(playbackName);
 
         // INYECCIÓN: Generar audio del texto usando TTSCore
         player->setTTSCallback([this](std::string const& modelName, std::string const& text) -> std::vector<float> {
@@ -187,7 +198,8 @@ public:
             // #TODO
         });
 
-        ttsPlayers_[name] = std::move(player);
+        // Guardar en TTSPlayer en la lista de TTSMgr
+        ttsPlayers_[TTSPlayerName] = std::move(player);
         return true;
     }
 
@@ -199,8 +211,65 @@ public:
 
 // TTSPlayer ----------------------------------------------------------------------------
 
-    bool play(std::string const& text) {
-        // #TODO
+    bool play(
+        std::string const& text, 
+        std::string const& entityName,
+        std::string const& modelName = "", 
+        std::string const& playbackName = "" ) 
+    {
+        // Comprobaciones
+        if (text.empty()) {
+            SYS_WARN("TTSMgr","Play error: text empty");
+            return false;
+        }
+
+        // Comprobar si en el playbackName se puede reproducir
+        if (!snd_->isOnManagedCaptures(playbackName)) {
+            SYS_WARN("TTSMgr","Play error: Playback device is not managed");
+            return false;
+        }
+
+        // Comprobar si la entidad existe ya en la info de algún player
+        TTSMgrInfo* myinfo = nullptr;
+        for (auto& it : ttsPlayers_) {
+            for (auto& info : PlayersInfo_[it.first])
+                if(entityName == info.entityName) {
+                    myinfo = &info;
+                    break;
+                }
+            if (myinfo) break;
+        }
+
+        // Si se ha definido un nuevo modelo de voz, se asigna (exista o no la info)
+        if (!modelName.empty()) {
+            if (!ttsCore_.isModelLoaded(modelName)) {
+                SYS_WARN("TTSMgr","Cannot play: Model selected doesn't exist");
+                return false;
+            }
+            myinfo->modelNameAssigned = modelName;
+        }
+
+        // Caso cuando no existe la info (info nueva)
+        if (!myinfo) {
+            // Si no se ha definido un modelo de voz, elegir uno cualquiera
+            if (myinfo->modelNameAssigned.empty()) {
+                std::vector<std::string> models = ttsCore_.getLoadedModels();
+                unsigned short sel = rand() % models.size();
+                myinfo->modelNameAssigned = models[sel];
+            }
+
+            // Guardar la entidad en la info
+            myinfo->entityName = entityName;
+        }
+        
+        // Asignar a un TTSPlayer...
+        /* #TODO */
+
+        // Callback para mostrar texto mientras se está reproduciendo, quitar después
+        /* #TODO */
+
+        SYS_WARN("TTSMgr","Not yet implemented");
+        return false;
     }
 
 
@@ -263,5 +332,17 @@ private:
 
 // Reproductores TTS (usan playback de soundmgr)
     TTSPlayers                  ttsPlayers_;    ///< Lista de reproductores TTS
+
+    /**
+     * @brief Estructura con los datos asignados a un TTSPlayer
+     */
+    struct TTSMgrInfo{
+        std::string             entityName;             ///< Nombre de la entidad asociada
+        std::string             modelNameAssigned;      ///< Nombre del modelo asociado a la entidad
+        std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida de la asignación voz <-> entidad
+        unsigned long long      TXID;                   ///< (DINÁMICO) Identificador de transmisión
+        std::string             text_playing;           ///< (DINÁMICO) Texto en reproducción
+    };
+    std::unordered_map<std::string, std::vector<TTSMgrInfo>> PlayersInfo_; ///< Lista de información de cada TTSPlayer
 
 };

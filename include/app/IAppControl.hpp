@@ -172,6 +172,20 @@ public:
         noexcept = 0;
 
     /**
+     * @brief Reproduce un audio por un playback genereado mediante un texto, usando TTS
+     * @details No genera ningún archivo de audio intermedio; se genera y se reproduce
+     * @param modelName Nombre del modelo que genera el audio
+     * @param text El texto a convertir en audio.
+     * @param playbackName El nombre del playback
+     * @return true si la generación fue exitosa, false en caso de error.
+     */
+    virtual bool TTSPlay(
+        std::string const& modelName, 
+        std::string const& text, 
+        std::string const& playbackName)
+        noexcept = 0;
+
+    /**
      * @brief Obtiene los datos de módulo TTS
      */
     virtual TTSCoreData getTTSData() noexcept = 0; 

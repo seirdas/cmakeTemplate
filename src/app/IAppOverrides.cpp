@@ -86,11 +86,11 @@ bool AppController::removeInputDevice(std::string const& captureName) noexcept {
 }
 
 bool AppController::StartRecording(std::string const& captureName) noexcept{
-    return snd_->startRec_snd(captureName); 
+    return snd_->startRec(captureName); 
 }
 
 bool AppController::StopRecording(std::string const& captureName) noexcept{
-    return snd_->stopRec_snd(captureName); 
+    return snd_->stopRec(captureName); 
 }
 
 size_t AppController::getInputBufferSize(std::string const& captureName) noexcept {
@@ -124,6 +124,15 @@ bool AppController::TTSgenerate(
     noexcept {
         return tts_->generateWav(modelName, text, wavname);
     };
+
+bool AppController::TTSPlay(
+    std::string const& modelName, 
+    std::string const& text, 
+    std::string const& playbackName)
+    noexcept {
+        // #TODO
+        return false;
+    }
 
 TTSCoreData AppController::getTTSData() noexcept {
     TTSCoreData data;

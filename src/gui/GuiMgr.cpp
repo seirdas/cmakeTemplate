@@ -716,9 +716,12 @@
 
 						Spacing(); Spacing();
 
-						if (Button("Generate Audio", ImVec2(-FLT_MIN, 40))) { 
+						if (Button("Generate Wav", ImVec2(-FLT_MIN, 40))) { 
 							// Usamos el buffer manual que el usuario ha escrito
 							ctrl_->TTSgenerate(current_model, manual_buffer, current_model);
+						}
+						if (Button("Play (default playback)", ImVec2(-FLT_MIN, 40))) { 
+							ctrl_->TTSPlay(current_model, manual_buffer, current_model);
 						}
 						if (is_online) EndDisabled(); // Cerramos el bloque de deshabilitado
 

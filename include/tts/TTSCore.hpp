@@ -100,12 +100,12 @@ public:
       
     /**
      * @brief Obtiene una lista con las rutas de los modelos disponibles
-     * @note Los nombres NO incluyen el tipo de modelo (ej. "vits-piper-*")
      */
     std::vector<std::string> getAvailableModelsPath();
 
     /**
      * @brief Obtiene una lista con los nombres de los modelos cargados
+     * @note Los nombres NO incluyen el tipo de modelo (ej. "vits-piper-*")
      * @note Con lazy_load activo, los modelos disponibles se consideran como cargados
      */
     std::vector<std::string> getLoadedModels() const;
@@ -124,9 +124,16 @@ public:
 
     /**
      * @brief Obtiene el número de modelos cargados
-     * @note Con lazy_load activo, NO CUENTA los modelos no disponibles
+     * @returns Número de modelos cargados disponibles. 
+     *  Con lazy_load activo, NO CUENTA los modelos disponibles no cargados
      */
     short numLoadedModels() const;
+
+    /**
+     * @brief Comprueba si un modelo está cargado
+     * @return @c true Si el modelo se puede usar, @c false en caso contrario
+     */
+    bool isModelLoaded(std::string const& modelName) const;
 
 
 // Control de modelos individuales ------------------------------------------------------
@@ -202,7 +209,7 @@ private:
      * @details Verifica que existan de manera simultánea el archivo `.onnx`, el fichero `tokens.txt` 
      * y el directorio de fonemas `espeak-ng-data`.
      * @param modelAbsPath Ruta absoluta de la carpeta que se va a evaluar.
-     * @return `true` si contiene todos los elementos mínimos requeridos; `false` si falta alguno.
+     * @return @c true si contiene todos los elementos mínimos requeridos; @c false si falta alguno.
      */
     bool checkAvailableModel(std::filesystem::path modelAbsPath) const;
 

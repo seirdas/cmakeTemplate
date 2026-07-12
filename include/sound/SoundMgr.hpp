@@ -66,7 +66,7 @@ public:
     bool updateDevices();
 
 
-// Capture Input ------------------------------------------------------------------------
+// Dispositivos de captura --------------------------------------------------------------
 
     /**
      * @brief Devuelve una lista con los nombres de todos los micrófonos disponibles
@@ -77,6 +77,14 @@ public:
      * @brief Devuelve una lista con los nombres de todos las capturas agregadas
      */
     std::vector<std::string> getManagedCaptures() const;
+
+    /**
+     * @brief Devuelve si un dispositivo de captura pasado por parámetro
+     *  está siendo gestionado
+     * @param captureName Nombre del dispositivo
+     * @return @c true Si está siendo gestionado, @c false en caso contrario
+     */
+    bool isOnManagedCaptures(std::string const& captureName) const;
 
     /** 
      * @brief Devuelve el nombre del micrófono que tiene Windows marcado como predeterminado.
@@ -102,15 +110,18 @@ public:
      */ 
     bool removeInputDevice(std::string const& name); 
 
+
+// Ejecución y datos en dispositivos de captura -----------------------------------------
+
     /**
      * @brief Empieza a grabar
      */
-    bool startRec_snd(std::string const& name);
+    bool startRec(std::string const& name);
 
     /**
      * @brief Para de grabar
      */
-    bool stopRec_snd(std::string const& name);
+    bool stopRec(std::string const& name);
 
     /**
      * @brief Obtiene el nivel de RMS del audio
@@ -137,17 +148,22 @@ public:
       */
     size_t getInputBufferSize(std::string const& name);
 
-// Playbacks ----------------------------------------------------------------------------
+
+// Gestión de dispositivos playbacks ----------------------------------------------------
 
     std::vector<std::string> getAvailablePlaybacks() const;
 
+    std::vector<std::string> getManagedPlaybacks() const;
+
     std::string getDefaultPlaybackDevice() const;
 
-    void listAvailablePlaybacks();
+    void listAvailablePlaybacks() const;
 
     bool addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
 
     bool removePlaybackDevice(std::string const& name);
+
+// Ejecución y datos de playbacks -------------------------------------------------------
 
     bool playbackTest();
 

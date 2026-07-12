@@ -87,6 +87,10 @@ public:
         playbackName_ = pbName;
     }
 
+    std::string getPlaybackName() const {
+        return playbackName_;
+    }
+
     bool isBusy() {
         return (active_tasks_ > 0);
     }
