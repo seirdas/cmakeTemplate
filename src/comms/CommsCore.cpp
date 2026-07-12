@@ -18,16 +18,16 @@ CommsCore::~CommsCore() {
 // Inicialización -----------------------------------------------------------------------
 
 bool CommsCore::init(void* config) {
-    
-    // #TODO
 
-
-        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
+    // Validar y asignar valores de variables miembro a partir de la config pasada (json)
     if (config)
         loadConfig(config);
     else  // Puede llegar aquí cuando se hace reload()
         SYS_WARN("CommsCore","Cannot load config. Using default values.");
 
+
+    // #TODO
+    SYS_WARN("CommsCore","Comms logic not yet implemented");
     return false;
 }
 
@@ -42,6 +42,9 @@ void CommsCore::loadConfig(void* config) {
     JsonMgr& jsonMgr = JsonMgr::instance();
     
     // #TODO...
+
+    SYS_INFO("CommsCore","Config node read OK");
+
 }
 
 

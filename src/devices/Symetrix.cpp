@@ -40,6 +40,8 @@ void Symetrix::loadConfig(void* config) {
     jsonMgr.get_or_set(cfg, "supermatrix_ins",              supermatrix_ins_);             // Por defecto para tener 20 entradas (se puede cambiar por método)
     jsonMgr.get_or_set(cfg, "supermatrix_outs",             supermatrix_outs_);            // Por defecto para tener 20 salidas (se puede cambiar por método)
     jsonMgr.get_or_set(cfg, "kBootPreset",                  kBootPreset_);
+
+    SYS_INFO("Symetrix","Config node read OK");
 }
 
 

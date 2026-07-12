@@ -44,7 +44,7 @@ AppController::~AppController() {
     // Cerrar socket y worker esperando paquetes de red
     net_->stop();
     online_cv_.notify_all();
-    SYS_INFO("AppController","Closing running threads...");
+    SYS_INFO("AppController","Waiting for running threads...");
     if (hilo_consumer_.joinable())
         hilo_consumer_.join();
 
@@ -128,6 +128,7 @@ bool AppController::init(int argc, char** argv) {
         SYS_WARN("AppController","Symetrix manager FAIL");
     else SYS_INFO("AppController","Symetrix manager OK");
 
+    
     // Inicialización de TTS
     SYS_INFO("AppController","TTS manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"tts");
@@ -144,7 +145,18 @@ bool AppController::init(int argc, char** argv) {
     else SYS_INFO("AppController","Comms logic OK");
     
 
+    // Hilo consumidor de paquetes online
+    SYS_INFO("AppController","Starting net consumer thread...");
+    hilo_consumer_ = std::thread(&AppController::TWorker, this);
+
+
+    // Hilo para cout de pruebas
+    SYS_INFO("AppController","Starting test thread...");
+    hilo_test_ = std::thread(&AppController::TPruebas, this);
+
+
     // Volcar datos que hayan escrito los módulos al config
+    SYS_INFO("AppController","Updating json config files...");
     jsonMgr.update();
 
 
@@ -155,12 +167,6 @@ bool AppController::init(int argc, char** argv) {
 int AppController::run() {
     SYS_INFO("AppController","Running app...");
     running_ = true;
-    
-    // Hilo consumidor de paquetes online
-    hilo_consumer_ = std::thread(&AppController::TWorker, this);
-
-    // Hilo para cout de pruebas
-    hilo_test_ = std::thread(&AppController::TPruebas, this);
 
     gui_->run(); // ← Bloquea hasta cerrar
     return 0;
@@ -173,7 +179,7 @@ void AppController::loadConfig(void* config) {
     if (!config)
         return;
 
-    SYS_INFO("AppController","Loading parameters from config...");
+    SYS_INFO("AppController","Reading config node...");
 
     // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
@@ -181,13 +187,14 @@ void AppController::loadConfig(void* config) {
 
     jsonMgr.get_or_set(cfg, "version",  version_);
 
+    SYS_INFO("AppController","Config node read OK");
+
 }
 
 
 // Hilos --------------------------------------------------------------------------------
 
 void AppController::TWorker() {
-    SYS_INFO("TWorker","Initializating consumer thread...");
     std::vector<char> data;
 
     while (running_) {
@@ -230,8 +237,6 @@ void AppController::TWorker() {
 }
 
 void AppController::TPruebas() {
-    SYS_INFO("TPruebas","init TPruebas");
-
     // Poner aquí las pruebas o lo que sea
     /*
     while (running_) {

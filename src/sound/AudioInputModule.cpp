@@ -189,6 +189,8 @@
         jsonMgr.get_or_set(cfg, "numchannels", channels_);
         jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
         jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
+
+	    SYS_INFO("AudioInputModule","Config node read OK");
     }
 
     void AudioInputModule::stop() {

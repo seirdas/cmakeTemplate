@@ -82,7 +82,8 @@
         // bucle que recorre los elementos de dentro del nodo
         for (short i=0; i < config_elements.size(); i++) 
             addCaptureDevice(config_elements[i]);
-        
+
+        SYS_INFO("SoundMgr","Config node read OK");
     }
 
     bool SoundMgr::stop() {

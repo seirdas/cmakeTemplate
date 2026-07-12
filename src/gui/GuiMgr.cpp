@@ -232,6 +232,8 @@
         jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
         jsonMgr.get_or_set(cfg, "deviceRefreshInterval", deviceRefreshInterval_);
         jsonMgr.get_or_set(cfg, "theme_selected", theme_selected_);
+
+	    SYS_INFO("GuiMgr","Config node read OK");
     }
 
 	void GuiMgr::run() {

@@ -82,6 +82,8 @@ public:
                 createVoiprec_(name);   // Función inyectada para usar snd, net
         }
 
+        SYS_INFO("VoIPMgr","Config node read OK");
+
     }
 
 

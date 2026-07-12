@@ -22,6 +22,8 @@ void TotalMix::loadConfig(void* config) {
     jsonMgr.get_or_set(cfg, "numInputs",      numInputs_);
     jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
     jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
+
+    SYS_INFO("TotalMix","Config node read OK");
 }
 
 

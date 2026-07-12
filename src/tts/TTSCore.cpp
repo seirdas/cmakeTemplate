@@ -141,12 +141,12 @@
         jsonMgr.get_or_set(lazyCfg, "keep_alive_seconds", keep_alive_raw);
         keep_alive_seconds_ = std::chrono::seconds(keep_alive_raw);
 
-
         // Carga de la sección concurrent
         json* concurrentCfg = jsonMgr.getSubNode(cfg, "concurrent_init_");
         jsonMgr.get_or_set(concurrentCfg, "active", concurrent_init_);
         jsonMgr.get_or_set(concurrentCfg, "num_load_retries", num_load_retries_);
 
+        SYS_INFO("TTSCore","Config node read OK");
     }
 
     void TTSCore::cerrar() {

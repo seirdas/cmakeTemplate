@@ -141,6 +141,8 @@
                 addUdpSocket(name, port);
             }
         }
+
+	    SYS_INFO("NetMgr","Config node read OK");
     }
 
     bool NetMgr::start() {
