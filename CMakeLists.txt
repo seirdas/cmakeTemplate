@@ -102,7 +102,9 @@ if (MSVC AND CLI_SOURCES)
         $<$<CONFIG:Debug>:/Od /Zi>
         $<$<CONFIG:Release>:/O2 /Oi>
     )
-    target_compile_options(CliWrapper PRIVATE "/AI${CMAKE_CURRENT_SOURCE_DIR}/.NET")
+
+    # Toma las dlls correspondientes a la arquitectura (x86/x64)
+    target_compile_options(CliWrapper PRIVATE "/AI${CMAKE_CURRENT_SOURCE_DIR}/.NET/${ARCH_NAME}")
 
     set(HAVE_CLI_MANAGED ON)
     message(STATUS "CLI managed sources found, target CliWrapper created")
