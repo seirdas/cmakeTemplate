@@ -81,11 +81,11 @@
             std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Iniciar sockets
-            for (auto& sock : pimpl_->udp_sockets_) {
-            asio::post(getAsioStrand(sock), [sock]{ 
+            for (auto& sock : pimpl_->udp_sockets_)
+                asio::post(getAsioStrand(sock), [sock]{ 
                     sock->start(); 
                 });
-            }
+            
         }
 
         SYS_INFO("NetMgr","Sockets running");
@@ -108,6 +108,18 @@
         // Se considera que la configuración se pasa como json    
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
+
+        // Thread_count
+        jsonMgr.get_or_set(cfg, "thread_count", thread_count_);
+        // Calcular máximo disponible
+        unsigned short max_thread = std::thread::hardware_concurrency();
+        if (max_thread < 1) max_thread = 1;
+        // Capar el valor leído a máximo disponible
+        if (thread_count_ > max_thread) {
+            SYS_WARN("NetMgr","Warn: thread_count higher than max allowed. thread_count set to max hw concurrency (" + std::to_string(max_thread)+")");
+            thread_count_ = max_thread;
+        }
+
 
         // hago un vector que apunte al array de los nodos json dentro del nodo principal
         std::vector<json*> config_net = jsonMgr.getArrayElements(cfg, "udpSockets");
