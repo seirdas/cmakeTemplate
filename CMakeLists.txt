@@ -90,7 +90,7 @@ file(GLOB_RECURSE RESOURCES   CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/res
 set(HAVE_CLI_MANAGED OFF)
 
 if (MSVC AND CLI_SOURCES)
-    add_library(CliWrapper STATIC ${CLI_SOURCES} ${CLI_HEADERS})
+    add_library(CliWrapper OBJECT ${CLI_SOURCES} ${CLI_HEADERS})
     target_include_directories(CliWrapper PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
     # Target completo managed - MSBuild pondrá CLRSupport=true en todo el .vcxproj de CliWrapper
@@ -264,7 +264,8 @@ if(MSVC)
 
     # Flags específicos por configuración
     $<$<CONFIG:Debug>:
-      /ZI                     # Símbolos de depuración (Edit and Continue)
+      $<$<BOOL:${HAVE_CLI_MANAGED}>:/Zi>        # Símbolos de depuración (Compatible con CLI.NET)
+      $<$<NOT:$<BOOL:${HAVE_CLI_MANAGED}>>:/ZI> # Símbolos de depuración (Edit and Continue)
       /Od                     # Desactivar optimizaciones
       /RTC1                   # Verificaciones en tiempo de ejecución (Stack frames / uninitialized)
     >  

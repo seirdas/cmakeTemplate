@@ -3,15 +3,25 @@
 #include "tts/TTSPlayer.hpp"
 #include "files/JsonMgr.hpp"
 #include "Sound/SoundMgr.hpp"
+#include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommWrapper
 
 #include <mutex>
 #include <condition_variable>
 #include <thread>
 #include <vector>
 
+
+// Implementación de puente para clase administrada (iComm)
+struct TTSMgr::Impl {
+    iCommBridge commBridge;
+    Impl(TTSMgr* parent) : commBridge(parent) {}
+};
+
+
 // General ------------------------------------------------------------------------------
 
 TTSMgr::TTSMgr(SoundMgr* snd) :
+    pimpl_(std::make_unique<Impl>(this)),
     initialized_(false),
     running_(false),
     snd_(snd)
@@ -34,6 +44,14 @@ bool TTSMgr::init(void* config) {
     else
         SYS_WARN("TTSMgr","Cannot load config. Using default values.");
     
+
+    // Inicialización de iComm (CLI.NET)
+    SYS_INFO("TTSMgr","Starting iComm (.NET) client...");
+    if(!pimpl_->commBridge.init())
+        SYS_WARN("TTSMgr","iComm FAIL");
+    else SYS_INFO("TTSMgr","iComm OK");
+
+    
     // Inicialización de TTSCore (en hilo para no bloquear)
     SYS_INFO("TTSMgr","Starting TTSCore async load...");
     hilo_ttscore_ = std::thread([this, config]() {
@@ -43,10 +61,12 @@ bool TTSMgr::init(void* config) {
             JsonMgr::instance().update();
         }
     );
+    
 
     // Hilo consumidor de paquetes TTS
     hilo_consumer_ = std::thread(&TTSMgr::TWorker, this);
 
+    
     // Marcar el módulo internamente como inicializado y corriendo
     initialized_    = true;
     running_        = true;

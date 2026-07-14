@@ -10,7 +10,8 @@
 
 // General ------------------------------------------------------------------------------
 
-iCommWrapper::iCommWrapper() :
+iCommWrapper::iCommWrapper(TTSMgr* tts) :
+    tts_(tts),
     iCommMgr(iComm::iCommManager::GetInstance()),
     initialized_(false),
     running_(false),

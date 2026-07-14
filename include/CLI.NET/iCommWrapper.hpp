@@ -8,16 +8,20 @@
 #using <iComm.iATC.dll>
 
 
+// Declaración implícita
+class TTSMgr;
+
+
 /**
  * @class iCommWrapper
- * @brief Managed wrapper (C++/CLI) for .NET iComm dll
+ * @brief Managed class (C++/CLI) for .NET iComm dll
  *   Clase para compatibilidad con .NET de iComm
  *  especial para manejar los eventos y las funciones delegadas de la librería iComm
  *   Compatibilidad con iComm de .NET, clase autogestionada (managed) con el _ref class_
  *   Administrada con gc (garbage collector)
  *   Le pasa los datos necesarios a la logica del TTS.
  */
-ref class iCommWrapper {
+public ref class iCommWrapper {
 
 public:
 
@@ -26,7 +30,7 @@ public:
     /**
      * @brief Constructor
      */
-    iCommWrapper();
+    iCommWrapper(TTSMgr* tts);
 
     /**
      * @brief Destructor
@@ -121,7 +125,10 @@ private:
     long long ATIS_ID_;        ///< Identificador de ATIS
     long long ATC_ID_;         ///< Identificador de ATC
 
-    iComm::IMessageSender^ iCommMgr;    // icomm manager pointer instance (.NET)
+// Módulos
+    iComm::IMessageSender^  iCommMgr;   ///< icomm manager pointer instance (.NET)
+    TTSMgr*                 tts_;       ///< Puntero a TTSMgr para usar sus funciones
+
 };
 
 #endif

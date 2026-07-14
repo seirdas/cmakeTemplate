@@ -158,6 +158,10 @@ private:
 // Aliases
     using TTSPlayers    = std::unordered_map<std::string, std::unique_ptr<TTSPlayer>>;
     using TTSInfos      = std::unordered_map<std::string, std::vector<TTSMgrInfo>>;
+
+// Pointer to implementation (PIMPL) para añadir iComm (clase administrada CLI.NET)
+    struct Impl;
+    std::unique_ptr<Impl> pimpl_;
     
 // Inicialización y ejecución
     std::atomic<bool>           running_;       ///< flag de aplicación corriendo (para hilos)
