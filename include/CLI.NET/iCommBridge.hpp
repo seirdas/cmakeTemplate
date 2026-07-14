@@ -5,7 +5,7 @@ class TTSMgr;
 
 /**
  * @class iCommBridge
- * @brief Clase puente (bridge) para la comunicación con componentes .NET.
+ * @brief Clase puente (bridge) para la comunicación con iComm (.NET).
  * 
  * Esta clase actúa como interfaz nativa para gestionar la interacción con la librería 
  * administrada (managed) de iComm. Utiliza un patrón PIMPL para encapsular el 
@@ -15,6 +15,9 @@ class TTSMgr;
  */
 class iCommBridge {
 public:
+
+// General ------------------------------------------------------------------------------
+
     /**
      * @brief Constructor.
      * @param parent Puntero a TTSMgr para que el código .NET pueda llamarlo de vuelta
@@ -26,6 +29,8 @@ public:
      *  Elimina las referencias a memoria de la clase administrada
      */
     ~iCommBridge();
+
+// Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Inicializa el cliente iComm.
@@ -49,3 +54,21 @@ private:
     void* m_managedWrapper; ///< Puntero opaco que esconderá el gcroot interno
 
 };
+
+#if not defined MSVC
+// ============================================================
+//  (Stubs para no MSVC)
+//  NOTA:
+//      Los Stubs se ponen aquí porque si el compilador no es MSVC, 
+//      los archivos fuente cpp no se incluyen en la compilación
+// ============================================================
+
+    iCommBridge::iCommBridge(TTSMgr*)   {}
+    iCommBridge::~iCommBridge()         {}
+
+    bool iCommBridge::init()                { 
+        SYS_WARN("iCommBridge","iCommWrapper only compatible with MSVC compiler");
+        return false; 
+    }
+    bool iCommBridge::close()               { return false; }
+#endif
