@@ -104,7 +104,8 @@ if (MSVC AND CLI_SOURCES)
     )
 
     # Toma las dlls correspondientes a la arquitectura (x86/x64)
-    target_compile_options(CliWrapper PRIVATE "/AI${CMAKE_CURRENT_SOURCE_DIR}/.NET/${ARCH_NAME}")
+    set(NET_DEPS_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/.NET/${ARCH_NAME})
+    target_compile_options(CliWrapper PRIVATE "/AI${NET_DEPS_FOLDER}")
 
     set(HAVE_CLI_MANAGED ON)
     message(STATUS "CLI managed sources found, target CliWrapper created")
@@ -434,6 +435,21 @@ endif()
 # ===============================
 # Configuración post-build
 # ===============================
+
+# -----------------
+# Copiar dlls de CLI.NET
+# -----------------
+
+if (HAVE_CLI_MANAGED)
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E echo "---- Copying CLI.NET deps from ${NET_DEPS_FOLDER} folder..."
+  )
+  add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${NET_DEPS_FOLDER}/"
+    "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+  )
+endif()
 
 # -----------------
 # Copiar archivos puestos manualmente a la carpeta del binario
