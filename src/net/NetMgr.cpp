@@ -137,6 +137,7 @@
 
             // si el nombre y el puerto no estan vacios, crea el socket
             if(!name.empty() && port > 0) {
+                SYS_INFO("NetMgr","Registering socket from config...");
                 addUdpSocket(name, port);
             }
         }

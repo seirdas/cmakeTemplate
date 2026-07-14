@@ -144,12 +144,7 @@ public:
      * @brief Hilo consumidor de paquetes TTS
      */
     void TWorker();
-
-
-// iComm --------------------------------------------------------------------------------
-
-// #TODO
-
+    
 
 private:
 
