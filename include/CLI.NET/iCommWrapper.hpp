@@ -5,9 +5,7 @@
 
 #using <system.dll>
 #using <iComm.dll>
-
-/* FALTA */
-//#using <iComm.iATC.dll>
+#using <iComm.iATC.dll>
 
 
 /**
@@ -90,6 +88,7 @@ private:
 
     /**
      * @brief Función registrada para cuando se ha conectado
+     * @param _pConnectionEventArgs 
      */
     void OnConnected_Wrapper(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs);
 

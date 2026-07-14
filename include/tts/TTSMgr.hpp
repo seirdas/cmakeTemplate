@@ -114,15 +114,17 @@ public:
         ttsCore_.cerrar();
 
         // Espera a que se cierren los hilos
-        SYS_INFO("TTSMgr","Waiting for consumer thread...");
-        if (hilo_consumer_.joinable())
+        if (hilo_consumer_.joinable()) {
+            SYS_INFO("TTSMgr","Waiting for consumer thread...");
             hilo_consumer_.join();
+        }
 
-        SYS_INFO("TTSMgr","Waiting for TTSCore thread...");
-        if (hilo_ttscore_.joinable())
+        if (hilo_ttscore_.joinable()) {
+            SYS_INFO("TTSMgr","Waiting for TTSCore thread...");
             hilo_ttscore_.join();
+        }
 
-        SYS_INFO("TTSMgr","TTS closed successfuly");
+        SYS_INFO("TTSMgr","TTSMgr closed successfuly");
     }
 
     void Ejecutar(const TTSDataPacket& packet) {
@@ -238,7 +240,7 @@ public:
         TTSMgrInfo* myinfo = nullptr;
         for (auto& it : ttsPlayers_) {
             for (auto& info : PlayersInfo_[it.first])
-                if(entityName == info.entityName) {
+                if(entityName == info.entity_name) {
                     myinfo = &info;
                     break;
                 }
@@ -251,13 +253,13 @@ public:
                 SYS_WARN("TTSMgr","Play error: Model selected doesn't exist");
                 return false;
             }
-            myinfo->modelNameAssigned = modelName;
+            myinfo->model_name_assigned = modelName;
         }
 
         // Caso cuando no existe la info (info nueva)
         if (!myinfo) {
             TTSMgrInfo newInfo;
-            newInfo.entityName = entityName;
+            newInfo.entity_name = entityName;
 
             // Si no se ha definido un modelo de voz, elegir uno cualquiera
             if (modelName.empty()) {
@@ -267,11 +269,11 @@ public:
                     return false;
                 }
                 unsigned short sel = rand() % models.size();
-                myinfo->modelNameAssigned = models[sel];
+                myinfo->model_name_assigned = models[sel];
             }
 
             // Guardar la entidad en la info
-            myinfo->entityName = entityName;
+            newInfo.entity_name = entityName;
         }
 
         // Desbloqueo de mutex antes de reproducir para evitar deadlocks
@@ -329,7 +331,6 @@ private:
 
 // Aliases
     using TTSPlayers    = std::unordered_map<std::string, std::unique_ptr<TTSPlayer>>;
-    struct TTSMgrInfo;  // Declaración "anticipada" para el alias
     using TTSInfos      = std::unordered_map<std::string, std::vector<TTSMgrInfo>>;
     
 // Inicialización y ejecución
@@ -347,20 +348,10 @@ private:
     SoundMgr*                   snd_;           ///< Puntero a clase de gestión de audio para reproducción
     TTSCore                     ttsCore_;       ///< Clase núcleo de tts
 
-// Reproductores TTS (usan playback de soundmgr)
-    TTSPlayers                  ttsPlayers_;    ///< Lista de reproductores TTS
 
-    /**
-     * @brief Estructura con los datos asignados a un TTSPlayer
-     */
-    struct TTSMgrInfo{
-        std::string             entityName;             ///< Nombre de la entidad asociada
-        std::string             modelNameAssigned;      ///< Nombre del modelo asociado a la entidad
-        std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida de la asignación voz <-> entidad
-        unsigned long long      TXID;                   ///< (DINÁMICO) Identificador de transmisión
-        std::string             text_playing;           ///< (DINÁMICO) Texto en reproducción
-    };
-    TTSInfos        PlayersInfo_;       ///< Lista de información de cada TTSPlayer
-    std::mutex      playersInfo_mtx_;   ///< Mutex para la lista de información
+// Reproductores TTS (usan playback de soundmgr)
+    TTSPlayers                  ttsPlayers_;        ///< Lista de reproductores TTS
+    TTSInfos                    PlayersInfo_;       ///< Lista de información de cada TTSPlayer
+    std::mutex                  playersInfo_mtx_;   ///< Mutex para la lista de información
 
 };
