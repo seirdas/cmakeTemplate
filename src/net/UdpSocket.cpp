@@ -33,7 +33,7 @@
     
     UdpSocket::Impl::Impl(void* io) :
         strand_(asio::make_strand(*static_cast<asio::io_context*>(io))),
-        socket_(static_cast<asio::io_context*>(io)->get_executor()),
+        socket_(*static_cast<asio::io_context*>(io)),
         local_endpoint_(),
         remote_endpoint_()
     {
@@ -45,7 +45,6 @@
 
     UdpSocket::UdpSocket(std::string const& name, void* io) :
         name_(name), 
-        pimpl_(std::make_unique<Impl>(io)),
         rcv_packet_size_(0),
         initialized_(false), 
         running_    (false),
