@@ -178,12 +178,9 @@ private:
     SoundMgr*                   snd_;           ///< Puntero a clase de gestión de audio para reproducción
     TTSCore                     ttsCore_;       ///< Clase núcleo de tts
 
-
 // Reproductores TTS (usan playback de soundmgr)
     TTSPlayers                  ttsPlayers_;        ///< Lista de reproductores TTS
     TTSInfos                    PlayersInfo_;       ///< Lista de información de cada TTSPlayer
     std::mutex                  playersInfo_mtx_;   ///< Mutex para la lista de información
-
-// iComm
 
 };

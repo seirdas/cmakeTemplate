@@ -14,7 +14,6 @@ iCommWrapper::iCommWrapper(TTSMgr* tts) :
     tts_(tts),
     iCommMgr(iComm::iCommManager::GetInstance()),
     initialized_(false),
-    running_(false),
     ATIS_ID_(0),
     ATC_ID_(0)
 {
@@ -100,20 +99,17 @@ bool iCommWrapper::init() {
     SYS_INFO("iCommWrapper","Starting iComm Client...");
     iCommMgr->Start();
 
-    initialized_ = true;
-    running_     = true;
-
+    
     SYS_INFO("iCommWrapper","Initializing OK");
-    return true;
+    initialized_ = true;
+    return initialized_;       // <- true
 }
 
 bool iCommWrapper::close() {
-	iCommMgr->Stop();
+    if(iCommMgr->Active) 
+        iCommMgr->Stop();
 
-    // if(!iCommMgr->Active) 
-        running_ = false;
-
-    return true;
+    return !iCommMgr->Active;
 }
 
 bool iCommWrapper::isInitialized() {
@@ -121,8 +117,7 @@ bool iCommWrapper::isInitialized() {
 }
 
 bool iCommWrapper::isRunning() {
-	//return iCommMgr->Active;
-    return running_;
+	return iCommMgr->Active;
 }
 
 
@@ -141,7 +136,6 @@ unsigned short iCommWrapper::get_ATC_ID() {
 
 void iCommWrapper::OnConnected_Wrapper(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs) {
 	/* #TODO */
-    //iCommMgr = iComm::iCommManager::GetInstance();
 	//iCommMgr->SubscribeMsg(true, _IConnectionID, iComm::iATC::Identifiers::FACTORY_NAME, _iMsgID);
 	//tts->OnConnected(_pConnectionEventArgs);
 }
@@ -166,12 +160,11 @@ void iCommWrapper::OnReceivedTEXT_VOICE_COMMAND_Wrapper(iComm::Net::Data::NetDat
 
 void iCommWrapper::notifyFinished(unsigned int MsgID, unsigned int LocalID) {
 
-    /* FALTA iComm.iATC.dll */
-	// iComm::iATC::DataRadioMsgStatus^ dataRadioMsgStatus = gcnew iComm::iATC::DataRadioMsgStatus();
-	// dataRadioMsgStatus->MsgID = MsgID;
-	// dataRadioMsgStatus->Status = iComm::iATC::DataRadioMsgStatus::EStatus::FINISHED;
+	iComm::iATC::DataRadioMsgStatus^ dataRadioMsgStatus = gcnew iComm::iATC::DataRadioMsgStatus();
+	dataRadioMsgStatus->MsgID = MsgID;
+	dataRadioMsgStatus->Status = iComm::iATC::DataRadioMsgStatus::EStatus::FINISHED;
 
-	// iCommMgr->SendMessage(LocalID, dataRadioMsgStatus, true, false);
+	iCommMgr->SendMessage(LocalID, dataRadioMsgStatus, true, false);
 }
 
 #endif

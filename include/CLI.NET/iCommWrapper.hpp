@@ -29,17 +29,26 @@ public:
 
     /**
      * @brief Constructor
+     *  Inicializa el módulo TTSMgr y obtiene instancia de iComm
      */
     iCommWrapper(TTSMgr* tts);
 
     /**
-     * @brief Destructor
+     * @brief Destructor.
+     *  Libera memoria del puntero inicializado a iComm
      */
     ~iCommWrapper();
 
 
 // Ejecución ----------------------------------------------------------------------------
 
+    /**
+     * @brief Inicializa el cliente iComm.
+     *  - Lee el archivo de configuración de iComm (iCommConfigFile)
+     *  - Obtiene los identificadores de ATIS/ATC
+     *  - Suscribe eventos a funciones que ejecutará TTSMgr
+     * @return @c true Si la inicialización ha sido correcta, @c false en caso contrario
+     */
     bool init();
 
     /**
@@ -118,12 +127,11 @@ private:
 /************ Variables ********************************************************/
 
 // Inicialización y ejecución
-    bool        initialized_;       ///< Bandera para indicar inicialización exitosa
-    bool        running_;           ///< Bandera de clase en ejecución
+    bool        initialized_;   ///< Bandera para indicar inicialización exitosa
 
 // Datos
-    long long ATIS_ID_;        ///< Identificador de ATIS
-    long long ATC_ID_;         ///< Identificador de ATC
+    long long   ATIS_ID_;        ///< Identificador de ATIS
+    long long   ATC_ID_;         ///< Identificador de ATC
 
 // Módulos
     iComm::IMessageSender^  iCommMgr;   ///< icomm manager pointer instance (.NET)

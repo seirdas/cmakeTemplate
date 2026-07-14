@@ -51,7 +51,7 @@ bool TTSMgr::init(void* config) {
         SYS_WARN("TTSMgr","iComm FAIL");
     else SYS_INFO("TTSMgr","iComm OK");
 
-    
+
     // Inicialización de TTSCore (en hilo para no bloquear)
     SYS_INFO("TTSMgr","Starting TTSCore async load...");
     hilo_ttscore_ = std::thread([this, config]() {
@@ -97,6 +97,7 @@ void TTSMgr::loadConfig(void* config) {
 
 void TTSMgr::cerrar() {
 
+    // Si no está corriendo, no hacer nada
     if (!running_)
         return;
 
@@ -104,16 +105,22 @@ void TTSMgr::cerrar() {
     running_ = false;
     queue_cv_.notify_all();
 
+    // Cierra el cliente de iComm
+    SYS_INFO("TTSMgr","Closing iComm (.NET) client...");
+    if(!pimpl_->commBridge.close())
+        SYS_WARN("TTSMgr","Closing iComm FAIL");
+
     // Cierra el núcleo de TTS
     SYS_INFO("TTSMgr","Closing ttsCore...");
     ttsCore_.cerrar();
 
-    // Espera a que se cierren los hilos
+    // Espera a que se cierre el hilo consumidor
     if (hilo_consumer_.joinable()) {
         SYS_INFO("TTSMgr","Waiting for consumer thread...");
         hilo_consumer_.join();
     }
 
+    // Espera a que se cierre el hilo que inicia el TTSCore (si aplica)
     if (hilo_ttscore_.joinable()) {
         SYS_INFO("TTSMgr","Waiting for TTSCore thread...");
         hilo_ttscore_.join();

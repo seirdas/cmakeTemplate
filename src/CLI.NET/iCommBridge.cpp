@@ -4,7 +4,7 @@
 #include <vcclr.h>
 
 iCommBridge::iCommBridge(TTSMgr* parent) {
-    // Creamos el ref class y lo protegemos en el montón gestionado
+    // Crea el ref class y lo protege en modo gestionado
     gcroot<iCommWrapper^>* handle = new gcroot<iCommWrapper^>(gcnew iCommWrapper(parent));
     m_managedWrapper = static_cast<void*>(handle);
 }
@@ -20,4 +20,9 @@ iCommBridge::~iCommBridge() {
 bool iCommBridge::init() {
     auto handle = static_cast<gcroot<iCommWrapper^>*>(m_managedWrapper);
     return (*handle)->init();
+}
+
+bool iCommBridge::close() {
+    auto handle = static_cast<gcroot<iCommWrapper^>*>(m_managedWrapper);
+    return (*handle)->close();
 }
