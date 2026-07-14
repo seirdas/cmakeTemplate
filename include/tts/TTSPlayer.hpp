@@ -3,6 +3,7 @@
 #include <string>
 #include <functional>
 #include "system/SystemMgr.hpp"
+#include <thread>
 
 class TTSCore;
 
