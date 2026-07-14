@@ -2,26 +2,18 @@
 
 #include <memory>   // unique_ptr
 #include <string>
+#include <queue>
 
-/* temp para que funcione en el hpp */
-#include "tts/TTSPlayer.hpp"
+
+// intentar quitar esto si es posible:
 #include "tts/TTSData.hpp"
 #include "tts/TTSCore.hpp"
-#include "files/JsonMgr.hpp"
-
-#include "Sound/SoundMgr.hpp"
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <thread>
-#include <chrono>
-#include <vector>
-/************************************/
 
 
 // Declaración implícita
-// class TTSCore;
-// class SoundMgr;
+class TTSCore;
+class SoundMgr;
+class TTSPlayer;
 
 
 class TTSMgr {
@@ -33,185 +25,108 @@ public:
     /**
      * @brief Constructor 
      */
-    TTSMgr(SoundMgr* snd = nullptr) :
-        initialized_(false),
-        running_(false),
-        snd_(snd)
-    {
-
-    }
+    TTSMgr(SoundMgr* snd = nullptr);
     
     /**
      * @brief Destructor 
      */
-    ~TTSMgr() {
-        cerrar();
-    }
+    ~TTSMgr();
 
 
 // Ejecución ----------------------------------------------------------------------------
 
-    bool init(void* config) {
+    /**
+     * @brief Inicializa TTSMgr incluyendo el núcleo de TTS, los 
+     *  reproductores de TTS y el cliente de iComm administrado
+     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
+     */
+    bool init(void* config);
 
-        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
-        if (config)
-            loadConfig(config);
-        else
-            SYS_WARN("TTSMgr","Cannot load config. Using default values.");
-        
-        // Inicialización de TTSCore (en hilo para no bloquear)
-        SYS_INFO("TTSMgr","Starting TTSCore async load...");
-        hilo_ttscore_ = std::thread([this, config]() {
-                if(!ttsCore_.init(config))
-                    SYS_WARN("TTSMgr","TTSCore FAIL");
-                else SYS_INFO("TTSMgr","TTSCore OK");
-                JsonMgr::instance().update();
-            }
-        );
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
 
-        // Hilo consumidor de paquetes TTS
-        hilo_consumer_ = std::thread(&TTSMgr::TWorker, this);
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
 
-        // Marcar el módulo internamente como inicializado y corriendo
-        initialized_    = true;
-        running_        = true;
+    /**
+     * @brief Cierra TTSMgr incluyendo el núcleo de TTS, los
+     *  reproductores de TTS y el cliente de iComm administrado
+     */
+    void cerrar();
 
-        return initialized_;    // <- true
-    }
-
-    bool isInitialized() const {
-        return initialized_;
-    }
-
-    void loadConfig(void* config) {
-
-        if (!config)
-            return;
-
-        SYS_INFO("TTSMgr","Reading config node...");
-
-        // Se considera que la configuración se pasa como json
-        json* cfg = static_cast<json*>(config);
-        JsonMgr& jsonMgr = JsonMgr::instance();
-
-        // Cargar TTSPlayers a partir del json
-        // #TODO
-
-        SYS_INFO("TTSMgr","Config node read OK");
-    }
-
-    void cerrar() {
-
-        if (!running_)
-            return;
-
-        // Notifica el estado de cerrado (para threads, etc.)
-        running_ = false;
-        queue_cv_.notify_all();
-
-        // Cierra el núcleo de TTS
-        SYS_INFO("TTSMgr","Closing ttsCore...");
-        ttsCore_.cerrar();
-
-        // Espera a que se cierren los hilos
-        if (hilo_consumer_.joinable()) {
-            SYS_INFO("TTSMgr","Waiting for consumer thread...");
-            hilo_consumer_.join();
-        }
-
-        if (hilo_ttscore_.joinable()) {
-            SYS_INFO("TTSMgr","Waiting for TTSCore thread...");
-            hilo_ttscore_.join();
-        }
-
-        SYS_INFO("TTSMgr","TTSMgr closed successfuly");
-    }
-
-    void Ejecutar(const TTSDataPacket& packet) {
-
-        // Añadir paquete a la queue
-        /* TBD */
-
-        {
-            std::lock_guard<std::mutex> lock(queue_mtx_);
-            queue_.push(packet);
-        }
-        // Avisar al worker de que hay paquete
-        queue_cv_.notify_one();
-    }
+    /**
+     * @brief Añade un paquete de datos TTS listo para procesar
+     *  Particularmente y en resumen, texto que será reproducido (entre otros datos)
+     * @param packet Paquete de datos para procesar
+     */
+    void Ejecutar(const TTSDataPacket& packet);
 
     
 // TTSCore ------------------------------------------------------------------------------
 
-    bool generateWav(std::string const& modelName, std::string const& text, std::string wavname) {
-        return ttsCore_.generateWav(modelName, text, wavname);
-    }
+    /**
+     * @brief Genera un archivo '.wav' a partir de un texto con una voz determinada
+     * @param modelName Nombre del modelo
+     * @param text Texto del que generar el audio
+     * @param wavname Nombre del archivo resultante
+     * @return @c true Si se ha generado correctamente, @c false en caso contrario
+     */
+    bool generateWav(std::string const& modelName, std::string const& text, std::string wavname);
 
-    std::vector<std::string> getAvailableModels() {
-        return ttsCore_.getAvailableModels();
-    }
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos disponibles
+     * @note Los nombres SÍ incluyen el tipo de modelo (ej. "vits-piper-*")
+     */
+    std::vector<std::string> getAvailableModels();
 
-    std::vector<std::string> getLoadedModels() const {
-        return ttsCore_.getLoadedModels();
-    }
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos cargados
+     * @note Los nombres NO incluyen el tipo de modelo (ej. "vits-piper-*")
+     * @note Con lazy_load activo, los modelos disponibles se consideran como cargados
+     */
+    std::vector<std::string> getLoadedModels() const;
 
-    short numLoadedModels() const {
-        return ttsCore_.numLoadedModels();
-    }
+    /**
+     * @brief Obtiene el número de modelos disponibles
+     */
+    short numAvailableModels() const;
 
-    short numAvailableModels() const {
-        return ttsCore_.numAvailableModels();
-    }
+    /**
+     * @brief Obtiene el número de modelos cargados
+     * @returns Número de modelos cargados disponibles
+     *  Con lazy_load activo, NO CUENTA los modelos disponibles no cargados
+     */
+    short numLoadedModels() const;
 
 
 // Gestión de reproductores TTS ---------------------------------------------------------
 
-    bool add_tts_player(std::string const& TTSPlayerName, std::string const& playbackName = "") {
-        std::lock_guard<std::mutex> lock(queue_mtx_);
-        
-        if (ttsPlayers_.find(TTSPlayerName) != ttsPlayers_.end()) {
-            return false; // Ya existe un reproductor para ese canal/dispositivo
-        }
+    /**
+     * @brief Añade un nuevo reproductor TTS
+     * @param TTSPlayerName Nombre del reproductor TTS
+     * @param playbackName Nombre del dispositivo playback por el que se reproducen los audios
+     *  El dispositivo playback debe estar gestionado por el gestor de audio (SoundMgr)
+     * @return @c true si se ha creado el reproductor correctamente, @c false en caso contrario
+     */
+    bool add_tts_player(std::string const& TTSPlayerName, std::string const& playbackName = "");
 
-        // No interesa crear nada si no hay módulo de sonidos para asignar playbacks
-        if (!snd_) {
-            SYS_WARN("TTSMgr","Cannot create TTSPlayer: Sound module not defined");
-            return false;
-        }
-
-        // Creamos el reproductor dedicado
-        std::unique_ptr<TTSPlayer> player = std::make_unique<TTSPlayer>();
-        player->init(TTSPlayerName);
-
-        // Establece el dispositivo de reproducción si se ha indicado
-        if (!playbackName.empty())
-            player->setPlaybackDev(playbackName);
-
-        // INYECCIÓN: Generar audio del texto usando TTSCore
-        player->setTTSCallback([this](std::string const& modelName, std::string const& text) -> std::vector<float> {
-            AudioData data = ttsCore_.generate(modelName, text);
-            return data.samples;
-        });
-
-        // INYECCIÓN: Reproducir el audio usando SoundMgr
-        player->setPlaybackCallback([this](std::vector<float>& audio, const std::string& playbackName) -> bool {
-            if (!snd_) {
-                SYS_WARN("TTSPlayer","Cannot reproduce audio: Sound module not defined");
-                return false;
-            }
-
-            // #TODO
-        });
-
-        // Guardar en TTSPlayer en la lista de TTSMgr
-        ttsPlayers_[TTSPlayerName] = std::move(player);
-        return true;
-    }
-
-    bool remove_tts_player(std::string const& name) {
-        std::lock_guard<std::mutex> lock(queue_mtx_);
-        return ttsPlayers_.erase(name) > 0;
-    }
+    /**
+     * @brief Borra un reproductor TTS
+     * @param name Nombre del reproductor TTS a borrar
+     * @return @c true si se ha eliminado el reproductor correctamente, @c false en caso contrario
+     */
+    bool remove_tts_player(std::string const& name);
 
 
 // TTSPlayer ----------------------------------------------------------------------------
@@ -220,104 +135,15 @@ public:
         std::string const& text, 
         std::string const& entityName,
         std::string const& modelName = "", 
-        std::string const& playbackName = "" ) 
-    {
-        // Comprobaciones
-        if (text.empty()) {
-            SYS_WARN("TTSMgr","Play error: text empty");
-            return false;
-        }
-
-        // Comprobar si en el playbackName se puede reproducir
-        if (!snd_->isOnManagedCaptures(playbackName)) {
-            SYS_WARN("TTSMgr","Play error: Playback device is not managed");
-            return false;
-        }
-
-        //std::unique_lock<std::mutex> lock(queue_mtx_);
-
-        // Comprobar si la entidad existe ya en la info de algún player
-        TTSMgrInfo* myinfo = nullptr;
-        for (auto& it : ttsPlayers_) {
-            for (auto& info : PlayersInfo_[it.first])
-                if(entityName == info.entity_name) {
-                    myinfo = &info;
-                    break;
-                }
-            if (myinfo) break;
-        }
-
-        // Si se ha definido un nuevo modelo de voz, se asigna (exista o no la info)
-        if (!modelName.empty()) {
-            if (!ttsCore_.isModelLoaded(modelName)) {
-                SYS_WARN("TTSMgr","Play error: Model selected doesn't exist");
-                return false;
-            }
-            myinfo->model_name_assigned = modelName;
-        }
-
-        // Caso cuando no existe la info (info nueva)
-        if (!myinfo) {
-            TTSMgrInfo newInfo;
-            newInfo.entity_name = entityName;
-
-            // Si no se ha definido un modelo de voz, elegir uno cualquiera
-            if (modelName.empty()) {
-                std::vector<std::string> models = ttsCore_.getLoadedModels();
-                if (models.empty()) {
-                    SYS_WARN("TTSMgr","Play error: Cannot gather any TTS model.");
-                    return false;
-                }
-                unsigned short sel = rand() % models.size();
-                myinfo->model_name_assigned = models[sel];
-            }
-
-            // Guardar la entidad en la info
-            newInfo.entity_name = entityName;
-        }
-
-        // Desbloqueo de mutex antes de reproducir para evitar deadlocks
-        //lock.unlock();
-        
-        // Asignar a un TTSPlayer...
-        /* #TODO */
-
-        // Callback para mostrar texto mientras se está reproduciendo, quitar después
-        /* #TODO */
-
-        SYS_WARN("TTSMgr","Not yet implemented");
-        return false;
-    }
+        std::string const& playbackName = "" );
 
 
 // Hilos --------------------------------------------------------------------------------
 
-    void TWorker() {
-
-        while (running_) {
-
-            // Salir si el programa se está cerrando (antes de bloqueo)
-            if (!running_)
-                break;
-
-            // Forzar la espera hasta que sea notificado de un paquete nuevo
-            std::unique_lock<std::mutex> lock(queue_mtx_);
-            queue_cv_.wait(lock, [this] {
-                return !running_ || !queue_.empty();
-            });
-
-            // Salir si el programa se está cerrando (después de bloqueo)
-            if (!running_)
-                break;
-
-            // Va consumiendo la cola de datos pasándoselo a los ttsPlayers
-            /* #TODO */
-
-            // Lógica de ejemplo (borrar al implementar la de verdad)
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-        }
-    }
+    /**
+     * @brief Hilo consumidor de paquetes TTS
+     */
+    void TWorker();
 
 
 // iComm --------------------------------------------------------------------------------
@@ -353,5 +179,7 @@ private:
     TTSPlayers                  ttsPlayers_;        ///< Lista de reproductores TTS
     TTSInfos                    PlayersInfo_;       ///< Lista de información de cada TTSPlayer
     std::mutex                  playersInfo_mtx_;   ///< Mutex para la lista de información
+
+// iComm
 
 };

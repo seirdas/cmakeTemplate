@@ -75,7 +75,7 @@ public:
     void cerrar();
 
     /**
-     * @brief recarga los modelos de voz (cierra, borra y vuelve a inicializar)
+     * @brief Recarga los modelos de voz (cierra, borra y vuelve a inicializar)
      */
     void reload();
 
