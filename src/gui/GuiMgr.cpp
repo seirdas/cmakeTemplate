@@ -95,7 +95,7 @@
 	}
 
 	GuiMgr::~GuiMgr() {
-		cerrar();
+		close();
 	}
 
 	void GuiMgr::setController(IAppControl* controller){
@@ -243,14 +243,14 @@
 		while (isRunning())
 			BuclePrincipal();		// <-- Se queda aqui hasta cerrar
 		
-		cerrar();
+		close();
 	}
 
 	bool GuiMgr::isRunning() const {
 		return window_ && !glfwWindowShouldClose(window_);
 	}
 
-	void GuiMgr::cerrar() {
+	void GuiMgr::close() {
 		// No intentar cerrar de nuevo (excepción)
 		if(!running_) 
 			return;
@@ -1060,7 +1060,7 @@
     bool GuiMgr::init()				{ return false;}
     void GuiMgr::run()				{ return; }
     bool GuiMgr::isRunning() const 	{ return false; }
-    void GuiMgr::cerrar()			{ return; }
+    void GuiMgr::close()			{ return; }
 
 	// Bucle principal ----------------------------------------------------------------------
     void GuiMgr::initCuadro()		{ return; }

@@ -44,19 +44,7 @@
     }
 
     NetMgr::~NetMgr() {
-
-        // Parar los sockets
-        stop();
-
-        // Soltar el work_guard para que io_context pueda drenar y terminar.
-        pimpl_->work_guard_.reset();
-
-        // Esperar a que los hilos salgan naturalmente (sin stop() forzado).
-        //    io_context terminará solo cuando no queden handlers pendientes.
-        for (auto& t : threads_)
-            if (t.joinable()) t.join(); // Esperar a los hilos de io_context
-        io_running_ = false;
-        threads_.clear();
+        close();
     }
 
 
@@ -161,13 +149,30 @@
             std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
             // Parar sockets (debería funcionar sin usar strand, parada directa)
-            for (auto& sock : pimpl_->udp_sockets_)
-                sock->stop(); 
+            for (auto& sock : pimpl_->udp_sockets_) 
+            asio::post(getAsioStrand(sock), [sock]{ 
+                    sock->stop(); 
+                });
         }
 
         sockets_running_ = false;
         udp_rcv_data_cv_.notify_all();   // desbloquea getNextPacket()
         SYS_INFO("NetMgr","All sockets stopped");
+    }
+
+    void NetMgr::close() {
+        // Parar los sockets
+        stop();
+
+        // Soltar el work_guard para que io_context pueda drenar y terminar.
+        pimpl_->work_guard_.reset();
+
+        // Esperar a que los hilos salgan naturalmente (sin stop() forzado).
+        //    io_context terminará solo cuando no queden handlers pendientes.
+        for (auto& t : threads_)
+            if (t.joinable()) t.join(); // Esperar a los hilos de io_context
+        io_running_ = false;
+        threads_.clear();
     }
 
     bool NetMgr::isRunning() const {

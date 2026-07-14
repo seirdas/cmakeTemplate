@@ -30,7 +30,7 @@ TTSMgr::TTSMgr(SoundMgr* snd) :
 }
 
 TTSMgr::~TTSMgr() {
-    cerrar();
+    close();
 }
 
 
@@ -95,7 +95,7 @@ void TTSMgr::loadConfig(void* config) {
     SYS_INFO("TTSMgr","Config node read OK");
 }
 
-void TTSMgr::cerrar() {
+void TTSMgr::close() {
 
     // Si no está corriendo, no hacer nada
     if (!running_)
@@ -112,7 +112,7 @@ void TTSMgr::cerrar() {
 
     // Cierra el núcleo de TTS
     SYS_INFO("TTSMgr","Closing ttsCore...");
-    ttsCore_.cerrar();
+    ttsCore_.close();
 
     // Espera a que se cierre el hilo consumidor
     if (hilo_consumer_.joinable()) {

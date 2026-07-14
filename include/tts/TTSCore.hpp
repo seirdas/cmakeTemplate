@@ -72,7 +72,7 @@ public:
     /**
      * @brief Libera los recursos asociados a los modelos de voz cargados.
      */
-    void cerrar();
+    void close();
 
     /**
      * @brief Recarga los modelos de voz (cierra, borra y vuelve a inicializar)

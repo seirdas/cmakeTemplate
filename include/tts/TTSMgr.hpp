@@ -63,7 +63,7 @@ public:
      * @brief Cierra TTSMgr incluyendo el núcleo de TTS, los
      *  reproductores de TTS y el cliente de iComm administrado
      */
-    void cerrar();
+    void close();
 
     /**
      * @brief Añade un paquete de datos TTS listo para procesar

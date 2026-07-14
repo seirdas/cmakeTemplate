@@ -86,7 +86,7 @@ public:
     /**
      * @brief Cierra la ventana y libera los recursos asociados.
      */
-    void cerrar();
+    void close();
 
 
 private:

@@ -38,7 +38,7 @@
     };
 
     TTSCore::~TTSCore() {
-        cerrar();
+        close();
     };
 
 
@@ -149,7 +149,7 @@
         SYS_INFO("TTSCore","Config node read OK");
     }
 
-    void TTSCore::cerrar() {
+    void TTSCore::close() {
         if (!running_) return;
         running_ = false;
 
@@ -176,7 +176,7 @@
     }
 
     void TTSCore::reload() {
-        cerrar();
+        close();
         init(nullptr);
     }
 
@@ -727,7 +727,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
     bool TTSCore::init()              { return false; };
-    void TTSCore::cerrar()            { return; };
+    void TTSCore::close()            { return; };
     void TTSCore::reload()            { return; }
     void TTSCore::loadMissingModels() { return; }
     bool TTSCore::isWorking() const   { return false; }

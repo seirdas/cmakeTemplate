@@ -91,6 +91,11 @@ public:
     void stop();
 
     /**
+     * @brief Detiene los sockets y cierra todos los recursos de la clase
+     */
+    void close();
+
+    /**
      * @brief Devuelve si la red está activa (los sockets están activos)
      * @returns true si los sockets están activos, false en caso contrario
      */

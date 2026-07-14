@@ -42,7 +42,7 @@ AppController::~AppController() {
     running_ = false;
 
     // Cerrar socket y worker esperando paquetes de red
-    net_->stop();
+    net_->close();
     online_cv_.notify_all();
     SYS_INFO("AppController","Waiting for running threads...");
     if (hilo_consumer_.joinable())
@@ -53,8 +53,8 @@ AppController::~AppController() {
 
     // Cerrar módulos (opcional, recomendado)
     snd_->stop();
-    gui_->cerrar();
-    tts_->cerrar();
+    gui_->close();
+    tts_->close();
 
     SYS_INFO("AppController","AppController closed successfuly.");
 }
