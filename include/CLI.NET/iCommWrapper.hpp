@@ -1,8 +1,5 @@
 #pragma once
 
-
-#ifdef _MSC_VER
-
 #using <system.dll>
 #using <iComm.dll>
 #using <iComm.iATC.dll>
@@ -138,5 +135,3 @@ private:
     TTSMgr*                 tts_;       ///< Puntero a TTSMgr para usar sus funciones
 
 };
-
-#endif

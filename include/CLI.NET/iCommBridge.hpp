@@ -55,13 +55,15 @@ private:
 
 };
 
-#if not defined MSVC
+#if not defined _MSC_VER
 // ============================================================
 //  (Stubs para no MSVC)
 //  NOTA:
 //      Los Stubs se ponen aquí porque si el compilador no es MSVC, 
 //      los archivos fuente cpp no se incluyen en la compilación
 // ============================================================
+
+    #include "system/SystemMgr.hpp"
 
     iCommBridge::iCommBridge(TTSMgr*)   {}
     iCommBridge::~iCommBridge()         {}

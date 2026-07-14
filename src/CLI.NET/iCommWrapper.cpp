@@ -6,8 +6,6 @@
 #include <string>
 
 
-#ifdef _MSC_VER
-
 // General ------------------------------------------------------------------------------
 
 iCommWrapper::iCommWrapper(TTSMgr* tts) :
@@ -166,5 +164,3 @@ void iCommWrapper::notifyFinished(unsigned int MsgID, unsigned int LocalID) {
 
 	iCommMgr->SendMessage(LocalID, dataRadioMsgStatus, true, false);
 }
-
-#endif
