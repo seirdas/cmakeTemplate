@@ -6,7 +6,7 @@ include(FetchContent)
 message(STATUS "[asio] Fetching asio-network library...")
 
 # Versiones de librerías
-set(ASIO_VERSION         asio-1-36-0)       # No hay un tag específico
+set(ASIO_VERSION         asio-1-38-1)
 
 # Versión para devolver al CMakeLists principal
 set(LIB_VERSION ${ASIO_VERSION})
@@ -32,10 +32,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(asio_network)
 
 # Crear una librería estática de red
-add_library(asio_lib STATIC "${asio_network_SOURCE_DIR}/asio/src/asio.cpp")
+add_library(asio_lib STATIC "${asio_network_SOURCE_DIR}/src/asio.cpp")
 
 # Incluir rutas de encabezado
-target_include_directories(asio_lib PUBLIC "${asio_network_SOURCE_DIR}/asio/include")
+target_include_directories(asio_lib PUBLIC "${asio_network_SOURCE_DIR}/include")
 
 # Macros de compilación
 target_compile_definitions(asio_lib PUBLIC 
