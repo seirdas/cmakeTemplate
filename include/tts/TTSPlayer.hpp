@@ -21,7 +21,6 @@ public:
         fn_textToAudio(nullptr),
         fn_audioToPlayback(nullptr),
         name_(playerName),
-        active_tasks_(0),
         initialized_(false),
         running_(false)
     {
@@ -82,29 +81,16 @@ public:
             return false;
         }
 
-        // Lanzamos en un hilo para no bloquear al caller
-        std::thread([this, modelName, text]() {
-            // Incrementar contador de tareas activas de la clase
-            active_tasks_++;
-            // Generar audio usando función inyectada de tts
-            std::vector<float> audio = fn_textToAudio(modelName, text);
-            if (audio.empty()) {
-                SYS_WARN("TTSPlayer","Empty audio generated from " + modelName);
-                return false;
-            }
-            // Reproducir audio por el playback
-            bool result = fn_audioToPlayback(audio, playbackName_);
-            // Decrementar contador de tareas activas de la clase
-            active_tasks_--;
+        std::lock_guard<std::mutex> lock(cola_textos_mtx_);
+        
+        // Encolamos los datos para que el hilo los procese
+        queueElement element;
+        element.modelName = modelName;
+        element.text = text;
+        cola_textos_.push(element);
 
-            if (!result) {
-                SYS_WARN("TTSPlayer","Cannot reproduce audio through playback '" + playbackName_ + "'");
-                return false;
-            }
-
-            // Notificar que ha terminado de reproducir
-            /* #TODO */
-        }).detach();
+        // Despertamos al hilo de procesamiento si estaba dormido
+        cola_textos_cv_.notify_one();
 
         return true;
     }
@@ -120,8 +106,13 @@ public:
         return playbackName_;
     }
 
+    /**
+     * @brief Devuelve si está generando/reproduciendo un texto
+     * @details El truco es que si hay un texto en proceso, está ocupado
+     * @return @c true si está procesando, @c false en caso contrario
+     */
     bool isBusy() {
-        return (active_tasks_ > 0);
+        return !texto_en_proceso_.empty();
     }
 
 
@@ -154,17 +145,76 @@ public:
 // Hilos --------------------------------------------------------------------------------
 
     void TProcesarCola() {
-        // #TODO
+
+        // Elemento a reproducir de la cola
+        queueElement element;
 
         while(running_) {
-            // #TODO
 
-            break;
+            // Salir si el programa se está cerrando (antes)
+            if (!running_) break;
+
+            // Forzar espera hasta que haya algo en la cola o se cierre este player
+            std::unique_lock<std::mutex> lock(cola_textos_mtx_);
+            cola_textos_cv_.wait(lock, [this] {
+                return !running_ || !cola_textos_.empty();
+            });
+
+            // Salir si el programa se está cerrando (después)
+            if(!running_) break;
+
+            // Obtener tarea de la cola
+            element = cola_textos_.front();
+            cola_textos_.pop();
+
+            // Libera el lock de aquí en adelante
+            lock.unlock();
+
+            // Reproducir elemento
+            reproducirElemento(element);
+
+            // Esperar un rato hasta reproducir el siguiente paquete
+            std::this_thread::sleep_for(std::chrono::seconds(2));   // (poner tiempo como variable)
         }
+
+        SYS_INFO("TTSPlayer::TProcesarCola", "Thread stopped.");
+
     }
 
 
 private:
+
+    // Declaración anticipada
+    struct queueElement;
+    bool reproducirElemento(queueElement element) {
+
+        // Guardar el texto que se está procesando
+        texto_en_proceso_ = element.text;
+
+        // Generar audio
+        std::vector<float> audio = fn_textToAudio(element.modelName, element.text);
+        if (audio.empty()) {
+            SYS_WARN("TTSPlayer", "Empty audio generated from " + element.modelName);
+            texto_en_proceso_.clear();
+            return false;
+        }
+
+        // Reproducir audio por el playback
+        bool result = fn_audioToPlayback(audio, playbackName_);
+        if (!result) {
+            SYS_WARN("TTSPlayer", "Cannot reproduce audio through playback '" + playbackName_ + "'");
+            texto_en_proceso_.clear();
+            return false;
+        }
+
+        // Limpiar el texto que se está procesando
+        texto_en_proceso_.clear();
+
+        // Notificar que ha terminado de reproducir (iComm)
+        /* #TODO */
+
+        return true;
+    }
 
 /************ Variables ********************************************************/
 
@@ -175,7 +225,6 @@ private:
 // Inicialización y ejecución
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>       running_;               ///< Flag de módulo corriendo (para hilos)
-    std::atomic<short>      active_tasks_;          ///< Número de tareas en ejecución
 
 // Datos
     std::string const       name_;                  ///< Nombre asignado a este TTSPlayer
