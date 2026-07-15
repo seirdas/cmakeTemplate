@@ -78,15 +78,15 @@ public:
     void run();
 
     /**
+     * @brief Cierra la ventana y libera los recursos asociados.
+     */
+    bool close();
+
+    /**
     * @brief Comprueba si la ventana sigue abierta.
     * @return	True si la ventana está abierta, false si se ha cerrado.
     */
     bool isRunning() const;
-
-    /**
-     * @brief Cierra la ventana y libera los recursos asociados.
-     */
-    void close();
 
 
 private:

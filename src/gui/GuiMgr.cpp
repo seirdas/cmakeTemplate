@@ -246,14 +246,10 @@
 		close();
 	}
 
-	bool GuiMgr::isRunning() const {
-		return window_ && !glfwWindowShouldClose(window_);
-	}
-
-	void GuiMgr::close() {
+	bool GuiMgr::close() {
 		// No intentar cerrar de nuevo (excepción)
 		if(!running_) 
-			return;
+			return true;
 
 		SYS_INFO("GuiMgr", "Closing UI...");
 
@@ -273,9 +269,14 @@
 
 		SYS_INFO("GuiMgr", "UI closed.");
 		running_ = false;
+
+		return true;
 	}
 
-
+	bool GuiMgr::isRunning() const {
+		return window_ && !glfwWindowShouldClose(window_);
+	}
+	
 	// Captura de teclas --------------------------------------------------------------------
 
 	void GuiMgr::captureKeys() {
