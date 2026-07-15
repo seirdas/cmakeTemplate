@@ -182,7 +182,7 @@ bool TTSMgr::add_tts_player(std::string const& TTSPlayerName, std::string const&
     }
 
     // Creamos el reproductor dedicado
-    std::unique_ptr<TTSPlayer> player = std::make_unique<TTSPlayer>();
+    std::unique_ptr<TTSPlayer> player = std::make_unique<TTSPlayer>(TTSPlayerName);
     player->init(TTSPlayerName);
 
     // Establece el dispositivo de reproducción si se ha indicado
@@ -255,7 +255,8 @@ bool TTSMgr::play(
             SYS_WARN("TTSMgr","Play error: Model selected doesn't exist");
             return false;
         }
-        myinfo->model_name_assigned = modelName;
+        /* #TODO */
+        //myinfo->model_name_assigned = modelName;
     }
 
     // Caso cuando no existe la info (info nueva)
@@ -271,7 +272,8 @@ bool TTSMgr::play(
                 return false;
             }
             unsigned short sel = rand() % models.size();
-            myinfo->model_name_assigned = models[sel];
+            /* #TODO */
+            //myinfo->model_name_assigned = modelName;
         }
 
         // Guardar la entidad en la info

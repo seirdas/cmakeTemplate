@@ -4,6 +4,7 @@
 #include <functional>
 #include "system/SystemMgr.hpp"
 #include <thread>
+#include <queue>
 
 class TTSCore;
 
@@ -16,10 +17,13 @@ public:
     /**
      * @brief Constructor 
      */
-    TTSPlayer() :
+    TTSPlayer(std::string const& playerName) :
         fn_textToAudio(nullptr),
         fn_audioToPlayback(nullptr),
-        active_tasks_(0)
+        name_(playerName),
+        active_tasks_(0),
+        initialized_(false),
+        running_(false)
     {
 
     }
@@ -28,7 +32,7 @@ public:
      * @brief Destructor 
      */
     ~TTSPlayer() {
-
+        close();
     }
 
 
@@ -36,6 +40,29 @@ public:
 
     bool init(std::string const& pbName) {
         playbackName_ = pbName;
+
+        // Lanza el hilo que consumirá la cola interna
+        worker_thread_ = std::thread(&TTSPlayer::TProcesarCola, this);
+
+        initialized_    = true;
+        running_        = true;
+        return initialized_;    // <- true
+    }
+
+    bool isInitialized() const {
+        return initialized_;
+    }
+
+    bool close() {
+        {
+            std::lock_guard<std::mutex> lock(cola_textos_mtx_);
+            running_ = false;
+        }
+        cola_textos_cv_.notify_one();
+        if (worker_thread_.joinable()) {
+            worker_thread_.join();
+        }
+
         return true;
     }
 
@@ -82,6 +109,7 @@ public:
         return true;
     }
 
+
 // Datos --------------------------------------------------------------------------------
 
     void setPlaybackDev(std::string const& pbName) {
@@ -95,6 +123,7 @@ public:
     bool isBusy() {
         return (active_tasks_ > 0);
     }
+
 
 // Inyección de funciones ---------------------------------------------------------------
 
@@ -117,9 +146,21 @@ public:
      */
     using PlaybackFunction = std::function<bool(std::vector<float>& audio, std::string const& playbackName)>;
 
-
     void setPlaybackCallback(PlaybackFunction fn) {
         fn_audioToPlayback = std::move(fn);
+    }
+
+
+// Hilos --------------------------------------------------------------------------------
+
+    void TProcesarCola() {
+        // #TODO
+
+        while(running_) {
+            // #TODO
+
+            break;
+        }
     }
 
 
@@ -127,15 +168,32 @@ private:
 
 /************ Variables ********************************************************/
 
-    // Funciones inyectadas
-    TTSFunction       fn_textToAudio;       ///< Función inyectada para pasar de texto a audio
-    PlaybackFunction  fn_audioToPlayback;   ///< Función inyectada para reproducir audio en playback
+// Funciones inyectadas
+    TTSFunction             fn_textToAudio;         ///< Función inyectada para pasar de texto a audio
+    PlaybackFunction        fn_audioToPlayback;     ///< Función inyectada para reproducir audio en playback
 
-    // Ejecución 
-    std::atomic<short>  active_tasks_;      ///< Indica si hay algo en ejecución
+// Inicialización y ejecución
+    bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
+    std::atomic<bool>       running_;               ///< Flag de módulo corriendo (para hilos)
+    std::atomic<short>      active_tasks_;          ///< Número de tareas en ejecución
 
-    // Datos
-    std::string         playbackName_;      ///< Nombre del playback por el que se reproduce
+// Datos
+    std::string const       name_;                  ///< Nombre asignado a este TTSPlayer
+    std::string             playbackName_;          ///< Nombre del playback por el que se reproduce
+    std::string             texto_en_proceso_;      ///< Texto que está procesando (generando->reproduciendo) el módulo
 
-    // Datos temporales
+// Cola de textos a procesar
+
+    /**
+     * @brief Elemento de la cola de textos
+     */
+    struct queueElement {
+        std::string text;       ///< Texto a reproducir
+        std::string modelName;  ///< Nombre del modelo de voz TTS a usar
+    };
+    std::queue<queueElement>    cola_textos_;       ///< Cola de textos pendientes de reproducir
+    std::mutex                  cola_textos_mtx_;   ///< Mutex para cola de textos
+    std::condition_variable     cola_textos_cv_;    ///< Condition variable para cola de textos
+    std::thread                 worker_thread_;     ///< Hilo dedicado a procesar la cola de textos
+
 };
