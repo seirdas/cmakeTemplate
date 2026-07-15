@@ -381,9 +381,10 @@ elseif (MINGW)
     >
   )
 
-  # Linkado estático de librerías de std c++
-  set_target_properties(${PROJECT_NAME} PROPERTIES 
-    LINK_FLAGS "-static -static-libgcc -static-libstdc++"
+  # Linkado estático de librerías de std
+  target_link_options(${PROJECT_NAME} PRIVATE 
+      $<$<CXX_COMPILER_ID:Clang>:-static -stdlib=libc++ -static-libgcc -lc++ -lc++abi -lunwind>
+      $<$<NOT:$<CXX_COMPILER_ID:Clang>>:-static -static-libgcc -static-libstdc++>
   )
 
   # Librerías de sistema 
