@@ -185,6 +185,47 @@ public:
     std::string getModelName(std::filesystem::path modelAbsPath) const;
 
 
+// Idiomas-------------------------------------------------------------------------------
+
+    /**
+     * @brief Comprueba si un modelo de voz corresponde al idioma inglés.
+     * @details Un modelo se considera inglés si su nombre contiene el código "en_" (ej. "en_US-amy-low", "en_GB-alan-low").
+     * @param modelName Nombre del modelo.
+     * @return @c true si es un modelo de inglés; @c false en caso contrario.
+     */
+    bool isEnglish(std::string const& modelName) const; //ponemos const porque no modifica nada
+
+    /**
+     * @brief Comprueba si un modelo de voz corresponde al idioma español.
+     * @details Un modelo se considera español si su nombre contiene el código "es_" (ej. "es_ES-carlfm-x_low", "es_MX-claude-high", "es_AR-daniela-high").
+     * @param modelName Nombre del modelo.
+     * @return @c true si es un modelo de español; @c false en caso contrario.
+     */
+    bool isSpanish(std::string const& modelName) const;
+
+    /**
+     * @brief Comprueba si un modelo de voz corresponde específicamente al inglés británico.
+     * @details Un modelo se considera inglés británico si su nombre contiene el código "en_GB" (ej. "en_GB-alan-low").
+     * @param modelName Nombre del modelo.
+     * @return @c true si es un modelo de inglés británico; @c false en caso contrario.
+     */
+    bool isBritainEnglish(std::string const& modelName) const;
+
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos cargados que son de idioma inglés (US).
+     */
+    std::vector<std::string> getLoadedModelsEnglish() const;
+
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos cargados que son de idioma español.
+     */
+    std::vector<std::string> getLoadedModelsSpanish() const;
+
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos cargados que son de inglés británico.
+     */
+    std::vector<std::string> getLoadedModelsBritainEnglish() const;
+    
 private:
 
 // Inicialización de modelos ------------------------------------------------------------
