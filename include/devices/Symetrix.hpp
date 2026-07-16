@@ -4,6 +4,8 @@
 #include <chrono>           ///< Herramientas para medición de tiempo, duraciones y relojes de alta resolución.
 #include <string>
 #include <unordered_map>    ///< Mapa para valores cacheados
+#include <atomic>
+#include <thread>
 
 
 #define SYM_THRESHOLD_MIN   -48.0    ///< Valor mínimo de threshold soportado por los componentes de Symetrix
@@ -82,7 +84,7 @@ public:
      * @brief Cierra y limpia todos los componentes de la clase.
      * @details Esto incluye la liberación de la capa de red WSA de Windows y el socket abierto.
      */
-    void Destroy();
+    void close();
 
     /**
      * @brief Devuelve si la Symetrix está conectada y respondiendo.
@@ -194,6 +196,12 @@ private:
      * @return @c true si la conexión e intercambio inicial de buffers fue correcto, @c false en caso contrario.
      */
     bool initConnection();
+
+    /**
+     * @brief Comprueba la conexión con Symetrix mandando ping y esperando ACK
+     * @note Preparado para lanzarse en un hilo independiente
+     */
+    void ConnectionChecker();
 
     /**
      * @brief Limpia todos los elementos inicializados de la red (WSA, socket).
@@ -391,6 +399,7 @@ private:
 // Inicialización y ejecución
     bool                initialized_;                   ///< Bandera que indica si el sistema está inicializado.
     bool                wsaStarted_;                    ///< Indica si la capa de red del sistema Windows (WSAStartup) se inicializó correctamente.
+    std::atomic<bool>   running_;                       ///< flag de aplicación corriendo (para hilos)
 
 // Conexión de socket
     bool                connected_;                     ///< Estado actual de la comunicación (true = conectado y respondiendo pings).
@@ -399,7 +408,9 @@ private:
     unsigned long       connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
     unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
     std::string         SymetrixIP_;                    ///< IP de Symetrix
-
+    std::thread         connection_checker_;            ///< Hilo para "certificar" la conexión con Symetrix
+    unsigned char       connection_check_seconds_;      ///< Intervalo de tiempo para comprobar la conexión con un ping
+    
 // Conversión de datos
     float               dBcurve_gamma_;                 ///< Valor de ponderación de escala porcentual a escala logarítmica
     unsigned int const  minTickValue_;                  ///< Valor mínimo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)

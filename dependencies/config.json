@@ -4,14 +4,15 @@
         "AppName": "Audio Control Center",
         "deviceRefreshInterval": 5,
         "fontSize": 16,
-        "theme_selected": "DefaultLight",
         "fullscreen": false,
+        "theme_selected": "DefaultLight",
         "windowPosX": 720,
         "windowPosY": 0,
         "windowSizeX": 1280,
         "windowSizeY": 720
     },
     "network": {
+        "num_threads": 4,
         "udpSockets": [
             {
                 "name": "host",
@@ -52,6 +53,7 @@
     "symetrix": {
         "ComposerPort": 48631,
         "SymetrixIP": "192.168.7.21",
+        "connection_check_seconds": 5,
         "connection_ping_timeout_ms": 500,
         "dBcurve_gamma": 0.415,
         "kBootPreset": 1,
@@ -76,7 +78,8 @@
         "lazy_load": {
             "active": true,
             "keep_alive_seconds": 20
-        }
+        },
+        "num_threads": 4
     },
-    "version": "0.10.0"
+    "version": "0.11.0"
 }

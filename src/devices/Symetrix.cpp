@@ -8,12 +8,14 @@
 Symetrix::Symetrix() :
     pimpl_(std::make_unique<Impl>()),
     initialized_(false),
+    running_(false),
     wsaStarted_(false),
     connected_(false),
     m_waitingPingResponse_(false),
     connection_ping_timeout_ms_(500),
     ComposerPort_(48631),
     SymetrixIP_("192.168.7.21"),
+    connection_check_seconds_(5),
     dBcurve_gamma_(0.415f),
     minTickValue_(0),
     maxTickValue_(65535),
@@ -29,8 +31,6 @@ void Symetrix::loadConfig(void* config) {
     if (!config)
         return;
 
-    SYS_INFO("Symetrix","Reading config node...");
-
     // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
@@ -43,8 +43,8 @@ void Symetrix::loadConfig(void* config) {
     jsonMgr.get_or_set(cfg, "supermatrix_ins",              supermatrix_ins_);             // Por defecto para tener 20 entradas (se puede cambiar por método)
     jsonMgr.get_or_set(cfg, "supermatrix_outs",             supermatrix_outs_);            // Por defecto para tener 20 salidas (se puede cambiar por método)
     jsonMgr.get_or_set(cfg, "kBootPreset",                  kBootPreset_);
+    jsonMgr.get_or_set(cfg, "connection_check_seconds",     connection_check_seconds_);
 
-    SYS_INFO("Symetrix","Config node read OK");
 }
 
 
@@ -81,7 +81,7 @@ void Symetrix::loadConfig(void* config) {
     // Symetrix::Symetrix() {...}
 
     Symetrix::~Symetrix() {
-        Destroy();
+        close();
     }
 
 
@@ -97,12 +97,6 @@ void Symetrix::loadConfig(void* config) {
             loadConfig(config);
         else
             SYS_WARN("Symetrix","Cannot load config. Using default values.");
-
-        // Si entra aquí, se ha forzado la inicialización. Limpiar lo que hubiera
-        if (initialized_) {
-            initialized_ = false;
-            net_cleanup();
-        }
 
         // Inicializar y probar conexión de red con Symetrix
         if(!initConnection())
@@ -123,15 +117,23 @@ void Symetrix::loadConfig(void* config) {
     /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
     // Symetrix::loadConfig(void* config) {...}
 
-    void Symetrix::Destroy() {
+    void Symetrix::close() {
 
         // Si no está inicializado no hay que destruir nada
         if (!initialized_) return;
+        running_ = false;
 
         // Cierra Socket y WSA
         net_cleanup();
 
+        // Esperar al hilo que comprueba la conexión
+        if (connection_checker_.joinable()) {
+            SYS_INFO("Symetrix","Waiting for connection checker thread...");
+            connection_checker_.join();
+        }
+
         initialized_ = false;
+        
     }
 
     bool Symetrix::isConnected() const {
@@ -482,24 +484,50 @@ void Symetrix::loadConfig(void* config) {
             return false;
         }
 
-        // --- PING CON MANEJO DE ERRORES MEJORADO ---
+        // Activar hilo que comprueba conexión a pings constantemente
+        running_ = true;
+        connection_checker_ = std::thread(&Symetrix::ConnectionChecker, this);
 
-        // Probar a mandar un ping
-        char pingCmd[] = "CSQ 1\r";
-        if (send(pimpl_->socket, pingCmd, (int)strlen(pingCmd), 0) == SOCKET_ERROR) {
-            SYS_WARN("Symetrix", "Cannot send ping to symetrix: Socket fail.");
-            return false;
-        }
-
-        // Esperamos respuesta (el socket tiene 500ms de timeout configurado arriba)
-        char rxBuf[64];
-        if (recv(pimpl_->socket, rxBuf, sizeof(rxBuf), 0) <= 0) {
-            SYS_WARN("Symetrix","Cannot receive ACK from Symetrix. Check connection or IP");
-            return false;
-        }
-
-        connected_ = true;
         return true;
+    }
+
+    void Symetrix::ConnectionChecker() {
+
+        bool resultado_conexion;
+        bool first_connection = true;
+
+        while (running_) {
+
+            resultado_conexion = true;
+
+            // Probar a mandar un ping
+            char pingCmd[] = "CSQ 1\r";
+            if (send(pimpl_->socket, pingCmd, (int)strlen(pingCmd), 0) == SOCKET_ERROR) 
+                resultado_conexion = false;
+
+            // Esperamos respuesta (el socket tiene 'connection_ping_timeout_ms_' de tiempo de timeout)
+            char rxBuf[64];
+            if (recv(pimpl_->socket, rxBuf, sizeof(rxBuf), 0) <= 0) 
+                resultado_conexion = false;
+
+            // Guarda resultado en connected
+            if (connected_ != resultado_conexion) {
+                if (!resultado_conexion)
+                    SYS_WARN("Symetrix","Cannot receive ACK from Symetrix. Check connection or IP");
+                else if (first_connection) {
+                    SYS_INFO("Symetrix","ACK received from Symetrix. Connected.");
+                    first_connection = false;
+                }
+                else 
+                    SYS_SOLVED("Symetrix","ACK received from Symetrix. Reconnected.");
+                connected_ = resultado_conexion;
+            }
+
+            // Espera a la siguiente iteracción para volver a probar
+            std::this_thread::sleep_for(std::chrono::seconds(connection_check_seconds_));   // (poner tiempo como variable)
+
+        }
+        
     }
 
     void Symetrix::net_cleanup() {

@@ -52,9 +52,11 @@ AppController::~AppController() {
         hilo_test_.join();
 
     // Cerrar módulos (opcional, recomendado)
-    snd_->stop();
     gui_->close();
+    snd_->stop();
     tts_->close();
+    //tmx_->close();       // #TODO
+    sym_->close();
 
     SYS_INFO("AppController","AppController closed successfuly.");
 }
