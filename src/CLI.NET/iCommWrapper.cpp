@@ -111,19 +111,6 @@ bool iCommWrapper::init() {
 		gcnew iComm::iCommManager::DelegateOnNetMessage(this, &iCommWrapper::OnReceived_TextVoiceCommand)
     );
 
-	/*	Salta a la funcion OnReceived_TextVoiceCommand cuando recibe un mensaje de iComm 
-	*	Siendo:
-	*	iComm::iATC::Identifiers::FACTORY_NAME == iComm.iATC	(del iComm.iATC.dll)
-	*	iComm::iATC::Identifiers::MessageID::MSG_TEXT_VOICE_COMMAND	== El mensaje ^NetData es de tipo DataTextVoiceCommand (del iComm.iATC.dll)
-	*/
-    // aquí el iComm::Net::Data::NetData -> iComm::Net::Data::DataVoiceMessageToTTS
-    SYS_INFO("iCommWrapper","Subscribing OnReceivedINFO_DACS event...");
-	iCommMgr->AddDelegateToMessage(
-        iComm::iATC::Identifiers::FACTORY_NAME,
-		(int)iComm::iATC::Identifiers::MessageID::MSG_VOICE_MESSAGE_TO_TTS,
-		gcnew iComm::iCommManager::DelegateOnNetMessage(this, &iCommWrapper::OnReceived_OldTextVoiceCommand)
-    );
-
 
     SYS_INFO("iCommWrapper","Starting iComm Client...");
     iCommMgr->Start();
@@ -229,45 +216,38 @@ void iCommWrapper::OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetD
 	//tts_->play(data);
 }
 
-void iCommWrapper::OnReceived_OldTextVoiceCommand(iComm::Net::Data::NetData^ _pNetData) {
-    
-    SYS_INFO("iCommWrapper","OnReceived_OldTextVoiceCommand callback called");
-
-    iComm::iATC::DataVoiceMessageToTTS^ packet = static_cast<iComm::iATC::DataVoiceMessageToTTS^>(_pNetData);
-    
-    // Sin usar, sin implementar
-    SYS_WARN("iCommWrapper","OnReceived_OldTextVoiceCommand not implemented");
-
-    
-    return;
-}
-
 
 // Funciones auxiliares -----------------------------------------------------------------
 
 std::string iCommWrapper::getEntity(iComm::iATC::DataTextVoiceCommand^ packet) {
     
     // debería ser una voz de mujer (podría ser la misma siempre)
-    if (packet->NetCreator->ConnectionConfigData->LocalID == ATIS_ID_)
-        return (packet->Language == iComm::iATC::Identifiers::Language::CHINESE) ? "VOICE_ATIS_CHINO" : "VOICE_ATIS";
+    if (packet->NetCreator->ConnectionConfigData->LocalID == ATIS_ID_) {
+        switch (packet->Language) {
+            case iComm::iATC::Identifiers::Language::CHINESE:
+                return "ATIS_CHINESE";
+            case iComm::iATC::Identifiers::Language::ENGLISH:
+                return "ATIS_ENGLISH";
+            case iComm::iATC::Identifiers::Language::SPANISH:
+                return "ATIS_SPANISH";
+        }
+    }
 
-
-    // (Los pilotos suelen ser hombres)
 
     if (packet->NetCreator->ConnectionConfigData->LocalID == ATC_ID_) {
         if (packet->Sender == iComm::iATC::Identifiers::SenderReceiverType::IA_PILOT)
-            return "VOICE_PILOT";
+            return "PILOT";     // (Los pilotos suelen ser hombres)
         else {
             switch (packet->ControllerType) {
             case iComm::iATC::Identifiers::ControllerType::GROUND:
-                return "VOICE_CONTROLER_GROUND";
+                return "CONTROLER_GROUND";
             case iComm::iATC::Identifiers::ControllerType::TOWER:
-                return "VOICE_CONTROLER_TOWER";
+                return "CONTROLER_TOWER";
             case iComm::iATC::Identifiers::ControllerType::APPROACH:
-                return "VOICE_CONTROLER_APPROACH";
+                return "CONTROLER_APPROACH";
             }
         }
     }
 
-    return "VOICE_CONTROLER_CONTROL";		// voz por defecto si no se cumplen las condiciones anteriores
+    return "OTHER";		// voz por defecto si no se cumplen las condiciones anteriores
 }

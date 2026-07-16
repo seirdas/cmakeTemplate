@@ -123,14 +123,6 @@ private:
      */
     void OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetData);
 
-    /**
-     * @brief Función registrada de información "antigua" para DACS
-     * @note En desuso
-     * @param _pNetData 
-     */
-    void OnReceived_OldTextVoiceCommand(iComm::Net::Data::NetData^ _pNetData);
-
-
 
 // Funciones auxiliares -----------------------------------------------------------------
 
