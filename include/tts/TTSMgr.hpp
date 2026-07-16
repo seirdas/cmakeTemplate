@@ -70,7 +70,7 @@ public:
      *  Particularmente y en resumen, texto que será reproducido (entre otros datos)
      * @param packet Paquete de datos para procesar
      */
-    void Ejecutar(const TTSDataPacket& packet);
+    void Ejecutar(const TTSPacket& packet);
 
     
 // TTSCore ------------------------------------------------------------------------------
@@ -152,6 +152,15 @@ private:
 
 // Aliases
     using TTSPlayers    = std::unordered_map<std::string, std::unique_ptr<TTSPlayer>>;
+
+    /**
+     * @brief Estructura de información de elementos en reproducción
+     * @details Contiene además los datos de TTSPacket recibidos 
+     */
+    struct TTSMgrInfo : TTSPacket {
+        std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida de la asignación voz <-> entidad
+        std::string             model_name_assigned;    ///< Nombre del modelo asociado a la entidad
+    };
     using TTSInfos      = std::unordered_map<std::string, std::vector<TTSMgrInfo>>;
 
 // Pointer to implementation (PIMPL) para añadir iComm (clase administrada CLI.NET)
@@ -165,7 +174,7 @@ private:
 
 // Cola de datos
     std::thread                 hilo_consumer_; ///< Hilo consumidor de datos TTS (queue)
-    std::queue<TTSDataPacket>   queue_;         ///< Cola de comandos
+    std::queue<TTSPacket>       queue_;         ///< Cola de comandos
     std::mutex                  queue_mtx_;     ///< Mutex de cola de comandos
     std::condition_variable     queue_cv_;      ///< Conditional variable para mutex de cola
 

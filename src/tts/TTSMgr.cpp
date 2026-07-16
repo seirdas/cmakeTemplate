@@ -129,7 +129,7 @@ void TTSMgr::close() {
     SYS_INFO("TTSMgr","TTSMgr closed successfuly");
 }
 
-void TTSMgr::Ejecutar(const TTSDataPacket& packet) {
+void TTSMgr::Ejecutar(const TTSPacket& packet) {
 
     // Añadir paquete a la queue
     /* TBD */
@@ -242,7 +242,7 @@ bool TTSMgr::play(
     TTSMgrInfo* myinfo = nullptr;
     for (auto& it : ttsPlayers_) {
         for (auto& info : PlayersInfo_[it.first])
-            if(entityName == info.entity_name) {
+            if(entityName == info.entityName) {
                 myinfo = &info;
                 break;
             }
@@ -262,7 +262,7 @@ bool TTSMgr::play(
     // Caso cuando no existe la info (info nueva)
     if (!myinfo) {
         TTSMgrInfo newInfo;
-        newInfo.entity_name = entityName;
+        newInfo.entityName = entityName;
 
         // Si no se ha definido un modelo de voz, elegir uno cualquiera
         if (modelName.empty()) {
@@ -277,7 +277,7 @@ bool TTSMgr::play(
         }
 
         // Guardar la entidad en la info
-        newInfo.entity_name = entityName;
+        newInfo.entityName = entityName;
     }
 
     // Desbloqueo de mutex antes de reproducir para evitar deadlocks
