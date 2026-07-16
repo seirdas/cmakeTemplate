@@ -106,7 +106,7 @@ public:
     void setSupermatrixOUTs(unsigned int num);
 
 
-// Comandos -----------------------------------------------------------------------------
+// Control de componentes Symetrix Composer ---------------------------------------------
 
     /**
      * @brief Carga un preset de Symetrix Composer.
@@ -114,9 +114,6 @@ public:
      * @return @c true si se ha mandado el comando con éxito, @c false en caso de error o parámetros inválidos.
      */
     bool LoadPreset(unsigned int preset);
-
-
-// Componentes: Controles generales -----------------------------------------------------
 
     /**
      * @brief Establece un valor en un componente de Symetrix.
@@ -128,7 +125,7 @@ public:
      * @param maxValue Límite superior de la escala del parámetro original.
      * @return @c true si el valor superó la tolerancia y se envió correctamente por red, @c false en caso contrario.
      */
-    bool setValue(unsigned int id, float value, float minValue, float maxValue);
+    bool setValue(unsigned short id, float value, float minValue, float maxValue);
 
     /**
      * @brief Establece un valor para un componente Symetrix aplicando una curva de ponderación logarítmica.
@@ -141,8 +138,7 @@ public:
      * @param maxValue Límite superior de la escala del parámetro original.
      * @return true si el valor fue enviado (o no requirió envío por estar dentro de la tolerancia), false en caso de error.
      */
-    bool setValue_dB(unsigned int id, float value, float minValue, float maxValue);
-
+    bool setValue_dB(unsigned short id, float value, float minValue, float maxValue);
 
     /**
      * @brief Activa/Desactiva el estado binario (botón) de un componente.
@@ -152,17 +148,14 @@ public:
      * @param selection @c true para activar/habilitar, @c false para desactivar/mutear.
      * @return @c true si el comando CSQ se transmitió con éxito, @c false en caso contrario.
      */
-    bool setButton(unsigned int id, bool selection);
-
-
-// Supermatrix --------------------------------------------------------------------------
+    bool setButton(unsigned short id, bool selection);
 
     /**
      * @brief Establece el volumen de un punto específico de la supermatriz (Crosspoint).
      * @details Permite enviar el valor de ganancia ya sea como un valor absoluto en dB o como un
      *  porcentaje (0-100) que se traduce mediante una curva logarítmica de audio.
-     * @param in Índice de la entrada (0-indexed).
-     * @param out Índice de la salida (0-indexed).
+     * @param in Índice de la entrada (1-indexed).
+     * @param out Índice de la salida (1-indexed).
      * @param volume Valor de volumen: puede ser dB exactos o porcentaje (0-100).
      * @param real_scale Si es true, trata 'volume' como dB directos. Si es false (por defecto), 
      *  aplica una curva de ponderación logarítmica sobre el porcentaje.
@@ -182,7 +175,14 @@ public:
      * @param newTolerance Nuevo valor o porcentaje de tolerancia a aplicar.
      * @param id Identificador único del componente en Symetrix. Si es @c 0, se aplica a todo el sistema.
      */
-    void updateTolerancePct(unsigned int newTolerance, unsigned int id = 0);
+    void updateTolerancePct_CSQ(unsigned char newTolerance, unsigned short id = 0);
+
+    /**
+     * @brief Actualiza el porcentaje de valor de tolerancia para 
+     *  el filtrado de envíos de valores de crosspoints Supermatrix
+     * @param newTolerancePercent Nuevo porcentaje de tolerancia a aplicar.
+     */
+    void updateTolerancePct_Supermatrix(unsigned short newTolerancePercent);
 
 
 private:
@@ -219,7 +219,7 @@ private:
      * @param pct Valor de entrada en porcentaje [0, 100].
      * @return El valor equivalente en dB dentro del rango [SYM_GAIN_MIN, SYM_GAIN_MAX].
      */
-    float pct_to_dB(float pct);
+    float pct_to_dB(float pct) const;
 
     /**
      * @brief Convierte un valor en decibelios (dB) a su equivalente porcentual (0-100).
@@ -227,16 +227,16 @@ private:
      * @param dbValue Valor en dB.
      * @return Valor porcentual equivalente [0, 100].
      */
-    float dB_to_pct(float dbValue);
+    float dB_to_pct(float dbValue) const;
 
-// Caché de datos de envío --------------------------------------------------------------
+// Caché de datos de envío (CSQ) --------------------------------------------------------
 
     /**
      * @brief Comprueba si un componente específico ya tiene una entrada registrada en la caché local.
      * @param id Identificador del componente a buscar.
      * @return @c true si existe en la caché, @c false en caso contrario.
      */
-    bool isCached(unsigned int id) const;
+    bool isCached_CSQ(unsigned short id) const;
 
     /**
      * @brief Guarda el valor de "ticks" o "dB" almacenado en una entrada específica de la caché.
@@ -245,7 +245,7 @@ private:
      * @param id Identificador único del componente en la caché.
      * @param currentTick El nuevo valor en "ticks" a persistir en la caché.
      */
-    void cacheValue(unsigned int id, float value);
+    void cacheValue_CSQ(unsigned short id, float value);
 
     /**
      * @brief Obtiene el valor bruto almacenado en la caché para un ID específico.
@@ -254,17 +254,65 @@ private:
      * @param id ID del componente.
      * @return El valor almacenado como entero.
      */
-    float getCachedValue(unsigned int id) const;
+    float getCachedValue_CSQ(unsigned short id) const;
 
     /**
      * @brief Obtiene la tolerancia configurada para un ID específico en la caché.
      * @note Esta función no verifica si el ID existe en la caché. Se recomienda llamar 
-     * a isCached() previamente si no se tiene certeza de la existencia del ID.
+     * a isCached_CSQ() previamente si no se tiene certeza de la existencia del ID.
      * @param id ID del componente.
      * @return El valor de tolerancia en la escala correspondiente (ticks).
      */
-    int getCachedTolerance(unsigned int id) const;
+    unsigned short getCachedTolerance_CSQ(unsigned short id) const;
+
+
+// Caché de datos de envío (CMV) --------------------------------------------------------
+
+    /**
+     * @brief Comprueba si un crosspoint de supermatrix ya tiene una entrada registrada en la caché local.
+     * @param id Identificador del crosspoint supermatrix a buscar.
+     * @return @c true si existe en la caché, @c false en caso contrario.
+     */
+    bool isCached_CMV(unsigned short id) const;
+
+    /**
+     * @brief Guarda el valor "dB" de Crosspoint Supermatrix almacenado en una entrada específica de la caché.
+     * @details Sincroniza el estado local de la aplicación con el último valor 
+     *  conocido o enviado al dispositivo.
+     * @param id Identificador único del componente en la caché.
+     * @param currentTick El nuevo valor en "ticks" a persistir en la caché.
+     */
+    void cacheValue_CMV(unsigned short id, float value);
+
+    /**
+     * @brief Obtiene el valor "dB" de Crosspoint Supermatrix almacenado en la caché para un ID específico.
+     * @warning Esta función no verifica si el ID existe en el mapa de caché. Acceder a un ID 
+     * no existente provocará una inserción por defecto (default construction) en el std::map.
+     * @param id ID del componente.
+     * @return El valor almacenado como entero.
+     */
+    float getCachedValue_CMV(unsigned short id) const;
+
+    /**
+     * @brief Obtiene la tolerancia configurada para un ID CMV específico en la caché.
+     * @note Esta función no verifica si el ID existe en la caché. Se recomienda llamar 
+     * a isCached_CSQ() previamente si no se tiene certeza de la existencia del ID.
+     * @param id ID del componente.
+     * @return El valor de tolerancia en la escala correspondiente (ticks).
+     */
+    unsigned short getCachedTolerance_CMV(unsigned short id) const;
     
+    /**
+     * @brief Obtiene el valor de tolerancia de ganancia de un 
+     *  volumen crosspoint de Supermatrix respecto a otro
+     * @details Se necesita un valor para calcular la tolerancia por
+     *  el valor de ponderación de escala porcentual a escala logarítmica
+     *  (esto significa que la tolerancia depende del valor en dB)
+     * @param value Valor de referencia (porcentual o dB)
+     * @param db_scale Magnitud del valor de referencia, @c true si es en escala dB, @c false en escala porcentual
+     * @return Valor de tolerancia en dB (valor que se debe superar para mandar el dato)
+     */
+    float getCachedTolerance_CMV_dB(float value, bool db_scale) const;
     
 // Tolerancias (privado) ----------------------------------------------------------------
 
@@ -277,7 +325,14 @@ private:
      * @param id Identificador único del componente o controlador remoto en Symetrix.
      * @param newToleranceTicks Margen de tolerancia bruto expresado directamente en la escala de ticks (0-65535).
      */
-    void setTolerance(unsigned int id, unsigned int newTolerance);
+    void setTolerance_CSQ(unsigned short id, unsigned short newTolerance);
+
+    /**
+     * @brief Asigna el umbral de tolerancia directamente a un valor crosspoint de la caché.
+     * @param id Identificador único del componente o controlador remoto en Symetrix.
+     * @param newToleranceTicks Margen de tolerancia porcentual (0-100)
+     */
+    void setTolerance_CMV(unsigned short id, unsigned short newTolerance);
 
 
 // Envío de datos -----------------------------------------------------------------------
@@ -290,7 +345,7 @@ private:
      * @param newTicks El nuevo valor en "ticks" que se pretende evaluar.
      * @return @c true si se ha superado el umbral de tolerancia o no había registro previo, @c false si debe descartarse.
      */
-    bool shouldSendCSQ(unsigned int id, unsigned int newTicks);
+    bool shouldSendCSQ(unsigned short id, unsigned int newTicks);
 
     /**
      * @brief Envía un comando nativo CSQ (Change Controller Setting Quiet) al dispositivo Symetrix por UDP.
@@ -300,7 +355,7 @@ private:
      * @param ticks El valor numérico final que se le va a asignar en el dispositivo (0-65535).
      * @return @c true si todo el buffer del comando se transmitió correctamente por el socket, @c false en caso de fallo.
      */
-    bool sendCSQ(unsigned int id, unsigned int ticks);
+    bool sendCSQ(unsigned short id, unsigned int ticks);
 
     /**
      * @brief Determina si un cambio en el valor en dB debe enviarse al Supermatrix según la tolerancia dinámica.
@@ -310,7 +365,7 @@ private:
      * @param dbValue Valor nuevo en dB que se pretende enviar.
      * @return true si la diferencia es suficiente para requerir un nuevo envío, false si está dentro del umbral.
      */
-    bool shouldSendCMV(unsigned int id, float dbValue);
+    bool shouldSendCMV(unsigned short id, float dbValue);
 
     /**
      * @brief Envía el comando CMV (Command Matrix Value) al Supermatrix para un punto de cruce.
@@ -324,6 +379,11 @@ private:
 
 /************ Variables ********************************************************/
 
+// Aliases
+    using TimePoint = std::chrono::steady_clock::time_point;
+    struct CacheEntry;
+    using CacheMap = std::unordered_map<unsigned short, CacheEntry>;
+
 // Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;                        ///< Estructura PIMPL para el socket, para no depender de Windows en el header
     std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de Windows (socket)
@@ -333,7 +393,6 @@ private:
     bool                wsaStarted_;                    ///< Indica si la capa de red del sistema Windows (WSAStartup) se inicializó correctamente.
 
 // Conexión de socket
-    using TimePoint = std::chrono::steady_clock::time_point;
     bool                connected_;                     ///< Estado actual de la comunicación (true = conectado y respondiendo pings).
     TimePoint           m_lastPingTime_;                ///< Registro temporal del último comando de control o ping enviado al hardware.
     bool                m_waitingPingResponse_;         ///< Bandera que indica si estamos esperando que el socket reciba el ACK del ping pendiente.
@@ -345,22 +404,25 @@ private:
     float               dBcurve_gamma_;                 ///< Valor de ponderación de escala porcentual a escala logarítmica
     unsigned int const  minTickValue_;                  ///< Valor mínimo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
     unsigned int const  maxTickValue_;                  ///< Valor máximo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
-    unsigned int        tolerance_percent_;             ///< Porcentaje de tolerancia, si un valor cambia menos de este porcentaje respecto a su escala, no se mandará
+    unsigned char       tolerance_percent_;             ///< Porcentaje de tolerancia, si un valor cambia menos de este porcentaje respecto a su escala, no se mandará
     
 // Caché de Comandos de Control Único
-    /** @brief Entrada de cache */
+    /** 
+     * @brief Entrada de caché
+     */
     struct CacheEntry {
-        float cachedValue = 99999;      ///< Último valor mandado a Symetrix de ticks/dB (valor por defecto fuera de rango)
-        int tolerance;                  ///< Valor de tolerancia 
+        float           cachedValue = 99999;           ///< Último valor mandado a Symetrix de ticks/dB (valor por defecto fuera de rango)
+        unsigned short  tolerance;                     ///< Valor de tolerancia (ticks en CSQ, pct en CMV)
     };
-    using CacheMap = std::unordered_map<unsigned int, CacheEntry>;
-    CacheMap        cache_;                             ///< Vector de caché local para evitar saturar el bus UDP con valores idénticos o dentro de tolerancia
+    CacheMap        CSQ_cache_;                         ///< Lista de caché local de elementos CSQ
+    CacheMap        CMV_cache_;                         ///< Lista de caché local de elementos CMV (Supermatrix) 
+
 
 // Configuración y Estado de SuperMatrix
-    int             supermatrix_ins_;                   ///< Número de entradas lógicas de la SuperMatrix.
-    int             supermatrix_outs_;                  ///< Número de salidas lógicas de la SuperMatrix.
+    unsigned short  supermatrix_ins_;                   ///< Número de entradas lógicas de la SuperMatrix.
+    unsigned short  supermatrix_outs_;                  ///< Número de salidas lógicas de la SuperMatrix.
 
 // Configuración Fija del Dispositivo
-    unsigned int    kBootPreset_;                       ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
+    unsigned short  kBootPreset_;                       ///< Número de preset de hardware (1..1000) que se invocará automáticamente al arrancar. Si es 0 se omite.
 
 };
