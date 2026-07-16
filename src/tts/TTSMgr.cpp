@@ -184,7 +184,7 @@ bool TTSMgr::add_tts_player(std::string const& TTSPlayerName, std::string const&
 
     // Establece el dispositivo de reproducción si se ha indicado
     if (!playbackName.empty())
-        player->setPlaybackDev(playbackName);
+        player->setPlayback(playbackName);
 
     // INYECCIÓN: Generar audio del texto usando TTSCore
     player->setTTSCallback([this](std::string const& modelName, std::string const& text) -> std::vector<float> {
