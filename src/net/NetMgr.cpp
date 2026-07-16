@@ -110,18 +110,17 @@
         JsonMgr& jsonMgr = JsonMgr::instance();
 
         // Thread_count
-        jsonMgr.get_or_set(cfg, "thread_count", num_threads_);
+        jsonMgr.get_or_set(cfg, "num_threads", num_threads_);
         
-        // Calcular máximo disponible
+        // Establecer dentro de rango: 0=auto, >max = max
         unsigned short max_threads = std::thread::hardware_concurrency();
         if (max_threads < 1) max_threads = 1;
-
-        // Si es 0, poner automáticamente el número máximo
-        if (num_threads_ == 0) num_threads_ = max_threads;
-        
-        // Si es mayor que el máximo, capar el valor leído al máximo disponible
+        if (num_threads_ == 0) {
+            SYS_INFO("NetMgr","Thread_count set auto to max hw concurrency (" + std::to_string(max_threads)+")");
+            num_threads_ = max_threads;
+        }
         if (num_threads_ > max_threads) {
-            SYS_WARN("NetMgr","Warn: thread_count higher than max allowed. thread_count set to max hw concurrency (" + std::to_string(max_threads)+")");
+            SYS_WARN("NetMgr","Warn: Thread_count higher than max allowed. thread_count set to max hw concurrency (" + std::to_string(max_threads)+")");
             num_threads_ = max_threads;
         }
 

@@ -34,7 +34,7 @@ public:
      * @brief Constructor de TTSCore. Recibe el número de hilos a usar para la generación de audios.
      * @param num_threads_ Número de hilos a usar para la generación de audios.
      */
-    TTSCore(std::size_t const& num_threads_ = std::thread::hardware_concurrency());
+    TTSCore(std::size_t const& thread_count = std::thread::hardware_concurrency());
 
     /**
      * @brief Destructor de TTSCore.
@@ -226,6 +226,7 @@ public:
      */
     std::vector<std::string> getLoadedModelsBritainEnglish() const;
     
+
 private:
 
 // Inicialización de modelos ------------------------------------------------------------

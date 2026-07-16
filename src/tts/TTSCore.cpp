@@ -22,8 +22,8 @@
 
     // General ------------------------------------------------------------------------------
 
-    TTSCore::TTSCore(std::size_t const& num_threads_) :
-        num_threads_(num_threads_ == 0 ? 1 : num_threads_),
+    TTSCore::TTSCore(std::size_t const& thread_count) :
+        num_threads_(thread_count == 0 ? 1 : thread_count),
         concurrent_init_(false),
         lazy_load_(true),
         keep_alive_seconds_(20),
@@ -133,6 +133,22 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
+        // Thread_count
+        jsonMgr.get_or_set(cfg, "num_threads", num_threads_);
+        
+        // Establecer dentro de rango: 0=auto, >max = max
+        unsigned short max_threads = std::thread::hardware_concurrency();
+        if (max_threads < 1) max_threads = 1;
+        if (num_threads_ == 0) {
+            SYS_INFO("TTSCore","Thread_count set auto to max hw concurrency (" + std::to_string(max_threads)+")");
+            num_threads_ = max_threads;
+        }
+        if (num_threads_ > max_threads) {
+            SYS_WARN("TTSCore","Warn: Thread_count higher than max allowed. thread_count set to max hw concurrency (" + std::to_string(max_threads)+")");
+            num_threads_ = max_threads;
+        }
+
+
         // Carga de la sección lazy
         json* lazyCfg = jsonMgr.getSubNode(cfg, "lazy_load");
         jsonMgr.get_or_set(lazyCfg, "active", lazy_load_);
@@ -140,6 +156,7 @@
         int keep_alive_raw = static_cast<int>(keep_alive_seconds_.count()); // numero a segundos
         jsonMgr.get_or_set(lazyCfg, "keep_alive_seconds", keep_alive_raw);
         keep_alive_seconds_ = std::chrono::seconds(keep_alive_raw);
+
 
         // Carga de la sección concurrent
         json* concurrentCfg = jsonMgr.getSubNode(cfg, "concurrent_init_");
@@ -536,7 +553,7 @@
         return modelName.find("en_GB") != std::string::npos; 
     }
 
-        std::vector<std::string> TTSCore::getLoadedModelsEnglish() const {
+    std::vector<std::string> TTSCore::getLoadedModelsEnglish() const {
         std::vector<std::string> models;
 
         // Rellena la lista solo con los modelos cargados que son inglés (US)
@@ -568,6 +585,7 @@
                 models.push_back(name);
         return models;
     }
+
 
     // Inicialización de modelos ------------------------------------------------------------
 
@@ -774,8 +792,6 @@
                 last_used_.erase(name);
         }
     }
-
-
 
 
 #else
