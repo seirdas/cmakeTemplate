@@ -146,6 +146,8 @@ bool AppController::init(int argc, char** argv) {
         SYS_WARN("AppController","Comms logic FAIL");
     else SYS_INFO("AppController","Comms logic OK");
     
+    // Activar running para los hilos
+    running_ = true;
 
     // Hilo consumidor de paquetes online
     SYS_INFO("AppController","Starting net consumer thread...");
@@ -168,8 +170,6 @@ bool AppController::init(int argc, char** argv) {
 
 int AppController::run() {
     SYS_INFO("AppController","Running app...");
-    running_ = true;
-
     gui_->run(); // ← Bloquea hasta cerrar
     return 0;
 }
