@@ -9,8 +9,6 @@ void TotalMix::loadConfig(void* config) {
     if (!config)
         return;
 
-    SYS_INFO("TotalMix","Reading config node...");
-
     // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
@@ -23,7 +21,6 @@ void TotalMix::loadConfig(void* config) {
     jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
     jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
 
-    SYS_INFO("TotalMix","Config node read OK");
 }
 
 

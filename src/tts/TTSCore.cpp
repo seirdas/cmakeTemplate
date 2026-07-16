@@ -127,8 +127,6 @@
         if (!config)
             return;
 
-        SYS_INFO("TTSCore","Reading config node...");
-
         // Se considera que la configuración se pasa como json
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
@@ -163,7 +161,6 @@
         jsonMgr.get_or_set(concurrentCfg, "active", concurrent_init_);
         jsonMgr.get_or_set(concurrentCfg, "num_load_retries", num_load_retries_);
 
-        SYS_INFO("TTSCore","Config node read OK");
     }
 
     void TTSCore::close() {

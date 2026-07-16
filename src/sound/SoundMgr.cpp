@@ -70,8 +70,6 @@
     void SoundMgr::loadConfig(void* config) {
         if (!config) 
             return;
-
-        SYS_INFO("SoundMgr","Reading config node...");
             
         // Se considera que la configuración se pasa como json    
         json* cfg = static_cast<json*>(config);
@@ -81,10 +79,10 @@
         std::vector<json*> config_elements = jsonMgr.getArrayElements(cfg, "Capture");
 
         // bucle que recorre los elementos de dentro del nodo
-        for (short i=0; i < config_elements.size(); i++) 
+        for (short i=0; i < config_elements.size(); i++) {
+            SYS_INFO("SoundMgr","Loading capture from config...");
             addCaptureDevice(config_elements[i]);
-
-        SYS_INFO("SoundMgr","Config node read OK");
+        }
     }
 
     bool SoundMgr::stop() {

@@ -58,8 +58,6 @@ public:
 
         if (!config) 
             return;
-
-        SYS_INFO("VoIPMgr","Reading config node...");
             
         // Se considera que la configuración se pasa como json    
         json* cfg = static_cast<json*>(config);
@@ -81,9 +79,7 @@ public:
             if(!name.empty())
                 createVoiprec_(name);   // Función inyectada para usar snd, net
         }
-
-        SYS_INFO("VoIPMgr","Config node read OK");
-
+        
     }
 
 

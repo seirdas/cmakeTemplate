@@ -175,8 +175,6 @@
         if (!config)
              return;
 
-        SYS_INFO("AudioInputModule","Reading config node...");
-
         // Se considera que la configuración se pasa como json
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
@@ -190,7 +188,6 @@
         jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
         jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
 
-	    SYS_INFO("AudioInputModule","Config node read OK");
     }
 
     void AudioInputModule::stop() {

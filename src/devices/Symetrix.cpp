@@ -415,6 +415,8 @@ void Symetrix::loadConfig(void* config) {
         if (connected_)
             return true;
 
+        SYS_INFO("Symetrix","Setting up async connection to Symetrix...");
+
         // Iniciar WSA (Contexto de red Windows)
         if (!wsaStarted_) {
             WSADATA wsaData;

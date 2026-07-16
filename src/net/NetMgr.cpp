@@ -102,8 +102,6 @@
 
         if (!config) 
             return;
-
-        SYS_INFO("NetMgr","Reading config node...");
             
         // Se considera que la configuración se pasa como json    
         json* cfg = static_cast<json*>(config);
@@ -146,7 +144,6 @@
             }
         }
 
-	    SYS_INFO("NetMgr","Config node read OK");
     }
 
     bool NetMgr::start() {

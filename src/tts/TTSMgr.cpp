@@ -83,8 +83,6 @@ void TTSMgr::loadConfig(void* config) {
     if (!config)
         return;
 
-    SYS_INFO("TTSMgr","Reading config node...");
-
     // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
@@ -92,7 +90,6 @@ void TTSMgr::loadConfig(void* config) {
     // Cargar TTSPlayers a partir del json
     // #TODO
 
-    SYS_INFO("TTSMgr","Config node read OK");
 }
 
 void TTSMgr::close() {

@@ -217,8 +217,6 @@
         if (!config)
 			return;
 
-        SYS_INFO("GuiMgr","Reading config node...");
-
         // Se considera que la configuración se pasa como json
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
@@ -233,7 +231,6 @@
         jsonMgr.get_or_set(cfg, "deviceRefreshInterval", deviceRefreshInterval_);
         jsonMgr.get_or_set(cfg, "theme_selected", theme_selected_);
 
-	    SYS_INFO("GuiMgr","Config node read OK");
     }
 
 	void GuiMgr::run() {

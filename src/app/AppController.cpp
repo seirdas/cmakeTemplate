@@ -181,15 +181,11 @@ void AppController::loadConfig(void* config) {
     if (!config)
         return;
 
-    SYS_INFO("AppController","Reading config node...");
-
     // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
     jsonMgr.get_or_set(cfg, "version",  version_);
-
-    SYS_INFO("AppController","Config node read OK");
 
 }
 
@@ -246,8 +242,6 @@ void AppController::TPruebas() {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     */
-
-    SYS_INFO("TPruebas","fin TPruebas");
 }
 
 
