@@ -13,7 +13,7 @@ struct TTSDataPacket {
 };
 
 /**
- * @brief Datos del módulo TTS Core
+ * @brief Datos agrupados del módulo TTS Core (para GUI)
  */
 struct TTSCoreData {
     short init_percent;
@@ -28,9 +28,28 @@ struct TTSCoreData {
  */
 struct TTSMgrInfo{
     std::string             entity_name;            ///< Nombre de la entidad asociada
-    std::string             model_name_assigned;    ///< Nombre del modelo asociado a la entidad
-    std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida de la asignación voz <-> entidad
     unsigned long long      ID_Radio;               ///< Identificador de la radio ("siempre" diferente, identificaría la voz)
     unsigned long long      ID_TX;                  ///< (DINÁMICO) Identificador de transmisión (TXID = RemoteID)
     std::string             text_playing;           ///< (DINÁMICO) Texto en reproducción
+};
+
+
+struct TTS_myInfo : TTSMgrInfo {
+    std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida de la asignación voz <-> entidad
+    std::string             model_name_assigned;    ///< Nombre del modelo asociado a la entidad
+};
+
+
+/**
+ * @brief Estructura con los datos que procesa TTSMgr (->TTSPlay)
+ */
+struct TTSPacket { 
+    long long           LocalID;    ///< ATIS o ATC
+	unsigned int        MsgID;      ///< Número de mensaje enviado/recibido
+	unsigned long long  ID_TX;      ///< ID de transmisión (SenderRemoteRadioID)
+	int                 entityID;   ///< Identificación de entidad
+	std::string         entityName; ///< Nombre de entidad
+    std::string         texto;      ///< Texto a reproducir
+    std::string         lang;       ///< Idioma del texto
+
 };

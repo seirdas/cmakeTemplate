@@ -4,6 +4,8 @@
 #using <iComm.dll>
 #using <iComm.iATC.dll>
 
+#include <string>
+
 
 // Declaración implícita
 class TTSMgr;
@@ -92,9 +94,10 @@ public:
      */
     void notifyFinished(unsigned int MsgID, unsigned int LocalID);
 
+
 private:
 
-// Delegate functions - Wrappers for native callbacks -----------------------------------
+// Delegate functions (iComm Callbacks) -------------------------------------------------
 
     /**
      * @brief Función registrada para cuando se ha conectado
@@ -112,13 +115,30 @@ private:
      * @brief Función registrada para cuando llega información para DACS (coberturas, radios, etc.)
      * @param _pNetData 
      */
-    void OnReceivedINFO_DACS_Wrapper(iComm::Net::Data::NetData^ _pNetData);
+    void OnReceived_InfoDacs(iComm::Net::Data::NetData^ _pNetData);
 
     /**
      * @brief Función registrada para cuando llega Texto,ID,etc. para DACS
      * @param _pNetData 
      */
-    void OnReceivedTEXT_VOICE_COMMAND_Wrapper(iComm::Net::Data::NetData^ _pNetData);
+    void OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetData);
+
+    /**
+     * @brief Función registrada de información "antigua" para DACS
+     * @note En desuso
+     * @param _pNetData 
+     */
+    void OnReceived_OldTextVoiceCommand(iComm::Net::Data::NetData^ _pNetData);
+
+
+
+// Funciones auxiliares -----------------------------------------------------------------
+
+    /**
+     * @brief Devuelve el nombre de entidad en función de parámetros del iComm
+     * @return Nombre de entidad
+     */
+    std::string getEntity(iComm::iATC::DataTextVoiceCommand^ packet);
 
     
 /************ Variables ********************************************************/

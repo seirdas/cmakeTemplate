@@ -26,9 +26,9 @@ struct NetPacket;
   *         work_guard_ para evitar que el contexto termine mientras haya hilos en espera.
   *   * addReceiver() crea y registra un UdpReceiver asociado a un puerto local.
   *   * removeReceiver() detiene y elimina el receptor asociado a un puerto.
-  *   * start() crea hasta thread_count_ hilos que ejecutan io_context_.run().
+  *   * start() crea hasta num_threads_ hilos que ejecutan io_context_.run().
   *   * stop() detiene todos los receptores y libera los hilos de trabajo.
-  * @note thread_count_ determina el número máximo de hilos de trabajo (por defecto std::thread::hardware_concurrency()).
+  * @note num_threads_ determina el número máximo de hilos de trabajo (por defecto std::thread::hardware_concurrency()).
   * @note Los receptores se almacenan en receivers_ usando unique_ptr para gestión RAII.
   * @note El constructor es explicit para evitar conversiones implícitas en thread_count.
   * @see UdpSocket
@@ -267,6 +267,6 @@ private:
 
 // Hilos de trabajo
     std::vector<std::thread>    threads_;           ///< Hilos procesando operaciones asíncronas.
-    std::size_t                 thread_count_;      ///< Numero máximo de hilos gestionando operaciones asíncronas.
+    std::size_t                 num_threads_;      ///< Numero máximo de hilos gestionando operaciones asíncronas.
 
 };
