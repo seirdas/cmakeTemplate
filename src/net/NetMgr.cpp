@@ -38,7 +38,7 @@
         initialized_(false),
         io_running_(false),
         sockets_running_(false),
-        thread_count_(thread_count == 0 ? 1 : thread_count)
+        num_threads_(thread_count == 0 ? 1 : thread_count)
     {
 
     }
@@ -65,8 +65,8 @@
         // Inicializar el io_context con varios hilos de recepción
         if (!io_running_) {
             pimpl_->io_context_.restart();
-            SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(thread_count_) + " threads...");
-            for (std::size_t i = 0; i < thread_count_; ++i) {
+            SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(num_threads_) + " threads...");
+            for (std::size_t i = 0; i < num_threads_; ++i) {
                 threads_.emplace_back([this]() {
                     pimpl_->io_context_.run();
                 });
@@ -110,14 +110,19 @@
         JsonMgr& jsonMgr = JsonMgr::instance();
 
         // Thread_count
-        jsonMgr.get_or_set(cfg, "thread_count", thread_count_);
+        jsonMgr.get_or_set(cfg, "thread_count", num_threads_);
+        
         // Calcular máximo disponible
-        unsigned short max_thread = std::thread::hardware_concurrency();
-        if (max_thread < 1) max_thread = 1;
-        // Capar el valor leído a máximo disponible
-        if (thread_count_ > max_thread) {
-            SYS_WARN("NetMgr","Warn: thread_count higher than max allowed. thread_count set to max hw concurrency (" + std::to_string(max_thread)+")");
-            thread_count_ = max_thread;
+        unsigned short max_threads = std::thread::hardware_concurrency();
+        if (max_threads < 1) max_threads = 1;
+
+        // Si es 0, poner automáticamente el número máximo
+        if (num_threads_ == 0) num_threads_ = max_threads;
+        
+        // Si es mayor que el máximo, capar el valor leído al máximo disponible
+        if (num_threads_ > max_threads) {
+            SYS_WARN("NetMgr","Warn: thread_count higher than max allowed. thread_count set to max hw concurrency (" + std::to_string(max_threads)+")");
+            num_threads_ = max_threads;
         }
 
 
