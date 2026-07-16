@@ -127,6 +127,7 @@ void Symetrix::loadConfig(void* config) {
         net_cleanup();
 
         // Esperar al hilo que comprueba la conexión
+        connection_cv_.notify_one();
         if (connection_checker_.joinable()) {
             SYS_INFO("Symetrix","Waiting for connection checker thread...");
             connection_checker_.join();
@@ -513,21 +514,23 @@ void Symetrix::loadConfig(void* config) {
                 resultado_conexion = false;
 
             // Guarda resultado en connected
-            if (connected_ != resultado_conexion) {
+            if (first_connection || connected_ != resultado_conexion) {
                 if (!resultado_conexion)
                     SYS_WARN("Symetrix","Cannot receive ACK from Symetrix. Check connection or IP");
                 else if (first_connection) {
                     SYS_INFO("Symetrix","ACK received from Symetrix. Connected.");
-                    first_connection = false;
                 }
                 else 
                     SYS_SOLVED("Symetrix","ACK received from Symetrix. Reconnected.");
                 connected_ = resultado_conexion;
+                first_connection = false;
             }
 
-            // Espera a la siguiente iteracción para volver a probar
-            std::this_thread::sleep_for(std::chrono::seconds(connection_check_seconds_));   // (poner tiempo como variable)
-
+            // Espera 'connection_check_seconds_' o hasta que 'running_' sea false (notificado)
+            std::unique_lock<std::mutex> lock(connection_mutex_);
+            connection_cv_.wait_for(lock, std::chrono::seconds(connection_check_seconds_), [this]() {
+                return !running_;
+            });
         }
         
     }

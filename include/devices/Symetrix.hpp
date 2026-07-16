@@ -6,6 +6,8 @@
 #include <unordered_map>    ///< Mapa para valores cacheados
 #include <atomic>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 
 #define SYM_THRESHOLD_MIN   -48.0    ///< Valor mínimo de threshold soportado por los componentes de Symetrix
@@ -410,7 +412,9 @@ private:
     std::string         SymetrixIP_;                    ///< IP de Symetrix
     std::thread         connection_checker_;            ///< Hilo para "certificar" la conexión con Symetrix
     unsigned char       connection_check_seconds_;      ///< Intervalo de tiempo para comprobar la conexión con un ping
-    
+    std::mutex          connection_mutex_;              ///< Mutex para hilo de check conexión
+    std::condition_variable connection_cv_;             ///< Condition variable para hilo de check conexión
+
 // Conversión de datos
     float               dBcurve_gamma_;                 ///< Valor de ponderación de escala porcentual a escala logarítmica
     unsigned int const  minTickValue_;                  ///< Valor mínimo de parámetro mapeado en "ticks" de 16 bits (2^16-1 = 65535)
