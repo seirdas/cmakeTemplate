@@ -384,7 +384,7 @@ private:
      * @param dbValue Valor de ganancia en dB a aplicar.
      * @return true si el paquete se envió correctamente a través del socket, false en caso de error.
      */
-    bool sendCMV(unsigned int in, unsigned int out, float dbValue);
+    bool sendCMV(unsigned short in, unsigned short out, float dbValue);
 
 
 /************ Variables ********************************************************/

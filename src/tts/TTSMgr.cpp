@@ -2,7 +2,7 @@
 #include "tts/TTSMgr.hpp"
 #include "tts/TTSPlayer.hpp"
 #include "files/JsonMgr.hpp"
-#include "Sound/SoundMgr.hpp"
+#include "sound/SoundMgr.hpp"
 #include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommWrapper
 
 #include <mutex>

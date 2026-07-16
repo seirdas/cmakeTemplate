@@ -708,7 +708,7 @@ void Symetrix::loadConfig(void* config) {
         return std::abs(dbValue - getCachedValue_CMV(id)) > toleranceDb;
     }
 
-    bool Symetrix::sendCMV(unsigned int in, unsigned int out, float dbValue) {
+    bool Symetrix::sendCMV(unsigned short in, unsigned short out, float dbValue) {
 
         // Calcular tamaño de buffer redondeado a la siguiente potencia de 2 a partir del comando
         constexpr std::string_view componentName = "0.1.CPGain";
@@ -756,7 +756,7 @@ bool Symetrix::init(void* config) {
 bool Symetrix::isInitialized() const    { return false; }
 /* Común en ambos sistemas */
 // Symetrix::loadConfig(void* config) {...}
-void Symetrix::Destroy()                { return; }
+void Symetrix::close()                { return; }
 bool Symetrix::isConnected() const      { return false; }
 
 // Parámetros ---------------------------------------------------------------------------
@@ -767,14 +767,14 @@ void Symetrix::setSupermatrixOUTs(unsigned int) {}
 bool Symetrix::LoadPreset(unsigned int) { return false; }
 
 // Componentes: Controles generales -----------------------------------------------------
-bool Symetrix::setValue(unsigned int, float, float, float)      { return false; }
-bool Symetrix::setValue_dB(unsigned int, float, float, float)   { return false; }
-bool Symetrix::setButton(unsigned int, bool)                    { return false; }
+bool Symetrix::setValue(unsigned short, float, float, float)    { return false; }
+bool Symetrix::setValue_dB(unsigned short, float, float, float) { return false; }
+bool Symetrix::setButton(unsigned short, bool)                  { return false; }
 bool Symetrix::setSupermatrixValue(unsigned int, unsigned int, float, bool) { return false; }
 
 // Tolerancias --------------------------------------------------------------------------
-void Symetrix::updateTolerancePct_CSQ(unsigned int, unsigned int)   {}
-void Symetrix::updateTolerancePct_Supermatrix(unsigned int)         {}
+void Symetrix::updateTolerancePct_CSQ(unsigned char, unsigned short)   {}
+void Symetrix::updateTolerancePct_Supermatrix(unsigned short)         {}
 
 // Inicialización privada ---------------------------------------------------------------
 bool Symetrix::initConnection() { return false; }
@@ -782,30 +782,30 @@ void Symetrix::net_cleanup()    { return; }
 
 // Conversión de datos a ticks ----------------------------------------------------------
 unsigned int Symetrix::ValueToTicks(float, float, float)    { return 0; }
-float Symetrix::pct_to_dB(float)                            { return 0.0f; }
-float Symetrix::dB_to_pct(float)                            { return 0.0f; }
+float Symetrix::pct_to_dB(float) const                      { return 0.0f; }
+float Symetrix::dB_to_pct(float) const                      { return 0.0f; }
 
 // Caché de datos de envío (CSQ) --------------------------------------------------------
-bool Symetrix::isCached_CSQ(unsigned int) const             { return false; }
-void Symetrix::cacheValue_CSQ(unsigned int, float)          { return; }
-float Symetrix::getCachedValue_CSQ(unsigned int) const      { return 0.0f; }
-int Symetrix::getCachedTolerance_CSQ(unsigned int) const    { return 0; }
+bool Symetrix::isCached_CSQ(unsigned short) const             { return false; }
+void Symetrix::cacheValue_CSQ(unsigned short, float)          { return; }
+float Symetrix::getCachedValue_CSQ(unsigned short) const      { return 0.0f; }
+unsigned short Symetrix::getCachedTolerance_CSQ(unsigned short) const    { return 0; }
 
 // Caché de datos de envío (CMV) --------------------------------------------------------
-bool Symetrix::isCached_CMV(unsigned int) const             { return false; }
-void Symetrix::cacheValue_CMV(unsigned int, float)          { return; }
-float Symetrix::getCachedValue_CMV(unsigned int) const      { return 0.0f; }
-int Symetrix::getCachedTolerance_CMV(unsigned int) const    { return 0; }
-float Symetrix::getCachedTolerance_CMV_dB(float, bool) const { return 0.0f; } // Evita undefined reference si se declara en .hpp
+bool Symetrix::isCached_CMV(unsigned short) const             { return false; }
+void Symetrix::cacheValue_CMV(unsigned short, float)          { return; }
+float Symetrix::getCachedValue_CMV(unsigned short) const      { return 0.0f; }
+unsigned short Symetrix::getCachedTolerance_CMV(unsigned short) const    { return 0; }
+float Symetrix::getCachedTolerance_CMV_dB(float, bool) const  { return 0.0f; } // Evita undefined reference si se declara en .hpp
 
 // Tolerancias (privado) ----------------------------------------------------------------
-void Symetrix::setTolerance_CSQ(unsigned int, unsigned int) {}
-void Symetrix::setTolerance_CMV(unsigned int, unsigned int) {}
+void Symetrix::setTolerance_CSQ(unsigned short, unsigned short) {}
+void Symetrix::setTolerance_CMV(unsigned short, unsigned short) {}
 
 // Envío de datos -----------------------------------------------------------------------
-bool Symetrix::shouldSendCSQ(unsigned int, unsigned int)    { return false; }
-bool Symetrix::sendCSQ(unsigned int, unsigned int)          { return false; }
-bool Symetrix::shouldSendCMV(unsigned int, float)           { return false; }
-bool Symetrix::sendCMV(unsigned int, unsigned int, float)   { return false; }
+bool Symetrix::shouldSendCSQ(unsigned short, unsigned int)  { return false; }
+bool Symetrix::sendCSQ(unsigned short, unsigned int)        { return false; }
+bool Symetrix::shouldSendCMV(unsigned short, float)         { return false; }
+bool Symetrix::sendCMV(unsigned short, unsigned short,float){ return false; }
 
 #endif
