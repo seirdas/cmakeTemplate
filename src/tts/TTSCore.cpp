@@ -374,19 +374,7 @@
                     if(!load_vits_model(modpath)) {
                         SYS_WARN("TTSCore","Cannot generate: Model '" + modelName + "' couldn't be loaded.");
                         return {};
-                    }
-
-                    // NUEVO: Comprobación de funciones para reconocer el idioma
-                    else {
-                        if(isEnglish(modelName))
-                            SYS_INFO("TTSCore","English model loaded: '" + modelName + "'");
-                        else if(isBritainEnglish(modelName)) {
-                            SYS_INFO("TTSCore","Britain English model loaded: '" + modelName + "'");
-                        }
-                        else if(isSpanish(modelName))
-                            SYS_INFO("TTSCore","Spanish model loaded: '" + modelName + "'");
-                    }
-                    
+                    }                    
                 }
             }
         }
@@ -664,7 +652,7 @@
         #endif  // Fallback a CPU en caso contrario
 
         // Inicializa el modelo con la configuración (tarda un poco)
-        SYS_INFO("TTSCore","Initializating voice model " + st_modelname);
+        SYS_INFO("TTSCore","Initializating voice model '" + st_modelname + "'");
         active_tasks_++;
         const SherpaOnnxOfflineTts* tts_model = SherpaOnnxCreateOfflineTts(&config);
         active_tasks_--;
@@ -685,6 +673,14 @@
             std::lock_guard<std::mutex> klock(keepalive_mtx_);
             last_used_[st_modelname] = std::chrono::steady_clock::now();
         }
+
+        // Mensaje de info con idioma
+        if(isEnglish(st_modelname))
+            SYS_INFO("TTSCore","English model loaded: '" + st_modelname + "'");
+        else if(isBritainEnglish(st_modelname))
+            SYS_INFO("TTSCore","Britain English model loaded: '" + st_modelname + "'");
+        else if(isSpanish(st_modelname))
+            SYS_INFO("TTSCore","Spanish model loaded: '" + st_modelname + "'");
 
         // Todo correcto
         return true;
