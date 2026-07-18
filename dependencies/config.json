@@ -48,7 +48,10 @@
                 "sample_rate": 48000
             }
         ],
-        "Playback": []
+        "Playback": [],
+        "attack_coefficient": 0.05,
+        "release_coefficient": 0.5,
+        "smoothedValues": true
     },
     "symetrix": {
         "ComposerPort": 48631,
