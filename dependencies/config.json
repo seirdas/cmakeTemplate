@@ -49,8 +49,8 @@
             }
         ],
         "Playback": [],
-        "attack_coefficient": 0.05,
-        "release_coefficient": 0.5,
+        "attack_coefficient": 0.5,
+        "release_coefficient": 0.1,
         "smoothedValues": true
     },
     "symetrix": {
