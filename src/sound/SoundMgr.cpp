@@ -1,4 +1,5 @@
 #include "sound/SoundMgr.hpp"
+#include <algorithm>
 
 // Macro de cmake al activar la librería
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
@@ -27,7 +28,10 @@
     SoundMgr::SoundMgr() : 
         pimpl_(std::make_unique<Impl>()),
         initialized_(false),
-        MAX_REINIT_ATTEMPTS(3)
+        MAX_REINIT_ATTEMPTS(3),
+        smoothedValues_(true),
+        attackCoeff_(0.5),
+        releaseCoeff_(0.1)
     {
 
     }
@@ -75,14 +79,24 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
-        // obtener un array de punteros json
-        std::vector<json*> config_elements = jsonMgr.getArrayElements(cfg, "Capture");
+        // Valores globales de suavizado (para los módulos capture/playbacks)
+        float minValue = 0; float maxValue = 1;
+        jsonMgr.get_or_set(cfg, "smoothedValues",       smoothedValues_);
+        jsonMgr.get_or_set(cfg, "attack_coefficient",   attackCoeff_);
+        attackCoeff_= std::clamp(attackCoeff_, minValue, maxValue);
+        jsonMgr.get_or_set(cfg, "release_coefficient",  releaseCoeff_);
+        releaseCoeff_= std::clamp(releaseCoeff_, minValue, maxValue);
 
-        // bucle que recorre los elementos de dentro del nodo
+        /* CAPTURAS */
+        // Recorrer elementos de capturas dentro del nodo json
+        std::vector<json*> config_elements = jsonMgr.getArrayElements(cfg, "Capture");
         for (short i=0; i < config_elements.size(); i++) {
             SYS_INFO("SoundMgr","Loading capture from config...");
             addCaptureDevice(config_elements[i]);
         }
+
+        /* PLAYBACKS */
+        // #TODO
     }
 
     bool SoundMgr::stop() {
@@ -112,21 +126,21 @@
             &pimpl_->pPlaybackDevInfos_, &pimpl_->PlaybackDevCount_, 
             &pimpl_->pCaptureDevInfos_, &pimpl_->captureDevCount_);
 
-    if (res != MA_SUCCESS) return false;
+        if (res != MA_SUCCESS) return false;
 
-    // Si hay algun dispositivo con is_valid = false se reinicializa
-    for (auto& [name, aim] : captures_) {
-        if (aim->isValid()) continue;
+        // Si hay algun dispositivo con is_valid = false se reinicializa
+        for (auto& [name, aim] : captures_) {
+            if (aim->isValid()) continue;
 
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) 
-            if (aim->deviceName() == pimpl_->pCaptureDevInfos_[i].name) 
-                for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++) 
-                    if (aim->init(nullptr))
-                        break;
+            for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) 
+                if (aim->deviceName() == pimpl_->pCaptureDevInfos_[i].name) 
+                    for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++) 
+                        if (aim->init(nullptr))
+                            break;
+        }
+
+        return true;
     }
-
-    return true;
-}
 
 
     // Dispositivos de captura --------------------------------------------------------------
@@ -270,6 +284,11 @@
             return false;
         }
 
+        // Le pasa los parámetros globales del suavizado de valores
+        aim->set_SmoothedValues(smoothedValues_);
+        aim->set_SmoothAttackCoeff(attackCoeff_);
+        aim->set_SmoothReleaseCoeff(releaseCoeff_);
+
         // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (captures_).
         captures_[captureName] = std::move(aim);
         SYS_INFO("SoundMgr", "New input device: '" + captureName + "' (" + deviceName + ")");
@@ -343,6 +362,11 @@
             SYS_WARN("SoundMgr","Failed to initialize capture.");
             return false;
         }
+
+        // Le pasa los parámetros globales del suavizado de valores
+        aim->set_SmoothedValues(smoothedValues_);
+        aim->set_SmoothAttackCoeff(attackCoeff_);
+        aim->set_SmoothReleaseCoeff(releaseCoeff_);
 
         // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (captures_).
         captures_[deviceName] = std::move(aim);

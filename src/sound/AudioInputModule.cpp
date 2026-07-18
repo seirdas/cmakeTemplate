@@ -58,7 +58,11 @@
         ma_uint32 targetSize = self->processBufferSize_ * self->channels_;
         if (self->captureBuffer_.size() >= targetSize) {
 
-            /* Valor de pico del buffer */
+            // Variable temporal para almacenar valores
+            float rawValue = 0;
+
+
+            /* Valor de pico del buffer (0-100)*/
             int32_t peak = 0;       // 32 bits para evitar overflow con el valor -32768 
             int32_t sampleAbs = 0;
             for (unsigned int i = 0; i < targetSize; ++i) {
@@ -66,10 +70,12 @@
                 if (sampleAbs > peak)
                     peak = sampleAbs;
             }
-            self->peakLevel_ = static_cast<float>((peak / static_cast<float>(self->max_int16_val_)) * 100.0f); //de 0 a 100
+            rawValue = static_cast<float>((peak / static_cast<float>(self->max_int16_val_)) * 100.0f); //de 0 a 100
+            self->peakLevel_ = (self->smoothedValues_) ? self->smoothLevel(rawValue, self->peakLevel_) : rawValue;
+            if (self->peakLevel_ > 100.0f) self->peakLevel_ = 100.0f; // capar al máximo
+            
 
-
-            /* Valor RMS */
+            /* Valor RMS (0-100)*/
             double sampleVal = 0.0f;
             double sum = 0.0f;
             for (unsigned int i = 0; i < targetSize; ++i) {
@@ -77,8 +83,10 @@
                 sum += sampleVal * sampleVal;
             }
             double rms = std::sqrt(sum / targetSize); // La raiz es más eficiente hacerla fuera del bucle
-            self->rmsLevel_  = static_cast<float>((rms  / self->max_int16_val_) * 100.0); // de 0 a 1
-            if (self->peakLevel_ > 100.0f) self->peakLevel_ = 100.0f;
+            rawValue  = static_cast<float>((rms  / self->max_int16_val_) * 100.0); // de 0 a 100
+            self->rmsLevel_ = (self->smoothedValues_) ? self->smoothLevel(rawValue, self->rmsLevel_) : rawValue;
+            if (self->rmsLevel_ > 100.0f) self->rmsLevel_ = 100.0f;
+
         
             /* Limpieza de buffer */
             self->captureBuffer_.clear();
@@ -123,6 +131,9 @@
     codec_inited_(false),
     recording_(false),
     is_valid_(false),
+    smoothedValues_(false),
+    attackCoeff_(0),
+    releaseCoeff_(0),
     onFrame_(nullptr),
     max_int16_val_(std::numeric_limits<int16_t>::max())
     {
@@ -184,9 +195,9 @@
         /* Esto ya llega en la inicialización, en devInfo del constructor */
         //jsonMgr.get_or_set(cfg, "device", device_);
         
-        jsonMgr.get_or_set(cfg, "numchannels", channels_);
-        jsonMgr.get_or_set(cfg, "sample_rate", sampleRate_);
-        jsonMgr.get_or_set(cfg, "process_buffer_size", processBufferSize_);
+        jsonMgr.get_or_set(cfg, "numchannels",          channels_);
+        jsonMgr.get_or_set(cfg, "sample_rate",          sampleRate_);
+        jsonMgr.get_or_set(cfg, "process_buffer_size",  processBufferSize_);
 
     }
 
@@ -291,6 +302,21 @@
     }
 
 
+    // Parámetros de suavizado de valores ---------------------------------------------------
+
+    void AudioInputModule::set_SmoothedValues(bool value) {
+        smoothedValues_ = value;
+    }
+
+    void AudioInputModule::set_SmoothAttackCoeff(float value) {
+        attackCoeff_ = value;
+    }
+
+    void AudioInputModule::set_SmoothReleaseCoeff(float value) {
+        releaseCoeff_ = value;
+    }
+
+
     // Codificador de grabación -------------------------------------------------------------
 
     void AudioInputModule::InitRecEncoder(std::string const& filename) {
@@ -330,6 +356,24 @@
         // Limpiar el buffer de grabación
         rec_buffer_.clear();
     }
+
+    // Suavizado de valores -----------------------------------------------------------------
+
+    float AudioInputModule::smoothLevel(float rawValue, float const& previousValue, 
+                       float attackCoeff, float releaseCoeff)
+    {
+        // Si no se llama a esta función con los valores de ataque yh release, se ponen los valores por defecto
+        if (attackCoeff == 0) attackCoeff = attackCoeff_;
+        if (releaseCoeff == 0) releaseCoeff = releaseCoeff_;
+
+        // Ahora, si los valores son realmente 0, devuelve el valor "crudo"
+        if (attackCoeff == 0 || releaseCoeff == 0) return rawValue;
+
+        // Cálculo de valor suavizado:
+        float coeff = (rawValue > previousValue) ? attackCoeff : releaseCoeff;
+        return coeff * rawValue + (1.0f - coeff) * previousValue;
+    }
+
 
 
 #else

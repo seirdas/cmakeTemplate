@@ -114,6 +114,7 @@ public:
      */
     void clearOnFrameCallback();
 
+
     // Grabación ----------------------------------------------------------------------------
 
     /**
@@ -143,6 +144,27 @@ public:
     bool isRecording();
 
 
+    // Parámetros de suavizado de valores ---------------------------------------------------
+
+    /**
+     * @brief Activa/Desactiva los valores suavizados
+     * @param value @c true para activar los valores suavizados, @c false para desactivar
+     */
+    void set_SmoothedValues(bool value);
+
+    /**
+     * @brief Set the SmoothAttackCoeff object
+     * @param value Valor de ataque (+grande = subida lenta)
+     */
+    void set_SmoothAttackCoeff(float value);
+
+    /**
+     * @brief Set the SmoothReleaseCoeff object
+     * @param value Valor de release (+grande = bajada lenta)
+     */
+    void set_SmoothReleaseCoeff(float value);
+
+
 private:
 
     // Codificador de grabación -------------------------------------------------------------
@@ -165,6 +187,19 @@ private:
      * @details Por defecto se hace justo después de parar la grabación
      */
     void saveRecording();
+
+    // Suavizado de niveles -----------------------------------------------------------------
+
+    /**
+     * @brief Calcula un valor suavizado respecto a su valor anterior
+     * @param rawValue Valor "crudo" obtenido
+     * @param previousValue Valor anterior
+     * @param attackCoeff Coeficiente de "attack"
+     * @param releaseCoeff Coeficiente de "release"
+     * @return Valor suavizado
+     */
+    float smoothLevel(float rawValue, float const& previousValue, 
+                       float attackCoeff = 0, float releaseCoeff = 0);
 
 
 
@@ -195,6 +230,11 @@ private:
     std::atomic<float>      peakLevel_;           ///< Nivel de pico (solo cuando usePeak_ == true)
     std::vector<int16_t>    captureBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)
     unsigned int            processBufferSize_;   ///< frames por bloque de proceso
+    
+    // Suavizado de valores
+    bool                    smoothedValues_;      ///< Suaviza los valores de captura (RMS, Peak...)
+    float                   attackCoeff_;         ///< Valor de ataque (+grande = subida lenta)
+    float                   releaseCoeff_;        ///< Valor de release (+grande = bajada lenta)
 
 // Función inyectada
     AudioCallback           onFrame_;             ///< Almacena la función de callback registrada externamente

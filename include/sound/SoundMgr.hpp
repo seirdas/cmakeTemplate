@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -185,7 +184,12 @@ private:
     unsigned short          MAX_REINIT_ATTEMPTS;    ///< Número de reintentos para reinicializar dispositivo de entrada
 
 // Módulos de audio
-    CapturesList            captures_;      ///< Vector con dispositivos inicializados de captura
-    PlaybacksList           playbacks_;     ///< Vector con dispositivos inicializados de playback
+    CapturesList            captures_;              ///< Vector con dispositivos inicializados de captura
+    PlaybacksList           playbacks_;             ///< Vector con dispositivos inicializados de playback
+
+// Parámetros de los módulos capture/playbacks
+    bool                    smoothedValues_;        ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
+    float                   attackCoeff_;           ///< Valor de ataque (+grande = subida lenta)
+    float                   releaseCoeff_;          ///< Valor de release (+grande = bajada lenta)
 
 };
