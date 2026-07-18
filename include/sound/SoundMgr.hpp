@@ -93,16 +93,11 @@ public:
     /**
      * @brief Añadir un nuevo dispositivo de captura a partir de una config (json)
      * @param config Puntero a parámetros de dispositivo (json)
+     * @param name Nombre asignado a esta captura (cualquiera)
+     * @param deviceName Nombre del dispositivo de captura
      * @return @c true Si se ha creado correctamente, @c false en caso contrario
      */
-    bool addCaptureDevice(void* config);
-
-    /**
-     * @brief Añadir un nuevo dispositivo de captura con parámetros por defecto
-     * @param name Nombre de dispositivo de captura
-     * @return @c true Si se ha creado correctamente, @c false en caso contrario
-     */ 
-    bool addCaptureDevice(std::string const& captureName, std::string const& deviceName);
+    bool addCaptureDevice(void* config, std::string const& captureName = "", std::string const& deviceName = "");
 
     /**
      * @brief Eliminar el dispositivo de captura

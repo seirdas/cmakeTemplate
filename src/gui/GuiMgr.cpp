@@ -831,7 +831,7 @@
 							} else {
 								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 									if (Selectable(entradas[n].c_str())) {
-										ctrl_->addInputDevice("DEFAULT", entradas[n]);         // Inicializa el dispositivo en SoundMgr
+										ctrl_->addInputDevice("", entradas[n]);         // Inicializa el dispositivo en SoundMgr
 										show_device_selector = false;               // Cierra el popup
 									}
 								}
