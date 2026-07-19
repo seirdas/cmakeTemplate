@@ -48,14 +48,39 @@
         // Recupera el puntero a this, así el CallBack puede acceder a los miembros de la clase. 
         AudioInputModule* self = static_cast<AudioInputModule*>(pDevice->pUserData);
 
-        // pInput llega sin tipo y lo convierte a int16_t (formato que se ha configurado ma_format_s16)
+        // Recoge los frames capturados en este callback (samples en frameCount)
         const int16_t* samples = static_cast<const int16_t*>(pInput);
 
+        // Filtrar a las muestras del canal seleccionado (si aplica, osea, si channelSelected=0)
+        bool captureAll = (self->selectedChannel_ == 0);
+        std::vector<int16_t> filteredSamples;
+        unsigned int numSamples = (captureAll) ? frameCount * self->channels_ : frameCount;
+        filteredSamples.reserve(numSamples);
+
+        if (captureAll)
+            // Opción 1: Guarda todos los samples de todos los canales
+            filteredSamples.assign(samples, samples + numSamples);
+        else {
+            // Opción 2: Filtrar un canal específico
+            // Ajustamos el índice: si selecciona 1, restamos 1 para acceder al índice 0
+            int idx = self->selectedChannel_ - 1; 
+            
+            // Protegemos contra índices inválidos
+            if (idx >= 0 && idx < static_cast<int>(self->channels_))
+                for (unsigned int i = 0; i < frameCount; ++i)
+                    filteredSamples.push_back(samples[i * self->channels_ + idx]);
+            else {
+                // Fallback por si fallo, grabar todos los canales
+                SYS_WARN("AudioInputModule","Bad channel selection: capturing all device channels");
+                filteredSamples.assign(samples, samples + numSamples);
+            }
+        }
+
         // 1. NIVEL DE SEÑAL: Procesar frame de muestras de captura (normales) y limpiar buffer cuando se llene
-        self->captureBuffer_.insert(self->captureBuffer_.end(), samples, samples + frameCount * self->channels_);
+        self->captureBuffer_.insert(self->captureBuffer_.end(), filteredSamples.begin(), filteredSamples.end());
 
         // Procesamos solo cuando el buffer acumulado alcance el tamaño deseado
-        ma_uint32 targetSize = self->processBufferSize_ * self->channels_;
+        ma_uint32 targetSize = self->processBufferSize_ * (captureAll ? self->channels_ : 1);
         if (self->captureBuffer_.size() >= targetSize) {
 
             // Variable temporal para almacenar valores
@@ -94,13 +119,14 @@
 
         // 2. GRABACIÓN: Guarda los samples en el buffer de grabación si está grabando. Cada frame tiene una muestra por canal
         if (self->recording_)
-            self->rec_buffer_.insert(self->rec_buffer_.end(), samples, samples + frameCount * self->channels_);
+            self->rec_buffer_.insert(self->rec_buffer_.end(), filteredSamples.begin(), filteredSamples.end());
 
         // 3. CALLBACK: Envío de trama de datos de audio de entrada a "otro sitio" si el callback está definido
         {
             std::lock_guard<std::mutex> lk(self->onFrame_mtx_);
-            if (self->onFrame_ != nullptr)
-                self->onFrame_(samples, frameCount);
+            if (self->onFrame_ != nullptr) {
+                self->onFrame_(filteredSamples.data(), filteredSamples.size());
+            }
         }
     }
 
@@ -125,19 +151,21 @@
 
     AudioInputModule::AudioInputModule(void* ctx, const void* devInfo) :
     pimpl_(std::make_unique<Impl>(ctx, devInfo)),
+    is_valid_(false),
+    initialized_(false),
     channels_(2),
     sampleRate_(48000),
-    processBufferSize_(1024),
+    selectedChannel_(0),
     codec_inited_(false),
     recording_(false),
-    is_valid_(false),
+    max_int16_val_(std::numeric_limits<int16_t>::max()),
+    processBufferSize_(1024),
     smoothedValues_(false),
     attackCoeff_(0),
     releaseCoeff_(0),
-    onFrame_(nullptr),
-    max_int16_val_(std::numeric_limits<int16_t>::max())
+    onFrame_(nullptr)
     {
-        device_ = pimpl_->device_info.name;
+        deviceName_ = pimpl_->device_info.name;
     }
 
     AudioInputModule::~AudioInputModule() {
@@ -155,22 +183,30 @@
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
-        else  // Puede llegar aquí cuando se hace reload()
-            SYS_WARN("AIM","Cannot load config. Using default values.");
 
+        // Fallo si selectedchannels no está dentro de numChannels
+        if (selectedChannel_ > channels_) {
+            SYS_WARN("AudioInputModule","Cannot initialize channel: selected:" 
+                + std::to_string(selectedChannel_) + ", channels: " + std::to_string(channels_));
+            return false;
+        }
+
+        // rellenar los parámetros de la configuración de miniaudio
         deviceConfig.capture.format       = ma_format_s16;
-        deviceConfig.capture.channels     = channels_;
+        deviceConfig.capture.channels     = static_cast<unsigned int>(channels_);
         deviceConfig.sampleRate           = sampleRate_;
         deviceConfig.dataCallback         = Impl::dataCallback_;
         deviceConfig.notificationCallback = Impl::notificationCallback_;
         deviceConfig.pUserData            = this;             
         deviceConfig.capture.pDeviceID    = &pimpl_->device_info.id;
 
+        // Inicializar
         if (ma_device_init(pimpl_->ctx, &deviceConfig, &pimpl_->device) != MA_SUCCESS) {
             SYS_WARN("AudioInputModule","Cannot initialize input device");
             return false;
         }
 
+        // Arrancar
         if (ma_device_start(&pimpl_->device) != MA_SUCCESS){
             SYS_WARN("AudioInputModule","Cannot start input device");
             ma_device_uninit(&pimpl_->device);
@@ -179,7 +215,9 @@
 
         // Llega hasta aquí si se ha inicializado bien
         is_valid_ = true;
-        return true;
+        initialized_ = true;
+
+        return initialized_; //<- true
     }
     
     void AudioInputModule::loadConfig(void* config) {
@@ -198,12 +236,16 @@
         jsonMgr.get_or_set(cfg, "numchannels",          channels_);
         jsonMgr.get_or_set(cfg, "sample_rate",          sampleRate_);
         jsonMgr.get_or_set(cfg, "process_buffer_size",  processBufferSize_);
+        jsonMgr.get_or_set(cfg, "selected_channel",     selectedChannel_);
 
     }
 
     void AudioInputModule::stop() {
 
-        // Si estaba grabando, parar la grabación (no guardamos nada)
+        if (!initialized_)
+            return;
+
+        // Si estaba grabando, parar la grabación (se guarda lo que hubiera)
         if (recording_) {
             SYS_WARN("AudioInputModule","Device stopped while recording.");
             StopRec();
@@ -222,13 +264,93 @@
         // Limpia el callback
         SYS_INFO("AudioInputModule","Clearing onframe callback injected...");
         clearOnFrameCallback();
+
+        initialized_ = false;
     }
 
+    bool AudioInputModule::reload() {
+        // Parar todo si está inicializado
+        if (initialized_)
+            stop();
+
+        // Inicializa tomando los parámetros nuevos para la config (samplerate, channels, etc.)
+        return init();
+    }
 
     // Información y parámetros -------------------------------------------------------------
 
-    std::string AudioInputModule::deviceName() const { 
-        return device_; 
+    std::string AudioInputModule::getDeviceName() const { 
+        return deviceName_; 
+    }
+
+    std::string AudioInputModule::getName() const {
+        return name_;
+    }
+
+    unsigned short AudioInputModule::getNumChannels() const {
+        return channels_;
+    }
+
+    unsigned int AudioInputModule::getSampleRate() const {
+        return sampleRate_;
+    }
+
+    unsigned short AudioInputModule::getSelectedChannel() const {
+        return selectedChannel_;
+    }
+
+    bool AudioInputModule::setDeviceName(std::string const& deviceName) {
+
+        // Obtener el ma_device_info a partir del nombre
+        ma_device_info* selectedDeviceInfo  = nullptr;
+        unsigned int    captureDevCount     = 0;
+        ma_device_info* pCaptureDevInfos   = nullptr;
+
+        // Obtener los dispositivos de captura (simplificado)
+        ma_result res = ma_context_get_devices(pimpl_->ctx,
+            nullptr, nullptr, 
+            &pCaptureDevInfos, &captureDevCount);
+
+        for (unsigned int i = 0; i < captureDevCount; ++i)
+            if (deviceName == pCaptureDevInfos[i].name) {  
+                selectedDeviceInfo = &pCaptureDevInfos[i];
+                break;
+            }
+        // No hace comprobación de duplicados ni inferencia de nombre
+
+        // Si no encuentra ningún nombre salta fallo
+        if(!selectedDeviceInfo){
+            SYS_WARN("SoundMgr", "Failed to found device: '" + deviceName + "'"); 
+            return false; 
+        }
+
+        // Guarda el dispositivo encontrado
+        pimpl_->device_info = *selectedDeviceInfo;
+
+        // Reinicializa (si aplica)
+        return initialized_ ? reload() : true;
+    }
+
+    bool AudioInputModule::setNumChannels(unsigned short numChannels) {
+        channels_ = numChannels;
+        // Reinicializa (si aplica)
+        return initialized_ ? reload() : true;
+    }
+
+    bool AudioInputModule::setSampleRate(unsigned int sampleRate) {
+        sampleRate_ = sampleRate;
+        // Reinicializa (si aplica)
+        return initialized_ ? reload() : true;
+    }
+
+    bool AudioInputModule::setSelectedChannel(unsigned short selectedChannel) {
+        if (selectedChannel > channels_) {
+            SYS_WARN("AudioInputModule","Cannot change channel: selected:" 
+                + std::to_string(selectedChannel) + ", channels: " + std::to_string(channels_));
+                return false;
+        }
+        selectedChannel_ = selectedChannel;
+        return true;
     }
 
     bool AudioInputModule::isValid() {
