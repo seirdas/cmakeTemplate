@@ -117,10 +117,10 @@ void Symetrix::loadConfig(void* config) {
     /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
     // Symetrix::loadConfig(void* config) {...}
 
-    void Symetrix::close() {
+    bool Symetrix::close() {
 
         // Si no está inicializado no hay que destruir nada
-        if (!initialized_) return;
+        if (!initialized_) return true;
         running_ = false;
 
         // Cierra Socket y WSA
@@ -134,7 +134,7 @@ void Symetrix::loadConfig(void* config) {
         }
 
         initialized_ = false;
-        
+        return !initialized_;   // <- true
     }
 
     bool Symetrix::isConnected() const {

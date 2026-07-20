@@ -132,6 +132,11 @@ private:
      */
     std::string getEntity(iComm::iATC::DataTextVoiceCommand^ packet);
 
+    /**
+     * @brief Devuelve el idioma de entidad en función de parámetros del iComm
+     * @return Idioma de entidad
+     */
+    std::string getLanguage(iComm::iATC::DataTextVoiceCommand^ packet);
     
 /************ Variables ********************************************************/
 

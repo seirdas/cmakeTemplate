@@ -266,6 +266,7 @@
 
 		SYS_INFO("GuiMgr", "UI closed.");
 		running_ = false;
+		initialized_ = false;
 
 		return true;
 	}

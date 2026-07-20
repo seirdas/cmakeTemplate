@@ -62,11 +62,7 @@ void TotalMix::loadConfig(void* config) {
     }
 
     TotalMix::~TotalMix() {
-        if (pimpl_->socket != INVALID_SOCKET) {
-            closesocket(pimpl_->socket);
-            pimpl_->socket = INVALID_SOCKET;
-        }
-        WSACleanup();
+        close();
     }
 
     // Ejecución ----------------------------------------------------------------------------
@@ -125,6 +121,18 @@ void TotalMix::loadConfig(void* config) {
 
     /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
     // Symetrix::loadConfig(void* config) {...}
+
+    bool TotalMix::close() {
+
+        if (pimpl_->socket != INVALID_SOCKET) {
+            closesocket(pimpl_->socket);
+            pimpl_->socket = INVALID_SOCKET;
+        }
+        WSACleanup();
+
+        initialized_ = false;
+        return !initialized_;    // <- true
+    }
 
 
     // Control de volumen -------------------------------------------------------------------

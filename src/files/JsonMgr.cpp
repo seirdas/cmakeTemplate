@@ -76,7 +76,7 @@ JsonMgr& JsonMgr::instance() {
             if (itSnap != snapshot_.end() && itSnap->second == cacheContent)
                 continue; 
 
-            SYS_INFO("JsonMgr", "Saving config changes to ..." + filename);
+            SYS_INFO("JsonMgr", "Saving config changes to '" + filename + "'");
             
             // Abrir archivo para escritura
             std::ofstream file(filename, std::ios::out);

@@ -32,8 +32,7 @@ bool CommsCore::init(void* config) {
 
     // #TODO
 
-    // Temp vamos marcando que esto está todo ok (mentira)
-    initialized_ = true;
+    //initialized_ = true;
 
     SYS_WARN("CommsCore","Comms logic not yet implemented");
     return false;
@@ -53,6 +52,13 @@ void CommsCore::loadConfig(void* config) {
     
     // #TODO...
 
+}
+
+bool CommsCore::close() {
+
+
+    initialized_ = false;
+    return !initialized_;   // <- true
 }
 
 

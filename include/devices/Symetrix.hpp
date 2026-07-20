@@ -85,8 +85,9 @@ public:
     /**
      * @brief Cierra y limpia todos los componentes de la clase.
      * @details Esto incluye la liberación de la capa de red WSA de Windows y el socket abierto.
+     * @return @c true Si se cierra correctamente, @c false en caso contrario
      */
-    void close();
+    bool close();
 
     /**
      * @brief Devuelve si la Symetrix está conectada y respondiendo.
