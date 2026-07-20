@@ -116,7 +116,7 @@ bool iCommWrapper::init() {
     iCommMgr->Start();
 
     
-    SYS_INFO("iCommWrapper","Initializing OK");
+    SYS_INFO("iCommWrapper","iComm initializing OK");
     initialized_ = true;
     return initialized_;       // <- true
 }

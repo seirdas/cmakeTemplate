@@ -144,10 +144,10 @@ void FastDDS::loadConfig(void* config) {
         if (config)
             loadConfig(config);
 
-        // Inicialización de DomainParticipantQos, contains all the possible Qos that can be set for a determined participant.
+            
+        // Inicialización de participante (incluye DomainParticipantQos con tipos de QOS)
+        SYS_INFO("FastDDS","Initializing participant (with QOS types)...");
         pimpl_->pqos_.name(pqos_name_);
-
-        // Inicialización de participante 
         pimpl_->participant_ =
             DomainParticipantFactory::get_instance()->create_participant(DOMAIN_ID_, pimpl_->pqos_);
         if (!pimpl_->participant_) {
