@@ -31,24 +31,30 @@
                 "name": "PILOTO",
                 "numchannels": 2,
                 "process_buffer_size": 1024,
-                "sample_rate": 48000
+                "sample_rate": 48000,
+                "selected_channel": 1
             },
             {
-                "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
+                "device": "Monitor",
                 "name": "COPILOTO",
                 "numchannels": 2,
                 "process_buffer_size": 1024,
-                "sample_rate": 48000
+                "sample_rate": 48000,
+                "selected_channel": 2
             },
             {
-                "device": "Micrófono de los auriculares con micrófono (Plantronics Blackwire 3220 Series)",
+                "device": "Monitor",
                 "name": "IOS",
                 "numchannels": 2,
                 "process_buffer_size": 1024,
-                "sample_rate": 48000
+                "sample_rate": 48000,
+                "selected_channel": 0
             }
         ],
-        "Playback": []
+        "Playback": [],
+        "attack_coefficient": 0.5,
+        "release_coefficient": 0.1,
+        "smoothedValues": true
     },
     "symetrix": {
         "ComposerPort": 48631,

@@ -39,7 +39,7 @@ public:
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    bool init(void* config);
+    bool init(void* config = nullptr);
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -56,6 +56,12 @@ public:
      *  Si estaba grabando, deja de grabar y guarda lo grabado.
      */
     void stop();
+
+    /**
+     * @brief Desinicializa y cierra la captura 
+     *  y la vuelve a abrir con los nuevos parámetros
+     */
+    bool reload();
     
     
     // Información y parámetros -------------------------------------------------------------
@@ -64,7 +70,67 @@ public:
      * @brief Devuelve el nombre del dispositivo
      * @return Nombre del dispositivo
      */
-    std::string deviceName() const;
+    std::string getDeviceName() const;
+
+    /**
+     * @brief Obtiene el nombre de este AudioInputModule
+     * @return Nombre de este componente 
+     */
+    std::string getName() const;
+
+    /**
+     * @brief Obtiene el número de canales totales del dispositivo de captura 
+     * @return Número de canales totales del dispositivo de captura
+     */
+    unsigned short getNumChannels() const;
+
+    /**
+     * @brief Obtiene la frecuencia de muestreo de captura 
+     * @return Frecuencia de muestreo
+     */
+    unsigned int getSampleRate() const;
+
+    /**
+     * @brief Obtiene el canal seleccionado
+     * @return Canal seleccionado
+     */
+    unsigned short getSelectedChannel() const;
+
+    /**
+     * @brief Establece un (nuevo) dispositivo de captura
+     *  Si la captura estaba inicializada, cierra y vuelve a inicializar
+     * @details Busca la información del dispositivo de captura (ma_device_info)
+     *  a partir del nombre, fallando si no existe (hace un updateDevices simplificado)
+     * @param deviceName Nuevo nombre de dispositivo
+     * @return @c true Si se ha podido reiniciar correctamente o no ha habido reinicialización
+     *  @c false si ha fallado la reinicialización 
+     */
+    bool setDeviceName(std::string const& deviceName);
+
+    /**
+     * @brief Establece un (nuevo) número de canales
+     *  Si la captura estaba inicializada, cierra y vuelve a inicializar
+     * @param numChannels Nuevo número de canales
+     * @return @c true Si se ha podido reiniciar correctamente o no ha habido reinicialización
+     *  @c false si ha fallado la reinicialización 
+     */
+    bool setNumChannels(unsigned short numChannels);
+
+    /**
+     * @brief Establece una (nueva) frecuencia de muestreo
+     *  Si la captura estaba inicializada, cierra y vuelve a inicializar
+     * @param numChannels Nueva frecuencia de muestreo
+     * @return @c true Si se ha podido reiniciar correctamente o no ha habido reinicialización
+     *  @c false si ha fallado la reinicialización 
+     */
+    bool setSampleRate(unsigned int sampleRate);
+
+    /**
+     * @brief Establece el canal seleccionado 
+     * @param selectedChannel Canal seleccionado
+     * @param @c false si el canal seleccionado > canales disponibles, @c true si se puede seleccionar
+     */
+    bool setSelectedChannel(unsigned short selectedChannel);
 
     /**
      * @brief Indica si el dispositivo está activo o se ha desconectado
@@ -114,6 +180,7 @@ public:
      */
     void clearOnFrameCallback();
 
+
     // Grabación ----------------------------------------------------------------------------
 
     /**
@@ -143,6 +210,27 @@ public:
     bool isRecording();
 
 
+    // Parámetros de suavizado de valores ---------------------------------------------------
+
+    /**
+     * @brief Activa/Desactiva los valores suavizados
+     * @param value @c true para activar los valores suavizados, @c false para desactivar
+     */
+    void set_SmoothedValues(bool value);
+
+    /**
+     * @brief Set the SmoothAttackCoeff object
+     * @param value Valor de ataque (+grande = subida lenta)
+     */
+    void set_SmoothAttackCoeff(float value);
+
+    /**
+     * @brief Set the SmoothReleaseCoeff object
+     * @param value Valor de release (+grande = bajada lenta)
+     */
+    void set_SmoothReleaseCoeff(float value);
+
+
 private:
 
     // Codificador de grabación -------------------------------------------------------------
@@ -166,6 +254,19 @@ private:
      */
     void saveRecording();
 
+    // Suavizado de niveles -----------------------------------------------------------------
+
+    /**
+     * @brief Calcula un valor suavizado respecto a su valor anterior
+     * @param rawValue Valor "crudo" obtenido
+     * @param previousValue Valor anterior
+     * @param attackCoeff Coeficiente de "attack"
+     * @param releaseCoeff Coeficiente de "release"
+     * @return Valor suavizado
+     */
+    float smoothLevel(float rawValue, float const& previousValue, 
+                       float attackCoeff = 0, float releaseCoeff = 0);
+
 
 
 /************ Variables ********************************************************/
@@ -177,11 +278,13 @@ private:
 // Inicialización y ejecución
     std::string             name_;                ///< Nombre asociado al dispositivo de captura
     bool                    is_valid_;            ///< Bandera para indicar si está inicializado el dispositivo
+    bool                    initialized_;         ///< Bandera para indicar inicialización exitosa
 
 // Configuración de entrada
-    unsigned int            channels_;            ///< Canales del audio
+    unsigned short          channels_;            ///< Canales del audio
     unsigned int            sampleRate_;          ///< Frecuencia de muestreo
-    std::string             device_;              ///< Nombre del dispositivo de captura
+    std::string             deviceName_;          ///< Nombre del dispositivo de captura
+    unsigned short          selectedChannel_;     ///< Número de canal seleccionado. Si es 0, usa todos los canales
 
 // Grabación 
     std::vector<int16_t>    rec_buffer_;          ///< Buffer que acumula las muestras de audio capturadas para grabación (formato s16)
@@ -195,6 +298,11 @@ private:
     std::atomic<float>      peakLevel_;           ///< Nivel de pico (solo cuando usePeak_ == true)
     std::vector<int16_t>    captureBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)
     unsigned int            processBufferSize_;   ///< frames por bloque de proceso
+    
+    // Suavizado de valores
+    bool                    smoothedValues_;      ///< Suaviza los valores de captura (RMS, Peak...)
+    float                   attackCoeff_;         ///< Valor de ataque (+grande = subida lenta)
+    float                   releaseCoeff_;        ///< Valor de release (+grande = bajada lenta)
 
 // Función inyectada
     AudioCallback           onFrame_;             ///< Almacena la función de callback registrada externamente
