@@ -194,6 +194,13 @@ bool AudioPlaybackModule::isPlaying(SoundID id) const
     return ma_sound_is_playing(&it->second->sound);
 }
 
+bool AudioPlaybackModule::isBusy() const {
+    std::lock_guard<std::mutex> lock(mutex_); 
+    for (auto& [id, inst] : sounds_) //recorre el ID del sonido y si ha terminado de sonar o no de todos los sonidos
+        if (!inst->finished) // si no encuentra ningun playback reproduciendose es que estan todos libres 
+            return true; // si recorre todos y hay alguno sonando devuelve true 
+    return false; // si recorre todos y no hay ninguno sonando devuelve false
+}
 
 std::string AudioPlaybackModule::deviceName() const {
     return device_info_.name;

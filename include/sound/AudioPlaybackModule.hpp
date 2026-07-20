@@ -115,6 +115,12 @@ public:
     bool isPlaying(SoundID id) const;
 
     /**
+    * @brief Comprueba si el módulo tiene algún sonido activo reproduciéndose.
+    * @return true si hay al menos un sonido sin terminar (ocupado), false si está libre.
+    */
+    bool isBusy() const; 
+    
+    /**
      * @brief Devuelve el nombre del dispositivo de audio.
      * @return Nombre del dispositivo.
      */

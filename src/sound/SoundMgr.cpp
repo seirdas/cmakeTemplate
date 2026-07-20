@@ -96,7 +96,8 @@
         }
 
         /* PLAYBACKS */
-        // #TODO
+        initTonePools(jsonMgr.getSubNode(cfg, "Playback"));
+
     }
 
     bool SoundMgr::stop() {
@@ -316,6 +317,69 @@
         SYS_INFO("SoundMgr", "Deleted Capture Device.");
         return true;
     }
+
+    int SoundMgr::initTonePools(void* config){
+
+    JsonMgr& jsonMgr = JsonMgr::instance();
+
+    if (!config) {
+        SYS_WARN("SoundMgr","Tones error");
+        return 0;   
+    }
+    // Si no ha llegado nada (json nulo), avisa con un warning y sale sin hacer nada más.
+
+    json* cfg = static_cast<json*>(config);
+
+    tonePools_.clear();
+    // Vacía el mapa de pools de antes, por si esta función se llama más de una vez.
+
+    int totalRegistered = 0;
+    // Contador de cuántos playbacks se han conseguido abrir en total, sumando los 3 grupos.
+
+    for (std::string const& poolName : {"dynamic", "morse", "radio"}) {
+        // Repite todo lo de dentro 3 veces, una por cada nombre de grupo.
+
+        json* poolCfg = jsonMgr.getSubNode(cfg, poolName);
+        // Coge el sub-trozo de json de ESTE grupo (dynamic/morse/radio), lo crea vacío si no existe.
+
+        std::string device = "Dante";
+        unsigned short firstChannel = 1;
+        unsigned short lastChannel  = 1;
+        // Variables locales con valores por defecto, por si el json aún no tiene estos campos.
+
+        jsonMgr.get_or_set(poolCfg, "device",        device);
+        jsonMgr.get_or_set(poolCfg, "first_channel", firstChannel);
+        jsonMgr.get_or_set(poolCfg, "last_channel",  lastChannel);
+        // Lee cada campo del json a la variable; si no existe, lo crea en el json con el valor por defecto.
+
+        std::vector<std::string> playbackNames;
+        // Lista donde se guardarán los nombres de los dispositivos que se consigan abrir en este grupo.
+
+        for (unsigned short ch = firstChannel; ch <= lastChannel; ch += 2) {
+            // Recorre el rango de canales de 2 en 2 (cada par Dante ocupa 2 canales seguidos).
+
+            std::string deviceName = device + " (" + std::to_string(ch) + "+" + std::to_string(ch + 1) + ")";
+            // Construye el nombre real del dispositivo, p.ej. "Dante (1+2)".
+
+            if (addPlaybackDevice(deviceName, "")) {
+                // Intenta abrir de verdad ese dispositivo. Si lo consigue:
+                playbackNames.push_back(deviceName);
+                // Lo añade a la lista de este grupo.
+                totalRegistered++;
+                // Suma 1 al contador total.
+            } else
+                SYS_WARN("SoundMgr", "initTonePools: Cannot register '" + deviceName + "' (" + poolName + ")");
+                // Si no se pudo abrir, avisa con un warning (pero sigue con el siguiente canal, no aborta todo).
+        }
+
+        tonePools_[poolName] = std::move(playbackNames);
+        // Guarda la lista de este grupo en el mapa general, bajo la clave "dynamic"/"morse"/"radio".
+    }
+
+    return totalRegistered;
+    // Devuelve cuántos se registraron en total, de los 3 grupos juntos.
+}
+
 
     // Ejecución y datos en dispositivos de captura -----------------------------------------
 

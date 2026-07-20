@@ -175,6 +175,14 @@ public:
 
     bool removePlaybackDevice(std::string const& name);
 
+    /**
+    * @brief Registra los playbacks Dante de cada grupo de tonos (dynamic/morse/radio) según el JSON.
+     * @param playbackConfig Puntero al sub-nodo "Playback" del JSON, con la configuración de cada grupo.
+    */
+    int initTonePools(void* playbackConfig);
+
+
+
 // Ejecución y datos de playbacks -------------------------------------------------------
 
     bool playbackTest();
@@ -199,6 +207,9 @@ private:
 // Módulos de audio
     CapturesList            captures_;              ///< Vector con dispositivos inicializados de captura
     PlaybacksList           playbacks_;             ///< Vector con dispositivos inicializados de playback
+    
+    std::unordered_map<std::string, std::vector<std::string>> tonePools_;  ///< Pools de tonos: nombre del grupo -> lista de playbacks Dante asignados
+
 
 // Parámetros de los módulos capture/playbacks
     bool                    smoothedValues_;        ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
