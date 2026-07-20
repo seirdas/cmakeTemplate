@@ -1,136 +1,76 @@
 #pragma once
 
+#include <memory>
+#include <string>
 
-// Encapsulamiento temporal para que vaya compilando de momento mientras se implementa bien
-#if defined FASTDDS || defined FASTDDS_VERSION
+// Temporal mientras la implementación esté en el hpp:
 
-    #include <fastdds/dds/domain/DomainParticipantFactory.hpp>
-    #include <fastdds/dds/domain/DomainParticipant.hpp>
-    #include <fastdds/dds/topic/Topic.hpp>
-    #include <fastdds/dds/topic/TypeSupport.hpp>
-    #include <fastdds/dds/publisher/Publisher.hpp>
-    #include <fastdds/dds/publisher/DataWriter.hpp>
-    #include <fastdds/dds/subscriber/Subscriber.hpp>
-    #include <fastdds/dds/subscriber/DataReader.hpp>
-    #include <fastdds/dds/subscriber/DataReaderListener.hpp>
-    #include <fastdds/dds/subscriber/SampleInfo.hpp>
-    #include <fastdds/dds/core/status/StatusMask.hpp>
-
-    #include "fastdds_generated/_ALL.hpp"
-
-    // Preparado para implementar la herencia en el stub
-    #ifndef FASTDDS
-        namespace eprosima { namespace fastdds { namespace dds { class DataReader; } } }
-    #endif
-
-    template<typename MsgT>
-    class ReaderListenerT : public eprosima::fastdds::dds::DataReaderListener
-    {
-    public:
-        using OnMsgFn = std::function<void(const MsgT&)>;
-    
-        explicit ReaderListenerT(OnMsgFn cb)
-            : cb_(std::move(cb))
-        {
-        }
-    
-        void on_data_available(eprosima::fastdds::dds::DataReader* reader) override
-        {
-            MsgT msg;
-            eprosima::fastdds::dds::SampleInfo info;
-    
-            while (reader->take_next_sample(&msg, &info) ==
-                eprosima::fastdds::dds::RETCODE_OK)
-            {
-                if (info.valid_data)
-                {
-                    cb_(msg);
-                }
-            }
-        }
-    
-    private:
-        OnMsgFn cb_;
-    };
-
-    class FastDDS {
-
-    // General ------------------------------------------------------------------------------
-
-        /**
-         * @brief Constructor estándar
-         */
-        FastDDS();
-
-        /**
-         * @brief Destructor estándar
-         */
-        ~FastDDS();
-
-    
-        void Inicializa_DDS();
-        void writeCBSystems1();
-    
-    private:
-        void onCBSystems1InReceived(const CABINA_IDL::st_CircuitBreakersSystems1& msg);
-        void onBreakerChangeInReceived(const CABINA_IDL::st_BreakerChangeEvent& msg);
-        void onAvionicsSwInReceived(const CABINA_IDL::st_AvionicsSwitchesIn& msg);
-        void onSystemTestResetInReceived(const CABINA_IDL::st_SystemTestResetIn& msg);
-    
-    private:
-        eprosima::fastdds::dds::DomainParticipant* participant_ = nullptr;
-        eprosima::fastdds::dds::Subscriber* subscriber_ = nullptr;
-        eprosima::fastdds::dds::Publisher* publisher_ = nullptr;
-    
-        eprosima::fastdds::dds::Topic* topicCBSystems1In_ = nullptr;
-        eprosima::fastdds::dds::Topic* topicCBSystems1Out_ = nullptr;
-        eprosima::fastdds::dds::Topic* topicBreakerChangeIn_ = nullptr;
-        eprosima::fastdds::dds::Topic* topicAvionicsSwIn_ = nullptr;
-        eprosima::fastdds::dds::Topic* topicSystemTestResetIn_ = nullptr;
-    
-        eprosima::fastdds::dds::DataReader* CBSystems1Reader = nullptr;
-        eprosima::fastdds::dds::DataReader* BreakerChangeReader = nullptr;
-        eprosima::fastdds::dds::DataReader* AvionicsSwReader = nullptr;
-        eprosima::fastdds::dds::DataReader* SystemTestResetReader = nullptr;
-
-        eprosima::fastdds::dds::DataWriter* CBSystems1Writer = nullptr;
-    
-        eprosima::fastdds::dds::TypeSupport CBSystems1Type;
-        eprosima::fastdds::dds::TypeSupport BreakerChangeType;
-        eprosima::fastdds::dds::TypeSupport AvionicsSwType;
-        eprosima::fastdds::dds::TypeSupport SystemTestResetType;
-        eprosima::fastdds::dds::TypeSupport CBSystems1Type_Out;
-    
-        using CBSystems1Listener = ReaderListenerT<CABINA_IDL::st_CircuitBreakersSystems1>;
-        using BreakerChangeListener = ReaderListenerT<CABINA_IDL::st_BreakerChangeEvent>;
-        using AvionicsSwListener = ReaderListenerT<CABINA_IDL::st_AvionicsSwitchesIn>;
-        using SystemTestResetListener = ReaderListenerT<CABINA_IDL::st_SystemTestResetIn>;
-    
-        std::unique_ptr<CBSystems1Listener> cbSystems1Listener;
-        std::unique_ptr<BreakerChangeListener> breakerChangeListener;
-        std::unique_ptr<AvionicsSwListener> avionicsSwListener;
-        std::unique_ptr<SystemTestResetListener> systemTestResetListener;
-    };
-
-
-#else
-// ============================================================
-//  (Stubs)
-// ============================================================
 
 class FastDDS {
 
-    // General ------------------------------------------------------------------------------
+public:
 
-        /**
-         * @brief Constructor estándar
-         */
-        FastDDS();
+// General ------------------------------------------------------------------------------
 
-        /**
-         * @brief Destructor estándar
-         */
-        ~FastDDS();
+    /**
+     * @brief Constructor estándar
+     */
+    FastDDS();
+
+    /**
+     * @brief Destructor estándar
+     */
+    ~FastDDS();
+
+    // Deshabilitamos copia para evitar problemas con la gestión de recursos DDS
+    FastDDS(const FastDDS&) = delete;
+    FastDDS& operator=(const FastDDS&) = delete;
+
+    // Permitimos movimiento (Move semantics)
+    FastDDS(FastDDS&&) noexcept;
+    FastDDS& operator=(FastDDS&&) noexcept;
+
+
+// Inicialización y ejecución ----------------------------------------------------------------------------
+
+    /**
+     * @brief Inicialización del servidor FastDDS.
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
+     */
+    bool init(void* config);
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
+
+
+private:
+
+/************ Variables ****************************************************************/
+
+// Pointer to implementation (PIMPL) para quitar includes del header
+    struct Impl;                                    ///< Declaración de estructura PIMPL para no depender de la librería en el header
+    std::unique_ptr<Impl>       pimpl_;             ///< Miembros dependientes de la librería externa
+
+// Inicialización
+    bool                        initialized_;       ///< Bandera para indicar inicialización exitosa
+
+
+// Datos de fastdds
+    unsigned int                DOMAIN_ID_;
+    std::string                 pqos_name_;
+
 };
-
-#endif

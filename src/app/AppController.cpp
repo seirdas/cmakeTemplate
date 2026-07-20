@@ -10,6 +10,7 @@
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
 #include "comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
 #include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
+#include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
 
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
@@ -31,7 +32,8 @@ AppController::AppController() :
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     voip_(std::make_unique<VoIPMgr>()),
-    com_(std::make_unique<CommsCore>())
+    com_(std::make_unique<CommsCore>()),
+    dds_(std::make_unique<FastDDS>())
 {
 
 }
@@ -145,9 +147,19 @@ bool AppController::init(int argc, char** argv) {
     if(!com_->init(config_node))
         SYS_WARN("AppController","Comms logic FAIL");
     else SYS_INFO("AppController","Comms logic OK");
+
     
+    // Inicialización FastDDS
+    SYS_INFO("AppController","FastDDS server loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"fastdds");
+    if(!dds_->init(config_node))
+        SYS_WARN("AppController","FastDDS server FAIL");
+    else SYS_INFO("AppController","FastDDS server OK");
+    
+
     // Activar running para los hilos
     running_ = true;
+
 
     // Hilo consumidor de paquetes online
     SYS_INFO("AppController","Starting net consumer thread...");

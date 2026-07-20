@@ -17,6 +17,7 @@ class TotalMix;
 class Symetrix;
 class VoIPMgr;
 class CommsCore;
+class FastDDS;
 
 /**
   *  @class AppController
@@ -273,6 +274,7 @@ private:
     std::unique_ptr<Symetrix>    sym_;          ///< Gestor módulo Symetrix
     std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay
     std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
+    std::unique_ptr<FastDDS>     dds_;          ///< Gestor DDS (FastDDS)
 
 // Gestión de hilos
     std::thread             hilo_test_;         ///< Hilo de pruebas
