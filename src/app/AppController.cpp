@@ -53,13 +53,37 @@ AppController::~AppController() {
     if (hilo_test_.joinable())
         hilo_test_.join();
 
-    // Cerrar módulos (opcional, recomendado)
-    gui_->close();
-    snd_->stop();
-    tts_->close();
-    //tmx_->close();       // #TODO
-    sym_->close();
-    dds_->close();
+
+    /* Cerrar módulos (opcional, recomendado) */
+
+    if (gui_->isInitialized()) {
+        SYS_INFO("AppController","Closing GUI subsystem...");
+        gui_->close();
+    }
+
+    if (snd_->isInitialized()) {
+        SYS_INFO("AppController","Closing sound subsystem...");
+        snd_->stop();
+    }
+
+    if (tts_->isInitialized()) {
+        SYS_INFO("AppController","Closing tts manager...");
+        tts_->close();
+    }
+    
+    // #TODO
+    //SYS_INFO("AppController","Closing Totalmix subsystem...");
+    //tmx_->close();
+
+    if (sym_->isInitialized()) {
+        SYS_INFO("AppController","Closing Symetrix manager...");
+        sym_->close();
+    }
+
+    if (dds_->isInitialized()) {
+        SYS_INFO("AppController","Closing FastDDS manager...");
+        dds_->close();
+    }
 
     SYS_INFO("AppController","AppController closed successfuly.");
 }
