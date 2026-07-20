@@ -4,6 +4,7 @@
 #include "files/JsonMgr.hpp"
 #include "sound/SoundMgr.hpp"
 #include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommWrapper
+#include "system/SystemMgr.hpp"
 
 #include <mutex>
 #include <condition_variable>
