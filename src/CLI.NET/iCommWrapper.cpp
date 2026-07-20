@@ -210,7 +210,7 @@ void iCommWrapper::OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetD
 	data.entityID   = packet->SenderRadioID;
 	data.entityName = getEntity(packet);        // Sustituye al cálculo de la voz
     data.texto      = converter.to_bytes(msclr::interop::marshal_as<std::wstring>(packet->VoiceText));
-    data.lang       = "en-US";      // Inglés americano por defecto
+    data.lang       = getLanguage(packet);
 
     SYS_WARN("iCommWrapper","OnReceived_TextVoiceCommand not implemented");
 	//tts_->play(data);
@@ -222,17 +222,8 @@ void iCommWrapper::OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetD
 std::string iCommWrapper::getEntity(iComm::iATC::DataTextVoiceCommand^ packet) {
     
     // debería ser una voz de mujer (podría ser la misma siempre)
-    if (packet->NetCreator->ConnectionConfigData->LocalID == ATIS_ID_) {
-        switch (packet->Language) {
-            case iComm::iATC::Identifiers::Language::CHINESE:
-                return "ATIS_CHINESE";
-            case iComm::iATC::Identifiers::Language::ENGLISH:
-                return "ATIS_ENGLISH";
-            case iComm::iATC::Identifiers::Language::SPANISH:
-                return "ATIS_SPANISH";
-        }
-    }
-
+    if (packet->NetCreator->ConnectionConfigData->LocalID == ATIS_ID_)
+        return "ATIS";
 
     if (packet->NetCreator->ConnectionConfigData->LocalID == ATC_ID_) {
         if (packet->Sender == iComm::iATC::Identifiers::SenderReceiverType::IA_PILOT)
@@ -250,4 +241,19 @@ std::string iCommWrapper::getEntity(iComm::iATC::DataTextVoiceCommand^ packet) {
     }
 
     return "OTHER";		// voz por defecto si no se cumplen las condiciones anteriores
+}
+
+std::string iCommWrapper::getLanguage(iComm::iATC::DataTextVoiceCommand^ packet) {
+    switch (packet->Language) {
+        case iComm::iATC::Identifiers::Language::ENGLISH:
+            return "en";
+        // case iComm::iATC::Identifiers::Language::ENGLISH_GB:
+        //     return "en_GB";
+        // case iComm::iATC::Identifiers::Language::ENGLISH_USA:
+        //     return "en_US";
+        case iComm::iATC::Identifiers::Language::SPANISH:
+            return "es";
+        default:
+            return "en";       // Inglés por defecto
+    }
 }
