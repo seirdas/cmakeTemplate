@@ -52,6 +52,12 @@ public:
     */
     void loadConfig(void* config);
 
+    /**
+     * @brief Cierra la lógica de comunicaciones
+     * @return @c true Si se cierra correctamente, @c false en caso contrario
+     */
+    bool close();
+
 
 // Ejecución ----------------------------------------------------------------------------
 

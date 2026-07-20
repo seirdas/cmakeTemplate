@@ -19,5 +19,4 @@ int main(int argc, char** argv) {
         SYS_ERROR("main", "The application could not be initialized.\nThe program cannot continue and will now close.");
         return -1;
     }
-    SYS_INFO("main","Bye!");
 }

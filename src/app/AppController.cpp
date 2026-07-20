@@ -43,17 +43,6 @@ AppController::~AppController() {
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
 
-    // Cerrar socket y worker esperando paquetes de red
-    net_->close();
-    online_cv_.notify_all();
-    SYS_INFO("AppController","Waiting for running threads...");
-    if (hilo_consumer_.joinable())
-        hilo_consumer_.join();
-
-    if (hilo_test_.joinable())
-        hilo_test_.join();
-
-
     /* Cerrar módulos (opcional, recomendado) */
 
     if (gui_->isInitialized()) {
@@ -61,29 +50,51 @@ AppController::~AppController() {
         gui_->close();
     }
 
+    if(net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
+        SYS_INFO("AppController","Closing GUI subsystem...");
+        net_->close();
+    }
+
     if (snd_->isInitialized()) {
         SYS_INFO("AppController","Closing sound subsystem...");
         snd_->stop();
     }
-
-    if (tts_->isInitialized()) {
-        SYS_INFO("AppController","Closing tts manager...");
-        tts_->close();
-    }
     
-    // #TODO
-    //SYS_INFO("AppController","Closing Totalmix subsystem...");
-    //tmx_->close();
+    if (tmx_->isInitialized()) {
+        SYS_INFO("AppController","Closing Totalmix subsystem...");
+        tmx_->close();
+    }
 
     if (sym_->isInitialized()) {
         SYS_INFO("AppController","Closing Symetrix manager...");
         sym_->close();
     }
 
+    if (com_->isInitialized()) {
+        SYS_INFO("AppController","Closing Comms logic module...");
+        com_->close();
+    }
+
     if (dds_->isInitialized()) {
         SYS_INFO("AppController","Closing FastDDS manager...");
         dds_->close();
     }
+
+    if (tts_->isInitialized()) {
+        SYS_INFO("AppController","Closing tts manager...");
+        tts_->close();
+    }
+
+    
+    // Cerrar hilos pendientes de aplicación
+    SYS_INFO("AppController","Waiting for running threads...");
+    online_cv_.notify_all();
+    if (hilo_consumer_.joinable())
+        hilo_consumer_.join();
+
+    if (hilo_test_.joinable())
+        hilo_test_.join();
+
 
     SYS_INFO("AppController","AppController closed successfuly.");
 }
@@ -159,11 +170,11 @@ bool AppController::init(int argc, char** argv) {
 
     
     // Inicialización lógica Comms
-    SYS_INFO("AppController","Comms logic loading...");
+    SYS_INFO("AppController","Comms logic module loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"comms");
     if(!com_->init(config_node))
-        SYS_WARN("AppController","Comms logic FAIL");
-    else SYS_INFO("AppController","Comms logic OK");
+        SYS_WARN("AppController","Comms logic module FAIL");
+    else SYS_INFO("AppController","Comms logic module OK");
 
     
     // Inicialización FastDDS
