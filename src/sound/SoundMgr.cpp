@@ -444,6 +444,18 @@
         return pb;
     }
 
+        bool SoundMgr::isOnManagedPlaybacks(std::string const& playbackName) const {
+        // Si no está inicializado no se puede hacer nada
+        if (!initialized_) return {};
+
+        // Recorre todos los dispositivos de playback 
+        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i)
+            if (pimpl_->pPlaybackDevInfos_[i].name == playbackName)
+                return true;
+
+        /*else*/ return false;
+    }
+
     std::string SoundMgr::getDefaultPlaybackDevice() const {
         // Si no está inicializado no se puede hacer nada
         if (!initialized_) return {};

@@ -69,12 +69,14 @@ public:
 // Dispositivos de captura --------------------------------------------------------------
 
     /**
-     * @brief Devuelve una lista con los nombres de todos los micrófonos disponibles
+     * @brief Devuelve una lista con los nombres de todos 
+     *  los dispositivos de entrada disponibles
      */
     std::vector<std::string> getAvailableInputs() const;
 
     /**
-     * @brief Devuelve una lista con los nombres de todos las capturas agregadas
+     * @brief Devuelve una lista con los nombres de todas
+     *  las capturas agregadas
      */
     std::vector<std::string> getManagedCaptures() const;
 
@@ -151,9 +153,25 @@ public:
 
 // Gestión de dispositivos playbacks ----------------------------------------------------
 
+    /**
+     * @brief Devuelve una lista con los nombres de todos 
+     *  los dispositivos de reproducción disponibles
+     */
     std::vector<std::string> getAvailablePlaybacks() const;
 
+    /**
+     * @brief Devuelve una lista con los nombres de todas 
+     *  los playbacks agregados
+     */
     std::vector<std::string> getManagedPlaybacks() const;
+
+    /**
+     * @brief Devuelve si un dispositivo de playback pasado por parámetro
+     *  está siendo gestionado
+     * @param captureName Nombre del dispositivo
+     * @return @c true Si está siendo gestionado, @c false en caso contrario
+     */
+    bool isOnManagedPlaybacks(std::string const& captureName) const;
 
     std::string getDefaultPlaybackDevice() const;
 
