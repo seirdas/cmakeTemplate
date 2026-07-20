@@ -56,6 +56,12 @@ public:
     */
     void loadConfig(void* config);
 
+    /**
+     * @brief Cierra y limpia todos los componentes de la clase.
+     * @details Esto incluye los datos PIMPL: Participant, publisher, subscriber, etc. 
+     */
+    void close();
+
 
 private:
 

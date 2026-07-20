@@ -48,10 +48,22 @@ void FastDDS::loadConfig(void* config) {
     // Implementación de miembros dependientes de fastdds (pimpl_)
     struct FastDDS::Impl {
 
-        DomainParticipant*      participant;
-        Subscriber*             subscriber;
-        Publisher*              publisher;
-        DomainParticipantQos    pqos;
+        /*
+         * DomainParticipant (Crea la conexión al dominio de red)
+         * ├── Publisher (Lado que envía)
+         * │     └── DataWriter (Escribe datos en un Topic específico)
+         * │
+         * └── Subscriber (Lado que recibe)
+         *         └── DataReader (Lee datos de un Topic específico)
+        */
+
+        bool                    initialized_;        ///< Bandera que indica inicialización exitosa (pimpl)
+
+        DomainParticipant*      participant_;        ///< Nodo principal de la red en un dominio determinado
+        Publisher*              publisher_;          ///< Gestor del lado emisor
+        Subscriber*             subscriber_;         ///< Receptor de un topic específico
+        DomainParticipantQos    pqos_;
+
 
         /**
          * @brief Constructor de Impl
@@ -59,16 +71,57 @@ void FastDDS::loadConfig(void* config) {
          *  e inicializa las variables miembro de Impl
          */
         Impl();
+
+        /**
+         * @brief Destructor de Impl
+         * @details Libera la memoria creada y los recursos asociados
+         *  a las instancias de las clases de FastDDS
+         */
+        ~Impl();
+
+        /**
+         * @brief Método auxiliar para liberar recursos
+         */
+        void close();
     };
 
     // Implementación de métodos PIMPL ------------------------------------------------------
     
     FastDDS::Impl::Impl() :
-        participant(nullptr),
-        subscriber(nullptr),
-        publisher(nullptr)
+        participant_(nullptr),
+        subscriber_(nullptr),
+        publisher_(nullptr)
     {
-        
+        initialized_ = true;
+    }
+
+    FastDDS::Impl::~Impl() {
+        close();
+    }
+
+    void FastDDS::Impl::close() {
+        if (!initialized_) return;
+
+        if (participant_) {
+
+            // Borra el publisher del participant (si aplica)
+            if (publisher_) {
+                SYS_INFO("FastDDS","Deleting publisher...");
+                participant_->delete_publisher(publisher_);
+            }
+
+            // Borra el subscriber del participant (si aplica)
+            if (subscriber_) {
+                SYS_INFO("FastDDS","Deleting subscriber...");
+                participant_->delete_subscriber(subscriber_);
+            }
+
+            // Borra el participante
+            SYS_INFO("FastDDS","Deleting participant...");
+            DomainParticipantFactory::get_instance()->delete_participant(participant_);
+        }
+
+        initialized_ = false;
     }
 
 
@@ -79,7 +132,7 @@ void FastDDS::loadConfig(void* config) {
     // FastDDS::FastDDS() {...}
 
     FastDDS::~FastDDS() {
-
+        close();
     }
 
 
@@ -92,15 +145,18 @@ void FastDDS::loadConfig(void* config) {
             loadConfig(config);
 
         // Inicialización de DomainParticipantQos, contains all the possible Qos that can be set for a determined participant.
-        pimpl_->pqos.name(pqos_name_);
+        pimpl_->pqos_.name(pqos_name_);
 
         // Inicialización de participante 
-        pimpl_->participant =
-            DomainParticipantFactory::get_instance()->create_participant(DOMAIN_ID_, pimpl_->pqos);
-        if (!pimpl_->participant) {
+        pimpl_->participant_ =
+            DomainParticipantFactory::get_instance()->create_participant(DOMAIN_ID_, pimpl_->pqos_);
+        if (!pimpl_->participant_) {
             SYS_WARN("FastDDS","Cannot initialize participant");
             return false;
         }
+
+        /* Demás implementación de fastdds...*/
+        // #TODO
 
 
         initialized_ = true;
@@ -115,6 +171,15 @@ void FastDDS::loadConfig(void* config) {
     /* Movido fuera del encapsulado, común en cualquier caso */
     // Symetrix::loadConfig(void* config) {...}
 
+    void FastDDS::close() {
+
+        if (!initialized_) return;
+
+        SYS_INFO("FastDDS","Closing domain members...");
+        pimpl_->close();
+
+        initialized_ = false;
+    }
 
 
 #else
@@ -141,5 +206,7 @@ bool FastDDS::isInitialized() const    { return false; }
 
 /* Movido fuera del encapsulado, común en cualquier caso */
 // Symetrix::loadConfig(void* config) {...}
+
+void FastDDS::close()                   { return; }
 
 #endif

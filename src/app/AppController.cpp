@@ -59,6 +59,7 @@ AppController::~AppController() {
     tts_->close();
     //tmx_->close();       // #TODO
     sym_->close();
+    dds_->close();
 
     SYS_INFO("AppController","AppController closed successfuly.");
 }
@@ -133,14 +134,6 @@ bool AppController::init(int argc, char** argv) {
     else SYS_INFO("AppController","Symetrix manager OK");
 
     
-    // Inicialización de TTS
-    SYS_INFO("AppController","TTS manager loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"tts");
-    if(!tts_->init(config_node))
-        SYS_WARN("AppController","TTS manager FAIL");
-    else SYS_INFO("AppController","TTS manager OK");
-
-    
     // Inicialización lógica Comms
     SYS_INFO("AppController","Comms logic loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"comms");
@@ -155,6 +148,14 @@ bool AppController::init(int argc, char** argv) {
     if(!dds_->init(config_node))
         SYS_WARN("AppController","FastDDS server FAIL");
     else SYS_INFO("AppController","FastDDS server OK");
+
+    
+    // Inicialización de TTS (al final para que no se mezcle en el log)
+    SYS_INFO("AppController","TTS manager loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"tts");
+    if(!tts_->init(config_node))
+        SYS_WARN("AppController","TTS manager FAIL");
+    else SYS_INFO("AppController","TTS manager OK");
     
 
     // Activar running para los hilos
