@@ -18,7 +18,7 @@ if(NOT FASTDDSGEN_JAVA)
     message(FATAL_ERROR "[FastDDS] fastddsgen not found.")
 endif()
 
-# Dependencia openSSL (hay que instalarla previamente, y definir la ruta)
+# Dependencia openSSL (hay que instalarla previamente, borrar cmake caché, y definir la ruta)
 # https://slproweb.com/products/Win32OpenSSL.html
 set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
 find_package(OpenSSL REQUIRED)
