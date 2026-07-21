@@ -18,7 +18,7 @@ bool AudioPlaybackModule::start()
     if (running_)
         return true;
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
     // Inicializar el dispositivo de reproducción
     ma_engine_config config = ma_engine_config_init();
@@ -38,7 +38,7 @@ void AudioPlaybackModule::stop()
     if (!running_)
         return;
     
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
     // Limpiar instancias activas
     for (auto& [id, inst] : sounds_) {
@@ -62,7 +62,7 @@ bool AudioPlaybackModule::preload(const std::string& filepath)
     if (!running_)
         return false;
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
     // Comprobar si ya está precargado
     if (cache_.count(filepath))
@@ -87,17 +87,18 @@ bool AudioPlaybackModule::preload(const std::string& filepath)
     return true;
 }
 
-SoundID AudioPlaybackModule::play(const std::string& filepath,
-                                  float volume,
-                                  float pitch,
-                                  LoopMode loop)
+unsigned long long AudioPlaybackModule::play(const std::string& filepath,
+    unsigned short volume,
+    bool loop,
+    bool forceStop,
+    unsigned short pitch)
 {
     cleanupFinished();
 
     if (!running_)
         return 0;
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
 
     auto inst = std::make_unique<SoundInstance>();
@@ -127,15 +128,15 @@ SoundID AudioPlaybackModule::play(const std::string& filepath,
     if (res != MA_SUCCESS)
         return 0;
 
-    ma_sound_set_volume(&inst->sound, volume);
+    ma_sound_set_volume(&inst->sound, volume/100);
     ma_sound_set_pitch(&inst->sound, pitch);
 
-    if (loop == LoopMode::LOOP)
+    if (loop)
         ma_sound_set_looping(&inst->sound, MA_TRUE);
 
     inst->loopMode = loop;
 
-    SoundID id = idCounter_++;
+    unsigned long long id = idCounter_++;
 
     ma_sound_set_end_callback(&inst->sound, endCallback, this);
     ma_sound_start(&inst->sound);
@@ -145,9 +146,9 @@ SoundID AudioPlaybackModule::play(const std::string& filepath,
     return id;
 }
 
-void AudioPlaybackModule::stopSound(SoundID id)
+void AudioPlaybackModule::stopSound(unsigned long long id)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
     auto it = sounds_.find(id);
     if (it == sounds_.end())
@@ -155,15 +156,15 @@ void AudioPlaybackModule::stopSound(SoundID id)
 
     auto& s = it->second;
 
-    if (s->loopMode == LoopMode::NONSTOP)
+    if (s->loopMode)
         ma_sound_set_looping(&s->sound, MA_FALSE);
     else
         ma_sound_stop(&s->sound);
 }
 
-void AudioPlaybackModule::setVolume(SoundID id, float volume)
+void AudioPlaybackModule::setVolume(unsigned long long id, float volume)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
     auto it = sounds_.find(id);
     if (it == sounds_.end())
@@ -172,9 +173,9 @@ void AudioPlaybackModule::setVolume(SoundID id, float volume)
     ma_sound_set_volume(&it->second->sound, volume);
 }
 
-void AudioPlaybackModule::setPitch(SoundID id, float pitch)
+void AudioPlaybackModule::setPitch(unsigned long long id, float pitch)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
     auto it = sounds_.find(id);
     if (it == sounds_.end())
@@ -183,9 +184,9 @@ void AudioPlaybackModule::setPitch(SoundID id, float pitch)
     ma_sound_set_pitch(&it->second->sound, pitch);
 }
 
-bool AudioPlaybackModule::isPlaying(SoundID id) const
+bool AudioPlaybackModule::isPlaying(unsigned long long id) const
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(sounds_mtx_);
 
     auto it = sounds_.find(id);
     if (it == sounds_.end())
@@ -194,8 +195,9 @@ bool AudioPlaybackModule::isPlaying(SoundID id) const
     return ma_sound_is_playing(&it->second->sound);
 }
 
+// #TODO CAMBIAR: de alguna manera, obtener un dispositivo libre que no esté reproduciendo (el siguiente, por ejemplo)
 bool AudioPlaybackModule::isBusy() const {
-    std::lock_guard<std::mutex> lock(mutex_); 
+    std::lock_guard<std::mutex> lock(sounds_mtx_); 
     for (auto& [id, inst] : sounds_) //recorre el ID del sonido y si ha terminado de sonar o no de todos los sonidos
         if (!inst->finished) // si no encuentra ningun playback reproduciendose es que estan todos libres 
             return true; // si recorre todos y hay alguno sonando devuelve true 
@@ -206,20 +208,20 @@ std::string AudioPlaybackModule::deviceName() const {
     return device_info_.name;
 }
 
-const ma_device_id AudioPlaybackModule::getDeviceID() const {
+ma_device_id AudioPlaybackModule::getDeviceID() const {
     return device_info_.id;
 }
 
 void AudioPlaybackModule::endCallback(void* userData, ma_sound* sound)
 {
     auto* self = reinterpret_cast<AudioPlaybackModule*>(userData);
-    std::lock_guard<std::mutex> lock(self->mutex_);
+    std::lock_guard<std::mutex> lock(self->sounds_mtx_);
 
     for (auto& [id, s] : self->sounds_)
     {
         if (&s->sound == sound)
         {
-            s->finished.store(true, std::memory_order_relaxed);
+            s->finished = true;
             break;
         }
     }

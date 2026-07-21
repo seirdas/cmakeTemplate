@@ -52,13 +52,65 @@
             }
         ],
 
-        "Playback": {
-            "dynamic": { "device": "Dante", "first_channel": 1,  "last_channel": 20 },
-            "morse":   { "device": "Dante", "first_channel": 21, "last_channel": 28 },
-            "radio":   { "device": "Dante", "first_channel": 29, "last_channel": 36 }
-        },
 
-
+        "Playbacks": [
+            {
+                "name": "CCAS",
+                "process_buffer_size": 1024,
+                "sample_rate": 48000,
+                "device": [
+                    {
+                        "name":"(Dante (1+2)",
+                        "channels":2,
+                        "channelSelected":1
+                    }
+                ]
+            },
+            {
+                "name": "TCAS",
+                "process_buffer_size": 1024,
+                "sample_rate": 48000,
+                "device": [
+                    {
+                        "name":"Dante (1+2)",
+                        "channels":2,
+                        "channelSelected":2
+                    },
+                    {
+                        "name":"AES",
+                        "channels":2,
+                        "channelSelected":1
+                    }
+                ]
+            },
+            {
+                "name": "TONES",
+                "process_buffer_size": 1024,
+                "sample_rate": 48000,
+                "device": [
+                    {
+                        "name":"Dante (1+2)",
+                        "channels":2,
+                        "channelSelected":1
+                    },
+                    {
+                        "name":"Dante (1+2)",
+                        "channels":2,
+                        "channelSelected":2
+                    },
+                    {
+                        "name":"Dante (3+4)",
+                        "channels":2,
+                        "channelSelected":1
+                    },
+                    {
+                        "name":"AES",
+                        "channels":2,
+                        "channelSelected":1
+                    }
+                ]
+            }
+        ],
 
         "attack_coefficient": 0.5,
         "release_coefficient": 0.1,
