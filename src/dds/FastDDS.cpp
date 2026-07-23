@@ -52,10 +52,14 @@ void FastDDS::loadConfig(void* config) {
          * DomainParticipant (Crea la conexión al dominio de red)
          * ├── Publisher (Lado que envía)
          * │     └── DataWriter (Escribe datos en un Topic específico)
+         * │     └── DataWriter (Otro topic)
+         * │     └── DataWriter ...
          * │
          * └── Subscriber (Lado que recibe)
-         *         └── DataReader (Lee datos de un Topic específico)
-        */
+         *       └── DataReader (Lee datos de un Topic específico)
+         *       └── DataReader (Otro topic)
+         *       └── DataReader ...
+         */
 
         bool                    initialized_;        ///< Bandera que indica inicialización exitosa (pimpl)
 
@@ -63,6 +67,15 @@ void FastDDS::loadConfig(void* config) {
         Publisher*              publisher_;          ///< Gestor del lado emisor
         Subscriber*             subscriber_;         ///< Receptor de un topic específico
         DomainParticipantQos    pqos_;
+
+
+        struct TopicEntry {
+            Topic*                          topic_  = nullptr;
+            DataWriter*                     writer_ = nullptr;
+            DataReader*                     reader_ = nullptr;
+        };
+
+        std::unordered_map<std::string, TopicEntry> topics_;    ///< Lista de tópicos con su reader/listener asociado
 
 
         /**
@@ -84,6 +97,7 @@ void FastDDS::loadConfig(void* config) {
          */
         void close();
     };
+
 
     // Implementación de métodos PIMPL ------------------------------------------------------
     
@@ -135,6 +149,9 @@ void FastDDS::loadConfig(void* config) {
         close();
     }
 
+    FastDDS::FastDDS(FastDDS&&) noexcept = default;
+    FastDDS& FastDDS::operator=(FastDDS&&) noexcept = default;
+
 
     // Inicialización y ejecución ----------------------------------------------------------------------------
     
@@ -143,7 +160,6 @@ void FastDDS::loadConfig(void* config) {
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
-
             
         // Inicialización de participante (incluye DomainParticipantQos con tipos de QOS)
         SYS_INFO("FastDDS","Initializing participant (with QOS types)...");
@@ -154,6 +170,29 @@ void FastDDS::loadConfig(void* config) {
             SYS_WARN("FastDDS","Cannot initialize participant");
             return false;
         }
+
+        // Crear publisher
+        pimpl_->publisher_ = pimpl_->participant_->create_publisher(PUBLISHER_QOS_DEFAULT);
+        if (!pimpl_->publisher_)
+            SYS_WARN("FastDDS","Cannot initialize participant publisher.");
+
+        // Crear subscriber
+        pimpl_->subscriber_ = pimpl_->participant_->create_subscriber(SUBSCRIBER_QOS_DEFAULT);
+        if (!pimpl_->subscriber_)
+            SYS_WARN("FastDDS","Cannot initialize participant subscriber.");
+
+        // Comprobar ambos
+        if (!pimpl_->subscriber_ && !pimpl_->publisher_) {
+            SYS_WARN("FastDDS","Cannot initialize FastDDS server: subscriber and publisher not initialized.");
+            return false;
+        }
+
+
+        // Con participant, publisher y subscriber, cargar los tópicos de la config
+        if (config)
+            loadConfigTopics(config);
+
+
 
         /* Demás implementación de fastdds...*/
         // #TODO
@@ -171,6 +210,38 @@ void FastDDS::loadConfig(void* config) {
     /* Movido fuera del encapsulado, común en cualquier caso */
     // Symetrix::loadConfig(void* config) {...}
 
+    void FastDDS::loadConfigTopics(void* config) {
+
+        // Se considera que la configuración se pasa como json    
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        // Leer los topics del json en un vector
+        std::vector<json*> config_topics = jsonMgr.getArrayElements(cfg, "topics");
+        std::string name        = "";
+        std::string type_name   = "";
+        bool publish            = false;
+        bool subscribe          = false;
+
+        for (json* const cfg_node : config_topics) {
+
+            jsonMgr.get_or_set(cfg, "name", name);
+            jsonMgr.get_or_set(cfg, "type_name", type_name);
+
+            if (name.empty() || type_name.empty()) {
+                SYS_WARN("FastDDS", "Entrada de topic inválida en config (falta name/type).");
+                continue;
+            }
+            if (pimpl_->topics_.count(name)) {
+                SYS_WARN("FastDDS", "Topic duplicado en config: " + name);
+                continue;
+            }
+            
+            /* De alguna forma, crear los topics aquí, con su reader/writer */
+        }
+
+    }
+
     void FastDDS::close() {
 
         if (!initialized_) return;
@@ -179,6 +250,45 @@ void FastDDS::loadConfig(void* config) {
         pimpl_->close();
 
         initialized_ = false;
+    }
+
+
+// Topics -------------------------------------------------------------------------------
+
+    bool FastDDS::createTopic(std::string const& typeName, bool withPublish, bool withSubscriber) {
+        
+        /* WIP */
+
+
+        // // Crear el topic (esto sí, uno por entrada, aunque el tipo se repita)
+        // Impl::TopicEntry entry;
+        // entry.topic_ = pimpl_->participant_->create_topic(
+        //     typeName, reg_it->second.get_type_name(), TOPIC_QOS_DEFAULT);
+        // if (!entry.topic_) {
+        //     SYS_WARN("FastDDS", "No se pudo crear topic: " + typeName);
+        //     return false;
+        // }
+
+        // // Writer si hay publisher y la config lo pide
+        // if (withPublish && pimpl_->publisher_) {
+        //     entry.writer_ = pimpl_->publisher_->create_datawriter(
+        //         entry.topic_, DATAWRITER_QOS_DEFAULT);
+        //     if (!entry.writer_)
+        //         SYS_WARN("FastDDS", "No se pudo crear writer para: " + typeName);
+        //         return false;
+        // }
+
+        // // Reader si hay subscriber y la config lo pide
+        // if (withSubscriber && pimpl_->subscriber_) {
+        //     entry.reader_ = pimpl_->subscriber_->create_datareader(
+        //         entry.topic_, DATAREADER_QOS_DEFAULT, entry.listener_);
+        //     if (!entry.reader_)
+        //         SYS_WARN("FastDDS", "No se pudo crear reader para: " + typeName);
+        //         return false;
+        // }
+
+        SYS_WARN("FastDDS","Not implemented");
+        return false;
     }
 
 

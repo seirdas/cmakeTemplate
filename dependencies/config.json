@@ -1,5 +1,19 @@
 {
     "comms": {},
+    "fastdds": {
+        "DOMAIN_ID": 0,
+        "pqos_name": "DDSMonitorParticipant",
+        "topics": [
+            {
+                "name": "cualquiera",
+                "type": "HelloWorld",
+                "publish": true,
+                "subscribe": true,
+                "history_depth": 10,
+                "reliability": "RELIABLE"
+            }
+        ]
+    },
     "gui": {
         "AppName": "Audio Control Center",
         "deviceRefreshInterval": 5,
