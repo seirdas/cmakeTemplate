@@ -142,11 +142,11 @@ download_voice(
 # =================================
 
 function(link_tts_assets)
-    set(SRC_DIR "${EXTERNAL_LIB_PATH}/tts-assets/tts-voices")
+    set(SRC_DIR "${EXTERNAL_LIB_PATH}/${ASSETS_CMAKE_FOLDER}/${VOICES_DIR}")
     file(TO_NATIVE_PATH "${SRC_DIR}" SRC_NATIVE)
 
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "---- Linking tts-assets to output folder..."
+        COMMAND ${CMAKE_COMMAND} -E echo "---- Linking ${ASSETS_CMAKE_FOLDER} to output folder..."
     )
 
     if(WIN32)

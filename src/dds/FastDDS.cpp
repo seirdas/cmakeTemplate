@@ -7,8 +7,11 @@
 
 FastDDS::FastDDS() :
     pimpl_(std::make_unique<Impl>()),
+    initialized_(false),
+    enabled_(false),
     DOMAIN_ID_(0),
     pqos_name_("DDSMonitorParticipant")
+
 {
 
 }
@@ -25,6 +28,7 @@ void FastDDS::loadConfig(void* config) {
     /* Añadir aquí configuraciones del json: */
     jsonMgr.get_or_set(cfg, "pqos_name", pqos_name_);
     jsonMgr.get_or_set(cfg, "DOMAIN_ID", DOMAIN_ID_);
+    jsonMgr.get_or_set(cfg, "enable", enabled_);
     
 }
 
@@ -161,6 +165,12 @@ void FastDDS::loadConfig(void* config) {
         if (config)
             loadConfig(config);
             
+        // No hacer nada si no se ha activado
+        if (!enabled_) {
+            SYS_WARN("FastDDS","FastDDS disabled by config.");
+            return false;
+        }
+
         // Inicialización de participante (incluye DomainParticipantQos con tipos de QOS)
         SYS_INFO("FastDDS","Initializing participant (with QOS types)...");
         pimpl_->pqos_.name(pqos_name_);
@@ -225,8 +235,8 @@ void FastDDS::loadConfig(void* config) {
 
         for (json* const cfg_node : config_topics) {
 
-            jsonMgr.get_or_set(cfg, "name", name);
-            jsonMgr.get_or_set(cfg, "type_name", type_name);
+            jsonMgr.get_or_set(cfg_node, "name", name);
+            jsonMgr.get_or_set(cfg_node, "type", type_name);
 
             if (name.empty() || type_name.empty()) {
                 SYS_WARN("FastDDS", "Entrada de topic inválida en config (falta name/type).");
@@ -244,7 +254,8 @@ void FastDDS::loadConfig(void* config) {
 
     void FastDDS::close() {
 
-        if (!initialized_) return;
+        // No hacer nada si el módulo no está activo/inicializado
+        if (!enabled_ || !initialized_) return;
 
         SYS_INFO("FastDDS","Closing domain members...");
         pimpl_->close();
