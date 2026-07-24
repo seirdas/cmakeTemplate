@@ -12,6 +12,8 @@
 #include "comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
 #include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
 #include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
+#include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
+
 
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
@@ -34,12 +36,15 @@ AppController::AppController() :
     sym_(std::make_unique<Symetrix>()),
     voip_(std::make_unique<VoIPMgr>()),
     com_(std::make_unique<CommsCore>()),
-    dds_(std::make_unique<FastDDS>())
+    dds_(std::make_unique<FastDDS>()),
+    cds_(std::make_unique<CycloneDDS>())
 {
 
 }
 
 AppController::~AppController() {
+
+    SYS_INFO("AppController","Closing AppController...");
 
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
@@ -51,7 +56,7 @@ AppController::~AppController() {
         gui_->close();
     }
 
-    if(net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
+    if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
         SYS_INFO("AppController","Closing GUI subsystem...");
         net_->close();
     }
@@ -81,8 +86,13 @@ AppController::~AppController() {
         dds_->close();
     }
 
+    if (cds_->isInitialized()) {
+        SYS_INFO("AppController","Closing CycloneDDS manager...");
+        cds_->close();
+    }
+
     if (tts_->isInitialized()) {
-        SYS_INFO("AppController","Closing tts manager...");
+        SYS_INFO("AppController","Closing TTS manager...");
         tts_->close();
     }
 
@@ -185,11 +195,19 @@ bool AppController::init(int argc, char** argv) {
 
     
     // Inicialización FastDDS
-    SYS_INFO("AppController","FastDDS server loading...");
+    SYS_INFO("AppController","FastDDS manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"fastdds");
     if(!dds_->init(config_node))
-        SYS_WARN("AppController","FastDDS server FAIL");
-    else SYS_INFO("AppController","FastDDS server OK");
+        SYS_WARN("AppController","FastDDS manager FAIL");
+    else SYS_INFO("AppController","FastDDS manager OK");
+
+    
+    // Inicialización FastDDS
+    SYS_INFO("AppController","CycloneDDS manager loading...");
+    config_node = jsonMgr.getSubNode(config_filename_,"cyclonedds");
+    if(!cds_->init(config_node))
+        SYS_WARN("AppController","CycloneDDS manager FAIL");
+    else SYS_INFO("AppController","CycloneDDS manager OK");
 
     
     // Inicialización de TTS (al final para que no se mezcle en el log)
@@ -219,7 +237,7 @@ bool AppController::init(int argc, char** argv) {
     jsonMgr.update();
 
 
-    SYS_INFO("AppController","App initialized.");
+    SYS_INFO("AppController","App initialized");
     return true;
 }
 

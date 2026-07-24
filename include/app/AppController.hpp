@@ -5,6 +5,7 @@
 #include <memory>               // unique_ptr
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
@@ -18,6 +19,7 @@ class Symetrix;
 class VoIPMgr;
 class CommsCore;
 class FastDDS;
+class CycloneDDS;
 
 /**
   *  @class AppController
@@ -193,12 +195,12 @@ public:
     /**
      * @brief devuelve el nivel del pico de audio
      */
-    float getInputPeakLevel(std::string const& captureName) noexcept;
+    float getInputPeakLevel(std::string const& captureName) noexcept override;
 
     /**
      * @brief devuelve el nivel del RMS de audio
      */
-    float getInputRMSLevel(std::string const& captureName) noexcept;
+    float getInputRMSLevel(std::string const& captureName) noexcept override;
 
 
 
@@ -278,6 +280,7 @@ private:
     std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay
     std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
     std::unique_ptr<FastDDS>     dds_;          ///< Gestor DDS (FastDDS)
+    std::unique_ptr<CycloneDDS>  cds_;          ///< Gestor DDS (CycloneDDS)
 
 // Gestión de hilos
     std::thread             hilo_test_;         ///< Hilo de pruebas
