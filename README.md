@@ -50,6 +50,8 @@ También se descargarán las herramientas de compilación de Visual Studio al in
 
 Después, hay que seleccionar **Desarrollo de aplicaciones de escritorio en C++** en las cargas de trabajo de Visual Studio Installer. Es suficiente con las herramientas que aparecerán seleccionadas por defecto.
 
+Instalar la ultima version de Paquete de compatibilidad de .Net Framework 
+
 ## MinGW & Clang
 
 Una de las herramientas que se pueden utilizar para descargar el entorno de compilación de MinGW & Clang es **MSYS2**. Para instalarlo hay varias alternativas:
