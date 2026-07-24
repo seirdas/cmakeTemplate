@@ -156,7 +156,7 @@ macro(import_dependency DEF_NAME ENABLE LINK_LIB)
 endmacro()
 
 # Librerías externas
-import_dependency( SHERPA           ON     sherpa_lib         audio/lib-sherpaonnx audio/tts-assets) # Tiene 2 toolchains
+import_dependency( SHERPA           ON     sherpa_lib         tts/lib-sherpaonnx tts/tts-assets) # Tiene 2 toolchains
 import_dependency( MINIAUDIO        ON     miniaudio_lib      audio/lib-miniaudio)
 import_dependency( DAISYSP          OFF    daisysp_lib        audio/lib-daisysp)
 import_dependency( ASIO_NETWORK     ON     asio_lib           net/lib-asionetwork)
