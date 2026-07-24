@@ -59,6 +59,7 @@ public:
 
     /**
      * @brief Devuelve si la inicialización ha sido exitosa
+     * @note En esta clase CLI.NET, no se puede poner const
      * @return @c true Si ha iniciado bien, @c false en caso contrario
      */
     bool isInitialized();
