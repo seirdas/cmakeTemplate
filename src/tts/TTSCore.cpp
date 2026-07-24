@@ -133,6 +133,9 @@
 
         // Thread_count
         jsonMgr.get_or_set(cfg, "num_threads", num_threads_);
+
+        // Ruta de modelos de voz
+        jsonMgr.get_or_set(cfg, "models_path", models_path_);
         
         // Establecer dentro de rango: 0=auto, >max = max
         unsigned short max_threads = std::thread::hardware_concurrency();
