@@ -316,27 +316,22 @@ if(MSVC)
     source_group("Include\\CLI.NET" FILES ${CLI_HEADERS})
   endif()
 
-  # Localizar las dependencias msvcp140(d) y vcruntime140d usando el path del compilador según la configuración actual (Debug o Release)
-  set(MSVCP_NAME "$<IF:$<CONFIG:Debug>,msvcp140d.dll,msvcp140.dll>")
-  set(VCRUNTIME_NAME "$<IF:$<CONFIG:Debug>,vcruntime140d.dll,vcruntime140.dll>")
-  get_filename_component(MSVC_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
-  find_file(MSVCP_DLL_PATH NAMES ${MSVCP_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
-  find_file(VCRUNTIME_DLL_PATH NAMES ${VCRUNTIME_NAME} PATHS "${MSVC_BIN_DIR}" NO_DEFAULT_PATH)
-  if (MSVCP_DLL_PATH)
+  
+  # Incluir el módulo oficial de CMake para localizar el runtime completo
+  include(InstallRequiredSystemLibraries)
+  
+  # Localizar las dependencias usando CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS de InstallRequiredSystemLibraries
+  if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+    # Log en build de lo que va a hacer...
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${MSVCP_DLL_PATH}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VCRUNTIME_DLL_PATH}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        COMMAND ${CMAKE_COMMAND} -E echo "---- Copying MSVC C++ dependencies to output folder..."
     )
-  else()
-    # Fallback usando las carpetas del sistema
-    if (ARCH_NAME STREQUAL "x86")
-      set(SYSTEM_WINDOWS_DIR "C:/Windows/SysWOW64")
-    else()
-      set(SYSTEM_WINDOWS_DIR "C:/Windows/System32")
-    endif()
+
+    # Copiando Runtime de Visual C++ completo
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SYSTEM_WINDOWS_DIR}/${MSVCP_NAME}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SYSTEM_WINDOWS_DIR}/${VCRUNTIME_NAME}" "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
     )
   endif()
 
