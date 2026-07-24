@@ -165,3 +165,64 @@ target_link_libraries(fastdds_lib INTERFACE
 target_include_directories(fastdds_lib INTERFACE
     "${EPROSIMA_INSTALL_DIR}/include"   # <fastdds/dds/...>
 )
+
+# =================================
+#   Funcion de copia de dlls a la salida
+# =================================
+
+function(configure_fastdds_deps)
+
+    if (ARCH_NAME STREQUAL "x64")
+        set(FASTDDS_BIN_FOLDER "x64Win64VS2019")
+    else()
+        set(FASTDDS_BIN_FOLDER "i86Win32VS2019")
+    endif()
+
+    set(FASTDDS_BIN_DIR "${EPROSIMA_INSTALL_DIR}/bin/${FASTDDS_BIN_FOLDER}")
+
+    # Lista de dependencias
+    set(DLL_LIST
+        "libcrypto-3-x64.dll"
+        "libssl-3-x64.dll"
+        "OpenSSL.Fast-DDS.manifest"
+    )
+
+    # Añadir las dependencias correspondientes según si es Debug o Release
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR (MSVC AND NOT CMAKE_CONFIGURATION_TYPES MATCHES "Release"))
+        # Si es entorno o configuración de Debug
+        list(APPEND DLL_LIST
+            "fastcdrd-2.3.dll"
+            "fastddsd-3.2.dll"
+            "foonathan_memory-0.7.3-dbg.dll"
+        )
+    else()
+        # Si es Release, RelWithDebInfo, MinSizeRel, etc.
+        list(APPEND DLL_LIST
+            "fastcdr-2.3.dll"
+            "fastdds-3.2.dll"
+            "foonathan_memory-0.7.3.dll"
+        )
+    endif()
+
+    # Log de lo que se va a hacer...
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "---- Copying FastDDS dependencies to output folder..."
+    )
+
+    # Copiar las dlls al lado del ejecutable
+    foreach(DLL_NAME ${DLL_LIST})
+        set(SRC_PATH "${FASTDDS_BIN_DIR}/${DLL_NAME}")
+
+        # Log en build de lo que va a hacer...
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "${SRC_PATH} --- $<TARGET_FILE_DIR:${PROJECT_NAME}>"
+        )
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            # Nos movemos a la carpeta del EXE para que el link sea local (sin slashes)
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SRC_PATH}" "${DLL_NAME}"
+            VERBATIM
+        )
+    endforeach()
+
+endfunction()

@@ -430,6 +430,11 @@ if(CYCLONEDDSCXX)
   configure_cyclonedds_dlls()
 endif()
 
+# Copiar dependencias de FastDDS
+if(FASTDDS)
+  configure_fastdds_deps()
+endif()
+
 
 # ===============================
 # Configuración post-build
