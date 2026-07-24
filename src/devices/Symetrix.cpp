@@ -756,7 +756,7 @@ bool Symetrix::init(void* config) {
 bool Symetrix::isInitialized() const    { return false; }
 /* Común en ambos sistemas */
 // Symetrix::loadConfig(void* config) {...}
-void Symetrix::close()                { return; }
+bool Symetrix::close()                  { return false; }
 bool Symetrix::isConnected() const      { return false; }
 
 // Parámetros ---------------------------------------------------------------------------

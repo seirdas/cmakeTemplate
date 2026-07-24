@@ -585,6 +585,8 @@ void TotalMix::loadConfig(void* config) {
         loadConfig(config); // Para leer/escribir en el json igualmente
         return false;
     }
+    bool TotalMix::isInitialized() const                     { return false; }
+    bool TotalMix::close()                                   { return false; }
 
     /* Movido fuera el encapsulado WIN32, común en ambos sistemas */
     // Symetrix::loadConfig(void* config) {...}
