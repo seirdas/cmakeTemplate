@@ -42,6 +42,12 @@ public:
     bool init();
 
     /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    /**
      * @brief Para la conexión y las suscripciones del iComm
      *  y borra el puntero a la instancia iCommMgr
      * @return @c true Si se cierra correctamente, @c false en caso contrario
@@ -50,8 +56,11 @@ public:
 
 private:
 
+// Inicialización
+    bool    initialized_;   ///< Bandera para indicar inicialización exitosa
+
 // Miembro puente
-    void* m_managedWrapper; ///< Puntero opaco que esconderá el gcroot interno
+    void*   managedWrapper_; ///< Puntero opaco que esconderá el gcroot interno
 
 };
 
@@ -65,12 +74,15 @@ private:
 
     #include "system/SystemMgr.hpp"
 
-    iCommBridge::iCommBridge(TTSMgr*)   {}
-    iCommBridge::~iCommBridge()         {}
+// General ------------------------------------------------------------------------------
+    inline iCommBridge::iCommBridge(TTSMgr*) : initialized_(true)   {}
+    inline iCommBridge::~iCommBridge()              {}
 
-    bool iCommBridge::init()                { 
-        SYS_WARN("iCommBridge","iCommWrapper only compatible with MSVC compiler");
+// Ejecución ----------------------------------------------------------------------------
+    inline bool iCommBridge::init()     { 
+        SYS_WARN("iCommBridge","iCommWrapper only compatible with MSVC compiler (Windows)");
         return false; 
     }
-    bool iCommBridge::close()               { return false; }
+    inline bool iCommBridge::isInitialized() const  { return false; }
+    inline bool iCommBridge::close()    { return false; }
 #endif

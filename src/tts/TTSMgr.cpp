@@ -104,9 +104,11 @@ void TTSMgr::close() {
     queue_cv_.notify_all();
 
     // Cierra el cliente de iComm
-    SYS_INFO("TTSMgr","Closing iComm (.NET) client...");
-    if(!pimpl_->commBridge.close())
-        SYS_WARN("TTSMgr","Closing iComm FAIL");
+    if (pimpl_->commBridge.isInitialized()) {
+        SYS_INFO("TTSMgr","Closing iComm (.NET) client...");
+        if(!pimpl_->commBridge.close())
+            SYS_WARN("TTSMgr","Closing iComm FAIL");
+    }
 
     // Cierra el núcleo de TTS
     SYS_INFO("TTSMgr","Closing ttsCore...");
