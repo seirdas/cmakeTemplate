@@ -253,10 +253,13 @@ private:
 
 /************ Variables ********************************************************/
 
+// Datos de aplicación
+    std::string             app_name_;          ///< Nombre de aplicación     
+    std::string             version_;           ///< Versión de la aplicación
+
 // Inicialización y ejecución
     std::atomic<bool>       running_;           ///< flag de aplicación corriendo (para hilos)
     std::atomic<bool>       online_mode_;       ///< Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
-    std::string             version_;           ///< Versión de la aplicación
     
 // Parámetros de entrada (igual que main)
     int         argc_;                          ///< Número de parámetros de entrada

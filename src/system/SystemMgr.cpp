@@ -10,11 +10,6 @@
     #include <clocale>
 #endif
 
-// APP_NAME debería haber sido inyectado desde CMakeLists
-#ifndef APP_NAME
-    #define APP_NAME "app"
-#endif
-
 // Definición de códigos de escape ANSI para colores
 const std::string ANSI_RESET      		= "\033[0m";
 const std::string ANSI_BLACK      		= "\033[30m";
@@ -42,19 +37,59 @@ SystemMgr& SystemMgr::instance() {
     return instance;
 }
 
-SystemMgr::SystemMgr() :
-    log_(std::string(APP_NAME) + (".log")),
-    errlog_("errors.log")
+SystemMgr::SystemMgr()
 {
-    // Se limpia solo el log de ejecución
-    log_.clear();
 
-    // indica nueva ejecución en log de errores
-    errlog_.write("-- init --");
 }
 
 SystemMgr::~SystemMgr() {
     
+}
+
+
+// Datos de aplicación ------------------------------------------------------------------
+
+    /**
+     * @brief Establece el nombre de la aplicación (para el log)
+     * @param name Nombre de aplicación
+     */
+    void SystemMgr::setAppName(const std::string& name) {
+        app_name_ = name;
+    }
+
+    /**
+     * @brief Devuelve el nombre de la aplicación
+     * @return Nombre de aplicación
+     */
+    std::string const& SystemMgr::getAppName() const {
+        return app_name_;
+    }
+
+
+// Inicialización y ejecución -----------------------------------------------------------
+
+bool SystemMgr::init(const std::string& appName) {
+
+    // Si se inicializa con nombre, utiliza ese para el nombre de la app
+    if (!appName.empty())
+        app_name_ = appName;
+
+    // Crear el archivo de log con el nombre del ejecutable
+    log_.init(app_name_ + ".log");
+    errlog_.init("errors.log");
+
+    // Se limpia solamente el log de ejecución
+    log_.clear();
+
+    // indica nueva ejecución en log de errores
+    errlog_.write("-- init --");
+    
+    initialized_ = true;
+    return initialized_; // <- true
+}
+
+bool SystemMgr::isInitialized() const {
+    return initialized_;
 }
 
 
@@ -78,7 +113,7 @@ void SystemMgr::error(std::string const& module, std::string const& msg) {
               << msg << ANSI_RESET << "\n";
 
     // Mostrar también ventana de error
-    showPopup(msg, APP_NAME);            // <- !! Bloqueante
+    showPopup(msg, app_name_);            // <- !! Bloqueante
 }
 
 void SystemMgr::warning(std::string const& module, std::string const& msg) {

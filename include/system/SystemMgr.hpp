@@ -27,7 +27,37 @@ public:
      */
     static SystemMgr& instance();
 
+    
+// Datos de aplicación ------------------------------------------------------------------
 
+    /**
+     * @brief Establece el nombre de la aplicación (para el log)
+     * @param name Nombre de aplicación
+     */
+    void setAppName(const std::string& name);
+
+    /**
+     * @brief Devuelve el nombre de la aplicación
+     * @return Nombre de aplicación
+     */
+    std::string const& getAppName() const;
+
+
+// Inicialización y ejecución -----------------------------------------------------------
+
+    /**
+     * @brief Inicializa la clase de gestión de sistema de la aplicación
+     *  Utiliza el nombre de la aplicación (app_name_) para crear el log de la app.
+     */
+    bool init(const std::string& appName = "");
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    
 // Log ----------------------------------------------------------------------------------
 
     /**
@@ -100,8 +130,13 @@ private:
      */
     void showPopup(std::string const& msg, std::string const& title, bool bloq = true);
 
+private:
 
 /************ Variables ****************************************************************/
+
+// Datos de aplicación
+    std::string app_name_;      ///< Nombre de aplicación
+    bool        initialized_;   ///< Bandera para indicar inicialización exitosa
 
 // Logs de aplicación
     LogMgr log_;             ///< Log de ejecución de aplicación

@@ -30,7 +30,9 @@ set(CXX_DEFINITIONS "")
 # Establecer nombre del exe igual que el nombre de la carpeta del proyecto
 get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME CACHE)
 project(${PROJECT_NAME})
-list(APPEND CXX_DEFINITIONS APP_NAME="${PROJECT_NAME}")
+
+# No uso este APP_NAME en C++ por si cambia el nombre del exe después de compilar
+# list(APPEND CXX_DEFINITIONS APP_NAME="${PROJECT_NAME}")
 
 
 # Identificar arquitectura de compilación (después de project() )

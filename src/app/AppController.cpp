@@ -1,6 +1,7 @@
 #include "app/AppController.hpp"
 #include <chrono>               // Controla tiempos de espera
 #include <string>
+#include <filesystem>               // Controla directorios, rutas, etc.
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
@@ -108,6 +109,12 @@ bool AppController::init(int argc, char** argv) {
     this->argv_ = argv;
 
     
+    // Obtener el nombre del ejecutable e inicializar SystemMgr con ese nombre
+    std::filesystem::path path = std::filesystem::absolute(argv[0]);
+    app_name_ = path.stem().string();
+    SystemMgr::instance().init(app_name_);
+
+    
     // Leer valores del json para AppController
     SYS_INFO("AppController","Reading app config files...");
     JsonMgr& jsonMgr = JsonMgr::instance();
@@ -124,7 +131,7 @@ bool AppController::init(int argc, char** argv) {
 
 
     // Mostrar versión en log
-    SYS_INFO("AppController","Welcome to " + std::string(APP_NAME) + ", version " + version_ + "!");
+    SYS_INFO("AppController","Welcome to " + std::string(app_name_) + ", version " + version_ + "!");
 
 
     // Iniciar GUI, salir si no se carga bien

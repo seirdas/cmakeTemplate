@@ -17,10 +17,9 @@ public:
 
     /**
      * @brief Constructor de la clase LogMgr.
-     * @param filepath Ruta completa o relativa del archivo de log.
      * Si las carpetas del path no existen, el constructor intentará crearlas.
      */
-    LogMgr(std::string const& filepath);
+    LogMgr();
 
     /**
      * @brief Destructor de la clase.
@@ -29,6 +28,22 @@ public:
     ~LogMgr();
 
 
+// Inicialización y ejecución -----------------------------------------------------------
+
+    /**
+     * @brief Inicializa el archivo
+     * @param filepath Ruta completa o relativa del archivo de log.
+     * @return @c true Si el archivo se ha creado correctamente, @c false en caso contrario
+     */
+    bool init(std::string const& filepath);
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    
 // Log ----------------------------------------------------------------------------------
 
     /**
@@ -80,6 +95,7 @@ private:
 /************ Variables ****************************************************************/
 
 // Archivo
+    bool                    initialized_;   ///< Clase inicializada con nombre de archivo
 	std::ofstream 			file_;			///< Archivo (literalmente)
 	std::filesystem::path	filepath_;		///< Ruta del archivo
 	std::string 			name_;			///< Nombre del archivo

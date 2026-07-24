@@ -6,20 +6,39 @@ namespace fs = std::filesystem;
 
 // General ------------------------------------------------------------------------------
 
-LogMgr::LogMgr(std::string const& filepath) :
-	filepath_(std::move(filepath)), 
+LogMgr::LogMgr() :
+	initialized_(false),
+	filepath_(""),
 	enabled_(true), 
 	keep_open_(true)
 {
-	if (filepath_.has_parent_path()) {
-        fs::create_directories(filepath_.parent_path());
-    }
+
 }
 
 LogMgr::~LogMgr() {
 	// Cerrar archivo si estába abierto
 	if (file_.is_open()) file_.close();
 }
+
+
+// Inicialización y ejecución -----------------------------------------------------------
+
+bool LogMgr::init(std::string const& filepath) {
+	
+	filepath_ = (std::move(filepath));
+
+	if (filepath_.has_parent_path()) {
+        fs::create_directories(filepath_.parent_path());
+    }
+
+	initialized_ = true;
+	return initialized_; // <- true
+}
+
+bool LogMgr::isInitialized() const {
+    return initialized_;
+}
+
 
 // Log ----------------------------------------------------------------------------------
 
