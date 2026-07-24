@@ -319,7 +319,7 @@ FastDDS::~FastDDS() { }
 
 // Inicialización y ejecución ----------------------------------------------------------------------------
 bool FastDDS::init(void* config) {
-    SYS_WARN("FastDDS", "FastDDS library not implemented.");
+    SYS_WARN("FastDDS", "FastDDS library not included");
     loadConfig(config); 
     return false; 
 }
