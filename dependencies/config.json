@@ -160,7 +160,8 @@
             "active": true,
             "keep_alive_seconds": 20
         },
-        "num_threads": 4
+        "num_threads": 4,
+        "models_path": "tts-voices"
     },
     "version": "0.11.0"
 }
