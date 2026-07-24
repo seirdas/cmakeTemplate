@@ -142,15 +142,20 @@
 
     void CycloneDDS::test() {
 
+        SYS_INFO("CycloneDDS","Sending test DDS data...");
+
         // Preparar y enviar un mensaje
         HelloWorld msg;
-        msg.id(1);
+        static unsigned int count = 0;
+        msg.id(count);
         msg.message("Hola desde CycloneDDS (C++ API)!");
         
         if(publish_now(msg))
             SYS_INFO("CycloneDDS","Test data sent successfuly.");
         else
             SYS_WARN("CycloneDDS","Test data send error");
+
+        count++;
         
         return;
     }
