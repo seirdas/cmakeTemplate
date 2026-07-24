@@ -79,6 +79,7 @@ private:
 
 // Inicialización
     bool                        initialized_;       ///< Bandera para indicar inicialización exitosa
+    bool                        enabled_;           ///< Activa la comunicación DDS a través de FastDDS
 
 
 // Datos de fastdds

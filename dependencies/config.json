@@ -1,6 +1,7 @@
 {
     "comms": {},
     "fastdds": {
+        "enable": true,
         "DOMAIN_ID": 0,
         "pqos_name": "DDSMonitorParticipant",
         "topics": [
