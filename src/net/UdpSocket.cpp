@@ -3,8 +3,8 @@
 
 #if defined ASIO_NETWORK || defined ASIO_NETWORK_VERSION
 
-    #include <asio.hpp>             // asio external lib
-    #include "net/netTypes.hpp"     // Para conocer NetPacket
+    #include <asio.hpp>                 // asio external lib
+    #include "datatypes/netTypes.hpp"   // Para conocer NetPacket
 
     constexpr std::size_t MAX_UDP_PACKET_SIZE = 65536; // Tamaño máximo de un paquete UDP (64 KB)
 

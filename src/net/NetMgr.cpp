@@ -3,10 +3,10 @@
 
 #if defined ASIO_NETWORK || defined ASIO_NETWORK_VERSION
 
-    #include <asio.hpp>             // asio external lib
-    #include "net/UdpSocket.hpp"    // Para conocer UdpSocket
-    #include "net/netTypes.hpp"     // Para conocer NetPacket
-    #include "files/JsonMgr.hpp"    // Para conocer json
+    #include <asio.hpp>                 // asio external lib
+    #include "net/UdpSocket.hpp"        // Para conocer UdpSocket
+    #include "datatypes/netTypes.hpp"   // Para conocer NetPacket
+    #include "files/JsonMgr.hpp"        // Para conocer json
 
 
     using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;

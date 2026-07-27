@@ -14,7 +14,7 @@
 #include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
-#include "tts/TTSDataTypes.hpp"
+#include "datatypes/TTSDataTypes.hpp"
 
 #if defined IMGUILIB || defined IMGUILIB_VERSION
 

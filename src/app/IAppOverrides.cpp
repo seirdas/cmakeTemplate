@@ -4,7 +4,7 @@
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
-#include "tts/TTSDataTypes.hpp"
+#include "datatypes/TTSDataTypes.hpp"
 
 /* 
 * Aquí solo deberían ir acciones que se ejecuten sobre otros módulos
