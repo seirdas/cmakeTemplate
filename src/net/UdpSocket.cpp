@@ -46,6 +46,7 @@
     UdpSocket::UdpSocket(std::string const& name, void* io) :
         name_(name), 
         rcv_packet_size_(0),
+        has_rcv_packet_(false),
         initialized_(false), 
         running_    (false),
         ignore_dupe_(true)
@@ -241,11 +242,6 @@
         return data;
     }
 
-    void UdpSocket::setReceiveCallback(std::function<void(NetPacket)> cb) 
-    { 
-        on_receive_cb_ = std::move(cb); 
-    }
-
     void UdpSocket::discardOnDupe(bool enable){
         ignore_dupe_ = enable;
     }
@@ -258,8 +254,40 @@
         return !isQueueEmpty();
     }
 
+    unsigned long long UdpSocket::getLastPacketMs() const {
+        if (!has_rcv_packet_) 
+            return 0; 
+
+        // Tomamos el tiempo actual
+        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+
+        // Calculamos la diferencia
+        std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_packet_time_);
+
+        // Devolvemos el conteo en milisegundos
+        return duration.count();
+    }
+
     void* UdpSocket::getStrandNative() { 
         return static_cast<void*>(&pimpl_->strand_);
+    }
+
+    // Callback de recepción ----------------------------------------------------------------
+
+    void UdpSocket::setReceiveCallback(std::function<void(NetPacket)> cb) 
+    { 
+        on_receive_cb_ = std::move(cb); 
+    }
+
+    void UdpSocket::clearReceiveCallback() {
+        if (!on_receive_cb_)
+            return;
+        
+        on_receive_cb_ = nullptr;
+    }
+
+    bool UdpSocket::hasReceiveCalback() const {
+        return (on_receive_cb_) ? true : false;
     }
 
 
@@ -412,6 +440,10 @@
             return;
         }
 
+        // Marcar el tiempo en el que ha llegado este paquete
+        last_packet_time_ = std::chrono::steady_clock::now();
+        has_rcv_packet_ = true;
+
         // Añade el paquete recibido a la cola listo para gestionar
         if (on_receive_cb_) {
             // Si NetMgr (o alguien) registró un callback, le pasamos los datos
@@ -494,13 +526,17 @@ struct UdpSocket::Impl {};
 
 // Recepción ----------------------------------------------------------------------------
     std::vector<char> UdpSocket::getFirstPacket()  { return {};     }
+    void UdpSocket::setReceiveCallback(std::function<void(NetPacket)> cb) { return; }
+    void UdpSocket::clearReceiveCallback()         { return;        }
+    void UdpSocket::hasReceiveCalback() const      { return;        }
     void UdpSocket::discardOnDupe(bool)            { return;        }
     bool UdpSocket::hasData()                      { return false;  }
+    unsigned long long getLastPacketMs() const     { return 0;      }
     void* UdpSocket::getStrandNative()             { return nullptr;}
 
 // Datos de socket ----------------------------------------------------------------------
     unsigned short UdpSocket::port() const         { return 0;     }
-    std::string const& UdpSocket::name() const     { return name_;    }
+    std::string const& UdpSocket::name() const     { return name_; }
     bool UdpSocket::isRunning() const              { return false; }
     bool UdpSocket::isOpen() const                 { return false; }
 

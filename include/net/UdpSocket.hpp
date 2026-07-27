@@ -107,16 +107,6 @@ public:
      * @brief Devuelve el primer paquete recibido de la cola. Si la cola está vacía, espera hasta que llegue un nuevo paquete.
      */
     std::vector<char> getFirstPacket();
-
-    /**
-     * @brief Callback para mandar el paquete recibido a cola centralizada de gestor de red
-     * @details Solo se define y se usa cuando esta clase se instancia desde un gestor de red
-     *  Por el contrario, si se crea esta clase sin un gestor de red (NetMgr), los paquetes 
-     *  recibidos se guardan en la cola de esta misma clase.
-     * @param cb Función callback que será invocada con un objeto NetPacket cada vez 
-     *  que se reciba un paquete válido.
-     */
-    void setReceiveCallback(std::function<void(NetPacket)> cb);
     
     /**
      * @brief Opción para rechazar el paquete de datos si es igual que el último recibido.
@@ -135,6 +125,12 @@ public:
     bool hasData();
 
     /**
+     * @brief Devuelve el tiempo que ha transcurrido desde que ha recibido el último paquete
+     * @return Tiempo transcurrido en ms
+     */
+    unsigned long long getLastPacketMs() const;
+
+    /**
      * @brief Obtiene una referencia al strand que coordina las operaciones del receptor.
      * El strand garantiza que todos los handlers (lectura, inicio, parada) se ejecuten
      * de forma secuencial, incluso si el io_context dispone de un pool de múltiples hilos.
@@ -147,6 +143,29 @@ public:
      * @return Referencia al asio::strand asociado a este receptor.
      */
     void* getStrandNative();
+
+
+// Callback de recepción ----------------------------------------------------------------
+
+    /**
+     * @brief Callback para mandar el paquete recibido a cola centralizada de gestor de red
+     * @details Solo se define y se usa cuando esta clase se instancia desde un gestor de red
+     *  Por el contrario, si se crea esta clase sin un gestor de red (NetMgr), los paquetes 
+     *  recibidos se guardan en la cola de esta misma clase.
+     * @param cb Función callback que será invocada con un objeto NetPacket cada vez 
+     *  que se reciba un paquete válido.
+     */
+    void setReceiveCallback(std::function<void(NetPacket)> cb);
+
+    /**
+     * @brief Limpia la función callback inyectada
+     */
+    void clearReceiveCallback();
+
+    /**
+     * @brief Indica si este socket tiene una función callback de recepción inyectada
+     */
+    bool hasReceiveCalback() const;
 
 
 // Datos de socket ----------------------------------------------------------------------
@@ -258,9 +277,13 @@ private:
     std::string                     name_;              ///< Nombre dado al socket para identificarlo
     std::vector<char>               recv_buffer_;       ///< Buffer para almacenar los datos recibidos
     unsigned int                    rcv_packet_size_;   ///< Tamaño esperado de los paquetes UDP (0 para aceptar cualquier tamaño)
+    
+// Tiempos
+    std::chrono::steady_clock::time_point last_packet_time_;    ///< Almacena el instante de tiempo del último paquete válido recibido
+    bool                            has_rcv_packet_;            ///< Bandera para saber si ya hemos recibido al menos un paquete
 
 // Función inyectada
-    std::function<void(NetPacket)>  on_receive_cb_;     ///< Función callback para mandar paquete recibido a cola centralizada de gestor de red
+    std::function<void(NetPacket)>  on_receive_cb_;             ///< Función callback para mandar paquete recibido a cola centralizada de gestor de red
 
 // Cola de datos recibidos
     std::queue<std::vector<char>>   queue_;                     ///< Cola de datos recibidos

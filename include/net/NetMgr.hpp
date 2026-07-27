@@ -146,14 +146,30 @@ public:
      * @param name Nombre del socket
      * @return true si está en el vector de sockets gestionados, false en caso contrario.
      */
-    bool socketExists(std::string const& socketname);
+    bool socketExists(std::string const& socketname) const;
 
     /**
      * @brief Comprueba si un socket se está gestionando por puerto
      * @param port Puerto del socket
      * @return true si está en el vector de sockets gestionados, false en caso contrario.
      */
-    bool socketExists(unsigned short port);
+    bool socketExists(unsigned short port) const;
+
+    /**
+     * @brief Devuelve el tiempo que ha transcurrido desde que 
+     *  ha recibido el último paquete de un socket UDP específico
+     * @param name Nombre del socket del que obtener el tiempo
+     * @return Tiempo transcurrido en ms
+     */
+    unsigned long long getLastPacketMs(std::string const& name) const;
+
+    /**
+     * @brief Devuelve el tiempo que ha transcurrido desde que 
+     *  ha recibido el último paquete de un socket UDP específico
+     * @param port Puerto del socket del que obtener el tiempo
+     * @return Tiempo transcurrido en ms
+     */
+    unsigned long long getLastPacketMs(unsigned short port) const;
 
 
 // Envío --------------------------------------------------------------------------------
@@ -188,10 +204,19 @@ public:
 
 // Recepción ----------------------------------------------------------------------------
 
+    /**
+     * @brief Extrae el siguiente paquete UDP recibido de la cola de recepción.
+     * 
+     * @param[out] name DEVUELVE Nombre del socket de origen del dato.
+     * @param[out] port DEVUELVE Puerto de origen del dato.
+     * @return std::vector<char> Los datos del paquete recibido, o un vector vacío si la red se ha detenido.
+     */
     std::vector<char> getNextUdpPacket(std::string* name = nullptr, unsigned short* port = nullptr);
 
     /**
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
+     * @note La cola de datos del socket UDP sólo se llena cuando no se ha especificado ningún callback
+     * @warning Solo usar cuando no se ha especificado un callback al socket UDP
      * @warning BLOQUEANTE
      * @returns Datos recibidos del socket en formato std::vector<char>
      */
@@ -199,6 +224,8 @@ public:
 
     /**
      * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
+     * @note La cola de datos del socket UDP sólo se llena cuando no se ha especificado ningún callback
+     * @warning Solo usar cuando no se ha especificado un callback al socket UDP.
      * @warning BLOQUEANTE
      * @returns Datos recibidos del socket en formato std::vector<char>
      */
@@ -230,6 +257,21 @@ private:
      * @return Índice del vector udpSockets
      */
     int getSocketIndex(std::string const& name) const;
+
+    /**
+     * @brief Extrae de forma segura y bloqueante el primer paquete de la cola centralizada que cumpla un criterio.
+     * 
+     * Bloquea el hilo del llamante mediante una variable de condición hasta que un paquete en la cola 
+     * satisfaga el predicado (lambda) especificado o hasta que la recepción del sistema se detenga 
+     * (sockets_running_ == false).
+     * 
+     * @tparam Lambda Tipo del predicado invocable.
+     * @param pred Función o expresión lambda con firma bool(const NetPacket&) que define la condición de búsqueda.
+     * @return std::vector<char> Carga útil (payload) del paquete encontrado, o un vector vacío si se detuvo
+     *         el sistema sin coincidencias.
+     */
+    template <typename Lambda>
+    std::vector<char> extractPacketIf(Lambda pred);
 
 
 // Operaciones privadas con sockets -----------------------------------------------------

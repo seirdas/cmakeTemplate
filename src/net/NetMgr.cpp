@@ -19,7 +19,7 @@
         UDPSocketsVector    udp_sockets_;      // Lista de receptores UDP registrados
 
         // Se declara aquí porque NetPacket está definido en UdpSocket, que sólo se incluye en este cpp
-        std::queue<NetPacket>       udp_rcv_data_;      ///< Cola de datos recibidos por los sockets UDP
+        std::deque<NetPacket>       udp_rcv_data_;      ///< Cola de datos recibidos por los sockets UDP
 
         // Este struct necesita inicializar io_context con work_guar, por eso declaramos el constructor
         Impl() : work_guard_(asio::make_work_guard(io_context_)) {}
@@ -203,7 +203,7 @@
     ) 
     {
         // Rechazar datos inválidos
-        if (local_port < 0) {
+        if (local_port == 0) {
             SYS_WARN("NetMgr","Cannot add new socket: Invalid port: " + std::to_string(local_port));
             return false;
         }
@@ -241,12 +241,12 @@
 
             // Agregar dato recibido a la cola general de NetMgr (si cabe)
             if (pimpl_->udp_rcv_data_.size() < MAX_QUEUE_ELEMENTS_)
-                pimpl_->udp_rcv_data_.push(std::move(pkt));
+                pimpl_->udp_rcv_data_.push_back(std::move(pkt));
             else
                 SYS_WARN("NetMgr", "Central queue full, dropping packet from " + pkt.socket_name + ":" + std::to_string(pkt.port));
 
             // Notificar 
-            udp_rcv_data_cv_.notify_one();
+            udp_rcv_data_cv_.notify_all();
         });
 
         // Intentar inicializar
@@ -310,7 +310,7 @@
         
     }
 
-    bool NetMgr::socketExists(std::string const& socketname) {
+    bool NetMgr::socketExists(std::string const& socketname) const {
         {
             // Proteger acceso a vector de sockets
             std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
@@ -328,7 +328,7 @@
         return false;
     }
 
-    bool NetMgr::socketExists(unsigned short port) {
+    bool NetMgr::socketExists(unsigned short port) const {
         {
             // Proteger acceso a vector de sockets
             std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
@@ -344,6 +344,38 @@
         // Llegará aquí si no encuentra socket
         SYS_WARN("NetMgr","Socket with port " + std::to_string(port) + "' not found.");
         return false;
+    }
+    
+    unsigned long long NetMgr::getLastPacketMs(std::string const& name) const {
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
+
+            // Si hay un socket con ese puerto, devuelve su tiempo
+            for (const auto& sock : pimpl_->udp_sockets_)
+                if (sock->name() == name) 
+                    return sock->getLastPacketMs();
+        }
+        
+        // Llegará aquí si no encuentra socket
+        SYS_WARN("NetMgr","Socket '" + name + "' not found.");
+        return 0;
+    }
+
+    unsigned long long NetMgr::getLastPacketMs(unsigned short port) const {
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
+
+            // Si hay un socket con ese puerto, devuelve su tiempo
+            for (const auto& sock : pimpl_->udp_sockets_)
+                if (sock->port() == port) 
+                    return sock->getLastPacketMs();
+        }
+        
+        // Llegará aquí si no encuentra socket
+        SYS_WARN("NetMgr","Socket with port " + std::to_string(port) + "' not found.");
+        return 0;
     }
 
 
@@ -410,7 +442,7 @@
             return {};   // red detenida, TWorker debe salir
 
         NetPacket pkt = std::move(pimpl_->udp_rcv_data_.front());
-        pimpl_->udp_rcv_data_.pop();
+        pimpl_->udp_rcv_data_.pop_front();
 
         // Pasar los datos a los parámetros pasados como referencia por si se necesitan usar
         if (name) *name = pkt.socket_name;
@@ -436,11 +468,29 @@
                 if (sock->name() == socketname) { target = sock; break; }
         }
 
-        if (target) return target->getFirstPacket();  // <-- BLOQUEANTE
-
         // Llegará aquí si no encuentra socket
-        SYS_WARN("NetMgr","Socket not exists with name " + socketname);
-        return {};
+        if (!target) {
+            SYS_WARN("NetMgr","Socket not exists with name " + socketname);
+            return {};
+        }
+
+        // Si no tiene función inyectada es que sus datos se almacenan en su cola interna
+        if (!target->hasReceiveCalback())
+            return target->getFirstPacket();  // <-- BLOQUEANTE
+
+        // Si tiene función inyectada, los datos estarán el la cola general de NetMgr
+        else {
+            // Buscamos en la cola centralizada usando el nombre (BLOQUEANTE)
+            std::vector<char> data = extractPacketIf([&socketname](const NetPacket& pkt) {
+                return pkt.socket_name == socketname;
+            });
+
+            if (data.empty()) 
+                SYS_WARN("NetMgr", "getDataFromSocket: No packet found for socket " + socketname);
+            
+            return data;
+        }
+
     }
 
     std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port) {
@@ -452,22 +502,42 @@
             return {};
         }
 
-        // Si hay un socket con ese nombre, pide los datos
+        // Si hay un socket con ese puerto, pide los datos
         {
             std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
             for (const auto& sock : pimpl_->udp_sockets_)
                 if (sock->port() == local_port) { target = sock; break; }
         }
-        if (target) return target->getFirstPacket();  // <-- BLOQUEANTE
 
         // Llegará aquí si no encuentra socket
-        SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
-        return {};
+        if (!target) {
+            
+            SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
+            return {};
+        }
+
+        // Si no tiene función inyectada es que sus datos se almacenan en su cola interna
+        if(!target->hasReceiveCalback())
+            return target->getFirstPacket();  // <-- BLOQUEANTE
+
+        // Si tiene función inyectada, los datos estarán el la cola general de NetMgr
+        else {
+            // Buscamos en la cola centralizada usando el puerto (BLOQUEANTE)
+            std::vector<char> data = extractPacketIf([local_port](const NetPacket& pkt) {
+                return pkt.port == local_port;
+            });
+
+            if (data.empty()) 
+                SYS_WARN("NetMgr", "getDataFromPort: No packet found for port " + std::to_string(local_port));
+
+            return data;
+        }
     }
 
     size_t NetMgr::numUdpRcvElements() {
         return pimpl_->udp_rcv_data_.size();
     }
+
 
     // Datos de los sockets guardados -------------------------------------------------------
 
@@ -481,6 +551,30 @@
         for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
             if (pimpl_->udp_sockets_[i]->name() == name) return i;
         /*else*/ return -1;
+    }
+
+    template <typename Lambda>
+    std::vector<char> NetMgr::extractPacketIf(Lambda pred) {
+        std::unique_lock<std::mutex> lock(udp_rcv_data_mtx_);
+
+        // Esperar hasta tener un paquete válido o hasta que los sockets se paren
+        udp_rcv_data_cv_.wait(lock, [this, &pred] {
+            if (!sockets_running_) return true; 
+            return std::any_of(pimpl_->udp_rcv_data_.begin(), pimpl_->udp_rcv_data_.end(), pred);
+        });
+
+        // Buscar si existe el elemento en la cola
+        auto it = std::find_if(pimpl_->udp_rcv_data_.begin(), pimpl_->udp_rcv_data_.end(), pred);
+        
+        // Si lo encuentra, lo extrae
+        if (it != pimpl_->udp_rcv_data_.end()) {
+            std::vector<char> data = std::move(it->data_rcv);
+            pimpl_->udp_rcv_data_.erase(it);
+            return data;
+        }
+
+        // Si no lo encuentra (porque despertó por detención de red), devuelve vacío
+        return {};
     }
 
 
