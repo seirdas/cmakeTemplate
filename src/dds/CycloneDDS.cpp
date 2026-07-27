@@ -78,6 +78,11 @@
 
     void CycloneDDS::Impl::close() {
         initialized_ = false;
+
+        // Reset de entidades DDS creadas
+        subscriber_  = dds::core::null;
+        publisher_   = dds::core::null;
+        participant_ = dds::core::null;
     }
 
 
@@ -171,12 +176,11 @@
             // Crear el DataWriter
             dds::pub::DataWriter<HelloWorld> writer(pimpl_->publisher_, pimpl_->topic_);
             
-            
             // Publicar el mensaje en la red
             writer.write(msg);
 
         } catch (const dds::core::Exception& e) {
-            std::cerr << "Excepción de DDS en publisher: " << e.what() << std::endl;
+            SYS_WARN("CycloneDDS","Publisher exception: " + std::string(e.what()));
             return false;
         }
 
