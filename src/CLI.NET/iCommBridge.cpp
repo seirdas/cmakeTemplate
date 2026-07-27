@@ -3,6 +3,8 @@
 #include "tts/TTSMgr.hpp"
 #include <vcclr.h>
 
+// General ------------------------------------------------------------------------------
+
 iCommBridge::iCommBridge(TTSMgr* parent) :
     initialized_(true)
 {
@@ -19,9 +21,15 @@ iCommBridge::~iCommBridge() {
     }
 }
 
+// Inicialización y ejecución -----------------------------------------------------------
+
 bool iCommBridge::init() {
     auto handle = static_cast<gcroot<iCommWrapper^>*>(managedWrapper_);
     return (*handle)->init();
+}
+
+bool iCommBridge::isInitialized() const {
+    return initialized_;
 }
 
 bool iCommBridge::close() {

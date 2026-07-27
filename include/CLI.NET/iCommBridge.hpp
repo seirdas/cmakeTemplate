@@ -30,7 +30,8 @@ public:
      */
     ~iCommBridge();
 
-// Ejecución ----------------------------------------------------------------------------
+
+// Inicialización y ejecución -----------------------------------------------------------
 
     /**
      * @brief Inicializa el cliente iComm.
@@ -54,6 +55,7 @@ public:
      */
     bool close();
 
+    
 private:
 
 // Inicialización
