@@ -322,3 +322,29 @@ void TTSMgr::TWorker() {
 
     }
 }
+
+// Observadores -------------------------------------------------------------------------
+
+void TTSMgr::addObserver(ITTSObserver* obs) {
+    observers_.push_back(obs);
+}
+
+// Notificar a observadores -------------------------------------------------------------
+
+void TTSMgr::notify() {
+    // 1. Empaquetamos los datos actuales
+    TTSCoreData data;
+    data.available_models       = ttsCore_.getAvailableModels();
+    data.loaded_models          = ttsCore_.getLoadedModels();
+    data.num_available_models   = ttsCore_.numAvailableModels();
+    data.num_loaded_models      = ttsCore_.numLoadedModels();
+    
+    if (data.num_available_models > 0) {
+        data.init_percent = static_cast<short>(100.0 * data.num_loaded_models / data.num_available_models);
+    }
+
+    // 2. Notificamos a los observadores pasándoles la estructura
+    for (auto* obs : observers_) {
+        obs->onTTSDataChanged(data);
+    }
+}

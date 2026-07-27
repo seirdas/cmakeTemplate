@@ -8,6 +8,7 @@
 // intentar quitar esto si es posible:
 #include "datatypes/TTSDataTypes.hpp"
 #include "tts/TTSCore.hpp"
+#include "tts/ITTSObserver.hpp"     // Clase para observadores
 
 
 // Declaración implícita
@@ -144,9 +145,26 @@ public:
      * @brief Hilo consumidor de paquetes TTS
      */
     void TWorker();
+
+
+// Observadores -------------------------------------------------------------------------
+
+    /**
+     * @brief Método para añadir una clase observadora
+     */
+    void addObserver(ITTSObserver* obs);
     
 
 private:
+
+// Notificar a observadores -------------------------------------------------------------
+
+    /**
+     * @brief Método privado para encapsular datos y notificarlos externamente
+     *  a través del patrón observador
+     */
+    void notify();
+
 
 /************ Variables ********************************************************/
 
@@ -186,5 +204,8 @@ private:
     TTSPlayers                  ttsPlayers_;        ///< Lista de reproductores TTS
     TTSInfos                    PlayersInfo_;       ///< Lista de información de cada TTSPlayer
     std::mutex                  playersInfo_mtx_;   ///< Mutex para la lista de información
+
+// Observadores
+    std::vector<ITTSObserver*>  observers_;         ///< Lista de observadores para transferir datos
 
 };
