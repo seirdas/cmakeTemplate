@@ -114,11 +114,12 @@
 
             pimpl_->initialized_ = true;
         } catch (const dds::core::Exception& e) {
-            SYS_WARN("CycloneDDS","Error al inicializar DDS: " + std::string(e.what()) );
+            SYS_WARN("CycloneDDS","CycloneDDS init failed: " + std::string(e.what()) );
             return false;
         }
 
         // Inicializar el hilo suscriptor (recibir mensajes...)
+        SYS_INFO("CycloneDDS","Initializing subscriber in a separated thread...");
         run_subscriber();
 
         initialized_ = true;
@@ -198,7 +199,7 @@
 
         // Lanzamos la función de lectura dentro del std::thread miembro
         sub_thread_ = std::thread([this]() {
-            SYS_INFO("CycloneDDS","Subscriber initialized in a separated thread...");
+            SYS_INFO("CycloneDDS","Subscriber initialized");
 
             try {
                 dds::sub::DataReader<HelloWorld> reader(pimpl_->subscriber_, pimpl_->topic_);
@@ -218,7 +219,7 @@
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
             } catch (const dds::core::Exception& e) {
-                std::cerr << "Excepción de DDS en subscriber thread: " << e.what() << std::endl;
+                SYS_WARN("CycloneDDS","Subscriber thread exception: " + std::string(e.what()));
             }
 
             SYS_INFO("CycloneDDS","Subscriber thread closed");
@@ -229,10 +230,10 @@
         // Si la bandera está en true, solicitamos la parada
         if (sub_running_.exchange(false)) {
             // Esperamos a que el hilo termine su última iteración y se cierre
-            if (sub_thread_.joinable()) {
+            if (sub_thread_.joinable()) 
                 sub_thread_.join();
-            }
-            std::cout << "[CycloneDDS] Subscriber detenido correctamente." << std::endl;
+            
+            SYS_INFO("CycloneDDS","Subscriber stopped successfuly");
         }
     }
 
