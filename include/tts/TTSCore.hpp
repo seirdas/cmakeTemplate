@@ -274,6 +274,32 @@ private:
     void keepAliveWorker();
 
 
+// Función inyectada de notificación a observers ------------------------------------
+
+    /**
+     * @brief Utiliza la función inyectada para que la clase administrada
+     *  superior notifique a los observadores de dicha clase
+     */
+    void notify();
+
+    /**
+     * @brief Establece la función de notificar desde clase administradora superior
+     * @param cb 
+     */
+    void set_notification_cb(std::function<void(void)> cb);
+
+    /**
+     * @brief Borra la función de notificar inyectada
+     */
+    void clear_notification_cb();
+
+    /**
+     * @brief Devuelve si existe la función de notificación inyectada
+     * @return @c true Si tiene función, @c false en caso contrario.
+     */
+    bool has_notification_cb();
+
+
 /************ Variables ********************************************************/
 
 // Aliases
@@ -311,5 +337,8 @@ private:
     std::atomic<bool>       loading_;           ///< Indica si está cargando modelos
     std::mutex              exit_mtx_;          ///< Evita destruir TTSCore si hay algo ejecutándose
     std::condition_variable exit_cv_;           ///< Notifica cuándo paran las tareas
+
+// Función inyectada de notificación a observadores
+    std::function<void(void)>  notification_cb_;             ///< Función callback para "mandar" notificar a clase controladora superior
 
 };

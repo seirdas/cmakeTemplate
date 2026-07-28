@@ -789,6 +789,24 @@
         }
     }
 
+    // Función inyectada de notificación a observers ------------------------------------
+
+    void TTSCore::notify() {
+        notification_cb_;
+    }
+
+    void TTSCore::set_notification_cb(std::function<void(void)> cb) {
+        notification_cb_ = std::move(cb); 
+    }
+
+    void TTSCore::clear_notification_cb() {
+        if (notification_cb_) notification_cb_ = nullptr;
+    }
+
+    bool TTSCore::has_notification_cb() {
+        return (notification_cb_) ? true : false;
+    }
+
 
 #else
 // ============================================================
