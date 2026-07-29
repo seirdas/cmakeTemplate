@@ -50,6 +50,9 @@ public:
      */
     ~AppController();
 
+
+// Inicialización y ejecución -----------------------------------------------------------
+
     /**
      * @brief Inicializa los miembros de la aplicación
      * @param argc Número de parámetros de entrada del programa
@@ -58,13 +61,10 @@ public:
     bool init(int argc, char** argv);
 
     /**
-     * @brief Ejecuta la aplicación. Inicia el receptor UDP y la ventana UI.
-     * @return 0 si todo se ejecutó correctamente, otro en caso de error.
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
      */
-    int run();
-
-
-// Configuración ------------------------------------------------------------------------
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -75,6 +75,17 @@ public:
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
     void loadConfig(void* config);
+
+    /**
+     * @brief Cierra los módulos y los hilos iniciados para terminar la ejecución
+     */
+    void close();
+
+    /**
+     * @brief Ejecuta la aplicación. Inicia el receptor UDP y la ventana UI.
+     * @return 0 si todo se ejecutó correctamente, otro en caso de error.
+     */
+    int run();
 
 
 // Hilos --------------------------------------------------------------------------------
@@ -203,7 +214,6 @@ public:
     float getInputRMSLevel(std::string const& captureName) noexcept override;
 
 
-
     // TTS ----------------------------------------------------------------------------------
 
     /**
@@ -233,11 +243,6 @@ public:
         std::string const& playbackName)
         noexcept override;
 
-    /**
-     * @brief Obtiene los datos de módulo TTS
-     */
-    TTSCoreData getTTSData() noexcept override; 
-
 
     // VoIP ---------------------------------------------------------------------------------
 
@@ -258,6 +263,7 @@ private:
 // Datos de aplicación
     std::string             app_name_;          ///< Nombre de aplicación     
     std::string             version_;           ///< Versión de la aplicación
+    bool                    initialized_;       ///< Bandera para indicar inicialización exitosa
 
 // Inicialización y ejecución
     std::atomic<bool>       running_;           ///< flag de aplicación corriendo (para hilos)

@@ -115,6 +115,9 @@
         if (lazy_load_ && keep_alive_seconds_.count() > 0)
             keepalive_thread_ = std::thread(&TTSCore::keepAliveWorker, this);
 
+        // Notifica de los nuevos datos
+        notify();
+
         return !loaded_models_.empty();;
     }
 
@@ -526,17 +529,17 @@
     
     // Idiomas-------------------------------------------------------------------------------
 
-    bool TTSCore::isEnglish(std::string const& modelName) const{ 
+    bool TTSCore::isEnglish(std::string const& modelName) const { 
         // Comprobar si el nombre del modelo (existe) contiene "en_US"
         return modelName.find("en_US") != std::string::npos;
     }
 
-    bool TTSCore::isSpanish(std::string const& modelName) const{
+    bool TTSCore::isSpanish(std::string const& modelName) const {
         // Comprobar si el nombre del modelo (existe) contiene "es_"
         return modelName.find("es_") != std::string::npos; 
     }
 
-    bool TTSCore::isBritainEnglish(std::string const& modelName) const{
+    bool TTSCore::isBritainEnglish(std::string const& modelName) const {
         // Comprobar si el nombre del modelo (existe) contiene "en_GB"
         return modelName.find("en_GB") != std::string::npos; 
     }
@@ -572,6 +575,26 @@
             if (isBritainEnglish(name))
                 models.push_back(name);
         return models;
+    }
+
+
+    // Función inyectada de notificación a observers ------------------------------------
+
+    void TTSCore::notify() {
+        if (notification_cb_) 
+            notification_cb_();
+    }
+
+    void TTSCore::set_notification_cb(std::function<void(void)> cb) {
+        notification_cb_ = std::move(cb); 
+    }
+
+    void TTSCore::clear_notification_cb() {
+        notification_cb_ = nullptr;
+    }
+
+    bool TTSCore::has_notification_cb() const {
+        return static_cast<bool>(notification_cb_);
     }
 
 
@@ -668,8 +691,10 @@
         }
 
         // Agregarlo a la lista de modelos disponibles del TTSCore
-        std::lock_guard<std::mutex> lock(models_mutex_);
-        loaded_models_[st_modelname] = tts_model;
+        {
+            std::lock_guard<std::mutex> lock(models_mutex_);
+            loaded_models_[st_modelname] = tts_model;
+        }
 
         // Activar el tiempo de vida del modelo
         if (lazy_load_) {
@@ -684,6 +709,9 @@
             SYS_INFO("TTSCore","Britain English model loaded: '" + st_modelname + "'");
         else if(isSpanish(st_modelname))
             SYS_INFO("TTSCore","Spanish model loaded: '" + st_modelname + "'");
+
+        // Notificar cambios a observadores
+        notify();
 
         // Todo correcto
         return true;
@@ -770,8 +798,8 @@
 
             // Descargar modelo si no está generando nada
             std::vector<std::string> modelos_a_descargar;
+            bool busy = false;
             for (auto const& name : candidatos) {
-                bool busy;
                 {
                     std::lock_guard<std::mutex> plock(processing_mtx_);
                     busy = processing_texts_.count(name) > 0;
@@ -786,25 +814,11 @@
             // Borrar los modelos de la lista de control de tiempos de modelos
             for (auto const& name : modelos_a_descargar)
                 last_used_.erase(name);
+
+            // Notificar a los observadores
+            notify();
+            
         }
-    }
-
-    // Función inyectada de notificación a observers ------------------------------------
-
-    void TTSCore::notify() {
-        notification_cb_;
-    }
-
-    void TTSCore::set_notification_cb(std::function<void(void)> cb) {
-        notification_cb_ = std::move(cb); 
-    }
-
-    void TTSCore::clear_notification_cb() {
-        if (notification_cb_) notification_cb_ = nullptr;
-    }
-
-    bool TTSCore::has_notification_cb() {
-        return (notification_cb_) ? true : false;
     }
 
 

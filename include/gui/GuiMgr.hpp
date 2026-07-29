@@ -6,6 +6,10 @@
 #include <unordered_map>
 
 
+// Includes de observador
+#include "tts/ITTSObserver.hpp"
+
+
 // Forward declaration
 struct GLFWwindow;
 struct ImGuiStyle;
@@ -24,7 +28,9 @@ class IAppControl;
   * @note Proporciona varias funciones de estilo para configurar la apariencia de ImGui.
   * @see IAppControl
   */
-class GuiMgr {
+class GuiMgr 
+    : public ITTSObserver
+{
 
 public:
 
@@ -184,6 +190,16 @@ private:
      * @note Solo para Windows
      */
     void titleBarDarkMode(bool useDarkMode);
+
+
+// Overrides de interfaces observador ---------------------------------------------------
+
+    /**
+     * @brief Cuando TTSMgr o TTSCore notifiquen un cambio, guardamos los datos en pimpl_
+     * @param data Paquete de datos internos de TTS
+     */
+	void onTTSDataChanged(const TTSCoreData& data) override;
+
     
 
 // Temas --------------------------------------------------------------------------------

@@ -1,4 +1,5 @@
-// TTSObserver.hpp
+#pragma once
+
 #include "datatypes/TTSDataTypes.hpp"
 
 class ITTSObserver {

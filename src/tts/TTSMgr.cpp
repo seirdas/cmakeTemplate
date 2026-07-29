@@ -56,9 +56,18 @@ bool TTSMgr::init(void* config) {
     // Inicialización de TTSCore (en hilo para no bloquear)
     SYS_INFO("TTSMgr","Starting TTSCore async load...");
     hilo_ttscore_ = std::thread([this, config]() {
+
+            // Inyectar función de notify al TTSCore
+            ttsCore_.set_notification_cb([this](){
+                this->notify();
+            });
+
+            // Inicializar submódulo 
             if(!ttsCore_.init(config))
                 SYS_WARN("TTSMgr","TTSCore FAIL");
             else SYS_INFO("TTSMgr","TTSCore OK");
+
+            // Actualizar json con los datos de ttscore (si aplica)
             JsonMgr::instance().update();
         }
     );
@@ -328,6 +337,7 @@ void TTSMgr::TWorker() {
 void TTSMgr::addObserver(ITTSObserver* obs) {
     observers_.push_back(obs);
 }
+
 
 // Notificar a observadores -------------------------------------------------------------
 

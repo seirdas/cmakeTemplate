@@ -185,11 +185,6 @@ public:
         std::string const& playbackName)
         noexcept = 0;
 
-    /**
-     * @brief Obtiene los datos de módulo TTS
-     */
-    virtual TTSCoreData getTTSData() noexcept = 0; 
-
 
 
 // VoIP ---------------------------------------------------------------------------------

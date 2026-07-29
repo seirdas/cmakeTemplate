@@ -404,10 +404,6 @@
 		static float sizeX__Izq = GetContentRegionAvail().x * 0.3f;
 		static std::string TTS_text;
 		
-		// Coge datos de módulos
-		pimpl_->datosTTS = ctrl_->getTTSData();
-	
-		
 		// COLUMNA IZQUIERDA
 		BeginGroup();
 		{
@@ -1041,6 +1037,17 @@
 			DwmSetWindowAttribute(glfwGetWin32Window(window_), 20, &useDarkMode_, sizeof(useDarkMode_));
 			SYS_INFO("GuiMgr",  st_darkmode + " window title set");
 		#endif
+	}
+
+
+	// Overrides de interfaces observador ---------------------------------------------------
+
+	void GuiMgr::onTTSDataChanged(const TTSCoreData& data) {
+		
+		/* Recomendable implementar mutex */
+		//std::lock_guard<std::mutex> lock(pimpl_->tts_data_mtx);
+		
+		pimpl_->datosTTS = data;
 	}
 
 #else

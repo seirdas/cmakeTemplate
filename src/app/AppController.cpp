@@ -22,6 +22,7 @@
 // General ------------------------------------------------------------------------------
 
 AppController::AppController() :
+    initialized_(false),
     running_(false),
     online_mode_(true),
     version_("0.0.0"),
@@ -43,72 +44,11 @@ AppController::AppController() :
 }
 
 AppController::~AppController() {
-
-    SYS_INFO("AppController","Closing AppController...");
-
-    // Notifica el estado de cerrado (para threads, etc.)
-    running_ = false;
-
-    /* Cerrar módulos (opcional, recomendado) */
-
-    if (gui_->isInitialized()) {
-        SYS_INFO("AppController","Closing GUI subsystem...");
-        gui_->close();
-    }
-
-    if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
-        SYS_INFO("AppController","Closing GUI subsystem...");
-        net_->close();
-    }
-
-    if (snd_->isInitialized()) {
-        SYS_INFO("AppController","Closing sound subsystem...");
-        snd_->stop();
-    }
-    
-    if (tmx_->isInitialized()) {
-        SYS_INFO("AppController","Closing Totalmix subsystem...");
-        tmx_->close();
-    }
-
-    if (sym_->isInitialized()) {
-        SYS_INFO("AppController","Closing Symetrix manager...");
-        sym_->close();
-    }
-
-    if (com_->isInitialized()) {
-        SYS_INFO("AppController","Closing Comms logic module...");
-        com_->close();
-    }
-
-    if (dds_->isInitialized()) {
-        SYS_INFO("AppController","Closing FastDDS manager...");
-        dds_->close();
-    }
-
-    if (cds_->isInitialized()) {
-        SYS_INFO("AppController","Closing CycloneDDS manager...");
-        cds_->close();
-    }
-
-    if (tts_->isInitialized()) {
-        SYS_INFO("AppController","Closing TTS manager...");
-        tts_->close();
-    }
-
-    
-    // Cerrar hilos pendientes de aplicación
-    SYS_INFO("AppController","Waiting for running threads...");
-    online_cv_.notify_all();
-    if (hilo_consumer_.joinable())
-        hilo_consumer_.join();
-
-    if (hilo_test_.joinable())
-        hilo_test_.join();
-
-
-    SYS_INFO("AppController","AppController closed successfuly.");
+    close();
 }
+
+
+// Inicialización y ejecución -----------------------------------------------------------
 
 bool AppController::init(int argc, char** argv) {
 
@@ -216,16 +156,19 @@ bool AppController::init(int argc, char** argv) {
     if(!tts_->init(config_node))
         SYS_WARN("AppController","TTS manager FAIL");
     else SYS_INFO("AppController","TTS manager OK");
+
+
+    // Vincular módulos a través de patrón observador a GUI
+    if (gui_->isInitialized() && tts_->isInitialized())
+        tts_->addObserver(gui_.get());
     
 
     // Activar running para los hilos
     running_ = true;
 
-
     // Hilo consumidor de paquetes online
     SYS_INFO("AppController","Starting net consumer thread...");
     hilo_consumer_ = std::thread(&AppController::TWorker, this);
-
 
     // Hilo para cout de pruebas
     SYS_INFO("AppController","Starting test thread...");
@@ -241,14 +184,9 @@ bool AppController::init(int argc, char** argv) {
     return true;
 }
 
-int AppController::run() {
-    SYS_INFO("AppController","Running app...");
-    gui_->run(); // ← Bloquea hasta cerrar
-    return 0;
+bool AppController::isInitialized() const{
+    return initialized_;
 }
-
-
-// Configuración ------------------------------------------------------------------------
 
 void AppController::loadConfig(void* config) {
     if (!config)
@@ -262,6 +200,79 @@ void AppController::loadConfig(void* config) {
 
 }
 
+void AppController::close() {
+
+    SYS_INFO("AppController","Closing AppController...");
+
+    // Notifica el estado de cerrado (para threads, etc.)
+    running_ = false;
+
+    /* Cerrar módulos (opcional, recomendado) */
+
+    if (gui_->isInitialized()) {
+        SYS_INFO("AppController","Closing GUI subsystem...");
+        gui_->close();
+    }
+
+    if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
+        SYS_INFO("AppController","Closing GUI subsystem...");
+        net_->close();
+    }
+
+    if (snd_->isInitialized()) {
+        SYS_INFO("AppController","Closing sound subsystem...");
+        snd_->stop();
+    }
+    
+    if (tmx_->isInitialized()) {
+        SYS_INFO("AppController","Closing Totalmix subsystem...");
+        tmx_->close();
+    }
+
+    if (sym_->isInitialized()) {
+        SYS_INFO("AppController","Closing Symetrix manager...");
+        sym_->close();
+    }
+
+    if (com_->isInitialized()) {
+        SYS_INFO("AppController","Closing Comms logic module...");
+        com_->close();
+    }
+
+    if (dds_->isInitialized()) {
+        SYS_INFO("AppController","Closing FastDDS manager...");
+        dds_->close();
+    }
+
+    if (cds_->isInitialized()) {
+        SYS_INFO("AppController","Closing CycloneDDS manager...");
+        cds_->close();
+    }
+
+    if (tts_->isInitialized()) {
+        SYS_INFO("AppController","Closing TTS manager...");
+        tts_->close();
+    }
+
+    
+    // Cerrar hilos pendientes de aplicación
+    SYS_INFO("AppController","Waiting for running threads...");
+    online_cv_.notify_all();
+    if (hilo_consumer_.joinable())
+        hilo_consumer_.join();
+
+    if (hilo_test_.joinable())
+        hilo_test_.join();
+
+
+    SYS_INFO("AppController","AppController closed successfuly.");
+}
+
+int AppController::run() {
+    SYS_INFO("AppController","Running app...");
+    gui_->run(); // ← Bloquea hasta cerrar
+    return 0;
+}
 
 // Hilos --------------------------------------------------------------------------------
 

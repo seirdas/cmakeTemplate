@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <chrono>
+#include <vector>
 
 /**
  * @brief Datos agrupados del módulo TTS Core (para GUI)
