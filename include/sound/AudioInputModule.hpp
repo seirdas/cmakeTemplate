@@ -279,6 +279,7 @@ private:
     std::string             name_;                ///< Nombre asociado al dispositivo de captura
     bool                    is_valid_;            ///< Bandera para indicar si está inicializado el dispositivo
     bool                    initialized_;         ///< Bandera para indicar inicialización exitosa
+    bool                    running_;             ///< Flag de captura corriendo
 
 // Configuración de entrada
     unsigned short          channels_;            ///< Canales del audio

@@ -137,7 +137,8 @@
         // Avisar, guardar y notificar si el dispositivo se ha desconectado o ya no está disponible
         if (pNotification->type == ma_device_notification_type_stopped) {
             self->is_valid_ = false;
-            SYS_WARN("AudioInputModule", "Device disconnected or stopped unexpectedly.");
+            if (self->running_) // Avisa si no se está cerrando
+                SYS_WARN("AudioInputModule", "Device disconnected or stopped unexpectedly.");
         }
         else {
             self->is_valid_ = true;
@@ -153,6 +154,7 @@
     pimpl_(std::make_unique<Impl>(ctx, devInfo)),
     is_valid_(false),
     initialized_(false),
+    running_(false),
     channels_(2),
     sampleRate_(48000),
     selectedChannel_(0),
@@ -216,6 +218,7 @@
         // Llega hasta aquí si se ha inicializado bien
         is_valid_ = true;
         initialized_ = true;
+        running_ = true;
 
         return initialized_; //<- true
     }
@@ -251,6 +254,9 @@
             StopRec();
             rec_buffer_.clear();
         }
+
+        // Marco running false para que no salga warn de "input closed unexpectedly"
+        running_ = false;
 
         // Detener la captura de audio
         SYS_INFO("AudioInputModule","Stopping device...");
