@@ -402,8 +402,8 @@
         style_->Colors[ImGuiCol_SliderGrab]            = ImVec4(0.0314f, 0.9490f, 0.8431f, 1.0000f);
         style_->Colors[ImGuiCol_SliderGrabActive]      = ImVec4(0.6000f, 0.9647f, 0.0314f, 1.0000f);
         style_->Colors[ImGuiCol_Button]                = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
-        style_->Colors[ImGuiCol_ButtonHovered]         = ImVec4(0.1804f, 0.1882f, 0.1961f, 1.0000f);
-        style_->Colors[ImGuiCol_ButtonActive]          = ImVec4(0.1529f, 0.1529f, 0.1529f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonHovered] = ImVec4(0.9000f, 0.9000f, 0.9000f, 1.0000f);    // <- Modificado
+        style_->Colors[ImGuiCol_ButtonActive]  = ImVec4(0.8000f, 0.8000f, 0.8000f, 1.0000f);    // <- Modificado
         style_->Colors[ImGuiCol_Header]                = ImVec4(0.1412f, 0.1647f, 0.2078f, 1.0000f);
         style_->Colors[ImGuiCol_HeaderHovered]         = ImVec4(0.1059f, 0.1059f, 0.1059f, 1.0000f);
         style_->Colors[ImGuiCol_HeaderActive]          = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
@@ -1398,8 +1398,8 @@
         style_->Colors[ImGuiCol_SliderGrab]               = ImVec4(0.9725f, 1.0000f, 0.4980f, 1.0000f);
         style_->Colors[ImGuiCol_SliderGrabActive]         = ImVec4(1.0000f, 0.7961f, 0.4980f, 1.0000f);
         style_->Colors[ImGuiCol_Button]                   = ImVec4(0.1176f, 0.1333f, 0.1490f, 1.0000f);
-        style_->Colors[ImGuiCol_ButtonHovered]            = ImVec4(0.1804f, 0.1882f, 0.1961f, 1.0000f);
-        style_->Colors[ImGuiCol_ButtonActive]             = ImVec4(0.1529f, 0.1529f, 0.1529f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonHovered] = ImVec4(0.9000f, 0.9000f, 0.9000f, 1.0000f);    // <- Modificado
+        style_->Colors[ImGuiCol_ButtonActive]  = ImVec4(0.8000f, 0.8000f, 0.8000f, 1.0000f);    // <- Modificado
         style_->Colors[ImGuiCol_Header]                   = ImVec4(0.1412f, 0.1647f, 0.2078f, 1.0000f);
         style_->Colors[ImGuiCol_HeaderHovered]            = ImVec4(0.1059f, 0.1059f, 0.1059f, 1.0000f);
         style_->Colors[ImGuiCol_HeaderActive]             = ImVec4(0.0784f, 0.0863f, 0.1020f, 1.0000f);
