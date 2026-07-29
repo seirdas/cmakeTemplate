@@ -207,7 +207,7 @@
                 return false;
             }
 
-            SYS_INFO("UdpSocket","[" + name_ + "] sendPacket() -> " + std::to_string(bytes_sent) + " bytes sent successfuly.");
+            SYS_INFO("UdpSocket","[" + name_ + "] sendPacket() -> " + std::to_string(bytes_sent) + " bytes sent successfully.");
             return true;
         }
         catch (const std::exception& e)

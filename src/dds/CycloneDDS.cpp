@@ -157,7 +157,7 @@
         msg.message("Hola desde CycloneDDS (C++ API)!");
         
         if(publish_now(msg))
-            SYS_INFO("CycloneDDS","Test data sent successfuly.");
+            SYS_INFO("CycloneDDS","Test data sent successfully");
         else
             SYS_WARN("CycloneDDS","Test data send error");
 
@@ -237,7 +237,7 @@
             if (sub_thread_.joinable()) 
                 sub_thread_.join();
             
-            SYS_INFO("CycloneDDS","Subscriber stopped successfuly");
+            SYS_INFO("CycloneDDS","Subscriber stopped successfully");
         }
     }
 

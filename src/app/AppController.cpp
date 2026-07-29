@@ -265,7 +265,7 @@ void AppController::close() {
         hilo_test_.join();
 
 
-    SYS_INFO("AppController","AppController closed successfuly.");
+    SYS_INFO("AppController","AppController closed successfully");
 }
 
 int AppController::run() {

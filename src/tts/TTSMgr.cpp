@@ -135,7 +135,7 @@ void TTSMgr::close() {
         hilo_ttscore_.join();
     }
 
-    SYS_INFO("TTSMgr","TTSMgr closed successfuly");
+    SYS_INFO("TTSMgr","TTSMgr closed successfully");
 }
 
 void TTSMgr::Ejecutar(const TTSPacket& packet) {
