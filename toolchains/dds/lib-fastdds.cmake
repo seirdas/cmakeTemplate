@@ -47,13 +47,13 @@ message(STATUS "[FastDDS] foonathan_memory found in: ${foonathan_memory_DIR}")
 # =========================================================
 
 # Carpeta de salida de cpp/hpp generado de .idl's
-set(IDL_DIR         "${CMAKE_SOURCE_DIR}/IDL")
+set(IDL_DIR         "${CMAKE_SOURCE_DIR}/interfaces/IDL")
 set(IDL_GENERATED_FOLDER       "fastdds_generated")
 set(IDL_GENERATED_PATH         "${IDL_DIR}/${IDL_GENERATED_FOLDER}")
 file(MAKE_DIRECTORY "${IDL_GENERATED_PATH}")
 
 # Guardar todos los archivos IDL en IDL_FILES
-file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
+file(GLOB IDL_FILES CONFIGURE_DEPENDS "${IDL_DIR}/*.idl")
 
 # Generar cxx, hpp... de todos los idl's de la carpeta IDL
 if(IDL_FILES)
