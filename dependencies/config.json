@@ -1,5 +1,59 @@
 {
-    "comms": {},
+    "comms": {
+        "positions": [
+            {
+                "alias": "PILOT",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "COPILOT",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "tm_channels": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                }
+            }
+        ]
+    },
     "fastdds": {
         "enable": true,
         "DOMAIN_ID": 0,

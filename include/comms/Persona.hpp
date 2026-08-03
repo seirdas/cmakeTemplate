@@ -24,6 +24,28 @@ public:
      */
     ~Persona();
 
+
+// Inicialización y ejecución -----------------------------------------------------------
+
+    /**
+     * @brief Inicializa la persona con sus datos
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     */
+    bool init(void* config = nullptr);
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    /**
+    * @brief Carga y valida la configuración de la clase desde un objeto JSON.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
+
+
 // Configuración ------------------------------------------------------------------------
 
     /**
@@ -70,6 +92,9 @@ private:
 
 /************ Variables ********************************************************/
 
+// Inicialización y ejecución
+    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
+
 // Datos de la persona
     std::string name_;              ///< Nombre de la persona
     bool        is_instructor_;     ///< flag que indica si es un instructor
@@ -87,7 +112,9 @@ private:
         std::vector<short> out; ///< Número de salidas totalmix asociadas
         short fx;               ///< Número de entrada/salida de bucle de efectos
         short out_spk;          ///< Número de salida de speaker
-    }tm_;                       ///< Instancia de metadatos relacionados con entradas/salidas de totalmix
+    };
+    
+    st_tm   tm_;                ///< Instancia de metadatos relacionados con entradas/salidas de totalmix
 
 
 // Datos de entradas/salidas (symetrix)
@@ -105,7 +132,10 @@ private:
         short in_fx_input_sel;      ///< ID de FX Input selector para fx de entrada (1-4)
         short out_gain_fader;       ///< ID de ganancia de salida                   (GAIN_MIN-GAIN_MAX)
         short out_gain_mute;        ///< ID de mute de ganancia de salida           (0-1)
-    }symID_;                        ///< Instancia de metadatos relacionados con entradas/salidas dante asociadas a symetrix
+    };
+
+    st_sym    symIDs_;              ///< Instancia de metadatos de componentes de Symetrix Composer
+
 
 
 // Identificadores de transmisión/recepción
