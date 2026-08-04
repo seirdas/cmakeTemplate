@@ -187,6 +187,17 @@ public:
 
     bool playbackTest();
 
+// Ejecución del morse
+
+    /**
+    * @brief Genera el audio (PCM mono, float 32) correspondiente a un texto en morse.
+    * @param tipo Radioayuda a la que pertenece el mensaje (ADF1, VOR1...), usada para
+    *  obtener su frecuencia de tono y el espaciado entre palabras desde la config.
+    * @param texto Texto a codificar (letras/números soportados por MORSE_DICT; los
+    *  espacios se interpretan como separación entre palabras).
+    * @return Vector de muestras PCM (mono, @c morseSampleRate_ Hz). Vacío si el tipo no existe.
+    */
+    std::vector<float> generateMorse(std::string const& tipo, std::string const& texto) const;
 
 private:
 
@@ -215,5 +226,10 @@ private:
     bool                    smoothedValues_;        ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
     float                   attackCoeff_;           ///< Valor de ataque (+grande = subida lenta)
     float                   releaseCoeff_;          ///< Valor de release (+grande = bajada lenta)
-
+// Playbacks 
+// Parámetros Morse
+    unsigned int                                  morseUnitMs_;           ///< Duración del punto, compartida por todo el grupo MORSE
+    unsigned int                                  morseSampleRate_;       ///< Sample rate (Hz) del audio generado para morse
+    std::unordered_map<std::string, float>        morseFrequencies_;      ///< Por radioayuda: frecuencia del tono (Hz)
+    std::unordered_map<std::string, unsigned int> espacioEntreMorse_;     ///< Por radioayuda: separación entre palabras (ms)
 };

@@ -1,6 +1,7 @@
 #include "sound/SoundMgr.hpp"
 #include <algorithm>
 
+
 // Macro de cmake al activar la librería
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
@@ -12,6 +13,7 @@
     #include "sound/AudioPlaybackModule.hpp"
     #include "system/SystemMgr.hpp"
     #include "files/JsonMgr.hpp"    // Para conocer json
+    #include "datatypes/MorseDict.hpp"
 
 
     // Implementación de miembros de la clase de miniaudio (pimpl_)
@@ -31,7 +33,9 @@
         MAX_REINIT_ATTEMPTS(3),
         smoothedValues_(true),
         attackCoeff_(0.5),
-        releaseCoeff_(0.1)
+        releaseCoeff_(0.1),
+        morseUnitMs_(100),
+        morseSampleRate_(48000)
     {
 
     }
@@ -86,6 +90,7 @@
         attackCoeff_= std::clamp(attackCoeff_, minValue, maxValue);
         jsonMgr.get_or_set(cfg, "release_coefficient",  releaseCoeff_);
         releaseCoeff_= std::clamp(releaseCoeff_, minValue, maxValue);
+        
 
         /* CAPTURAS */
         // Recorrer elementos de capturas dentro del nodo json
@@ -95,12 +100,44 @@
             addCaptureDevice(config_elements[i]);
         }
 
-        /* PLAYBACKS */
+       /* PLAYBACKS */
+        std::vector<json*> playbackElements = jsonMgr.getArrayElements(cfg, "Playbacks");
+       
+        // usamos pb como puntero tipo json para recorrer todos los elementos de playback 
 
-        // Leo la "lista de playbacks" del json
-        
+        for (json* pb : playbackElements) {
+            std::string name;
+            jsonMgr.get(pb, "name", name);
 
-    }
+            // if(name==CCAS)
+            // TODO**
+            
+            if (name == "MORSE") {
+                jsonMgr.get_or_set(pb, "unit_ms", morseUnitMs_);
+                jsonMgr.get_or_set(pb, "sample_rate", morseSampleRate_);
+
+                std::vector<json*> typeElements = jsonMgr.getArrayElements(pb, "Type");
+
+                for (json* type : typeElements) {
+                    std::string typeName;
+                    jsonMgr.get(type, "name", typeName);
+
+
+                    float        frequencyHz              = 1350.0f;
+                    unsigned int espacioEntreMorse        = 7000;
+
+                    jsonMgr.get_or_set(type, "frequency_hz",      frequencyHz);
+                    jsonMgr.get_or_set(type, "espacioEntreMorse", espacioEntreMorse);
+
+                    morseFrequencies_[typeName]  = frequencyHz;
+                    espacioEntreMorse_[typeName] = espacioEntreMorse;
+
+                }
+            }
+        }
+    }   
+
+
 
     bool SoundMgr::stop() {
         // No hacer nada si ya se ha cerrado.
@@ -554,8 +591,78 @@
 
         return true;
     }
+      
     
-
+    // Morse ---------------------------------------------------------------------------------
+ 
+    std::vector<float> SoundMgr::generateMorse(std::string const& tipo, std::string const& texto) const {
+ 
+    std::vector<float> audio;
+ 
+    // 1. Comprobar el tipo y sus valores de espacio y frecuencia
+    if (morseFrequencies_.find(tipo) == morseFrequencies_.end() ||
+        espacioEntreMorse_.find(tipo) == espacioEntreMorse_.end()) {
+        SYS_WARN("SoundMgr", "generateMorse: tipo desconocido '" + tipo + "'");
+        return audio;
+    }
+ 
+    // 2. Guardar esos valores (y la unidad, compartida por todos los tipos)
+    float        frequencyHz       = morseFrequencies_.at(tipo);
+    unsigned int espacioEntreMorse = espacioEntreMorse_.at(tipo);
+    unsigned int unitMs            = morseUnitMs_;
+ 
+    // 3. Recorrer el texto que nos dan, letra a letra
+    for (size_t c = 0; c < texto.size(); ++c) {
+ 
+        int letra = std::toupper(static_cast<unsigned char>(texto[c]));
+ 
+        // Espacio: separación entre palabras
+        if (letra == ' ') {
+            size_t silentSamples = morseSampleRate_ * espacioEntreMorse / 1000;
+            for (size_t i = 0; i < silentSamples; ++i)
+                audio.push_back(0.0f);
+            continue;
+        }
+ 
+        // Letra no soportada por el diccionario: se ignora
+        if (MORSE_DICT.find(letra) == MORSE_DICT.end())
+            continue;
+ 
+        std::string code = MORSE_DICT.at(letra);
+ 
+        // 4. Generar el pitido de cada letra: puntos, rayas y espacio entre símbolos
+        for (size_t s = 0; s < code.size(); ++s) {
+ 
+            // Punto = 1 unidad, raya = 3 unidades
+            unsigned int toneMs = (code[s] == '-') ? unitMs * 3 : unitMs;
+            size_t toneSamples = morseSampleRate_ * toneMs / 1000;
+ 
+            // 5. Generar el tono (onda senoidal) y guardarlo en audio
+            for (size_t i = 0; i < toneSamples; ++i) {
+                float t = static_cast<float>(i) / morseSampleRate_;
+                audio.push_back(sin(2.0f * 3.14159265f * frequencyHz * t));
+            }
+ 
+            // Silencio entre símbolos de la misma letra (1 unidad)
+            if (s + 1 < code.size()) {
+                size_t gapSamples = morseSampleRate_ * unitMs / 1000;
+                for (size_t i = 0; i < gapSamples; ++i)
+                    audio.push_back(0.0f);
+            }
+        }
+ 
+        // Espacio entre letras de la misma palabra (3 unidades)
+        if (c + 1 < texto.size() && texto[c + 1] != ' ') {
+            size_t gapSamples = morseSampleRate_ * unitMs * 3 / 1000;
+            for (size_t i = 0; i < gapSamples; ++i)
+                audio.push_back(0.0f);
+        }
+    }
+ 
+    return audio;
+}
+ 
+ 
 #else
 // ============================================================
 //  (Stubs)
