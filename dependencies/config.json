@@ -178,6 +178,70 @@
                         "channelSelected":1
                     }
                 ]
+            },
+            {
+                "name": "MORSE",
+                "unit_ms": 100,
+                "Type": [
+                    {
+                        "name":"ADF1",
+                        "espacioEntreMorse": 7000,
+                        "frequency_hz": 1350
+                    },
+                    {
+                        "name":"ADF2",
+                        "espacioEntreMorse": 7000
+                    },
+                    {
+                        "name":"DME",
+                        "espacioEntreMorse": 7000,
+                        "frequency_hz": 1350
+                    },
+                    {
+                        "name":"ILS1",
+                        "espacioEntreMorse": 7000,
+                        "frequency_hz": 1350
+                    },
+                    {
+                        "name":"ILS2",
+                        "espacioEntreMorse": 7000,
+                        "frequency_hz": 1350
+                    },
+                    {
+                        "name":"VOR1",
+                        "espacioEntreMorse": 7000,
+                        "frequency_hz": 1350
+                    },
+                    {
+                        "name":"VOR2",
+                        "espacioEntreMorse": 7000,
+                        "frequency_hz": 1350
+                    }
+                ],
+                
+                "device": [
+                    {
+                        "name":"Dante (1+2)",
+                        "channels":2,
+                        "channelSelected":1
+                    },
+                    {
+                        "name":"Dante (1+2)",
+                        "channels":2,
+                        "channelSelected":2
+                    },
+                    {
+                        "name":"Dante (3+4)",
+                        "channels":2,
+                        "channelSelected":1
+                    },
+                    {
+                        "name":"AES",
+                        "channels":2,
+                        "channelSelected":1
+                    }
+
+                ]
             }
         ],
 

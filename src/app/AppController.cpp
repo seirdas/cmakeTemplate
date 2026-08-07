@@ -13,7 +13,7 @@
 #include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
 #include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
 #include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
-
+#include <iostream>             // std::cout, para prueba temporal
 
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
@@ -108,6 +108,11 @@ bool AppController::init(int argc, char** argv) {
     if(!snd_->init(config_node))
         SYS_ERROR("AppController","Sound subsystem FAIL");
     else SYS_INFO("AppController","Sound subsystem OK");
+
+    // --- prueba temporal ---
+        auto audio = snd_->generateMorse("VOR1", "SOS AYUDA");
+        std::cout << "Muestras generadas: " << audio.size() << std::endl;
+    // --- fin prueba temporal ---
 
 
     // Iniciar conexión Totalmix
