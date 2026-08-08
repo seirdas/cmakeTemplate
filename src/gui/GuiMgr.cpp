@@ -1042,6 +1042,8 @@
 
 	// Overrides de interfaces observador ---------------------------------------------------
 
+	/* ITTSOberver */
+
 	void GuiMgr::onTTSDataChanged(const TTSCoreData& data) {
 		
 		/* Recomendable implementar mutex */

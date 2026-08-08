@@ -4,7 +4,6 @@
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
-#include "datatypes/TTSDataTypes.hpp"
 
 /* 
 * Aquí solo deberían ir acciones que se ejecuten sobre otros módulos
@@ -24,7 +23,10 @@ std::string AppController::getVersion() const noexcept {
 void AppController::setOnlineMode(bool nuevo_online_mode) noexcept { 
 
     std::unique_lock<std::mutex> lock(online_mtx_);
-    if(online_mode_==nuevo_online_mode) return;
+    
+    if(online_mode_==nuevo_online_mode) 
+        return;
+    
     online_mode_=nuevo_online_mode;
     lock.unlock();
 

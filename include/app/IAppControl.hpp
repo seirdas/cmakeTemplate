@@ -53,8 +53,11 @@ public:
 
     /**
      * @brief Destructor virtual para asegurar la correcta destrucción de objetos derivados.
+     * @details Destructor virtual asegura que se ejecute primero 
+     *  el destructor de la clase derivada y luego ésta
      */
     virtual ~IAppControl() = default;
+
 
 // Aplicación ---------------------------------------------------------------------------
 
