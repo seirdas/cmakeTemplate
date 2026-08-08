@@ -63,7 +63,7 @@ bool AppController::removeReceiver() const noexcept {
 // Audio ----------------------------------------------------------------------------
 
 std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
-    return snd_->getAvailableInputs();
+    return snd_->getAvailableCaptures();
 }
 
 std::vector<std::string> AppController::getManagedCaptures() noexcept {
@@ -84,7 +84,7 @@ bool AppController::addInputDevice(std::string const& captureName, std::string c
 }
 
 bool AppController::removeInputDevice(std::string const& captureName) noexcept {
-    return snd_->removeInputDevice(captureName);
+    return snd_->removeCaptureDevice(captureName);
 }
 
 bool AppController::StartRecording(std::string const& captureName) noexcept{

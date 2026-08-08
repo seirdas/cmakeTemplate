@@ -137,15 +137,14 @@
         }
     }   
 
-
-
     bool SoundMgr::stop() {
         // No hacer nada si ya se ha cerrado.
         if (!initialized_) return true;
-        SYS_INFO("SoundMgr", "Closing sound engine and modules...");
 
         // Limpieza (destruir) los módulos creados
+        SYS_INFO("SoundMgr", "Closing capture modules...");
         captures_.clear();
+        SYS_INFO("SoundMgr", "Closing playback modules...");
         playbacks_.clear();
 
         // Desinicializar el contexto global
@@ -166,7 +165,10 @@
             &pimpl_->pPlaybackDevInfos_, &pimpl_->PlaybackDevCount_, 
             &pimpl_->pCaptureDevInfos_, &pimpl_->captureDevCount_);
 
-        if (res != MA_SUCCESS) return false;
+        if (res != MA_SUCCESS) {
+            SYS_WARN("SoundMgr","Cannot retrieve data from audio devices: ma_context_get_devices error");
+            return false;
+        }
 
         // Si hay algun dispositivo con is_valid = false se reinicializa
         for (auto& [name, aim] : captures_) {
@@ -179,33 +181,31 @@
                             break;
         }
 
+        // #TODO Hacer lo mismo para playbacks
+
+
+        // Actualizar las listas de dispositivos disponibles/manejados
+        update_available_inputs();
+        update_available_playbacks();
+
+        // Estos también, aunque aquí no son necesarios
+        update_managed_inputs();
+        update_managed_playbacks();
+
         return true;
     }
 
 
     // Dispositivos de captura --------------------------------------------------------------
 
-    std::vector<std::string> SoundMgr::getAvailableInputs() const {
-
-        // Si no está inicializado no se puede hacer nada
-        if (!initialized_) return {};
-
-        // Crea un vector de strings devlist
-        std::vector<std::string> devlist;
-        // Recorre los dispositivos de captura que miniaudio encuentra
-        // Se guardan en captureDevCount
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) 
-            devlist.push_back(pimpl_->pCaptureDevInfos_[i].name);
-
-        // Devolver la lista de dispositivos
-        return devlist;
+    std::vector<std::string> SoundMgr::getAvailableCaptures() const {
+        std::lock_guard<std::mutex> lock(available_inputs_mtx_);
+        return available_inputs_;
     }
 
     std::vector<std::string> SoundMgr::getManagedCaptures() const {
-        std::vector<std::string> cap;
-        for (auto& it : captures_)
-            cap.push_back(it.first);
-        return cap;
+        std::lock_guard<std::mutex> lock(managed_inputs_mtx_);
+        return managed_inputs_;
     }
     
     bool SoundMgr::isOnManagedCaptures(std::string const& captureName) const {
@@ -213,29 +213,34 @@
         if (!initialized_) return {};
 
         // Recorre todos los dispositivos de captura 
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
-            if (pimpl_->pCaptureDevInfos_[i].name == captureName)
+        for (std::string const& managedCaptureNames : managed_inputs_)
+            if (managedCaptureNames == captureName)
                 return true;
 
         /*else*/ return false;
     }
 
-    std::string SoundMgr::getDefaultInputDevice() const {
+    std::string SoundMgr::getDefaultCaptureDevice() const {
         // Si no está inicializado no se puede hacer nada
         if (!initialized_) return {};
 
-        // Recorre todos los dispositivos de captura 
+        // Recorre todos los dispositivos de captura (para esto se tiene que usar la lista de infos)
         for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
         // Cuando encuentra el que tiene Default = true devuelve su nombre
             if (pimpl_->pCaptureDevInfos_[i].isDefault)
                 return pimpl_->pCaptureDevInfos_[i].name;
 
-                // Si no hay nungún predeterminado, devuelve un ""
+        // Si no hay nungún predeterminado, devuelve un ""
         /*else*/ return "";
+    }
+
+    void SoundMgr::listAvailableCaptures() const {
+        for (std::string const& name : getAvailableCaptures())
+            SYS_INFO("SoundMgr", "Capture: " + name);
     }
     
     bool SoundMgr::addCaptureDevice(void* config, std::string const& captureName, std::string const& deviceName) {
-     
+    
         // Comprobar que el contexto está inicializado
         if (!initialized_){
             SYS_WARN("SoundMgr", "Audio context not initialized.");
@@ -330,14 +335,17 @@
         aim->set_SmoothAttackCoeff(attackCoeff_);
         aim->set_SmoothReleaseCoeff(releaseCoeff_);
 
-        // El micrófono que acabas de crear (aim) lo metes en la lista de micrófonos (captures_).
+        // Insertar el nuevo aim inicializado en el vector de capturas
         captures_[myCaptureName] = std::move(aim);
         SYS_INFO("SoundMgr", "New input device: '" + myCaptureName + "' (" + myDeviceName + ")");
+
+        // Actualizar la lista de capturas gestionadas
+        update_managed_inputs();
 
         return true;
     }
 
-    bool SoundMgr::removeInputDevice(std::string const& name) {
+    bool SoundMgr::removeCaptureDevice(std::string const& name) {
 
         // comprobar si existe
         auto it = captures_.find(name);
@@ -352,8 +360,9 @@
         // Borrar el elemento del vector usando iterator
         captures_.erase(it);
 
-        // Notificar y salir
+        // Actualizar la lista de capturas gestionadas
         SYS_INFO("SoundMgr", "Deleted Capture Device.");
+        update_managed_inputs();
         return true;
     }
 
@@ -374,7 +383,9 @@
         auto it = captures_.find(name);
         if (it == captures_.end()) return false;
 
-        it->second->StopRec();
+        if(it->second->isRecording()) 
+            it->second->StopRec();
+        
         return true;
     }
 
@@ -412,28 +423,18 @@
     // Gestión de dispositivos playbacks ----------------------------------------------------
 
     std::vector<std::string> SoundMgr::getAvailablePlaybacks() const {
-        // Si no está inicializado no se puede hacer nada
-        if (!initialized_) return {};
-
-        // Popular vector con dispositivos disponibles
-        std::vector<std::string> devlist;
-        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) 
-            devlist.push_back(pimpl_->pPlaybackDevInfos_[i].name);
-        return devlist;
+        std::lock_guard<std::mutex> lock(managed_playbacks_mtx_);
+        return available_playbacks_;
     }
 
     std::vector<std::string> SoundMgr::getManagedPlaybacks() const {
-        if (!initialized_) return {};
-        std::vector<std::string> pb;
-        // Popular vector con dispositivos administrados
-        for (auto& it : playbacks_)
-            pb.push_back(it.first);
-        return pb;
+        std::lock_guard<std::mutex> lock(managed_playbacks_mtx_);
+        return managed_playbacks_;
     }
 
     bool SoundMgr::isOnManagedPlaybacks(std::string const& playbackName) const {
         // Si no está inicializado no se puede hacer nada
-        if (!initialized_) return {};
+        if (!initialized_) return false;
 
         // Recorre todos los dispositivos de playback 
         for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i)
@@ -489,21 +490,24 @@
         // Crear receiver (aún no registrado) #TODO AÑADIR AudioFilesFolder
         std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(
             &pimpl_->snd_context_, 
-            *selectedDeviceInfo
+            selectedDeviceInfo
         );
 
         // Intentar inicializar
         SYS_INFO("SoundMgr", "Initializing playback...");
-        if (!apm->start())
+        if (!apm->init())
         {
             // No hay nada que limpiar, el puntero make_unique se destruye al salir.
             SYS_WARN("SoundMgr","Failed to initialize playback.");
             return false;
         }
 
-        // Insertar en el vector
+        // Insertar el nuevo apm inicializado en el vector de playbacks
         playbacks_[deviceName] = std::move(apm);
         SYS_INFO("SoundMgr", "Playback loaded. ");
+
+        // Actualizar la lista de capturas gestionadas
+        update_managed_playbacks();
 
         return true;
     }
@@ -558,29 +562,30 @@
         SYS_INFO("SoundMgr", "Testing device: " + ultimoAPM->deviceName());
 
         /* precarga opcional */
-        ultimoAPM->preload("audio/DefaultDance.mp3");
-        ultimoAPM->preload("audio/ding.mp3");
+        // ultimoAPM->preload("audio/DefaultDance.mp3");
+        // ultimoAPM->preload("audio/ding.mp3");
 
         /* reproducir */
-        unsigned long long ding = ultimoAPM->play(
+        ultimoAPM->playAudio(
             "audio/ding.mp3",
-            100,
-            1.0f);
-
-        unsigned long long click = ultimoAPM->play("audio/DefaultDance.mp3");
+            100
+        );
+        ultimoAPM->playAudio(
+            "audio/cat.mp3"
+        );
 
         SYS_INFO("SoundMgr", "Sleep for 500ms...");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
         
-        /* modificar mientras reproduce */
-        ultimoAPM->setVolume(ding, 0.4f);
+        // /* modificar mientras reproduce */
+        ultimoAPM->setVolume("cat", 40);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
-        ultimoAPM->setVolume(click, 0.3f);
-        ultimoAPM->setPitch(click, 1.2f);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
+        ultimoAPM->setVolume("click", 0.3f);
+        ultimoAPM->setPitch("cat", 1.0f);
+        // std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
         
         /* cortar música */
-        ultimoAPM->stopSound(ding);
+        ultimoAPM->stopAudio("cat", true);  // (forzado)
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
 
         // Opcional: limpiar el módulo (destruir sonidos)
@@ -591,76 +596,107 @@
 
         return true;
     }
-      
+
+
+    // Listas de dispositivos de audio ------------------------------------------------------
+
+    void SoundMgr::update_available_inputs() {
+        std::lock_guard<std::mutex> lock(available_inputs_mtx_);
+        available_inputs_.clear();
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i) 
+            available_inputs_.push_back(pimpl_->pCaptureDevInfos_[i].name);
+    }
+
+    void SoundMgr::update_managed_inputs() {
+        std::lock_guard<std::mutex> lock(managed_inputs_mtx_);
+        managed_inputs_.clear();
+        for (auto& [name, aim] : captures_)
+            managed_inputs_.push_back(name);
+    }
+
+    void SoundMgr::update_available_playbacks() {
+        std::lock_guard<std::mutex> lock(available_playbacks_mtx_);
+        available_playbacks_.clear();
+        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) 
+            available_playbacks_.push_back(pimpl_->pPlaybackDevInfos_[i].name);
+    }
+
+    void SoundMgr::update_managed_playbacks() {
+        std::lock_guard<std::mutex> lock(managed_playbacks_mtx_);
+        managed_playbacks_.clear();
+        for (auto& [name, apm] : playbacks_)
+            managed_playbacks_.push_back(name);
+    }
     
+
     // Morse ---------------------------------------------------------------------------------
  
     std::vector<float> SoundMgr::generateMorse(std::string const& tipo, std::string const& texto) const {
- 
-    std::vector<float> audio;
- 
-    // 1. Comprobar el tipo y sus valores de espacio y frecuencia
-    if (morseFrequencies_.find(tipo) == morseFrequencies_.end() ||
-        espacioEntreMorse_.find(tipo) == espacioEntreMorse_.end()) {
-        SYS_WARN("SoundMgr", "generateMorse: tipo desconocido '" + tipo + "'");
-        return audio;
-    }
- 
-    // 2. Guardar esos valores (y la unidad, compartida por todos los tipos)
-    float        frequencyHz       = morseFrequencies_.at(tipo);
-    unsigned int espacioEntreMorse = espacioEntreMorse_.at(tipo);
-    unsigned int unitMs            = morseUnitMs_;
- 
-    // 3. Recorrer el texto que nos dan, letra a letra
-    for (size_t c = 0; c < texto.size(); ++c) {
- 
-        int letra = std::toupper(static_cast<unsigned char>(texto[c]));
- 
-        // Espacio: separación entre palabras
-        if (letra == ' ') {
-            size_t silentSamples = morseSampleRate_ * espacioEntreMorse / 1000;
-            for (size_t i = 0; i < silentSamples; ++i)
-                audio.push_back(0.0f);
-            continue;
+    
+        std::vector<float> audio;
+    
+        // Comprobar el tipo y sus valores de espacio y frecuencia
+        if (morseFrequencies_.find(tipo) == morseFrequencies_.end() ||
+            espacioEntreMorse_.find(tipo) == espacioEntreMorse_.end()) {
+            SYS_WARN("SoundMgr", "generateMorse: tipo desconocido '" + tipo + "'");
+            return audio;
         }
- 
-        // Letra no soportada por el diccionario: se ignora
-        if (MORSE_DICT.find(letra) == MORSE_DICT.end())
-            continue;
- 
-        std::string code = MORSE_DICT.at(letra);
- 
-        // 4. Generar el pitido de cada letra: puntos, rayas y espacio entre símbolos
-        for (size_t s = 0; s < code.size(); ++s) {
- 
-            // Punto = 1 unidad, raya = 3 unidades
-            unsigned int toneMs = (code[s] == '-') ? unitMs * 3 : unitMs;
-            size_t toneSamples = morseSampleRate_ * toneMs / 1000;
- 
-            // 5. Generar el tono (onda senoidal) y guardarlo en audio
-            for (size_t i = 0; i < toneSamples; ++i) {
-                float t = static_cast<float>(i) / morseSampleRate_;
-                audio.push_back(sin(2.0f * 3.14159265f * frequencyHz * t));
+    
+        // Guardar esos valores (y la unidad, compartida por todos los tipos)
+        float        frequencyHz       = morseFrequencies_.at(tipo);
+        unsigned int espacioEntreMorse = espacioEntreMorse_.at(tipo);
+        unsigned int unitMs            = morseUnitMs_;
+    
+        // Recorrer el texto que nos dan, letra a letra
+        for (size_t c = 0; c < texto.size(); ++c) {
+    
+            int letra = std::toupper(static_cast<unsigned char>(texto[c]));
+    
+            // Espacio: separación entre palabras
+            if (letra == ' ') {
+                size_t silentSamples = morseSampleRate_ * espacioEntreMorse / 1000;
+                for (size_t i = 0; i < silentSamples; ++i)
+                    audio.push_back(0.0f);
+                continue;
             }
- 
-            // Silencio entre símbolos de la misma letra (1 unidad)
-            if (s + 1 < code.size()) {
-                size_t gapSamples = morseSampleRate_ * unitMs / 1000;
+    
+            // Letra no soportada por el diccionario: se ignora
+            if (MORSE_DICT.find(letra) == MORSE_DICT.end())
+                continue;
+    
+            std::string code = MORSE_DICT.at(letra);
+    
+            // 4. Generar el pitido de cada letra: puntos, rayas y espacio entre símbolos
+            for (size_t s = 0; s < code.size(); ++s) {
+    
+                // Punto = 1 unidad, raya = 3 unidades
+                unsigned int toneMs = (code[s] == '-') ? unitMs * 3 : unitMs;
+                size_t toneSamples = morseSampleRate_ * toneMs / 1000;
+    
+                // 5. Generar el tono (onda senoidal) y guardarlo en audio
+                for (size_t i = 0; i < toneSamples; ++i) {
+                    float t = static_cast<float>(i) / morseSampleRate_;
+                    audio.push_back(sin(2.0f * 3.14159265f * frequencyHz * t));
+                }
+    
+                // Silencio entre símbolos de la misma letra (1 unidad)
+                if (s + 1 < code.size()) {
+                    size_t gapSamples = morseSampleRate_ * unitMs / 1000;
+                    for (size_t i = 0; i < gapSamples; ++i)
+                        audio.push_back(0.0f);
+                }
+            }
+    
+            // Espacio entre letras de la misma palabra (3 unidades)
+            if (c + 1 < texto.size() && texto[c + 1] != ' ') {
+                size_t gapSamples = morseSampleRate_ * unitMs * 3 / 1000;
                 for (size_t i = 0; i < gapSamples; ++i)
                     audio.push_back(0.0f);
             }
         }
- 
-        // Espacio entre letras de la misma palabra (3 unidades)
-        if (c + 1 < texto.size() && texto[c + 1] != ' ') {
-            size_t gapSamples = morseSampleRate_ * unitMs * 3 / 1000;
-            for (size_t i = 0; i < gapSamples; ++i)
-                audio.push_back(0.0f);
-        }
+    
+        return audio;
     }
- 
-    return audio;
-}
  
  
 #else

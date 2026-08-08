@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -71,7 +72,7 @@ public:
      * @brief Devuelve una lista con los nombres de todos 
      *  los dispositivos de entrada disponibles
      */
-    std::vector<std::string> getAvailableInputs() const;
+    std::vector<std::string> getAvailableCaptures() const;
 
     /**
      * @brief Devuelve una lista con los nombres de todas
@@ -88,9 +89,16 @@ public:
     bool isOnManagedCaptures(std::string const& captureName) const;
 
     /** 
-     * @brief Devuelve el nombre del micrófono que tiene Windows marcado como predeterminado.
+     * @brief Devuelve el nombre del dispositivo de captura
+     *  marcado como predeterminado.
      */
-    std::string getDefaultInputDevice() const;
+    std::string getDefaultCaptureDevice() const;
+
+    /**
+     * @brief Muestra en el log del sistema la lista
+     *  de dispositivos de captura disponibles
+     */
+    void listAvailableCaptures() const;
 
     /**
      * @brief Añadir un nuevo dispositivo de captura a partir de una config (json)
@@ -103,44 +111,57 @@ public:
 
     /**
      * @brief Eliminar el dispositivo de captura
+     * @param name Nombre del dispositivo de captura a eliminar
      */ 
-    bool removeInputDevice(std::string const& name); 
+    bool removeCaptureDevice(std::string const& name); 
 
 
 // Ejecución y datos en dispositivos de captura -----------------------------------------
 
     /**
-     * @brief Empieza a grabar
+     * @brief Empieza a grabar en un dispositivo de captura determinado
+     * @param name Nombre del dispositivo de captura seleccionado
      */
     bool startRec(std::string const& name);
 
     /**
-     * @brief Para de grabar
+     * @brief Para de grabar en un dispositivo de captura determinado
+     * @param name Nombre del dispositivo de captura seleccionado
      */
     bool stopRec(std::string const& name);
 
     /**
      * @brief Obtiene el nivel de RMS del audio
+     *  en un dispositivo de captura determinado
+     * @param name Nombre del dispositivo de captura seleccionado
      */
     float getInputRmsLevel(std::string const& name);
 
     /**
      * @brief Obtiene el nivel del pico del audio
+     *  en un dispositivo de captura determinado
+     * @param name Nombre del dispositivo de captura seleccionado
      */
     float getInputPeakLevel(std::string const& name);
 
     /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
+     *  en un dispositivo de captura determinado
+     * @param name Nombre del dispositivo de captura seleccionado
      */
     bool isInputDeviceValid(std::string const& name) const;
 
      /**
       * @brief Tamaño del buffer del dispositivo de grabación
+     *  de un dispositivo de captura determinado
+     * @param name Nombre del dispositivo de captura seleccionado
       */
     size_t getInputRecBufferSize(std::string const& name);
     
     /**
       * @brief Tamaño del buffer del dispositivo de captura
+     *  de un dispositivo de captura determinado
+     * @param name Nombre del dispositivo de captura seleccionado
       */
     size_t getInputBufferSize(std::string const& name);
 
@@ -187,7 +208,33 @@ public:
 
     bool playbackTest();
 
-// Ejecución del morse
+
+private:
+
+// Listas de dispositivos de audio ------------------------------------------------------
+
+    /**
+     * @brief Actualiza la lista de dispositivos de entrada disponibles
+     */
+    void update_available_inputs();
+
+    /**
+     * @brief Actualiza la lista de dispositivos de entrada gestionados
+     */
+    void update_managed_inputs();
+
+    /**
+     * @brief Actualiza la lista de dispositivos playback disponibles
+     */
+    void update_available_playbacks();
+
+    /**
+     * @brief Actualiza la lista de dispositivos playback gestionados 
+     */
+    void update_managed_playbacks();
+
+
+// Morse --------------------------------------------------------------------------------
 
     /**
     * @brief Genera el audio (PCM mono, float 32) correspondiente a un texto en morse.
@@ -199,8 +246,7 @@ public:
     */
     std::vector<float> generateMorse(std::string const& tipo, std::string const& texto) const;
 
-private:
-
+    
 /************ Variables ****************************************************************/
 
 // Aliases
@@ -215,21 +261,30 @@ private:
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
     unsigned short          MAX_REINIT_ATTEMPTS;    ///< Número de reintentos para reinicializar dispositivo de entrada
 
+// Listas de dispositivos de audio
+    std::vector<std::string>    available_inputs_;      ///< Lista de dispositivos de entrada disponibles
+    std::vector<std::string>    managed_inputs_;        ///< Lista de dispositivos de entrada gestionados
+    std::vector<std::string>    available_playbacks_;   ///< Lista de dispositivos playback disponibles
+    std::vector<std::string>    managed_playbacks_;     ///< Lista de dispositivos playback gestionados
+
+    mutable std::mutex          available_inputs_mtx_;      ///< Mutex para lista de dispositivos de entrada disponibles
+    mutable std::mutex          managed_inputs_mtx_;        ///< Mutex para lista de dispositivos de entrada gestionados
+    mutable std::mutex          available_playbacks_mtx_;   ///< Mutex para lista de dispositivos playback disponibles
+    mutable std::mutex          managed_playbacks_mtx_;     ///< Mutex para lista de dispositivos playback gestionados
+
 // Módulos de audio
     CapturesList            captures_;              ///< Vector con dispositivos inicializados de captura
     PlaybacksList           playbacks_;             ///< Vector con dispositivos inicializados de playback
     
-    std::unordered_map<std::string, std::vector<std::string>> tonePools_;  ///< Pools de tonos: nombre del grupo -> lista de playbacks Dante asignados
-
-
 // Parámetros de los módulos capture/playbacks
     bool                    smoothedValues_;        ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
     float                   attackCoeff_;           ///< Valor de ataque (+grande = subida lenta)
     float                   releaseCoeff_;          ///< Valor de release (+grande = bajada lenta)
-// Playbacks 
-// Parámetros Morse
+
+// Playbacks: Parámetros Morse
     unsigned int                                  morseUnitMs_;           ///< Duración del punto, compartida por todo el grupo MORSE
     unsigned int                                  morseSampleRate_;       ///< Sample rate (Hz) del audio generado para morse
     std::unordered_map<std::string, float>        morseFrequencies_;      ///< Por radioayuda: frecuencia del tono (Hz)
     std::unordered_map<std::string, unsigned int> espacioEntreMorse_;     ///< Por radioayuda: separación entre palabras (ms)
+    
 };
