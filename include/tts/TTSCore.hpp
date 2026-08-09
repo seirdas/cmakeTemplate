@@ -307,11 +307,11 @@ private:
 
     /**
      * @brief Hilo de ejecución (Worker) encargado de la gestión Keep-Alive de los modelos.
-     * @details Monitoriza periódicamente el mapa de tiempos de último uso (`last_used_`). Si un modelo 
-     * supera el tiempo de inactividad programado en `keep_alive_time_` y no se encuentra retenido 
-     * por ninguna tarea activa de generación, invoca a `unload_model` de forma segura liberando la memoria.
+     * @details Monitoriza periódicamente el mapa de tiempos de último uso. Si un modelo 
+     *  supera el tiempo de inactividad programado y no se encuentra retenido 
+     *  por ninguna tarea activa de generación, libera el modelo de la memoria.
      */
-    void keepAliveWorker();
+    void TKeepAliveWorker();
 
 
 

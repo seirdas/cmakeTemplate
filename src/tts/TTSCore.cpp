@@ -113,7 +113,7 @@
 
         // Si está lazy_load activo, activar el thread reaper
         if (lazy_load_ && keep_alive_seconds_.count() > 0)
-            keepalive_thread_ = std::thread(&TTSCore::keepAliveWorker, this);
+            keepalive_thread_ = std::thread(&TTSCore::TKeepAliveWorker, this);
 
         // Notifica de los nuevos datos
         notify();
@@ -783,13 +783,14 @@
         return true;
     }
 
-    void TTSCore::keepAliveWorker() {
+    void TTSCore::TKeepAliveWorker() {
+
+        // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
+        std::chrono::duration<long> poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);
+            
         std::unique_lock<std::mutex> lock(keepalive_mtx_);
 
         while (running_) {
-
-            // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
-            auto poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);
 
             // Espera hasta: cierre, haya algo que vigilar
             keepalive_cv_.wait_for(lock, poll_interval, [this] {
