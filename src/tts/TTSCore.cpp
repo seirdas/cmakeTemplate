@@ -530,18 +530,19 @@
     // Idiomas-------------------------------------------------------------------------------
 
     bool TTSCore::isEnglish(std::string const& modelName) const { 
-        // Comprobar si el nombre del modelo (existe) contiene "en_US"
-        return modelName.find("en_US") != std::string::npos;
-    }
-
-    bool TTSCore::isSpanish(std::string const& modelName) const {
-        // Comprobar si el nombre del modelo (existe) contiene "es_"
-        return modelName.find("es_") != std::string::npos; 
+        return modelName.find("en_") != std::string::npos;
     }
 
     bool TTSCore::isBritainEnglish(std::string const& modelName) const {
-        // Comprobar si el nombre del modelo (existe) contiene "en_GB"
         return modelName.find("en_GB") != std::string::npos; 
+    }
+
+    bool TTSCore::isAmericanEnglish(std::string const& modelName) const {
+        return modelName.find("en_US") != std::string::npos; 
+    }
+
+    bool TTSCore::isSpanish(std::string const& modelName) const {
+        return modelName.find("es_") != std::string::npos; 
     }
 
     std::vector<std::string> TTSCore::getLoadedModelsEnglish() const {
@@ -555,17 +556,6 @@
         return models;
     }
 
-    std::vector<std::string> TTSCore::getLoadedModelsSpanish() const {
-        std::vector<std::string> models;
-
-        // Rellena la lista solo con los modelos cargados que son español
-        std::lock_guard<std::mutex> lock(models_mutex_);
-        for(const auto& [name, model] : loaded_models_)
-            if (isSpanish(name))
-                models.push_back(name);
-        return models;
-    }
-
     std::vector<std::string> TTSCore::getLoadedModelsBritainEnglish() const {
         std::vector<std::string> models;
 
@@ -573,6 +563,28 @@
         std::lock_guard<std::mutex> lock(models_mutex_);
         for(const auto& [name, model] : loaded_models_)
             if (isBritainEnglish(name))
+                models.push_back(name);
+        return models;
+    }
+
+    std::vector<std::string> TTSCore::getLoadedModelsAmericanEnglish() const {
+        std::vector<std::string> models;
+
+        // Rellena la lista solo con los modelos cargados que son inglés británico
+        std::lock_guard<std::mutex> lock(models_mutex_);
+        for(const auto& [name, model] : loaded_models_)
+            if (isAmericanEnglish(name))
+                models.push_back(name);
+        return models;
+    }
+
+    std::vector<std::string> TTSCore::getLoadedModelsSpanish() const {
+        std::vector<std::string> models;
+
+        // Rellena la lista solo con los modelos cargados que son español
+        std::lock_guard<std::mutex> lock(models_mutex_);
+        for(const auto& [name, model] : loaded_models_)
+            if (isSpanish(name))
                 models.push_back(name);
         return models;
     }

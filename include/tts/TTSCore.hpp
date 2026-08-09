@@ -197,6 +197,22 @@ public:
     bool isEnglish(std::string const& modelName) const; //ponemos const porque no modifica nada
 
     /**
+     * @brief Comprueba si un modelo de voz corresponde específicamente al inglés británico
+     * @details Un modelo se considera inglés británico si su nombre contiene el código "en_GB" (ej. "en_GB-alan-low").
+     * @param modelName Nombre del modelo.
+     * @return @c true si es un modelo de inglés británico; @c false en caso contrario.
+     */
+    bool isBritainEnglish(std::string const& modelName) const;
+
+    /**
+     * @brief Comprueba si un modelo de voz corresponde específicamente al inglés americano
+     * @details Un modelo se considera inglés americano si su nombre contiene el código "en_US"
+     * @param modelName Nombre del modelo.
+     * @return @c true si es un modelo de inglés americano; @c false en caso contrario.
+     */
+    bool isAmericanEnglish(std::string const& modelName) const;
+
+    /**
      * @brief Comprueba si un modelo de voz corresponde al idioma español.
      * @details Un modelo se considera español si su nombre contiene el código "es_" (ej. "es_ES-carlfm-x_low", "es_MX-claude-high", "es_AR-daniela-high").
      * @param modelName Nombre del modelo.
@@ -205,27 +221,24 @@ public:
     bool isSpanish(std::string const& modelName) const;
 
     /**
-     * @brief Comprueba si un modelo de voz corresponde específicamente al inglés británico.
-     * @details Un modelo se considera inglés británico si su nombre contiene el código "en_GB" (ej. "en_GB-alan-low").
-     * @param modelName Nombre del modelo.
-     * @return @c true si es un modelo de inglés británico; @c false en caso contrario.
-     */
-    bool isBritainEnglish(std::string const& modelName) const;
-
-    /**
-     * @brief Obtiene una lista con los nombres de los modelos cargados que son de idioma inglés (US).
+     * @brief Obtiene una lista con los nombres de los modelos cargados que son de idioma inglés (US)
      */
     std::vector<std::string> getLoadedModelsEnglish() const;
 
     /**
-     * @brief Obtiene una lista con los nombres de los modelos cargados que son de idioma español.
-     */
-    std::vector<std::string> getLoadedModelsSpanish() const;
-
-    /**
-     * @brief Obtiene una lista con los nombres de los modelos cargados que son de inglés británico.
+     * @brief Obtiene una lista con los nombres de los modelos cargados que son de inglés británico
      */
     std::vector<std::string> getLoadedModelsBritainEnglish() const;
+
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos cargados que son de inglés americano
+     */
+    std::vector<std::string> getLoadedModelsAmericanEnglish() const;
+
+    /**
+     * @brief Obtiene una lista con los nombres de los modelos cargados que son de idioma español
+     */
+    std::vector<std::string> getLoadedModelsSpanish() const;
     
 
 // Función inyectada de notificación a observers ------------------------------------
