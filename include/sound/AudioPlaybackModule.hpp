@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 
 /**
@@ -119,7 +120,7 @@ private:
     bool preloadAudioFile(const std::string& filepath);
 
 
-// Limpieza -----------------------------------------------------------------------------
+// Limpieza de sonidos ------------------------------------------------------------------
 
     /**
      * @brief Comprueba los sonidos que han terminado y los desinicializa 
@@ -141,15 +142,28 @@ private:
     void cleanupSounds();
 
 
+// Limpieza de caché de audios ----------------------------------------------------------
+
+    /**
+     * @brief Hilo de trabajo para la limpieza y descarga diferida de audios en caché.
+     * @details Revisa de forma periódica el tiempo de inactividad de los audios cargados
+     *  en la caché. Si un audio supera el tiempo de vida especificado y no se 
+     *  encuentra actualmente en reproducción, libera el audio de la memoria.
+     * @note Esta función está diseñada para ejecutarse de manera continua 
+     *  en un hilo independiente.
+     */
+    void TCacheReaperWorker();
+
+
 /************ Variables ****************************************************************/
     
 // Estructura PIMPL para no depender de la librería en el header
     struct Impl;
-    std::unique_ptr<Impl>   pimpl_;             ///< Miembros dependientes de la librería externa
+    std::unique_ptr<Impl>   pimpl_;                 ///< Miembros dependientes de la librería externa
 
 // Inicialización y ejecución
-    bool                    initialized_;       ///< Bandera para indicar inicialización exitosa
-    std::atomic<bool>       running_;           ///< flag de aplicación corriendo (para hilos)
+    bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
+    std::atomic<bool>       running_;               ///< flag de aplicación corriendo (para hilos)
 
 // Listas de sonidos
     mutable std::mutex  playing_sounds_mtx_;    ///< Mutex para el mapa de sonidos
@@ -157,12 +171,17 @@ private:
     // SoundList       playing_sounds;          // variable en PIMPL
     // CacheList       sounds_cache;            // variable en PIMPL
 
-// Variables de limpieza
+// Limpieza de sonidos
     /* Todo esto es necesario porque no se pueden hacer uninit de los audios según terminan, hay que hacerlo diferido*/
-    std::thread             cleanup_thread_;    ///< Hilo de limpieza de sonidos en reproducción (cuando terminan)
-    std::condition_variable cleanup_cv_;        ///< Variable de condición para despertar al hilo
-    // std::queue<ma_sound*>   cleanup_queue;   // variable en PIMPL
-    std::mutex              cleanup_mtx_;       ///< Mutex para la cola de limpieza
+    std::thread             cleanup_thread_;        ///< Hilo de limpieza de sonidos en reproducción (cuando terminan)
+    std::condition_variable cleanup_cv_;            ///< Variable de condición para despertar al hilo
+    // std::queue<ma_sound*>   cleanup_queue;       // variable en PIMPL
+    std::mutex              cleanup_mtx_;           ///< Mutex para la cola de limpieza
 
+// Limpieza de caché de sonidos por tiempo
+    std::thread             cachereaper_thread_;    ///< Hilo para descargar sonidos cargados respecto a su timeout
+    std::mutex              cachereaper_mtx_;       ///< Mutex para el acceso al mapa last_used
+    std::condition_variable cachereaper_cv_;        ///< Condition variable para el acceso al hilo reaper
+    std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida en segundos de los audios en caché
 
 };

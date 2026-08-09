@@ -561,32 +561,26 @@
         AudioPlaybackModule* ultimoAPM = it->second.get();
         SYS_INFO("SoundMgr", "Testing device: " + ultimoAPM->deviceName());
 
-        /* precarga opcional */
-        // ultimoAPM->preload("audio/DefaultDance.mp3");
-        // ultimoAPM->preload("audio/ding.mp3");
-
         /* reproducir */
-        ultimoAPM->playAudio(
-            "audio/ding.mp3",
-            100
-        );
-        ultimoAPM->playAudio(
-            "audio/cat.mp3"
-        );
+        ultimoAPM->playAudio("audio/ding.mp3", 100, true);
+        ultimoAPM->playAudio("audio/cat.mp3");
 
         SYS_INFO("SoundMgr", "Sleep for 500ms...");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
         
         // /* modificar mientras reproduce */
         ultimoAPM->setVolume("cat", 40);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
+        std::this_thread::sleep_for(std::chrono::milliseconds(4000)); 
         ultimoAPM->setVolume("click", 0.3f);
-        ultimoAPM->setPitch("cat", 1.0f);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
+        ultimoAPM->setPitch("cat", 1.7f);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
         
         /* cortar música */
         ultimoAPM->stopAudio("cat", true);  // (forzado)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+        ultimoAPM->stopAudio("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000)); 
 
         // Opcional: limpiar el módulo (destruir sonidos)
         ultimoAPM->stop();
