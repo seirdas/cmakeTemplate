@@ -1,7 +1,7 @@
 #include "app/AppController.hpp"
+#include <string>               // Strings de texto
 #include <chrono>               // Controla tiempos de espera
-#include <string>
-#include <filesystem>               // Controla directorios, rutas, etc.
+#include <filesystem>           // Controla directorios, rutas, etc.
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
@@ -13,10 +13,8 @@
 #include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
 #include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
 #include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
-#include <iostream>             // std::cout, para prueba temporal
-
-#include "files/JsonMgr.hpp"
-#include "system/SystemMgr.hpp"
+#include "files/JsonMgr.hpp"    // Gestión de archivos json
+#include "system/SystemMgr.hpp" // Gestión de log del sistema
 
 
 // General ------------------------------------------------------------------------------
@@ -110,8 +108,11 @@ bool AppController::init(int argc, char** argv) {
     else SYS_INFO("AppController","Sound subsystem OK");
 
     // --- prueba temporal ---
-        auto audio = snd_->generateMorse("VOR1", "SOS AYUDA");
-        std::cout << "Muestras generadas: " << audio.size() << std::endl;
+    bool ok = snd_->playMorse("A", "ILS2", "SOS AYUDA");
+    SYS_INFO("AppController", ok ? "playMorse: lanzado" : "playMorse: fallo");
+
+    bool ok2 = snd_->playMorse("B", "VOR1", "SOS AYUDA");
+    SYS_INFO("AppController", ok2 ? "playMorse: lanzado" : "playMorse: fallo");
     // --- fin prueba temporal ---
 
 
