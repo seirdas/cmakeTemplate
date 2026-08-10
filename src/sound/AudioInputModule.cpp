@@ -10,7 +10,7 @@
 
     // Implementación de miembros y métodos de la librería externa
     struct AudioInputModule::Impl {
-        ma_context*    ctx = nullptr;   ///< Contexto de audio
+        ma_context*    ctx = nullptr;   ///< Contexto de miniaudio
         ma_device      device;          ///< Dispositivo de entrada
         ma_device_info device_info;     ///< Información del dispositivo de entrada
         ma_encoder     encoder;         ///< Codificador de audio para grabación 
@@ -36,6 +36,7 @@
         static void dataCallback_(ma_device* pDevice, void* pOutput, const void* pInput, unsigned int frameCount);
     };
 
+
     // Implementación de métodos PIMPL ------------------------------------------------------
 
     AudioInputModule::Impl::Impl(void* context, const void* devInfo) {
@@ -43,8 +44,7 @@
         device_info = *static_cast<const ma_device_info*>(devInfo);
     }
 
-    void AudioInputModule::Impl::dataCallback_(ma_device* pDevice, void* pOutput, const void* pInput, unsigned int frameCount) 
-    {
+    void AudioInputModule::Impl::dataCallback_(ma_device* pDevice, void* pOutput, const void* pInput, unsigned int frameCount) {
         // Recupera el puntero a this, así el CallBack puede acceder a los miembros de la clase. 
         AudioInputModule* self = static_cast<AudioInputModule*>(pDevice->pUserData);
 
@@ -150,8 +150,8 @@
 
     // General ------------------------------------------------------------------------------
 
-    AudioInputModule::AudioInputModule(void* ctx, const void* devInfo) :
-    pimpl_(std::make_unique<Impl>(ctx, devInfo)),
+    AudioInputModule::AudioInputModule(void* ctx, void* const device_info) :
+    pimpl_(std::make_unique<Impl>(ctx, device_info)),
     is_valid_(false),
     initialized_(false),
     running_(false),
@@ -282,6 +282,7 @@
         // Inicializa tomando los parámetros nuevos para la config (samplerate, channels, etc.)
         return init();
     }
+
 
     // Información y parámetros -------------------------------------------------------------
 
@@ -485,14 +486,18 @@
         rec_buffer_.clear();
     }
 
+
     // Suavizado de valores -----------------------------------------------------------------
 
-    float AudioInputModule::smoothLevel(float rawValue, float const& previousValue, 
-                       float attackCoeff, float releaseCoeff)
+    float AudioInputModule::smoothLevel(
+        float const     rawValue, 
+        float const&    previousValue, 
+        float           attackCoeff, 
+        float           releaseCoeff)
     {
-        // Si no se llama a esta función con los valores de ataque yh release, se ponen los valores por defecto
-        if (attackCoeff == 0) attackCoeff = attackCoeff_;
-        if (releaseCoeff == 0) releaseCoeff = releaseCoeff_;
+        // Si no se llama a esta función con los valores de ataque y release, se ponen los valores por defecto
+        if (attackCoeff == 0)   attackCoeff  = attackCoeff_;
+        if (releaseCoeff == 0)  releaseCoeff = releaseCoeff_;
 
         // Ahora, si los valores son realmente 0, devuelve el valor "crudo"
         if (attackCoeff == 0 || releaseCoeff == 0) return rawValue;

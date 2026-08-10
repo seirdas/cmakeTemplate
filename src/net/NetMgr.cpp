@@ -258,6 +258,7 @@
             return false;
         }
 
+        // Insertar en el vector
         {
             // Proteger el vector de sockets udp
             std::lock_guard<std::mutex> lock(udp_sockets_mtx_);

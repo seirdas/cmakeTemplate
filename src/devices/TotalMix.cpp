@@ -581,7 +581,7 @@ void TotalMix::loadConfig(void* config) {
     }
     TotalMix::~TotalMix() { }
     bool TotalMix::init(void* config) {
-        SYS_WARN("GuiMgr", "Totalmix not compatible in non-Windows SO.");
+        SYS_WARN("TotalMix", "Totalmix not compatible in non-Windows SO.");
         loadConfig(config); // Para leer/escribir en el json igualmente
         return false;
     }

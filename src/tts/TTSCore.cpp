@@ -113,7 +113,7 @@
 
         // Si está lazy_load activo, activar el thread reaper
         if (lazy_load_ && keep_alive_seconds_.count() > 0)
-            keepalive_thread_ = std::thread(&TTSCore::keepAliveWorker, this);
+            keepalive_thread_ = std::thread(&TTSCore::TKeepAliveWorker, this);
 
         // Notifica de los nuevos datos
         notify();
@@ -530,18 +530,19 @@
     // Idiomas-------------------------------------------------------------------------------
 
     bool TTSCore::isEnglish(std::string const& modelName) const { 
-        // Comprobar si el nombre del modelo (existe) contiene "en_US"
-        return modelName.find("en_US") != std::string::npos;
-    }
-
-    bool TTSCore::isSpanish(std::string const& modelName) const {
-        // Comprobar si el nombre del modelo (existe) contiene "es_"
-        return modelName.find("es_") != std::string::npos; 
+        return modelName.find("en_") != std::string::npos;
     }
 
     bool TTSCore::isBritainEnglish(std::string const& modelName) const {
-        // Comprobar si el nombre del modelo (existe) contiene "en_GB"
         return modelName.find("en_GB") != std::string::npos; 
+    }
+
+    bool TTSCore::isAmericanEnglish(std::string const& modelName) const {
+        return modelName.find("en_US") != std::string::npos; 
+    }
+
+    bool TTSCore::isSpanish(std::string const& modelName) const {
+        return modelName.find("es_") != std::string::npos; 
     }
 
     std::vector<std::string> TTSCore::getLoadedModelsEnglish() const {
@@ -555,17 +556,6 @@
         return models;
     }
 
-    std::vector<std::string> TTSCore::getLoadedModelsSpanish() const {
-        std::vector<std::string> models;
-
-        // Rellena la lista solo con los modelos cargados que son español
-        std::lock_guard<std::mutex> lock(models_mutex_);
-        for(const auto& [name, model] : loaded_models_)
-            if (isSpanish(name))
-                models.push_back(name);
-        return models;
-    }
-
     std::vector<std::string> TTSCore::getLoadedModelsBritainEnglish() const {
         std::vector<std::string> models;
 
@@ -573,6 +563,28 @@
         std::lock_guard<std::mutex> lock(models_mutex_);
         for(const auto& [name, model] : loaded_models_)
             if (isBritainEnglish(name))
+                models.push_back(name);
+        return models;
+    }
+
+    std::vector<std::string> TTSCore::getLoadedModelsAmericanEnglish() const {
+        std::vector<std::string> models;
+
+        // Rellena la lista solo con los modelos cargados que son inglés británico
+        std::lock_guard<std::mutex> lock(models_mutex_);
+        for(const auto& [name, model] : loaded_models_)
+            if (isAmericanEnglish(name))
+                models.push_back(name);
+        return models;
+    }
+
+    std::vector<std::string> TTSCore::getLoadedModelsSpanish() const {
+        std::vector<std::string> models;
+
+        // Rellena la lista solo con los modelos cargados que son español
+        std::lock_guard<std::mutex> lock(models_mutex_);
+        for(const auto& [name, model] : loaded_models_)
+            if (isSpanish(name))
                 models.push_back(name);
         return models;
     }
@@ -771,13 +783,14 @@
         return true;
     }
 
-    void TTSCore::keepAliveWorker() {
+    void TTSCore::TKeepAliveWorker() {
+
+        // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
+        std::chrono::duration<long> poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);
+            
         std::unique_lock<std::mutex> lock(keepalive_mtx_);
 
         while (running_) {
-
-            // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
-            auto poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);
 
             // Espera hasta: cierre, haya algo que vigilar
             keepalive_cv_.wait_for(lock, poll_interval, [this] {

@@ -3,6 +3,7 @@
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
+#include <memory>
 
 // General ------------------------------------------------------------------------------
 
@@ -15,7 +16,7 @@ CommsCore::CommsCore(IAppControl* ctrl) :
 }
 
 CommsCore::~CommsCore() {
-
+    close();
 }
 
 
@@ -32,10 +33,11 @@ bool CommsCore::init(void* config) {
 
     // #TODO
 
-    //initialized_ = true;
-
-    SYS_WARN("CommsCore","Comms logic not yet implemented");
-    return false;
+    
+    SYS_WARN("CommsCore","Comms logic not yet fully implemented");
+    
+    initialized_ = true;
+    return initialized_;    //<- true
 }
 
 bool CommsCore::isInitialized() const {
@@ -50,11 +52,31 @@ void CommsCore::loadConfig(void* config) {
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
     
-    // #TODO...
+    // Inicializar cada persona definida en el json
+    std::string name;
+    std::vector<json*> config_personas = jsonMgr.getArrayElements(cfg, "positions");
+    for (json* const cfg_node : config_personas) {
+        name = "";
+        std::unique_ptr<Persona> pers = std::make_unique<Persona>();
+
+        // Obtener el nombre desde aquí (puesto 'alias' para que salga lo primero)
+        jsonMgr.get(cfg_node, "alias", name);
+
+        // Inicializar la persona con los datos de la configuración
+        if(!name.empty() && !pers->init(cfg_node)) {
+            SYS_WARN("CommsCore","Cannot initialize new position '" + name + "'");
+            continue;
+        }
+
+        // Agregar persona creada a la lista de personas
+        personas_[name] = std::move(pers);
+    }
 
 }
 
 bool CommsCore::close() {
+    // Comprobar si el módulo ya estaba cerrado
+    if (!initialized_) return true;
 
 
     initialized_ = false;

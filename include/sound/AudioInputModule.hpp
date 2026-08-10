@@ -24,7 +24,7 @@ public:
      * @param ctx Contexto de mini audio.
      * @param device_info Información del dispositivo de audio.
      */
-   AudioInputModule(void* ctx, const void* devInfo);
+   AudioInputModule(void* ctx, void* const device_info);
 
     /**
      * @brief Destructor de AudioInputModule.
@@ -254,6 +254,7 @@ private:
      */
     void saveRecording();
 
+
     // Suavizado de niveles -----------------------------------------------------------------
 
     /**
@@ -264,8 +265,12 @@ private:
      * @param releaseCoeff Coeficiente de "release"
      * @return Valor suavizado
      */
-    float smoothLevel(float rawValue, float const& previousValue, 
-                       float attackCoeff = 0, float releaseCoeff = 0);
+    float smoothLevel(
+        float const     rawValue, 
+        float const&    previousValue, 
+        float           attackCoeff = 0, 
+        float           releaseCoeff = 0
+    );
 
 
 
@@ -294,7 +299,7 @@ private:
     std::string             rec_filename_;        ///< Nombre de archivo generado con la grabación (para INFO)
     
 // Captura
-    const int16_t           max_int16_val_;       ///< Máximo valor de  Normalizar entre 0 y 100, sobre el valor máximo del tipo int16_t
+    const int16_t           max_int16_val_;       ///< Máximo valor del tipo int16_t
     std::atomic<float>      rmsLevel_;            ///< Nivel actual de señal (RMS o pico según usePeak_)
     std::atomic<float>      peakLevel_;           ///< Nivel de pico (solo cuando usePeak_ == true)
     std::vector<int16_t>    captureBuffer_;       ///< Buffer que acumula las muestras de audio capturadas (formato s16)

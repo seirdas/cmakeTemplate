@@ -18,7 +18,10 @@ set(LIB_VERSION ${CYCLONE_VERSION})
 set(CYCLONE_TOTAL_INSTALL_DIR "${CMAKE_BINARY_DIR}/_deps/cyclonedds-install")
 set(CYCLONE_SRC_DIR           "${EXTERNAL_LIB_PATH}/cyclonedds_src")
 set(CYCLONECPP_SRC_DIR        "${EXTERNAL_LIB_PATH}/cycloneddscpp_src")
-set(IDL_GENERATED_PATH         "${CMAKE_SOURCE_DIR}/IDL/cyclone_generated")
+set(IDL_PATH                  "${CMAKE_SOURCE_DIR}/interfaces/IDL")
+set(IDL_GENERATED_FOLDER      "cyclone_generated")
+set(IDL_GENERATED_PATH        "${IDL_PATH}/${IDL_GENERATED_FOLDER}")
+
 
 # Detectar "formato" de librería
 if(WIN32)
@@ -246,7 +249,6 @@ else()
             "-DBUILD_TESTING=OFF"
 
             "-DCycloneDDS_DIR=${CYCLONE_TOTAL_INSTALL_DIR}/lib/cmake/CycloneDDS"
-            "-DCMAKE_PREFIX_PATH=${CYCLONE_TOTAL_INSTALL_DIR}"
             
             ${_generator_args}
         BUILD_COMMAND   ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG>
@@ -261,12 +263,10 @@ endif()
 # ==============================================================================
 
 # Carpeta de salida de cpp/hpp generado de .idl's
-set(IDL_DIR         "${CMAKE_SOURCE_DIR}/IDL")
-set(IDL_GENERATED_FOLDER       "cyclone_generated")
-set(IDL_GENERATED_PATH         "${IDL_DIR}/${IDL_GENERATED_FOLDER}")
 file(MAKE_DIRECTORY "${IDL_GENERATED_PATH}")
 
-file(GLOB IDL_FILES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/IDL/*.idl")
+# Obtener los IDL de la carpeta
+file(GLOB IDL_FILES CONFIGURE_DEPENDS "${IDL_PATH}/*.idl")
 
 # Generar cxx, hpp... de todos los idl's de la carpeta IDL
 if(IDL_FILES)
@@ -277,6 +277,8 @@ if(IDL_FILES)
     # Archivo hpp que contiene todos los demás
     set(UMBRELLA_FILE_NAME "_ALL.hpp")
     set(UMBRELLA_FILE "${IDL_GENERATED_PATH}/${UMBRELLA_FILE_NAME}")
+
+    # Inicializar el archivo
     if (EXISTS ${UMBRELLA_FILE})
         file(REMOVE ${UMBRELLA_FILE})
     endif()
@@ -304,7 +306,6 @@ if(IDL_FILES)
         string(APPEND UMBRELLA_CONTENT "#include \"${IDL_GENERATED_FOLDER}/${IDL_NAME}.hpp\"\n")
     endforeach()
 
-    set(UMBRELLA_FILE "${IDL_GENERATED_PATH}/_ALL.hpp")
     file(WRITE "${UMBRELLA_FILE}" "${UMBRELLA_CONTENT}")
 
 endif()
@@ -349,7 +350,8 @@ else()
 endif()
 
 set_target_properties(CycloneDDS::ddscxx PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include"
+    INTERFACE_INCLUDE_DIRECTORIES "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx"
+    INTERFACE_LINK_LIBRARIES CycloneDDS::ddsc
 )
 add_dependencies(CycloneDDS::ddscxx cyclonedds_cpp_binding)
 
@@ -358,20 +360,19 @@ add_dependencies(CycloneDDS::ddscxx cyclonedds_cpp_binding)
 if(IDL_FILES)
     add_library(idl_generated_lib STATIC ${IDL_GENERATED_SOURCES})
 
-    # Forzar C++17 para el binding moderno
     target_compile_features(idl_generated_lib PUBLIC cxx_std_17)
 
     # Añadir rutas de inclusión de la instalación de Cyclone
-    # Añado la carpeta superior para evitar conflictos con los archivos generados por otras librerías (fastdds)
-    # Para incluir los archivos generados por cyclone, hay que añadir la carpeta, por ejemplo:
-    # #include "cyclone_generated/idl_data.hpp"
+    # Añado la carpeta superior IDL_PATH para evitar conflictos con los archivos generados por otras librerías (fastdds)
+    # El include sería <cyclone_generated/...>
     target_include_directories(idl_generated_lib PUBLIC 
-        "${IDL_DIR}"
-        "${CYCLONE_TOTAL_INSTALL_DIR}/include"
-        "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx"
+        "${IDL_PATH}"
     )
 
+    # Link con Cyclone ddscxx
     target_link_libraries(idl_generated_lib PUBLIC CycloneDDS::ddscxx)
+
+    # Depende de cyclonedds y cyclonedds-cxx
     add_dependencies(idl_generated_lib cyclonedds_core cyclonedds_cpp_binding)
 endif()
 
@@ -384,19 +385,12 @@ endif()
 add_library(cycloneddscxx_lib INTERFACE)
 
 # Enlazamos todas las partes:
-target_link_libraries(cycloneddscxx_lib INTERFACE 
-    idl_generated_lib
-    CycloneDDS::ddscxx
-    CycloneDDS::ddsc
-)
-
-# Propagación de las rutas de inclusión para poder hacer  
-# #include <dds/dds.hpp> , #include "tu_idl.hpp", etc.
-target_include_directories(cycloneddscxx_lib SYSTEM INTERFACE 
-    "${IDL_GENERATED_PATH}"
-    "${CYCLONE_TOTAL_INSTALL_DIR}/include"
-    "${CYCLONE_TOTAL_INSTALL_DIR}/include/ddscxx"
-)
+if(IDL_FILES)
+    # idl_generated_lib incluye dds y ddscxx
+    target_link_libraries(cycloneddscxx_lib INTERFACE idl_generated_lib)
+else()
+    target_link_libraries(cycloneddscxx_lib INTERFACE CycloneDDS::ddscxx)
+endif()
 
 # Alias para que sea consistente con el uso de namespaces si se desea
 add_library(CycloneDDS::all ALIAS cycloneddscxx_lib)

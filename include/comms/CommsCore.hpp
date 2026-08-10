@@ -1,6 +1,9 @@
 #pragma once
 
 #include <vector>
+#include <memory>
+#include <unordered_map>
+#include <string>
 
 class Persona;      ///< Declaración implícita
 class IAppControl;  ///< Declaración implícita
@@ -73,6 +76,9 @@ private:
 
 /************ Variables ********************************************************/
 
+// Aliases
+    using ListaPersonas = std::unordered_map<std::string, std::unique_ptr<Persona>>;
+
 // Inicialización y ejecución
     bool            initialized_;       ///< Bandera para indicar inicialización exitosa
 
@@ -81,6 +87,6 @@ private:
     size_t          last_packet_hash_;  ///< Hash del último data recibido, para comparar duplicados
 
 // Gestión de personas
-    std::vector<Persona> personas_;     ///< Lista de personas gestionadas
+    ListaPersonas   personas_;          ///< Lista de personas gestionadas
 
 };

@@ -65,7 +65,12 @@ file(GLOB_RECURSE SOURCES     CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src
 list(FILTER SOURCES EXCLUDE REGEX ".*src/${CLINET_FOLDER}/.*")
 
 # Headers:
-file(GLOB_RECURSE HEADERS     CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS 
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h" 
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ICD/*.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ICD/*.h"
+)
 list(FILTER HEADERS EXCLUDE REGEX ".*include/${CLINET_FOLDER}/.*")
 
 if(MSVC)
@@ -187,6 +192,7 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/resources
   ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
 )
 
 
@@ -407,7 +413,6 @@ endif()
 if (HAVE_CLI_MANAGED)
     target_link_libraries(${PROJECT_NAME} PRIVATE CliWrapper)
 endif()
-
 
 # Enlazar las librerías externas activas creadas
 target_link_libraries(${PROJECT_NAME} PRIVATE 
