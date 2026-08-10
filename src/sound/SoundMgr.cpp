@@ -116,6 +116,8 @@
                 jsonMgr.get_or_set(pb, "unit_ms", morseUnitMs_);
                 jsonMgr.get_or_set(pb, "sample_rate", morseSampleRate_);
 
+                initTonePools(pb);
+
                 std::vector<json*> typeElements = jsonMgr.getArrayElements(pb, "Type");
 
                 for (json* type : typeElements) {
@@ -136,8 +138,6 @@
             }
         }
     }   
-
-
 
     bool SoundMgr::stop() {
         // No hacer nada si ya se ha cerrado.
@@ -460,31 +460,56 @@
             SYS_INFO("SoundMgr", "Playback: " + name);
     }
 
-    bool SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder) {
+    std::string SoundMgr::addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder){
         // Comprobar que el contexto está inicializado
         if (!initialized_) {
             SYS_WARN("SoundMgr","Audio context not initialized.");
-            return false;
+            return "";
         }
 
         // Refrescar la lista de dispositivos disponibles
         updateDevices();
+        // Copia local, porque puede que la corrijamos con el nombre real completo
+        std::string myDeviceName = deviceName;
 
-        // bucle para encontrar el ma_device_info por el nombre
+        // 1. Buscar coincidencia EXACTA con el nombre completo
         ma_device_info* selectedDeviceInfo = nullptr;
-        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) {
-            if (deviceName == pimpl_->pPlaybackDevInfos_[i].name) {
+        bool found = false;
+        for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i)
+            if (myDeviceName == pimpl_->pPlaybackDevInfos_[i].name) {
                 selectedDeviceInfo = &pimpl_->pPlaybackDevInfos_[i];
+                found = true;
                 break;
+            }
+
+        // 2. Si no hay coincidencia exacta, buscar un dispositivo cuyo nombre CONTENGA lo escrito
+        if (!found) {
+            short count = 0;
+            for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i) {
+                std::string realName = pimpl_->pPlaybackDevInfos_[i].name;
+                if (realName.find(myDeviceName) != std::string::npos) {
+                    selectedDeviceInfo = &pimpl_->pPlaybackDevInfos_[i];
+                    count++;
+                }
+            }
+
+            // Si hay varios que coinciden, es ambiguo: abortar
+            if (count > 1) {
+                SYS_WARN("SoundMgr","Cannot initialize playback: Ambiguous name specified: '" + myDeviceName + "'");
+                return "";
             }
         }
 
-        // Si no ha encontrado nada saltar fallo y return
+        // 3. Si sigue sin encontrar nada, fallo
         if (!selectedDeviceInfo) {
-            SYS_WARN("SoundMgr","Failed to found device" + deviceName);
-            return false;
+            SYS_WARN("SoundMgr", "Failed to found device: '" + myDeviceName + "'");
+            return "";
         }
-        SYS_INFO("SoundMgr", "Using playback device: " + deviceName);
+
+        // 4. Corrige el nombre con el nombre real completo del dispositivo encontrado
+        myDeviceName = selectedDeviceInfo->name;
+
+        SYS_INFO("SoundMgr", "Using playback device: " + myDeviceName);
 
         // Crear receiver (aún no registrado) #TODO AÑADIR AudioFilesFolder
         std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(
@@ -498,14 +523,14 @@
         {
             // No hay nada que limpiar, el puntero make_unique se destruye al salir.
             SYS_WARN("SoundMgr","Failed to initialize playback.");
-            return false;
+            return "";
         }
 
         // Insertar en el vector
-        playbacks_[deviceName] = std::move(apm);
+        playbacks_[myDeviceName] = std::move(apm);
         SYS_INFO("SoundMgr", "Playback loaded. ");
 
-        return true;
+        return myDeviceName;
     }
 
     bool SoundMgr::removePlaybackDevice(std::string const& name) {
@@ -526,6 +551,43 @@
         // Notificar y salir
         SYS_INFO("SoundMgr", "Deleted Playback.");
         return true;
+    }
+
+    int SoundMgr::initTonePools(void* playbackConfig) {
+        if (!playbackConfig)
+            return 0;
+
+        json* pb = static_cast<json*>(playbackConfig);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        // Nombre del grupo (ej. "MORSE") - será la clave dentro de tonePools_
+        std::string groupName;
+        jsonMgr.get(pb, "name", groupName);
+
+        // Recorrer los dispositivos definidos en "device" para este grupo
+        std::vector<json*> deviceElements = jsonMgr.getArrayElements(pb, "device");
+
+        int registered = 0;
+        for (json* dev : deviceElements) {
+            std::string deviceName;
+            jsonMgr.get(dev, "name", deviceName);
+
+            if (deviceName.empty())
+                continue;
+
+            // Registrarlo como playback real
+            std::string registeredName = addPlaybackDevice(deviceName, "");
+            if (!registeredName.empty()) {
+                tonePools_[groupName].push_back(registeredName);
+                registered++;
+
+                 // Corrige el JSON con el nombre real, para que quede guardado así
+                jsonMgr.set(dev, "name", registeredName);
+            }
+
+        }
+
+        return registered;
     }
 
 
@@ -662,6 +724,67 @@
     return audio;
 }
  
+        unsigned long long SoundMgr::playMorse(std::string const& toneLabel, std::string const& tipo, std::string const& texto, unsigned short volume, bool loop){
+
+        // 0. Comprobar si esa etiqueta ya está activa de verdad (sigue sonando)
+        ActiveTonesList::iterator labelIt = activeTones_.find(toneLabel);   // busca la etiqueta en el mapa de tonos activos
+        if (labelIt != activeTones_.end()) {                                // si la encuentra (ya existía una entrada)
+            PlaybacksList::iterator pbIt = playbacks_.find(labelIt->second.first);  // busca el playback donde supuestamente está sonando
+            if (pbIt != playbacks_.end() && pbIt->second->isPlaying(labelIt->second.second)) {  // si el playback existe Y ese id sigue sonando de verdad
+                SYS_WARN("SoundMgr", "playMorse: la etiqueta '" + toneLabel + "' ya está activa");  // avisa de que está ocupada
+                return 0;                                                    // aborta, no se lanza el nuevo tono
+            }
+            // Si ya no suena, estaba obsoleta: se puede reutilizar la etiqueta
+        }
+
+        // 1. Buscar el pool de playbacks del grupo MORSE
+        TonePoolsList::iterator poolIt = tonePools_.find("MORSE");          // busca la lista de playbacks registrados para "MORSE"
+        if (poolIt == tonePools_.end() || poolIt->second.empty()) {         // si no existe el grupo, o existe pero está vacío
+            SYS_WARN("SoundMgr", "playMorse: no hay playbacks registrados para MORSE");  // avisa
+            return 0;                                                       // aborta, no hay dónde reproducir
+        }
+
+        // 2. Buscar el primer playback del pool que esté libre
+        for (std::string const& playbackName : poolIt->second) {           // recorre cada nombre de playback del pool de MORSE
+            PlaybacksList::iterator it = playbacks_.find(playbackName);     // busca el AudioPlaybackModule real con ese nombre
+            if (it == playbacks_.end())                                     // si por lo que sea no existe
+                continue;                                                    // pasa al siguiente del pool
+
+            if (!it->second->isBusy()) {                                    // si este playback NO tiene nada sonando ahora mismo
+                // 3. Generar el audio y reproducirlo en ese playback libre
+                std::vector<float> audio = generateMorse(tipo, texto);       // genera las muestras de audio del morse
+                if (audio.empty())                                           // si el tipo no existía
+                    return 0;                                                 // aborta
+
+                unsigned long long id = it->second->playBuffer(audio, morseSampleRate_, volume, loop);  // reproduce y guarda el id devuelto
+
+                // 4. Recordar dónde ha quedado este tono, para poder pararlo luego por su etiqueta
+                if (id != 0)                                                 // solo si arrancó de verdad
+                    activeTones_[toneLabel] = { playbackName, id };          // guarda en el mapa: etiqueta -> (playback, id)
+
+                return id;                                                   // devuelve el id (o 0 si playBuffer falló)
+            }
+        }
+
+        // 5. Si no hay ninguno libre, descartar y avisar
+        SYS_WARN("SoundMgr", "playMorse: no hay ningun playback libre para reproducir '" + texto + "'");  // avisa de que no había hueco
+        return 0;                                                           // aborta sin reproducir nada
+    }
+
+    bool SoundMgr::stopTone(std::string const& toneLabel) {
+        ActiveTonesList::iterator it = activeTones_.find(toneLabel);        // busca la etiqueta en el mapa de tonos activos
+        if (it == activeTones_.end())                                      // si no existe esa etiqueta
+            return false;                                                    // no hay nada que parar
+
+        PlaybacksList::iterator pbIt = playbacks_.find(it->second.first);   // busca el playback donde está sonando
+        if (pbIt != playbacks_.end())                                       // si el playback todavía existe
+            pbIt->second->stopSound(it->second.second);                      // lo para, usando el id guardado
+
+        activeTones_.erase(it);                                             // quita la entrada del mapa, ya no está activo
+        return true;                                                        // confirma que se ha parado
+    }
+
+
  
 #else
 // ============================================================

@@ -171,7 +171,7 @@ public:
 
     void listAvailablePlaybacks() const;
 
-    bool addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
+    std::string addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
 
     bool removePlaybackDevice(std::string const& name);
 
@@ -199,6 +199,25 @@ public:
     */
     std::vector<float> generateMorse(std::string const& tipo, std::string const& texto) const;
 
+    /**
+    * @brief Genera y reproduce un mensaje morse por un playback gestionado.
+    * @param playbackName Nombre del playback (ej. "TONES") por el que sonará.
+    * @param tipo Radioayuda a la que pertenece el mensaje (ADF1, VOR1...).
+    * @param texto Texto a codificar en morse.
+    * @param volume Volumen del sonido (0 a 100).
+    * @param loop Modo de repetición.
+    * @return Un identificador único para la instancia del sonido, o 0 si falla.
+    */
+    unsigned long long playMorse(std::string const& toneLabel, std::string const& tipo, std::string const& texto, unsigned short volume = 100, bool loop = false);
+
+    /**
+    * @brief Para un tono activo por su etiqueta (la misma que se usó al lanzarlo).
+    * @param toneLabel Etiqueta del tono a parar.
+    * @return true si se ha encontrado y parado, false si no había ningún tono activo con esa etiqueta.
+    */
+    bool stopTone(std::string const& toneLabel);
+
+
 private:
 
 /************ Variables ****************************************************************/
@@ -206,6 +225,9 @@ private:
 // Aliases
     using CapturesList  = std::unordered_map<std::string, std::unique_ptr<AudioInputModule>>;
     using PlaybacksList = std::unordered_map<std::string, std::unique_ptr<AudioPlaybackModule>>;
+    using ActiveTonesList = std::unordered_map<std::string, std::pair<std::string, unsigned long long>>;
+    using TonePoolsList   = std::unordered_map<std::string, std::vector<std::string>>;
+
 
 // Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;
@@ -218,15 +240,15 @@ private:
 // Módulos de audio
     CapturesList            captures_;              ///< Vector con dispositivos inicializados de captura
     PlaybacksList           playbacks_;             ///< Vector con dispositivos inicializados de playback
-    
-    std::unordered_map<std::string, std::vector<std::string>> tonePools_;  ///< Pools de tonos: nombre del grupo -> lista de playbacks Dante asignados
-
+    TonePoolsList           tonePools_;             ///< Pools de tonos: nombre del grupo -> lista de playbacks Dante asignados
+    ActiveTonesList         activeTones_;           ///< Etiqueta del tono -> (nombre del playback, id del sonido)
 
 // Parámetros de los módulos capture/playbacks
     bool                    smoothedValues_;        ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
     float                   attackCoeff_;           ///< Valor de ataque (+grande = subida lenta)
     float                   releaseCoeff_;          ///< Valor de release (+grande = bajada lenta)
-// Playbacks 
+
+    // Playbacks 
 // Parámetros Morse
     unsigned int                                  morseUnitMs_;           ///< Duración del punto, compartida por todo el grupo MORSE
     unsigned int                                  morseSampleRate_;       ///< Sample rate (Hz) del audio generado para morse

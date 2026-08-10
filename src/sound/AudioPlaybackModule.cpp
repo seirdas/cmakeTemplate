@@ -43,6 +43,10 @@ void AudioPlaybackModule::stop()
     // Limpiar instancias activas
     for (auto& [id, inst] : sounds_) {
         ma_sound_uninit(&inst->sound);
+
+        if(inst->isbuffer){
+            ma_audio_buffer_uninit(&inst->buffer);
+        }
     }
     sounds_.clear();
 
@@ -99,7 +103,6 @@ unsigned long long AudioPlaybackModule::play(const std::string& filepath,
         return 0;
 
     std::lock_guard<std::mutex> lock(sounds_mtx_);
-
 
     auto inst = std::make_unique<SoundInstance>();
 
@@ -184,6 +187,67 @@ void AudioPlaybackModule::setPitch(unsigned long long id, float pitch)
     ma_sound_set_pitch(&it->second->sound, pitch);
 }
 
+unsigned long long AudioPlaybackModule::playBuffer( std::vector<float> const& audio,
+        unsigned int sampleRate,
+        unsigned short volume,
+        bool loop,
+        bool forceStop,
+        unsigned short pitch)
+    {
+        cleanupFinished();
+
+        if(!running_ || audio.empty())
+        return 0; 
+
+        std::lock_guard<std::mutex> lock(sounds_mtx_);
+
+        auto inst = std::make_unique<SoundInstance>(); //se crea un objeto vacío 
+
+        // creamos la configuracion del audio
+        ma_audio_buffer_config config = ma_audio_buffer_config_init(
+            ma_format_f32, 
+            1,                  //mono
+            audio.size(), 
+            audio.data(), 
+            nullptr
+        );
+        config.sampleRate = sampleRate; 
+
+        // comprueba si la copia salió bien
+        if (ma_audio_buffer_init_copy(&config, &inst->buffer) != MA_SUCCESS)
+            return 0; 
+            inst->isbuffer = true; // si ha salido se activa el buffer
+
+        //coge el buffer con el audio morse
+        if (ma_sound_init_from_data_source(&engine_, &inst->buffer, 0, nullptr, &inst->sound) !=MA_SUCCESS)
+        {
+            ma_audio_buffer_uninit(&inst->buffer); //si falla vaciamos el buffer
+            return 0; 
+        }
+
+        // mandamos el volumen y el pitch al sonido que queremos
+        ma_sound_set_volume(&inst->sound, volume / 100.0f); 
+        ma_sound_set_pitch(&inst->sound, pitch); 
+
+        // si el parametro loop es true
+        if(loop)
+        ma_sound_set_looping(&inst->sound, MA_TRUE); // se dice a miniaudio que cuando acabe vuelva a empezar
+
+        inst->loopMode = loop; // guarda si está en bucle o no
+
+        unsigned long long id = idCounter_++; //genera un ID para cada sonido
+
+        ma_sound_set_end_callback(&inst->sound, endCallback, this); //cuando acabe llama a endCallback
+        
+        //reproduce el sonido
+        ma_sound_start(&inst->sound);
+
+        //guarda en la posición id del mapa, el SoundInstance
+        sounds_[id]=std::move(inst);
+
+        return id; 
+    }
+
 bool AudioPlaybackModule::isPlaying(unsigned long long id) const
 {
     std::lock_guard<std::mutex> lock(sounds_mtx_);
@@ -231,11 +295,21 @@ void AudioPlaybackModule::cleanupFinished()
 {
     // PRECONDITION: mutex_ already locked
     for (auto it = sounds_.begin(); it != sounds_.end(); ) {
+
+        // Solo actuamos sobre los sonidos que ya han terminado de sonar
         if (it->second->finished)
         {
+            // Libera los recursos de miniaudio del ma_sound (siempre hace falta)
             ma_sound_uninit(&it->second->sound);
+
+            // Si este sonido venía de un buffer en memoria (morse), liberar también ese buffer
+            if (it->second->isbuffer) {
+                ma_audio_buffer_uninit(&it->second->buffer);
+            }
+
+            // Borra la entrada del mapa; erase() devuelve el iterador al siguiente elemento
             it = sounds_.erase(it);
         }
-        else ++it;
+        else ++it; // si no ha terminado, simplemente avanzamos al siguiente
     }
 }

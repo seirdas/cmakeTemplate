@@ -6,6 +6,7 @@
 #include <mutex>
 #include <atomic>
 #include <miniaudio.h>
+#include <vector>
 
 /**
  * @enum LoopMode
@@ -14,12 +15,15 @@
 
 
 struct SoundInstance
+
 {
-    ma_sound    sound;                      ///< La instancia del sonido en mini audio.
+    ma_sound            sound;                      ///< La instancia del sonido en mini audio.
+    ma_audio_buffer     buffer;                     ///< Buffer en memoria (solamente si el sonido viene del buffer y no de memoria)
 
     bool        loopMode   = false; 
     bool        forceStop  = false; 
     bool        finished   = false;            ///< Indica si el sonido ha terminado de reproducirse.
+    bool        isbuffer   = false;            ///< Indica si el el buffer está inicializado y hay que liberarlo
 };
 
 /**
@@ -102,7 +106,26 @@ public:
      */
     void setPitch(unsigned long long id, float pitch);
 
+// MORSE --------------------------------------------------------------------------------
 
+    /**
+     * @brief Reproduce un buffer de audio PCM (mono, float32) generado en memoria, ej. morse.
+     * @param audio Muestras PCM mono, float32.
+     * @param sampleRate Frecuencia de muestreo del buffer.
+     * @param volume Volumen del sonido (0 a 100)
+     * @param pitch Tono del sonido (0.0f - )
+     * @return Un identificador único para la instancia del sonido
+     */
+
+    unsigned long long playBuffer(std::vector<float> const& audio,
+        unsigned int sampleRate,
+        unsigned short volume = 100,
+        bool loop = false,
+        bool forceStop = false,
+        unsigned short pitch = 1
+    
+    ); 
+  
 // Datos del módulo ---------------------------------------------------------------------
 
     /**
@@ -164,4 +187,6 @@ private:
 
     std::atomic<unsigned long long> idCounter_{1}; ///< Contador para los IDs de sonido.
     bool running_ = false;              ///< Indica si el motor de audio está en funcionamiento.
+
 };
+
