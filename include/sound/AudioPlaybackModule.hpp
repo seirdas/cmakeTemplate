@@ -93,21 +93,27 @@ public:
      * @param texto Texto a codificar (letras/números soportados por el diccionario Morse).
      * @param audioName Nombre con el que se identifica este sonido.
      * @param frequencyHz Frecuencia del tono (Hz).
-     * @param unitMs Duración del punto (ms). La raya dura 3 unidades.
+     * @param puntoMs Duración del punto (ms).
+     * @param rayaMs Duración de la raya (ms).
+     * @param espacioEntreSimbolos Silencio entre símbolos de la misma letra (ms).
+     * @param espacioEntreLetras Silencio entre letras de la misma palabra (ms).
      * @param sampleRate Frecuencia de muestreo (Hz) del audio generado.
      * @param espacioEntreMorse Duración del silencio entre palabras (ms).
      * @param volume Volumen del sonido (0 a 100).
      * @param loop Modo de repetición.
      * @return true si se ha generado y empezado a reproducir correctamente, false en caso contrario.
      */
-    bool playMorse( 
-        std::string const& texto, 
-        std::string const& audioName, 
-        float              frequencyHz, 
-        unsigned int       unitMs, 
-        unsigned int       sampleRate, 
-        unsigned int       espacioEntreMorse, 
-        unsigned short     volume = 100, 
+    bool playMorse(
+        std::string const& texto,
+        std::string const& audioName,
+        float              frequencyHz,
+        unsigned int       puntoMs,
+        unsigned int       rayaMs,
+        unsigned int       espacioEntreSimbolos,
+        unsigned int       espacioEntreLetras,
+        unsigned int       sampleRate,
+        unsigned int       espacioEntreMorse,
+        unsigned short     volume = 100,
         bool               loop = false
     );
 
@@ -187,16 +193,22 @@ private:
      * @brief Genera el audio (PCM mono, float 32) correspondiente a un texto en morse.
      * @param texto Texto a codificar (letras/números soportados por el diccionario Morse).
      * @param frequencyHz Frecuencia del tono (Hz).
-     * @param unitMs Duración del punto (ms). La raya dura 3 unidades.
+     * @param puntoMs Duración del punto (ms).
+     * @param rayaMs Duración de la raya (ms).
+     * @param espacioEntreSimbolos Silencio entre símbolos de la misma letra (ms).
+     * @param espacioEntreLetras Silencio entre letras de la misma palabra (ms).
      * @param sampleRate Frecuencia de muestreo (Hz) del audio generado.
      * @param espacioEntreMorse Duración del silencio entre palabras (ms).
      * @return Vector de muestras PCM (mono). Vacío si no se generó nada.
      */
     std::vector<float> generateMorseAudio(
-        std::string const& texto, 
-        float              frequencyHz, 
-        unsigned int       unitMS,
-        unsigned int       sampleRate, 
+        std::string const& texto,
+        float              frequencyHz,
+        unsigned int       puntoMs,
+        unsigned int       rayaMs,
+        unsigned int       espacioEntreSimbolos,
+        unsigned int       espacioEntreLetras,
+        unsigned int       sampleRate,
         unsigned int       espacioEntreMorse
     );
 

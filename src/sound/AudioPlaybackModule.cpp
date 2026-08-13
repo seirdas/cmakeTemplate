@@ -318,20 +318,23 @@
 // MORSE --------------------------------------------------------------------------------
 
     bool AudioPlaybackModule::playMorse(
-        std::string const& texto, 
-        std::string const& audioName, 
+        std::string const& texto,
+        std::string const& audioName,
         float              frequencyHz,
-        unsigned int       unitMs,
-        unsigned int       sampleRate, 
-        unsigned int       espacioEntreMorse, 
-        unsigned short     volume, 
+        unsigned int       puntoMs,
+        unsigned int       rayaMs,
+        unsigned int       espacioEntreSimbolos,
+        unsigned int       espacioEntreLetras,
+        unsigned int       sampleRate,
+        unsigned int       espacioEntreMorse,
+        unsigned short     volume,
         bool               loop
     ){
         if (!initialized_)
-            return false; 
-        
-        // Generar el audio a partir del texto 
-        std::vector<float> audio = generateMorseAudio(texto, frequencyHz, unitMs, sampleRate, espacioEntreMorse);
+            return false;
+
+        // Generar el audio a partir del texto
+        std::vector<float> audio = generateMorseAudio(texto, frequencyHz, puntoMs, rayaMs, espacioEntreSimbolos, espacioEntreLetras, sampleRate, espacioEntreMorse);
         if(audio.empty()) {
             SYS_WARN("AudioPlaybackModule", "playMorse: audio vacío para '" + texto + "'"); 
             return false; 
@@ -619,22 +622,25 @@
 
     // Se puede hacer función libre
      std::vector<float> AudioPlaybackModule::generateMorseAudio(
-        std::string const& texto, 
-        float              frequencyHz, 
-        unsigned int       unitMS,
-        unsigned int       sampleRate, 
+        std::string const& texto,
+        float              frequencyHz,
+        unsigned int       puntoMs,
+        unsigned int       rayaMs,
+        unsigned int       espacioEntreSimbolos,
+        unsigned int       espacioEntreLetras,
+        unsigned int       sampleRate,
         unsigned int       espacioEntreMorse
     ){
-        std::vector<float> audio; 
+        std::vector<float> audio;
 
-        // Recorrer el texto letra por letra 
+        // Recorrer el texto letra por letra
         for (size_t c=0; c < texto.size(); ++c){
 
             int letra = std::toupper(static_cast<unsigned char>(texto[c]));
 
             // Espacio: separación entre palabras
             if(letra == ' '){
-                size_t silentSamples = sampleRate * espacioEntreMorse / 1000; 
+                size_t silentSamples = sampleRate * espacioEntreMorse / 1000;
                 for (size_t i = 0; i < silentSamples; ++i)
                     audio.push_back(0.0f);
                 continue;
@@ -649,8 +655,8 @@
             // Generar el pitido de cada letra: puntos, rayas y espacio entre símbolos
             for (size_t s = 0; s < code.size(); ++s) {
 
-                // Punto = 1 unidad, raya = 3 unidades
-                unsigned int toneMs = (code[s] == '-') ? unitMS * 3 : unitMS;
+                // Punto o raya, según el símbolo
+                unsigned int toneMs = (code[s] == '-') ? rayaMs : puntoMs;
                 size_t toneSamples = sampleRate * toneMs / 1000;
 
                 // Generar el tono (onda senoidal) y guardarlo en audio
@@ -659,17 +665,17 @@
                     audio.push_back(sin(2.0f * 3.14159265f * frequencyHz * t));
                 }
 
-                // Silencio entre símbolos de la misma letra (1 unidad)
+                // Silencio entre símbolos de la misma letra
                 if (s + 1 < code.size()) {
-                    size_t gapSamples = sampleRate * unitMS / 1000;
+                    size_t gapSamples = sampleRate * espacioEntreSimbolos / 1000;
                     for (size_t i = 0; i < gapSamples; ++i)
                         audio.push_back(0.0f);
                 }
             }
 
-            // Espacio entre letras de la misma palabra (3 unidades)
+            // Espacio entre letras de la misma palabra
             if (c + 1 < texto.size() && texto[c + 1] != ' ') {
-                size_t gapSamples = sampleRate * unitMS * 3 / 1000;
+                size_t gapSamples = sampleRate * espacioEntreLetras / 1000;
                 for (size_t i = 0; i < gapSamples; ++i)
                     audio.push_back(0.0f);
             }

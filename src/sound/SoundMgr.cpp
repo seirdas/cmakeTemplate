@@ -35,6 +35,9 @@
         attackCoeff_(0.5),
         releaseCoeff_(0.1),
         morseUnitMs_(100),
+        morseRayaMs_(300),
+        morseEspacioEntreSimbolos_(100),
+        morseEspacioEntreLetras_(300),
         morseSampleRate_(48000)
     {
 
@@ -116,7 +119,17 @@
                 jsonMgr.get_or_set(pb, "unit_ms", morseUnitMs_);
                 jsonMgr.get_or_set(pb, "sample_rate", morseSampleRate_);
 
-                initTonePools(pb);   
+                // Valores por defecto derivados de unit_ms (compatibilidad con configs antiguas)
+                morseRayaMs_ = morseUnitMs_ * 3;
+                jsonMgr.get_or_set(pb, "raya_ms", morseRayaMs_);
+
+                morseEspacioEntreSimbolos_ = morseUnitMs_;
+                jsonMgr.get_or_set(pb, "espacio_entre_simbolos_ms", morseEspacioEntreSimbolos_);
+
+                morseEspacioEntreLetras_ = morseUnitMs_ * 3;
+                jsonMgr.get_or_set(pb, "espacio_entre_letras_ms", morseEspacioEntreLetras_);
+
+                initTonePools(pb);
 
                 std::vector<json*> typeElements = jsonMgr.getArrayElements(pb, "Type");
 
@@ -683,7 +696,7 @@
             continue; 
 
             if(!it->second->isBusy()) {
-                return it->second->playMorse(texto, toneLabel, frequencyHz, morseUnitMs_, morseSampleRate_, espacioEntreMorse, volume, loop); 
+                return it->second->playMorse(texto, toneLabel, frequencyHz, morseUnitMs_, morseRayaMs_, morseEspacioEntreSimbolos_, morseEspacioEntreLetras_, morseSampleRate_, espacioEntreMorse, volume, loop);
             }
         }
 

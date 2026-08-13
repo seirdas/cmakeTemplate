@@ -300,7 +300,10 @@ private:
     float                   releaseCoeff_;          ///< Valor de release (+grande = bajada lenta)
 
 // Playbacks: Parámetros Morse
-    unsigned int                                  morseUnitMs_;           ///< Duración del punto, compartida por todo el grupo MORSE
+    unsigned int                                  morseUnitMs_;              ///< Duración del punto, compartida por todo el grupo MORSE
+    unsigned int                                  morseRayaMs_;              ///< Duración de la raya (ms), compartida por todo el grupo MORSE
+    unsigned int                                  morseEspacioEntreSimbolos_;///< Silencio entre símbolos de la misma letra (ms)
+    unsigned int                                  morseEspacioEntreLetras_;  ///< Silencio entre letras de la misma palabra (ms)
     unsigned int                                  morseSampleRate_;       ///< Sample rate (Hz) del audio generado para morse
     std::unordered_map<std::string, float>        morseFrequencies_;      ///< Por radioayuda: frecuencia del tono (Hz)
     std::unordered_map<std::string, unsigned int> espacioEntreMorse_;     ///< Por radioayuda: separación entre palabras (ms)
