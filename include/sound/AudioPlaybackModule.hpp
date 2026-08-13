@@ -22,8 +22,9 @@ public:
      * @brief Constructor de AudioPlaybackModule.
      * @param ctx Contexto de mini audio.
      * @param device_info Información del dispositivo de audio.
+     * @param audioFolder Carpeta donde buscar los archivos de audio de este playback (usada por playFromFolder).
      */
-    AudioPlaybackModule(void* ctx, void* const device_info);
+    AudioPlaybackModule(void* ctx, void* const device_info, std::string const& audioFolder = "");
 
     /**
      * @brief Destructor de AudioPlaybackModule.
@@ -58,6 +59,23 @@ public:
      */
     void playAudio(
         const std::string&  filepath,
+        unsigned short      volume = 100,
+        bool                loop = false,
+        bool                forceStop = false,
+        unsigned short      pitch = 1
+    );
+
+    /**
+     * @brief Reproduce un archivo de audio buscándolo por nombre dentro de la carpeta
+     *  configurada para este playback (ver @p audioFolder del constructor).
+     * @param filename Nombre del archivo (ej. "ding.wav"), sin ruta.
+     * @param volume Volumen del sonido (0 a 100)
+     * @param loop Modo de repetición
+     * @param forceStop Fuerza la parada si se desactiva (de lo contrario, deja terminar el wav)
+     * @param pitch Tono del sonido (0.0f - )
+     */
+    void playFromFolder(
+        const std::string&  filename,
         unsigned short      volume = 100,
         bool                loop = false,
         bool                forceStop = false,
@@ -221,6 +239,7 @@ private:
 // Inicialización y ejecución
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>       running_;               ///< flag de aplicación corriendo (para hilos)
+    std::string             audioFolder_;           ///< Carpeta de archivos de audio de este playback (usada por playFromFolder)
 
 // Listas de sonidos
     mutable std::mutex  playing_sounds_mtx_;    ///< Mutex para el mapa de sonidos

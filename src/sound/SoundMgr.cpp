@@ -536,10 +536,11 @@
 
         SYS_INFO("SoundMgr", "Using playback device: " + myDeviceName);
 
-        // Crear receiver (aún no registrado) #TODO AÑADIR AudioFilesFolder
+        // Crear receiver (aún no registrado)
         std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(
             &pimpl_->snd_context_,
-            selectedDeviceInfo
+            selectedDeviceInfo,
+            AudioFilesFolder
         );
 
         // Intentar inicializar

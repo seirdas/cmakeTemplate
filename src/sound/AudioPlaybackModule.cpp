@@ -91,9 +91,10 @@
 
     // General ------------------------------------------------------------------------------
 
-    AudioPlaybackModule::AudioPlaybackModule(void* ctx, void* const device_info) :
+    AudioPlaybackModule::AudioPlaybackModule(void* ctx, void* const device_info, std::string const& audioFolder) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
         initialized_(false),
+        audioFolder_(audioFolder),
         keep_alive_seconds_(10)
     {
 
@@ -254,6 +255,24 @@
             SYS_INFO("PlaybackModule","'" + filename + "': init playing...");
             ma_sound_start(&pimpl_->playing_sounds[filename]->sound);
         }
+    }
+
+    void AudioPlaybackModule::playFromFolder(
+        std::string const&  filename,
+        unsigned short      volume,
+        bool                loop,
+        bool                forceStop,
+        unsigned short      pitch)
+    {
+        if (audioFolder_.empty()) {
+            SYS_WARN("AudioPlaybackModule", "playFromFolder: este playback no tiene carpeta de audios configurada");
+            return;
+        }
+
+        // Construye la ruta completa a partir de la carpeta configurada y el nombre del archivo
+        std::filesystem::path fullPath = std::filesystem::path(audioFolder_) / filename;
+
+        playAudio(fullPath.string(), volume, loop, forceStop, pitch);
     }
 
     void AudioPlaybackModule::stopAudio(std::string const& audioName, bool force) {
