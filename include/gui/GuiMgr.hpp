@@ -80,7 +80,7 @@ public:
      * @brief Inicia el bucle principal de la ventana. 
      * @note Este método es bloqueante hasta que la ventana se cierre.
      */
-    void run();
+    bool run();
 
     /**
      * @brief Cierra la ventana y libera los recursos asociados.

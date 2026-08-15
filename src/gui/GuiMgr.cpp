@@ -233,14 +233,14 @@
 
     }
 
-	void GuiMgr::run() {
+	bool GuiMgr::run() {
 
 		running_ = true;
 
 		while (isRunning())
 			BuclePrincipal();		// <-- Se queda aqui hasta cerrar
 		
-		close();
+		return close();
 	}
 
 	bool GuiMgr::close() {

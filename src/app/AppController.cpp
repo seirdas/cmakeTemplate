@@ -6,6 +6,8 @@
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
+#include "sound/AudioInputModule.hpp"       // Para utilizar los métodos de AIM
+#include "sound/AudioPlaybackModule.hpp"    // Para utilizar los métodos de APM
 #include "tts/TTSMgr.hpp"       // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
@@ -190,7 +192,7 @@ bool AppController::init(int argc, char** argv) {
     return true;
 }
 
-bool AppController::isInitialized() const{
+bool AppController::isInitialized() const {
     return initialized_;
 }
 
@@ -274,11 +276,11 @@ void AppController::close() {
     SYS_INFO("AppController","AppController closed successfully");
 }
 
-int AppController::run() {
+bool AppController::run() {
     SYS_INFO("AppController","Running app...");
-    gui_->run(); // ← Bloquea hasta cerrar
-    return 0;
+    return gui_->run(); // ← Bloquea hasta cerrar
 }
+
 
 // Hilos --------------------------------------------------------------------------------
 

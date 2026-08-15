@@ -83,9 +83,9 @@ public:
 
     /**
      * @brief Ejecuta la aplicación. Inicia el receptor UDP y la ventana UI.
-     * @return 0 si todo se ejecutó correctamente, otro en caso de error.
+     * @return @c true si todo se ejecutó correctamente, @c false en caso de error.
      */
-    int run();
+    bool run();
 
 
 // Hilos --------------------------------------------------------------------------------
