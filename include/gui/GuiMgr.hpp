@@ -5,8 +5,7 @@
 #include <cstdint>              // uintptr_t
 #include <unordered_map>
 
-
-// Includes de observador
+// Interfaces de observador
 #include "tts/ITTSObserver.hpp"
 
 

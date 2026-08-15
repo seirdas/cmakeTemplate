@@ -1050,7 +1050,7 @@
 		//std::lock_guard<std::mutex> lock(pimpl_->tts_data_mtx);
 		
 		pimpl_->datosTTS = data;
-	}
+    }
 
 #else
 // ============================================================
@@ -1066,9 +1066,9 @@
     
 	// Ejecución ----------------------------------------------------------------------------
     bool GuiMgr::init(void*)		{ return false;}
-    void GuiMgr::run()			{ return; }
+    void GuiMgr::run()				{ return; }
     bool GuiMgr::isRunning() const 	{ return false; }
-    bool GuiMgr::close()		{ return false; }
+    bool GuiMgr::close()			{ return false; }
 
 	// Bucle principal ----------------------------------------------------------------------
     void GuiMgr::initCuadro()		{ return; }

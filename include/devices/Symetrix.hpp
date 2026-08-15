@@ -198,13 +198,13 @@ private:
      * @brief Inicializar y comprobar la conexión de red con Symetrix mediante un intercambio de Ping.
      * @return @c true si la conexión e intercambio inicial de buffers fue correcto, @c false en caso contrario.
      */
-    bool initConnection();
+    bool init_connection();
 
     /**
      * @brief Comprueba la conexión con Symetrix mandando ping y esperando ACK
      * @note Preparado para lanzarse en un hilo independiente
      */
-    void ConnectionChecker();
+    void t_connection_checker();
 
     /**
      * @brief Limpia todos los elementos inicializados de la red (WSA, socket).
@@ -223,7 +223,7 @@ private:
      * @param maxValue Límite superior del rango del parámetro.
      * @return int El valor mapeado en "ticks" (entre 0 y 65535).
      */
-    unsigned int ValueToTicks(float value, float minValue, float maxValue);
+    unsigned int value_to_ticks(float value, float minValue, float maxValue);
 
     /**
      * @brief Convierte un valor porcentual (0-100) a decibelios (dB) aplicando la curva gamma.
@@ -247,7 +247,7 @@ private:
      * @param id Identificador del componente a buscar.
      * @return @c true si existe en la caché, @c false en caso contrario.
      */
-    bool isCached_CSQ(unsigned short id) const;
+    bool is_cached_CSQ(unsigned short id) const;
 
     /**
      * @brief Guarda el valor de "ticks" o "dB" almacenado en una entrada específica de la caché.
@@ -256,7 +256,7 @@ private:
      * @param id Identificador único del componente en la caché.
      * @param currentTick El nuevo valor en "ticks" a persistir en la caché.
      */
-    void cacheValue_CSQ(unsigned short id, float value);
+    void cache_value_CSQ(unsigned short id, float value);
 
     /**
      * @brief Obtiene el valor bruto almacenado en la caché para un ID específico.
@@ -265,16 +265,16 @@ private:
      * @param id ID del componente.
      * @return El valor almacenado como entero.
      */
-    float getCachedValue_CSQ(unsigned short id) const;
+    float get_cached_value_CSQ(unsigned short id) const;
 
     /**
      * @brief Obtiene la tolerancia configurada para un ID específico en la caché.
      * @note Esta función no verifica si el ID existe en la caché. Se recomienda llamar 
-     * a isCached_CSQ() previamente si no se tiene certeza de la existencia del ID.
+     * a is_cached_CSQ() previamente si no se tiene certeza de la existencia del ID.
      * @param id ID del componente.
      * @return El valor de tolerancia en la escala correspondiente (ticks).
      */
-    unsigned short getCachedTolerance_CSQ(unsigned short id) const;
+    unsigned short get_cached_tolerance_CSQ(unsigned short id) const;
 
 
 // Caché de datos de envío (CMV) --------------------------------------------------------
@@ -284,7 +284,7 @@ private:
      * @param id Identificador del crosspoint supermatrix a buscar.
      * @return @c true si existe en la caché, @c false en caso contrario.
      */
-    bool isCached_CMV(unsigned short id) const;
+    bool is_cached_CMV(unsigned short id) const;
 
     /**
      * @brief Guarda el valor "dB" de Crosspoint Supermatrix almacenado en una entrada específica de la caché.
@@ -293,7 +293,7 @@ private:
      * @param id Identificador único del componente en la caché.
      * @param currentTick El nuevo valor en "ticks" a persistir en la caché.
      */
-    void cacheValue_CMV(unsigned short id, float value);
+    void cache_value_CMV(unsigned short id, float value);
 
     /**
      * @brief Obtiene el valor "dB" de Crosspoint Supermatrix almacenado en la caché para un ID específico.
@@ -302,16 +302,16 @@ private:
      * @param id ID del componente.
      * @return El valor almacenado como entero.
      */
-    float getCachedValue_CMV(unsigned short id) const;
+    float get_cached_value_CMV(unsigned short id) const;
 
     /**
      * @brief Obtiene la tolerancia configurada para un ID CMV específico en la caché.
      * @note Esta función no verifica si el ID existe en la caché. Se recomienda llamar 
-     * a isCached_CSQ() previamente si no se tiene certeza de la existencia del ID.
+     * a is_cached_CSQ() previamente si no se tiene certeza de la existencia del ID.
      * @param id ID del componente.
      * @return El valor de tolerancia en la escala correspondiente (ticks).
      */
-    unsigned short getCachedTolerance_CMV(unsigned short id) const;
+    unsigned short get_cached_tolerance_CMV(unsigned short id) const;
     
     /**
      * @brief Obtiene el valor de tolerancia de ganancia de un 
@@ -323,7 +323,7 @@ private:
      * @param db_scale Magnitud del valor de referencia, @c true si es en escala dB, @c false en escala porcentual
      * @return Valor de tolerancia en dB (valor que se debe superar para mandar el dato)
      */
-    float getCachedTolerance_CMV_dB(float value, bool db_scale) const;
+    float get_cached_tolerance_dB_CMV(float value, bool db_scale) const;
     
 // Tolerancias (privado) ----------------------------------------------------------------
 
@@ -336,14 +336,14 @@ private:
      * @param id Identificador único del componente o controlador remoto en Symetrix.
      * @param newToleranceTicks Margen de tolerancia bruto expresado directamente en la escala de ticks (0-65535).
      */
-    void setTolerance_CSQ(unsigned short id, unsigned short newTolerance);
+    void set_tolerance_CSQ(unsigned short id, unsigned short newTolerance);
 
     /**
      * @brief Asigna el umbral de tolerancia directamente a un valor crosspoint de la caché.
      * @param id Identificador único del componente o controlador remoto en Symetrix.
      * @param newToleranceTicks Margen de tolerancia porcentual (0-100)
      */
-    void setTolerance_CMV(unsigned short id, unsigned short newTolerance);
+    void set_tolerance_CMV(unsigned short id, unsigned short newTolerance);
 
 
 // Envío de datos -----------------------------------------------------------------------
@@ -356,7 +356,7 @@ private:
      * @param newTicks El nuevo valor en "ticks" que se pretende evaluar.
      * @return @c true si se ha superado el umbral de tolerancia o no había registro previo, @c false si debe descartarse.
      */
-    bool shouldSendCSQ(unsigned short id, unsigned int newTicks);
+    bool should_send_CSQ(unsigned short id, unsigned int newTicks);
 
     /**
      * @brief Envía un comando nativo CSQ (Change Controller Setting Quiet) al dispositivo Symetrix por UDP.
@@ -366,7 +366,7 @@ private:
      * @param ticks El valor numérico final que se le va a asignar en el dispositivo (0-65535).
      * @return @c true si todo el buffer del comando se transmitió correctamente por el socket, @c false en caso de fallo.
      */
-    bool sendCSQ(unsigned short id, unsigned int ticks);
+    bool send_CSQ(unsigned short id, unsigned int ticks);
 
     /**
      * @brief Determina si un cambio en el valor en dB debe enviarse al Supermatrix según la tolerancia dinámica.
@@ -376,7 +376,7 @@ private:
      * @param dbValue Valor nuevo en dB que se pretende enviar.
      * @return true si la diferencia es suficiente para requerir un nuevo envío, false si está dentro del umbral.
      */
-    bool shouldSendCMV(unsigned short id, float dbValue);
+    bool should_send_CMV(unsigned short id, float dbValue);
 
     /**
      * @brief Envía el comando CMV (Command Matrix Value) al Supermatrix para un punto de cruce.
@@ -385,7 +385,7 @@ private:
      * @param dbValue Valor de ganancia en dB a aplicar.
      * @return true si el paquete se envió correctamente a través del socket, false en caso de error.
      */
-    bool sendCMV(unsigned short in, unsigned short out, float dbValue);
+    bool send_CMV(unsigned short in, unsigned short out, float dbValue);
 
 
 /************ Variables ********************************************************/
@@ -423,6 +423,7 @@ private:
     unsigned char       tolerance_percent_;             ///< Porcentaje de tolerancia, si un valor cambia menos de este porcentaje respecto a su escala, no se mandará
     
 // Caché de Comandos de Control Único
+
     /** 
      * @brief Entrada de caché
      */

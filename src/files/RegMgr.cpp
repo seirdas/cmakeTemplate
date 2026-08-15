@@ -28,17 +28,17 @@
 	uint32_t RegMgr::Get_DWORD(std::wstring const& root,std::wstring const& path, std::wstring const& clave) {
 
 		// Comprueba valor de prefijo de ruta
-		void* ptr_Root = ResolveRoot(root);
+		void* ptr_Root = resolve_root(root);
 		if (!ptr_Root) {
 			SYS_ERROR("RegMgr", "Root '" + toStr(root) + "' is not recognized or supported.");
 			return 0;
 		}
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. AVISA PERO CONTINÚA
-		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
+		DWORD actualType = static_cast<DWORD>(query_type(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_DWORD)
 			SYS_WARN("RegMgr", "Type mismatch at " + toStr(path) + ": expected " + 
-					regTypeName(REG_DWORD) + " but found " + regTypeName(actualType));
+					reg_typename(REG_DWORD) + " but found " + reg_typename(actualType));
 
 		// Obtiene el valor
 		uint32_t valor = 0;
@@ -60,17 +60,17 @@
 	uint64_t RegMgr::Get_QWORD(std::wstring const& root,std::wstring const& path, std::wstring const& clave) {
 		
 		// Comprueba valor de prefijo de ruta
-		void* ptr_Root = ResolveRoot(root);
+		void* ptr_Root = resolve_root(root);
 		if (!ptr_Root) {
 			SYS_ERROR("RegMgr", "Root '" + toStr(root) + "' is not recognized or supported.");
 			return 0;
 		}
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. AVISA PERO CONTINÚA
-		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
+		DWORD actualType = static_cast<DWORD>(query_type(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_QWORD)
 			SYS_WARN("RegMgr", "Type mismatch at " + toStr(path) + ": expected " + 
-					regTypeName(REG_QWORD) + " but found " + regTypeName(actualType));
+					reg_typename(REG_QWORD) + " but found " + reg_typename(actualType));
 
 		// Obtiene el valor
 		uint64_t valor = 0;
@@ -94,17 +94,17 @@
 	std::wstring RegMgr::Get_SZ(std::wstring const& root,std::wstring const& path, std::wstring const& clave) {
 		
 		// Comprueba valor de prefijo de ruta
-		void* ptr_Root = ResolveRoot(root);
+		void* ptr_Root = resolve_root(root);
 		if (!ptr_Root) {
 			SYS_ERROR("RegMgr", "Root '" + toStr(root) + "' is not recognized or supported.");
 			return L"";
 		}
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. AVISA PERO CONTINÚA
-		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
+		DWORD actualType = static_cast<DWORD>(query_type(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_SZ)
 			SYS_WARN("RegMgr", "Type mismatch at " + toStr(path) + ": expected " + 
-					regTypeName(REG_SZ) + " but found " + regTypeName(actualType));
+					reg_typename(REG_SZ) + " but found " + reg_typename(actualType));
 
 		// Primera llamada para obtener el tamaño necesario en bytes
 		HKEY hRoot = static_cast<HKEY>(ptr_Root);
@@ -156,14 +156,14 @@
 	bool RegMgr::Set_DWORD(std::wstring const& root, std::wstring const& path, std::wstring const& clave, uint32_t valor) {
 
 		// Comprueba valor de prefijo de ruta
-		void* ptr_Root = ResolveRoot(root);
+		void* ptr_Root = resolve_root(root);
 		if (!ptr_Root) return false;
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. ERROR BLOQUEANTE
-		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
+		DWORD actualType = static_cast<DWORD>(query_type(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_DWORD) {
 			SYS_ERROR("RegMgr", "Type mismatch: cannot write REG_DWORD over existing "
-							+ std::string(regTypeName(actualType))
+							+ std::string(reg_typename(actualType))
 							+ " at " + toStr(path) + "\\" + toStr(clave));
 			return false;
 		}
@@ -179,14 +179,14 @@
 	bool RegMgr::Set_QWORD(std::wstring const& root, std::wstring const& path, std::wstring const& clave, uint64_t valor) {
 
 		// Comprueba valor de prefijo de ruta
-		void* ptr_Root = ResolveRoot(root);
+		void* ptr_Root = resolve_root(root);
 		if (!ptr_Root) return false;
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. ERROR BLOQUEANTE
-		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
+		DWORD actualType = static_cast<DWORD>(query_type(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_QWORD) {
 			SYS_ERROR("RegMgr", "Type mismatch: cannot write REG_QWORD over existing "
-							+ std::string(regTypeName(actualType))
+							+ std::string(reg_typename(actualType))
 							+ " at " + toStr(path) + "\\" + toStr(clave));
 			return false;
 		}
@@ -201,14 +201,14 @@
 
 	bool RegMgr::Set_STR(std::wstring const& root, std::wstring const& path, std::wstring const& clave, std::wstring const& valor) {
 		// Comprueba valor de prefijo de ruta
-		void* ptr_Root = ResolveRoot(root);
+		void* ptr_Root = resolve_root(root);
 		if (!ptr_Root) return false;
 
 		// Comprueba si está sobreescribiendo una clave con otro tipo. ERROR BLOQUEANTE
-		DWORD actualType = static_cast<DWORD>(queryType(ptr_Root, path, clave));
+		DWORD actualType = static_cast<DWORD>(query_type(ptr_Root, path, clave));
 		if (actualType != REG_NONE && actualType != REG_SZ) {
 			SYS_ERROR("RegMgr", "Type mismatch: cannot write REG_SZ over existing "
-							+ std::string(regTypeName(actualType))
+							+ std::string(reg_typename(actualType))
 							+ " at " + toStr(path) + "\\" + toStr(clave));
 			return false;
 		}
@@ -225,7 +225,7 @@
 	// Otros --------------------------------------------------------------------------------
 
 	bool RegMgr::WaitUntilChange(std::wstring const& root, std::wstring const& path) {
-        void* ptr_Root = ResolveRoot(root);
+        void* ptr_Root = resolve_root(root);
         if (!ptr_Root) return false;
 
         HKEY hKey = nullptr;
