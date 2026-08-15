@@ -319,6 +319,7 @@
         );
 
         // Intenta inicializar
+        SYS_INFO("SoundMgr", "Initializing capture module...");
         if(!aim->init(config, captureName))
         {
             SYS_WARN("SoundMgr","Failed to initialize capture module");
@@ -526,7 +527,7 @@
         );
 
         // Intentar inicializar
-        SYS_INFO("SoundMgr", "Initializing playback...");
+        SYS_INFO("SoundMgr", "Initializing playback module...");
         if (!apm->init(config, playbackName))
         {
             SYS_WARN("SoundMgr","Failed to initialize playback module");
