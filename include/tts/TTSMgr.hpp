@@ -120,14 +120,14 @@ public:
      *  El dispositivo playback debe estar gestionado por el gestor de audio (SoundMgr)
      * @return @c true si se ha creado el reproductor correctamente, @c false en caso contrario
      */
-    bool add_tts_player(std::string const& TTSPlayerName, std::string const& playbackName = "");
+    bool addTTSPlayer(std::string const& TTSPlayerName, std::string const& playbackName = "");
 
     /**
      * @brief Borra un reproductor TTS
      * @param name Nombre del reproductor TTS a borrar
      * @return @c true si se ha eliminado el reproductor correctamente, @c false en caso contrario
      */
-    bool remove_tts_player(std::string const& name);
+    bool removeTTSPlayer(std::string const& name);
 
 
 // TTSPlayer ----------------------------------------------------------------------------
@@ -137,14 +137,6 @@ public:
         std::string const& entityName,
         std::string const& modelName = "", 
         std::string const& playbackName = "" );
-
-
-// Hilos --------------------------------------------------------------------------------
-
-    /**
-     * @brief Hilo consumidor de paquetes TTS
-     */
-    void TWorker();
 
 
 // Observadores -------------------------------------------------------------------------
@@ -164,6 +156,14 @@ private:
      *  a través del patrón observador
      */
     void notify();
+
+
+// Hilos --------------------------------------------------------------------------------
+
+    /**
+     * @brief Hilo consumidor de paquetes TTS
+     */
+    void t_data_consumer();
 
 
 /************ Variables ********************************************************/
@@ -186,26 +186,26 @@ private:
     std::unique_ptr<Impl> pimpl_;
     
 // Inicialización y ejecución
-    std::atomic<bool>           running_;       ///< flag de aplicación corriendo (para hilos)
-    bool                        initialized_;   ///< Bandera para indicar inicialización exitosa
-    std::thread                 hilo_ttscore_;  ///< Hilo inicializador de TTSCore
+    std::atomic<bool>           running_;               ///< flag de aplicación corriendo (para hilos)
+    bool                        initialized_;           ///< Bandera para indicar inicialización exitosa
+    std::thread                 initTTS_thread_;        ///< Hilo inicializador de TTSCore
 
 // Cola de datos
-    std::thread                 hilo_consumer_; ///< Hilo consumidor de datos TTS (queue)
-    std::queue<TTSPacket>       queue_;         ///< Cola de comandos
-    std::mutex                  queue_mtx_;     ///< Mutex de cola de comandos
-    std::condition_variable     queue_cv_;      ///< Conditional variable para mutex de cola
+    std::thread                 dataConsumer_thread_;   ///< Hilo consumidor de datos TTS (queue)
+    std::queue<TTSPacket>       queue_;                 ///< Cola de comandos
+    std::mutex                  queue_mtx_;             ///< Mutex de cola de comandos
+    std::condition_variable     queue_cv_;              ///< Conditional variable para mutex de cola
 
 // Módulos
-    SoundMgr*                   snd_;           ///< Puntero a clase de gestión de audio para reproducción
-    TTSCore                     ttsCore_;       ///< Clase núcleo de tts
+    SoundMgr*                   snd_;                   ///< Puntero a clase de gestión de audio para reproducción
+    TTSCore                     ttsCore_;               ///< Clase núcleo de tts
 
 // Reproductores TTS (usan playback de soundmgr)
-    TTSPlayers                  ttsPlayers_;        ///< Lista de reproductores TTS
-    TTSInfos                    PlayersInfo_;       ///< Lista de información de cada TTSPlayer
-    std::mutex                  playersInfo_mtx_;   ///< Mutex para la lista de información
+    TTSPlayers                  ttsPlayers_;            ///< Lista de reproductores TTS
+    TTSInfos                    PlayersInfo_;           ///< Lista de información de cada TTSPlayer
+    std::mutex                  playersInfo_mtx_;       ///< Mutex para la lista de información
 
 // Observadores
-    std::vector<ITTSObserver*>  observers_;         ///< Lista de observadores para transferir datos
+    std::vector<ITTSObserver*>  observers_;             ///< Lista de observadores para transferir datos
 
 };

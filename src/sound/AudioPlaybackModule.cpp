@@ -5,6 +5,7 @@
 
     #include <miniaudio.h>
     #include "system/SystemMgr.hpp"
+    #include "files/JsonMgr.hpp"
     #include "datatypes/MorseDict.hpp"
 
     #include <memory>
@@ -14,6 +15,7 @@
     #include <queue>
     #include <string>
     #include <thread>
+    #include <cmath>
 
 
     // Implementación de miembros y métodos de la librería externa
@@ -40,20 +42,20 @@
 
 
         // Aliases
-        using SoundList     = std::unordered_map<std::string, std::unique_ptr<SoundInstance>>;
-        using CacheList     = std::unordered_map<std::string, std::unique_ptr<AudioCacheInstance>>;
-        using ColaCleanup   = std::queue<std::unique_ptr<SoundInstance>>;
+        using PlayingSoundsList = std::unordered_map<std::string, std::unique_ptr<SoundInstance>>;
+        using CacheList         = std::unordered_map<std::string, std::unique_ptr<AudioCacheInstance>>;
+        using ColaCleanup       = std::queue<std::unique_ptr<SoundInstance>>;
 
         // Componentes de miniaudio
-        ma_context*     ctx;                ///< Contexto de miniaudio
-        ma_device_info  device_info;        ///< Información del dispositivo de audio
-        ma_engine       engine;             ///< Motor de audio
+        ma_context*     ctx;                    ///< Contexto de miniaudio
+        ma_device_info  device_info;            ///< Información del dispositivo de audio
+        ma_engine       engine;                 ///< Motor de audio
 
         // Listas de sonidos
-        SoundList       playing_sounds;     ///< Mapa de instancias de sonido reproduciéndose (nombreWav -> SoundInstance)
-        CacheList       sounds_cache;       ///< Mapa de caché de archivos de audio
-        ColaCleanup     cleanup_queue;      ///< Cola de limpieza de sonidos a desinicializar
-
+        PlayingSoundsList   playing_sounds;     ///< Mapa de instancias de sonido reproduciéndose (nombreWav -> SoundInstance)
+        CacheList           sounds_cache;       ///< Mapa de caché de archivos de audio
+        ColaCleanup         cleanup_queue;      ///< Cola de limpieza de sonidos a desinicializar
+        
         /**
         * @brief Constructor de Impl
         *  El constructor del Impl hace el cast de los punteros opacos
@@ -83,7 +85,7 @@
         auto* self = reinterpret_cast<AudioPlaybackModule*>(userData);
 
         // Busca el sonido en la lista de sonidos reproduciéndose para eliminarlo
-        self->sendToCleanup(sound);
+        self->send_to_cleanup(sound);
         self->cleanup_cv_.notify_one();
         //self->cleanup();  // método directo (no diferido)
     }
@@ -91,7 +93,7 @@
 
     // General ------------------------------------------------------------------------------
 
-    AudioPlaybackModule::AudioPlaybackModule(void* ctx, void* const device_info, std::string const& audioFolder) :
+    AudioPlaybackModule::AudioPlaybackModule(void* ctx, const void* device_info, std::string const& audioFolder) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
         initialized_(false),
         audioFolder_(audioFolder),
@@ -101,21 +103,34 @@
     }
 
     AudioPlaybackModule::~AudioPlaybackModule() {
-        stop();
+        close();
     }
 
 
-    // Ejecución ----------------------------------------------------------------------------
+    // Inicialización -----------------------------------------------------------------------
 
-    bool AudioPlaybackModule::init() {
+    bool AudioPlaybackModule::init(void* config, std::string const& moduleName) {
         if (initialized_)
             return true;
 
+        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
+        if (config)
+            loadConfig(config);
+
+        // Ponerle nombre a este módulo (sobreescribe el de la config)
+        if (!moduleName.empty()) name_ = moduleName;
+
         // Inicializar el dispositivo de reproducción
-        ma_engine_config config = ma_engine_config_init();
-        config.pContext = pimpl_->ctx;
-        config.pPlaybackDeviceID = &pimpl_->device_info.id;
-        if (ma_engine_init(&config, &pimpl_->engine) != MA_SUCCESS) {
+        ma_engine_config deviceConfig = ma_engine_config_init();
+
+        // rellenar los parámetros de la configuración de miniaudio
+        deviceConfig.pContext = pimpl_->ctx;
+        deviceConfig.pPlaybackDeviceID = &pimpl_->device_info.id;
+
+        std::string deviceName = pimpl_->device_info.name;
+
+        // Inicializar
+        if (ma_engine_init(&deviceConfig, &pimpl_->engine) != MA_SUCCESS) {
             SYS_ERROR("AudioPlaybackModule","Engine init failed");
             return false;
         }
@@ -125,19 +140,38 @@
 
         // Inicializar el hilo de limpieza diferida
         SYS_INFO("PlaybackModule","Starting audio cleanup thread...");
-        cleanup_thread_ = std::thread(&AudioPlaybackModule::TCleanup, this);
+        cleanup_thread_ = std::thread(&AudioPlaybackModule::t_cleanup, this);
 
         // Iniciar el hilo del tiempo de vida de la caché de audios
         SYS_INFO("PlaybackModule","Starting audio caché cleanup on timeout thread...");
-        cachereaper_thread_ = std::thread(&AudioPlaybackModule::TCacheReaperWorker, this);
+        cachereaper_thread_ = std::thread(&AudioPlaybackModule::t_cache_reaper, this);
 
+        // Llega hasta aquí si se ha inicializado bien
         initialized_ = true;
-        return true;
+        return initialized_; //<- true
     }
 
-    void AudioPlaybackModule::stop() {
+    bool AudioPlaybackModule::isInitialized() const {
+        return initialized_;
+    }
+
+    void AudioPlaybackModule::loadConfig(void* config) {
+        if (!config)
+             return;
+
+        // Se considera que la configuración se pasa como json
+        json* cfg = static_cast<json*>(config);
+        JsonMgr& jsonMgr = JsonMgr::instance();
+
+        jsonMgr.get_or_set(cfg, "name", name_);
+        
+        /* Esto ya llega en la inicialización, en devInfo del constructor */
+        //jsonMgr.get_or_set(cfg, "device", device_);
+    }
+
+    bool AudioPlaybackModule::close() {
         if (!initialized_)
-            return;
+            return true;
 
         SYS_INFO("PlaybackModule", "Stopping PlaybackModule...");
 
@@ -161,14 +195,14 @@
         {
             std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
             SYS_INFO("PlaybackModule","Unitializing active sounds...");
-            for (auto& [id, snd] : pimpl_->playing_sounds){
+            for (auto& [id, snd] : pimpl_->playing_sounds) {
                 ma_sound_uninit(&snd->sound);
                 if (snd->isBuffer)
                     ma_audio_buffer_uninit(&snd->buffer);
             }
             pimpl_->playing_sounds.clear();
         }
-        cleanupSounds();    // Asegurar limpieza
+        cleanup_sounds();    // Asegurar limpieza
 
         // Limpiar cache de audios
         {
@@ -184,11 +218,23 @@
         ma_engine_uninit(&pimpl_->engine);
 
         initialized_ = false;
-        return;
+        return true;
+    }
+
+    bool AudioPlaybackModule::reload() {
+
+        SYS_INFO("PlaybackModule", "Reloading module...");
+
+        // Parar todo si está inicializado
+        if (initialized_)
+            close();
+
+        // Inicializa tomando los parámetros nuevos para la config (samplerate, channels, etc.)
+        return init();
     }
 
 
-    // Acciones -----------------------------------------------------------------------------
+    // Ejecución ----------------------------------------------------------------------------
 
     void AudioPlaybackModule::playAudio(
         std::string const&  filepath,
@@ -201,7 +247,7 @@
             return;
 
         // Asegurar precarga de audio en caché (devuelve true si ya estaba precargado)
-        if (!preloadAudioFile(filepath)) {
+        if (!preload_audio_file(filepath)) {
             SYS_WARN("AudioPlaybackModule", "Could not preload: " + filepath);
             return;
         }
@@ -302,7 +348,7 @@
         // Si forceStop de la instancia o param force activo, cortar inmediatamente
         else if(audioInstance->forceStop || force) {
             ma_sound_stop(&audioInstance->sound);
-            sendToCleanup(&audioInstance->sound);
+            send_to_cleanup(&audioInstance->sound);
             SYS_INFO("PlaybackModule","'" + audioName + "': stop forced");
             cleanup_cv_.notify_one();
         }
@@ -353,7 +399,7 @@
             return false;
 
         // Generar el audio a partir del texto
-        std::vector<float> audio = generateMorseAudio(texto, frequencyHz, puntoMs, rayaMs, espacioEntreSimbolos, espacioEntreLetras, sampleRate, espacioEntreMorse);
+        std::vector<float> audio = generate_morse_audio(texto, frequencyHz, puntoMs, rayaMs, espacioEntreSimbolos, espacioEntreLetras, sampleRate, espacioEntreMorse);
         if(audio.empty()) {
             SYS_WARN("AudioPlaybackModule", "playMorse: audio vacío para '" + texto + "'"); 
             return false; 
@@ -410,7 +456,15 @@
     }
 
 
-    // Datos del módulo ---------------------------------------------------------------------
+    // Parámetros del módulo ----------------------------------------------------------------
+
+    std::string AudioPlaybackModule::getDeviceName() const {
+        return pimpl_->device_info.name;
+    }
+
+    std::string AudioPlaybackModule::getModuleName() const {
+        return name_;
+    }
 
     bool AudioPlaybackModule::isPlaying(std::string const& name) const {
         std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
@@ -422,7 +476,6 @@
         return ma_sound_is_playing(&it->second->sound);
     }
 
-    // #TODO CAMBIAR: de alguna manera, obtener un dispositivo libre que no esté reproduciendo (el siguiente, por ejemplo)
     bool AudioPlaybackModule::isBusy() const {
         std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
 
@@ -430,14 +483,10 @@
         return !pimpl_->playing_sounds.empty();
     }
 
-    std::string AudioPlaybackModule::deviceName() const {
-        return pimpl_->device_info.name;
-    }
-
 
     // Caché --------------------------------------------------------------------------------
 
-    bool AudioPlaybackModule::preloadAudioFile(const std::string& filepath) {
+    bool AudioPlaybackModule::preload_audio_file(const std::string& filepath) {
         if (!initialized_)
             return false;
 
@@ -483,7 +532,7 @@
 
     // Limpieza -----------------------------------------------------------------------------
 
-    void AudioPlaybackModule::TCleanup() {
+    void AudioPlaybackModule::t_cleanup() {
 
         std::unique_ptr<Impl::SoundInstance> instanceToClean = nullptr;
 
@@ -524,7 +573,7 @@
         }
     }
 
-    void AudioPlaybackModule::sendToCleanup(void* sound) {
+    void AudioPlaybackModule::send_to_cleanup(void* sound) {
         ma_sound* maSound = static_cast<ma_sound*>(sound);
 
         // Proteger la lista PlayingSounds
@@ -553,7 +602,7 @@
         }
     }
 
-    void AudioPlaybackModule::cleanupSounds() {
+    void AudioPlaybackModule::cleanup_sounds() {
 
         std::unique_ptr<Impl::SoundInstance> instanceToClean = nullptr;
 
@@ -561,7 +610,7 @@
         while (!pimpl_->cleanup_queue.empty()) {
             instanceToClean = std::move(pimpl_->cleanup_queue.front());
             pimpl_->cleanup_queue.pop();
-            if (instanceToClean){
+            if (instanceToClean) {
                 ma_sound_uninit(&instanceToClean->sound);
                 if (instanceToClean->isBuffer)
                     ma_audio_buffer_uninit(&instanceToClean->buffer);
@@ -569,9 +618,10 @@
         }
     }
 
+
 // Limpieza de caché de audios ----------------------------------------------------------
 
-    void AudioPlaybackModule::TCacheReaperWorker() {
+    void AudioPlaybackModule::t_cache_reaper() {
 
         // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
         std::chrono::duration<long> poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);
@@ -640,7 +690,7 @@
 // MORSE --------------------------------------------------------------------------------
 
     // Se puede hacer función libre
-     std::vector<float> AudioPlaybackModule::generateMorseAudio(
+     std::vector<float> AudioPlaybackModule::generate_morse_audio(
         std::string const& texto,
         float              frequencyHz,
         unsigned int       puntoMs,
@@ -703,5 +753,47 @@
         return audio;
     }
 
+
+#else
+// ============================================================
+//  (Stubs)
+// ============================================================
+
+// Definición del struct de pimpl vacío
+struct AudioPlaybackModule::Impl {};
+
+// General ------------------------------------------------------------------------------
+AudioPlaybackModule::AudioPlaybackModule(void* ctx, void* const device_info) {}
+AudioPlaybackModule::~AudioPlaybackModule()  {}
+
+// Inicialización y ejecución -----------------------------------------------------------
+bool AudioPlaybackModule::init(void*, std::string const&)    { return false; }
+bool AudioPlaybackModule::isInitialized() const              { return false; }
+void AudioPlaybackModule::loadConfig(void*)                  { return; }
+bool AudioPlaybackModule::close()                            { return false; }
+bool AudioPlaybackModule::reload()                           { return false; }
+
+// Acciones -----------------------------------------------------------------------------
+void AudioPlaybackModule::playAudio(const std::string&, unsigned short, bool, bool, unsigned short) { return; }
+void AudioPlaybackModule::stopAudio(std::string const&, bool)    { return; }
+void AudioPlaybackModule::setVolume(std::string const&, float)   { return; }
+void AudioPlaybackModule::setPitch(std::string const&, float)    { return; }
+
+// Parámetros del módulo ----------------------------------------------------------------
+std::string AudioPlaybackModule::getDeviceName() const           { return "";    }
+std::string AudioPlaybackModule::getModuleName() const           { return "";    }
+bool AudioPlaybackModule::isPlaying(std::string const&) const    { return false; }
+bool AudioPlaybackModule::isBusy() const                         { return false; }
+
+// Caché --------------------------------------------------------------------------------
+bool AudioPlaybackModule::preload_audio_file(const std::string&)   { return false; }
+
+// Limpieza de sonidos ------------------------------------------------------------------
+void AudioPlaybackModule::t_cleanup()                            { return; }
+void AudioPlaybackModule::send_to_cleanup(void*)                  { return; }
+void AudioPlaybackModule::cleanup_sounds()                       { return; }
+
+// Limpieza de caché de audios ----------------------------------------------------------
+void AudioPlaybackModule::t_cache_reaper()                  { return; }
 
 #endif

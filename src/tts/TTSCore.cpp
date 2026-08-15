@@ -63,7 +63,7 @@
 
         // Carga los modelos
         if (!lazy_load_)
-            loadModels();
+            load_models();
         else {
             // Con lazy_load, marcar el modelo como cargado si está disponible
 
@@ -80,7 +80,7 @@
             std::lock_guard<std::mutex> lock(models_mutex_);
             for (std::filesystem::path const& modelDir : available_models) {
                 if (!running_) break;                               // Salir si el tts no está corriendo (cierre prematuro)
-                if (!checkAvailableModel(modelDir)) continue;       // No crear entrada si faltan archivos
+                if (!check_available_model(modelDir)) continue;       // No crear entrada si faltan archivos
                 loaded_models_[getModelName(modelDir)] = nullptr;   // rellenar el vector con puntero nulo
             }
         }
@@ -113,7 +113,7 @@
 
         // Si está lazy_load activo, activar el thread reaper
         if (lazy_load_ && keep_alive_seconds_.count() > 0)
-            keepalive_thread_ = std::thread(&TTSCore::TKeepAliveWorker, this);
+            keepalive_thread_ = std::thread(&TTSCore::t_keepalive, this);
 
         // Notifica de los nuevos datos
         notify();
@@ -593,26 +593,31 @@
     // Función inyectada de notificación a observers ------------------------------------
 
     void TTSCore::notify() {
-        if (notification_cb_) 
-            notification_cb_();
+        if (!onNotify_cb_) return;
+        
+        std::lock_guard<std::mutex> lk(onNotify_mtx_);
+        onNotify_cb_();
     }
 
-    void TTSCore::set_notification_cb(std::function<void(void)> cb) {
-        notification_cb_ = std::move(cb); 
+    void TTSCore::setCallback_onNotify(std::function<void(void)> cb) {
+        std::lock_guard<std::mutex> lk(onNotify_mtx_);
+        onNotify_cb_ = std::move(cb); 
     }
 
-    void TTSCore::clear_notification_cb() {
-        notification_cb_ = nullptr;
+    void TTSCore::clearCallback_onNotify() {
+        std::lock_guard<std::mutex> lk(onNotify_mtx_);
+        onNotify_cb_ = nullptr;
     }
 
-    bool TTSCore::has_notification_cb() const {
-        return static_cast<bool>(notification_cb_);
+    bool TTSCore::hasCallback_onNotify() const {
+        std::lock_guard<std::mutex> lk(onNotify_mtx_);
+        return static_cast<bool>(onNotify_cb_);
     }
 
 
     // Inicialización de modelos ------------------------------------------------------------
 
-    void TTSCore::loadModels() {
+    void TTSCore::load_models() {
 
         // obtener la lista de rutas de los modelos de la ruta models_path_
         std::vector<std::string> av_models_str = getAvailableModelsPath();
@@ -729,7 +734,7 @@
         return true;
     }
 
-    bool TTSCore::checkAvailableModel(std::filesystem::path modelAbsPath) const {
+    bool TTSCore::check_available_model(std::filesystem::path modelAbsPath) const {
         // Rutas
         std::string st_modelname_path, st_tokens_path, st_datadir_path, st_modelname;
 
@@ -783,7 +788,7 @@
         return true;
     }
 
-    void TTSCore::TKeepAliveWorker() {
+    void TTSCore::t_keepalive() {
 
         // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
         std::chrono::duration<long> poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);

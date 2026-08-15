@@ -72,7 +72,7 @@ public:
      * @brief Devuelve el nombre de este TTSPlayer
      * @return Nombre del TTSPlayer
      */
-    std::string getName();
+    std::string getName() const;
 
     /**
      * @brief Devuelve el nombre del reproductor playback 
@@ -89,7 +89,7 @@ public:
     bool isBusy();
 
 
-// Inyección de funciones ---------------------------------------------------------------
+// Inyección de función texto a audio ---------------------------------------------------
 
     /**
      * @brief Función inyectada que utiliza el núcleo de tts para pasar un texto a audio
@@ -99,7 +99,26 @@ public:
      */
     using TTSFunction = std::function<std::vector<float>(std::string const& modelName, std::string const& text)>;
 
-    void setTTSCallback(TTSFunction fn);
+    /**
+     * @brief Registra un callback externo para procesar un texto y devolver una trama de datos de audio.
+     * @param fn Función callback inyectada: std::vector<float> func(std::string const& modelName, std::string const& text)
+     */
+    void setCallback_onTextToAudio(TTSFunction fn);
+
+    /**
+     * @brief Elimina la función asociada a onTextToAudio
+     */
+    void clearCallback_onTextToAudio();
+
+    /**
+     * @brief Indica si este módulo tiene una función inyectada para
+     *  convertir texto a audio (módulo TTS)
+     * @return @c true si tiene la función inyectada, @c false en caso contrario (nullptr) 
+     */
+    bool hasCallback_onTextToAudio();
+
+
+// Inyección de función audio a playback ------------------------------------------------
 
     /**
      * @brief Función inyectada que utiliza el soundMgr para reproducir un audio
@@ -108,28 +127,46 @@ public:
      */
     using PlaybackFunction = std::function<bool(std::vector<float>& audio, std::string const& playbackName)>;
 
-    void setPlaybackCallback(PlaybackFunction fn);
+    /**
+     * @brief Registra un callback externo para reproducir un audio por una salida playback
+     * @param fn Función callback inyectada: bool func(std::string const& audio, std::string const& playbackName)
+     */
+    void setCallback_onAudioToPlayback(PlaybackFunction fn);
 
+    /**
+     * @brief Elimina la función asociada a onAudioToPlayback
+     */
+    void clearCallback_onAudioToPlayback();
 
-// Hilos --------------------------------------------------------------------------------
-
-    void TProcesarCola();
+    /**
+     * @brief Indica si este módulo tiene una función inyectada para
+     *  reproducir audio por un playback
+     * @return @c true si tiene la función inyectada, @c false en caso contrario (nullptr) 
+     */
+    bool hasCallback_onAudioToPlayback();
 
 
 private:
+
+// Hilos --------------------------------------------------------------------------------
+
+    void t_data_consumer();
+
 
 // Procesado de elementos de la cola ----------------------------------------------------
 
     // Declaración anticipada
     struct queueElement;
-    bool reproducirElemento(queueElement element);
+    bool reproducir_elemento(queueElement element);
 
 
 /************ Variables ********************************************************/
 
 // Funciones inyectadas
-    TTSFunction             fn_textToAudio;         ///< Función inyectada para pasar de texto a audio
-    PlaybackFunction        fn_audioToPlayback;     ///< Función inyectada para reproducir audio en playback
+    TTSFunction             onTextToAudio_cb_;         ///< Función inyectada para pasar de texto a audio
+    std::mutex              onTextToAudio_mtx_;        ///< Mutex para onTextToAudio
+    PlaybackFunction        onAudioToPlayback_cb_;     ///< Función inyectada para reproducir audio en playback
+    std::mutex              onAudioToPlayback_mtx_;    ///< Mutex para onAudioToPlayback
 
 // Inicialización y ejecución
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
@@ -152,6 +189,6 @@ private:
     std::queue<queueElement>    cola_textos_;       ///< Cola de textos pendientes de reproducir
     std::mutex                  cola_textos_mtx_;   ///< Mutex para cola de textos
     std::condition_variable     cola_textos_cv_;    ///< Condition variable para cola de textos
-    std::thread                 worker_thread_;     ///< Hilo dedicado a procesar la cola de textos
+    std::thread                 data_consumer_thread_;     ///< Hilo dedicado a procesar la cola de textos
 
 };

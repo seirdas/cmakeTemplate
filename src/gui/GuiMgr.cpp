@@ -1065,10 +1065,10 @@
     void GuiMgr::setController(IAppControl*)	{ return; }
     
 	// Ejecución ----------------------------------------------------------------------------
-    bool GuiMgr::init()				{ return false;}
-    void GuiMgr::run()				{ return; }
+    bool GuiMgr::init(void*)		{ return false;}
+    void GuiMgr::run()			{ return; }
     bool GuiMgr::isRunning() const 	{ return false; }
-    void GuiMgr::close()			{ return; }
+    bool GuiMgr::close()		{ return false; }
 
 	// Bucle principal ----------------------------------------------------------------------
     void GuiMgr::initCuadro()		{ return; }

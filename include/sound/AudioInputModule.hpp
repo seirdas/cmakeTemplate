@@ -13,18 +13,18 @@
  * @class AudioInputModule
  * @brief Clase para la captura de audio utilizando miniaudio.
  */
-class AudioInputModule{
+class AudioInputModule {
 
 public: 
 
-    // General ------------------------------------------------------------------------------
+// General ------------------------------------------------------------------------------
 
     /**
      * @brief Constructor de AudioInputModule.
      * @param ctx Contexto de mini audio.
      * @param device_info Información del dispositivo de audio.
      */
-   AudioInputModule(void* ctx, void* const device_info);
+    AudioInputModule(void* ctx, const void* device_info);
 
     /**
      * @brief Destructor de AudioInputModule.
@@ -32,14 +32,21 @@ public:
     ~AudioInputModule();
 
 
-    // Ejecución ----------------------------------------------------------------------------
+// Inicialización -------------------------------------------------------------------
 
     /**
      * @brief Inicializa el dispositivo de captura
+     * @note Aparte de la inicialización, también lo pone a capturar audio (start)
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    bool init(void* config = nullptr);
+    bool init(void* config = nullptr, std::string const& captureName = "");
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -55,16 +62,33 @@ public:
      * @brief Detiene la captura de audio y desinicializa el dispositivo
      *  Si estaba grabando, deja de grabar y guarda lo grabado.
      */
-    void stop();
+    void close();
 
     /**
-     * @brief Desinicializa y cierra la captura 
-     *  y la vuelve a abrir con los nuevos parámetros
+     * @brief Desinicializa y cierra el módulo 
+     *  y lo vuelve a inicializar con los nuevos parámetros
      */
     bool reload();
+
+
+// Ejecución ----------------------------------------------------------------------------
+
+    /**
+     * @brief Inicializa la captura de audio
+     * @note Devolverá true si el módulo ya estaba capturando (no hace nada)
+     * @return @c true Si se ha iniciado la captura correctamente, @c false en caso contrario
+     */
+    bool startCapture();
+
+    /**
+     * @brief Detiene la captura de audio
+     * @note Devolverá true si el módulo no estaba capturando (no hace nada)
+     * @return @c true Si se ha detenido la captura correctamente, @c false en caso contrario
+     */
+    bool stopCapture();
     
     
-    // Información y parámetros -------------------------------------------------------------
+// Parámetros del módulo ----------------------------------------------------------------
     
     /**
      * @brief Devuelve el nombre del dispositivo
@@ -76,7 +100,7 @@ public:
      * @brief Obtiene el nombre de este AudioInputModule
      * @return Nombre de este componente 
      */
-    std::string getName() const;
+    std::string getModuleName() const;
 
     /**
      * @brief Obtiene el número de canales totales del dispositivo de captura 
@@ -85,16 +109,16 @@ public:
     unsigned short getNumChannels() const;
 
     /**
-     * @brief Obtiene la frecuencia de muestreo de captura 
-     * @return Frecuencia de muestreo
-     */
-    unsigned int getSampleRate() const;
-
-    /**
      * @brief Obtiene el canal seleccionado
      * @return Canal seleccionado
      */
     unsigned short getSelectedChannel() const;
+
+    /**
+     * @brief Obtiene la frecuencia de muestreo de captura 
+     * @return Frecuencia de muestreo
+     */
+    unsigned int getSampleRate() const;
 
     /**
      * @brief Establece un (nuevo) dispositivo de captura
@@ -136,10 +160,10 @@ public:
      * @brief Indica si el dispositivo está activo o se ha desconectado
      * @return @c true Si el dispositivo está activo, @c false en caso contrario 
      */
-    bool isValid();
+    bool isValid() const;
 
 
-    // Captura ------------------------------------------------------------------------------
+// Captura ------------------------------------------------------------------------------
 
     /**
      * @brief Devuelve el valor medio RMS del buffer de captura.
@@ -148,18 +172,18 @@ public:
     float getRmsLevel() const;
 
     /**
-     * @brief Obtener tamaño del buffer de captura
-     * @return Tamaño de buffer de captura
-     */
-    size_t getBufferSize();
-
-    /**
      * @brief Devuelve el nivel del pico del buffer de captura.
      */
     float getPeakLevel() const;
 
+    /**
+     * @brief Obtener tamaño del buffer de captura
+     * @return Tamaño de buffer de captura
+     */
+    size_t getBufferSize() const;
 
-    // Callback expuesto --------------------------------------------------------------------
+
+// Callback expuesto --------------------------------------------------------------------
     
     /**
      * @brief Alias para definir la firma del callback de audio.
@@ -173,15 +197,21 @@ public:
      * para que sea ejecutada cada vez que el hilo de audio tenga nuevos datos disponibles.
      * * @param cb La función (o functor) que se ejecutará al recibir nuevos frames.
      */
-    void setOnFrameCallback(AudioCallback cb);
+    void setCallback_OnFrame(AudioCallback cb);
 
     /**
      * @brief Elimina la función asociada a onFrame_
      */
-    void clearOnFrameCallback();
+    void clearCallback_OnFrame();
+
+    /**
+     * @brief Indica si este modulo tiene una función inyectada para
+     *  procesar muestras de audio
+     */
+    bool hasCallback_OnFrame();
 
 
-    // Grabación ----------------------------------------------------------------------------
+// Grabación ----------------------------------------------------------------------------
 
     /**
      * @brief Comienza a grabar en el archivo especificado
@@ -210,52 +240,53 @@ public:
     bool isRecording();
 
 
-    // Parámetros de suavizado de valores ---------------------------------------------------
+// Parámetros de suavizado de valores ---------------------------------------------------
 
     /**
      * @brief Activa/Desactiva los valores suavizados
      * @param value @c true para activar los valores suavizados, @c false para desactivar
      */
-    void set_SmoothedValues(bool value);
+    void enableSmoothedValues(bool value);
 
     /**
      * @brief Set the SmoothAttackCoeff object
      * @param value Valor de ataque (+grande = subida lenta)
      */
-    void set_SmoothAttackCoeff(float value);
+    void setSmoothAttackCoeff(float value);
 
     /**
      * @brief Set the SmoothReleaseCoeff object
      * @param value Valor de release (+grande = bajada lenta)
      */
-    void set_SmoothReleaseCoeff(float value);
+    void setSmoothReleaseCoeff(float value);
 
 
 private:
 
-    // Codificador de grabación -------------------------------------------------------------
+// Codificador de grabación -------------------------------------------------------------
 
     /**
      * @brief Inicializa el codificador para pasar a .wav
      * @note Hay que inicializar y desinicializar el encoder cada vez que quieras grabar en un archivo nuevo
      * @param filename Recibe el nombre del archivo donde se va a guardar el audio
      */
-    void InitRecEncoder(std::string const& filename);
+    void init_rec_encoder(std::string const& filename);
 
     /**
      * @brief Desinicializa el encoder de grabación
-     * @note Hay que inicializar y desinicializar el encoder cada vez que quieras grabar en un archivo nuevo
+     * @note Hay que inicializar y desinicializar el encoder 
+     *  cada vez que se vaya a grabar en un archivo nuevo
     */
-    void UninitRecEncoder();
+    void uninit_rec_encoder();
 
     /**
      * @brief Guarda el audio grabado en un fichero .wav
      * @details Por defecto se hace justo después de parar la grabación
      */
-    void saveRecording();
+    void save_recording();
 
 
-    // Suavizado de niveles -----------------------------------------------------------------
+// Suavizado de niveles -----------------------------------------------------------------
 
     /**
      * @brief Calcula un valor suavizado respecto a su valor anterior
@@ -265,7 +296,7 @@ private:
      * @param releaseCoeff Coeficiente de "release"
      * @return Valor suavizado
      */
-    float smoothLevel(
+    float smooth_level(
         float const     rawValue, 
         float const&    previousValue, 
         float           attackCoeff = 0, 
@@ -311,7 +342,7 @@ private:
     float                   releaseCoeff_;        ///< Valor de release (+grande = bajada lenta)
 
 // Función inyectada
-    AudioCallback           onFrame_;             ///< Almacena la función de callback registrada externamente
+    AudioCallback           onFrame_cb_;          ///< Almacena la función de callback registrada externamente
     mutable std::mutex      onFrame_mtx_;         ///< Mutex para acceso a la función onFrame callback
 
 };

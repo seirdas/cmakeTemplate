@@ -289,8 +289,8 @@ private:
     std::unique_ptr<CycloneDDS>  cds_;          ///< Gestor DDS (CycloneDDS)
 
 // Gestión de hilos
-    std::thread             hilo_test_;         ///< Hilo de pruebas
-    std::thread             hilo_consumer_;     ///< Hilo consumidor de paquetes de red
+    std::thread             test_thread_;       ///< Hilo de pruebas
+    std::thread             consumer_thread_;   ///< Hilo consumidor de paquetes de red
     std::mutex              online_mtx_;        ///< Mutex para dejar en espera al hilo
     std::condition_variable online_cv_;         ///< Reacciona al cambio de estado para el hilo consumidor
 

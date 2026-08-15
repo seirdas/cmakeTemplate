@@ -411,7 +411,7 @@ private:
     unsigned long       connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
     unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
     std::string         SymetrixIP_;                    ///< IP de Symetrix
-    std::thread         connection_checker_;            ///< Hilo para "certificar" la conexión con Symetrix
+    std::thread         connection_checker_thread_;     ///< Hilo para "certificar" la conexión con Symetrix
     unsigned char       connection_check_seconds_;      ///< Intervalo de tiempo para comprobar la conexión con un ping
     std::mutex          connection_mutex_;              ///< Mutex para hilo de check conexión
     std::condition_variable connection_cv_;             ///< Condition variable para hilo de check conexión

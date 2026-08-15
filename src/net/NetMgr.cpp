@@ -234,7 +234,7 @@
         std::shared_ptr<UdpSocket> socket = std::make_shared<UdpSocket>(name, &pimpl_->io_context_);
 
         // [INYECCIÓN DEL CALLBACK]
-        socket->setReceiveCallback([this](NetPacket pkt) {
+        socket->setCallback_onReceive([this](NetPacket pkt) {
 
             // Proteger la cola de datos del socket
             std::lock_guard<std::mutex> lock(udp_rcv_data_mtx_);
@@ -282,7 +282,7 @@
         std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
         // Llama función privada con lock adquirido
-        return RemoveUdpSocketLocked(getSocketIndex(name));
+        return remove_udp_socket_locked(get_socket_index(name));
     }
 
     bool NetMgr::removeUdpSocket(unsigned int port) {
@@ -290,7 +290,7 @@
         std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
         // Llama función privada con lock adquirido
-        return RemoveUdpSocketLocked(getSocketIndex(port));
+        return remove_udp_socket_locked(get_socket_index(port));
     }
 
     void NetMgr::printUdpSockets() const {
@@ -476,13 +476,13 @@
         }
 
         // Si no tiene función inyectada es que sus datos se almacenan en su cola interna
-        if (!target->hasReceiveCalback())
+        if (!target->hasCallback_onReceive())
             return target->getFirstPacket();  // <-- BLOQUEANTE
 
         // Si tiene función inyectada, los datos estarán el la cola general de NetMgr
         else {
             // Buscamos en la cola centralizada usando el nombre (BLOQUEANTE)
-            std::vector<char> data = extractPacketIf([&socketname](const NetPacket& pkt) {
+            std::vector<char> data = extract_packet_if([&socketname](const NetPacket& pkt) {
                 return pkt.socket_name == socketname;
             });
 
@@ -518,13 +518,13 @@
         }
 
         // Si no tiene función inyectada es que sus datos se almacenan en su cola interna
-        if(!target->hasReceiveCalback())
+        if(!target->hasCallback_onReceive())
             return target->getFirstPacket();  // <-- BLOQUEANTE
 
         // Si tiene función inyectada, los datos estarán el la cola general de NetMgr
         else {
             // Buscamos en la cola centralizada usando el puerto (BLOQUEANTE)
-            std::vector<char> data = extractPacketIf([local_port](const NetPacket& pkt) {
+            std::vector<char> data = extract_packet_if([local_port](const NetPacket& pkt) {
                 return pkt.port == local_port;
             });
 
@@ -542,20 +542,20 @@
 
     // Datos de los sockets guardados -------------------------------------------------------
 
-    int NetMgr::getSocketIndex(short port) const {
+    int NetMgr::get_socket_index(short port) const {
         for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
             if (pimpl_->udp_sockets_[i]->port() == port) return i;
         /*else*/ return -1;
     }
 
-    int NetMgr::getSocketIndex(std::string const& name) const {
+    int NetMgr::get_socket_index(std::string const& name) const {
         for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
             if (pimpl_->udp_sockets_[i]->name() == name) return i;
         /*else*/ return -1;
     }
 
     template <typename Lambda>
-    std::vector<char> NetMgr::extractPacketIf(Lambda pred) {
+    std::vector<char> NetMgr::extract_packet_if(Lambda pred) {
         std::unique_lock<std::mutex> lock(udp_rcv_data_mtx_);
 
         // Esperar hasta tener un paquete válido o hasta que los sockets se paren
@@ -581,7 +581,7 @@
 
     // Operaciones privadas con sockets -----------------------------------------------------
     
-    bool NetMgr::RemoveUdpSocketLocked(int index) {
+    bool NetMgr::remove_udp_socket_locked(int index) {
         // Busca el índice del socket en el vector, -1 si falla
         if (index < 0) {
             SYS_WARN("NetMgr","Cannot delete selected UDP socket: Negative vector index.");
@@ -634,8 +634,8 @@ struct NetMgr::Impl {};
     bool NetMgr::removeUdpSocket(std::string const&)    { return false; }
     bool NetMgr::removeUdpSocket(unsigned int)          { return false; }
     void NetMgr::printUdpSockets() const                { return; }
-    bool NetMgr::socketExists(std::string const&)       { return false; }
-    bool NetMgr::socketExists(unsigned short)           { return false; }
+    bool NetMgr::socketExists(std::string const&) const { return false; }
+    bool NetMgr::socketExists(unsigned short) const     { return false; }
 
 // Ejecución ----------------------------------------------------------------------------
     bool NetMgr::start()                                { return false; }
@@ -662,6 +662,13 @@ struct NetMgr::Impl {};
     std::vector<char> NetMgr::getDataFromSocket(unsigned short)               { return {}; }
 
 // Datos de los sockets guardados -------------------------------------------------------
-    int NetMgr::getSocketIndex(std::string const&) const  { return 0; }
+    int NetMgr::get_socket_index(short port) const          { return 0; }
+    int NetMgr::get_socket_index(std::string const&) const  { return 0; }
+    
+    template <typename Lambda>
+    std::vector<char> extract_packet_if(Lambda)             { return {}; }
+
+// Operaciones privadas con sockets -----------------------------------------------------
+    bool remove_udp_socket_locked(int)                      { return false; }
 
 #endif

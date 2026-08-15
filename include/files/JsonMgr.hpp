@@ -1,8 +1,9 @@
 #pragma once
 
 #include <mutex>
-#include <string>
 #include <unordered_map>
+#include <string>
+#include <vector>
 
 // Comprobar si se puede usar la librería externa de json
 #if defined JSON || defined JSON_VERSION

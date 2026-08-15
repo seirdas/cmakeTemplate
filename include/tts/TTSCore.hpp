@@ -253,18 +253,18 @@ public:
      * @brief Establece la función de notificar desde clase administradora superior
      * @param cb Función de notificar de clase superior (notify)
      */
-    void set_notification_cb(std::function<void(void)> cb);
+    void setCallback_onNotify(std::function<void(void)> cb);
 
     /**
      * @brief Borra la función de notificar inyectada
      */
-    void clear_notification_cb();
+    void clearCallback_onNotify();
 
     /**
      * @brief Devuelve si existe la función de notificación inyectada
      * @return @c true Si tiene función, @c false en caso contrario.
      */
-    bool has_notification_cb() const;
+    bool hasCallback_onNotify() const;
 
 
 private:
@@ -276,7 +276,7 @@ private:
      * @details Dependiendo de la configuración, realiza la carga de forma consecutiva 
      * o concurrente distribuyendo la tarea en hilos independientes.
      */
-    void loadModels();
+    void load_models();
 
     /**
      * @brief Carga e inicializa en memoria un modelo VITS TTS específico a través de la API de Sherpa-Onnx.
@@ -293,7 +293,7 @@ private:
      * @param modelAbsPath Ruta absoluta de la carpeta que se va a evaluar.
      * @return @c true si contiene todos los elementos mínimos requeridos; @c false si falta alguno.
      */
-    bool checkAvailableModel(std::filesystem::path modelAbsPath) const;
+    bool check_available_model(std::filesystem::path modelAbsPath) const;
 
     /**
      * @brief Descarga un modelo específico liberando sus recursos asociados en memoria.
@@ -311,7 +311,7 @@ private:
      *  supera el tiempo de inactividad programado y no se encuentra retenido 
      *  por ninguna tarea activa de generación, libera el modelo de la memoria.
      */
-    void TKeepAliveWorker();
+    void t_keepalive();
 
 
 
@@ -354,6 +354,7 @@ private:
     std::condition_variable exit_cv_;               ///< Notifica cuándo paran las tareas
 
 // Función inyectada de notificación a observadores
-    std::function<void(void)>  notification_cb_;    ///< Función callback para "mandar" notificar a clase controladora superior
+    std::function<void(void)>  onNotify_cb_;        ///< Función callback para "mandar" notificar a clase controladora superior
+    mutable std::mutex         onNotify_mtx_;       ///< Mutex para onNotify callback
 
 };

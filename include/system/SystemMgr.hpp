@@ -130,6 +130,7 @@ private:
      */
     void showPopup(std::string const& msg, std::string const& title, bool bloq = true);
 
+    
 private:
 
 /************ Variables ****************************************************************/

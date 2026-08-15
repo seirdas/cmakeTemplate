@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 #include <string>               // std::string
@@ -248,7 +249,7 @@ private:
      * @param port Puerto local del socket abierto asignado en su creación
      * @return Índice del vector udpSockets
      */
-    int getSocketIndex(short port) const;
+    int get_socket_index(short port) const;
 
     /**
      * @brief Obtener el ID/index del socket por nombre
@@ -256,7 +257,7 @@ private:
      * @param name Nombre asignado al socket en su creación
      * @return Índice del vector udpSockets
      */
-    int getSocketIndex(std::string const& name) const;
+    int get_socket_index(std::string const& name) const;
 
     /**
      * @brief Extrae de forma segura y bloqueante el primer paquete de la cola centralizada que cumpla un criterio.
@@ -271,7 +272,7 @@ private:
      *         el sistema sin coincidencias.
      */
     template <typename Lambda>
-    std::vector<char> extractPacketIf(Lambda pred);
+    std::vector<char> extract_packet_if(Lambda pred);
 
 
 // Operaciones privadas con sockets -----------------------------------------------------
@@ -283,7 +284,7 @@ private:
      * @param index Índice del vector udpsockets del socket a borrar
      * @return @c true Si se ha borrado correctamente
      */
-    bool RemoveUdpSocketLocked(int index);
+    bool remove_udp_socket_locked(int index);
 
 
 /************ Variables ****************************************************************/

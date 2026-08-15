@@ -89,7 +89,7 @@ private:
      * @brief Genera una cadena de texto con la fecha y hora actual.
      * @return Formato: [AAAA-MM-DD HH:MM:SS]
      */
-    std::string getTimestamp();
+    std::string get_timestamp();
 
 
 /************ Variables ****************************************************************/

@@ -8,8 +8,8 @@
      * @brief Constructor 
      */
     TTSPlayer::TTSPlayer(std::string const& playerName) :
-        fn_textToAudio(nullptr),
-        fn_audioToPlayback(nullptr),
+        onTextToAudio_cb_(nullptr),
+        onAudioToPlayback_cb_(nullptr),
         name_(playerName),
         initialized_(false),
         running_(false)
@@ -31,7 +31,7 @@
         playbackName_ = pbName;
 
         // Lanza el hilo que consumirá la cola interna
-        worker_thread_ = std::thread(&TTSPlayer::TProcesarCola, this);
+        data_consumer_thread_ = std::thread(&TTSPlayer::t_data_consumer, this);
 
         initialized_    = true;
         running_        = true;
@@ -48,8 +48,8 @@
             running_ = false;
         }
         cola_textos_cv_.notify_one();
-        if (worker_thread_.joinable()) {
-            worker_thread_.join();
+        if (data_consumer_thread_.joinable()) {
+            data_consumer_thread_.join();
         }
 
         return true;
@@ -66,7 +66,7 @@
             SYS_WARN("TTSPlayer","Cannot play: Text empty.");
             return false;
         }
-        if (!fn_textToAudio || !fn_audioToPlayback) {
+        if (!onTextToAudio_cb_ || !onAudioToPlayback_cb_) {
             SYS_WARN("TTSPlayer","Cannot generate audio: Callback functions don't exist.");
             return false;
         }
@@ -92,6 +92,10 @@
         playbackName_ = pbName;
     }
 
+    std::string TTSPlayer::getName() const {
+        return name_;
+    }
+
     std::string TTSPlayer::getPlaybackName() const {
         return playbackName_;
     }
@@ -101,20 +105,45 @@
     }
 
 
-// Inyección de funciones ---------------------------------------------------------------
+// Inyección de función texto a audio ---------------------------------------------------
 
-    void TTSPlayer::setTTSCallback(TTSFunction fn) {
-        fn_textToAudio = std::move(fn); 
+    void TTSPlayer::setCallback_onTextToAudio(TTSFunction fn) {
+        std::lock_guard<std::mutex> lk(onTextToAudio_mtx_);
+        onTextToAudio_cb_ = std::move(fn); 
     }
 
-    void TTSPlayer::setPlaybackCallback(PlaybackFunction fn) {
-        fn_audioToPlayback = std::move(fn);
+    void TTSPlayer::clearCallback_onTextToAudio() {
+        std::lock_guard<std::mutex> lk(onTextToAudio_mtx_);
+        onTextToAudio_cb_ = nullptr;
+    }
+
+    bool TTSPlayer::hasCallback_onTextToAudio() {
+        std::lock_guard<std::mutex> lk(onTextToAudio_mtx_);
+        return static_cast<bool>(onTextToAudio_cb_);
+    }
+
+
+// Inyección de función audio a playback ------------------------------------------------
+
+    void TTSPlayer::setCallback_onAudioToPlayback(PlaybackFunction fn) {
+        std::lock_guard<std::mutex> lk(onAudioToPlayback_mtx_);
+        onAudioToPlayback_cb_ = std::move(fn);
+    }
+
+    void TTSPlayer::clearCallback_onAudioToPlayback() {
+        std::lock_guard<std::mutex> lk(onAudioToPlayback_mtx_);
+        onAudioToPlayback_cb_ = nullptr;
+    }
+
+    bool TTSPlayer::hasCallback_onAudioToPlayback() {
+        std::lock_guard<std::mutex> lk(onAudioToPlayback_mtx_);
+        return static_cast<bool>(onAudioToPlayback_cb_);
     }
 
 
 // Hilos --------------------------------------------------------------------------------
 
-    void TTSPlayer::TProcesarCola() {
+    void TTSPlayer::t_data_consumer() {
 
         // Elemento a reproducir de la cola
         queueElement element;
@@ -141,26 +170,26 @@
             lock.unlock();
 
             // Reproducir elemento
-            reproducirElemento(element);
+            reproducir_elemento(element);
 
             // Esperar un rato hasta reproducir el siguiente paquete
             std::this_thread::sleep_for(std::chrono::seconds(2));   // (poner tiempo como variable)
         }
 
-        SYS_INFO("TTSPlayer::TProcesarCola", "Thread stopped.");
+        SYS_INFO("TTSPlayer::t_data_consumer", "Thread stopped.");
 
     }
 
 
 // Procesado de elementos de la cola ----------------------------------------------------
 
-    bool TTSPlayer::reproducirElemento(queueElement element) {
+    bool TTSPlayer::reproducir_elemento(queueElement element) {
 
         // Guardar el texto que se está procesando
         texto_en_proceso_ = element.text;
 
         // Generar audio
-        std::vector<float> audio = fn_textToAudio(element.modelName, element.text);
+        std::vector<float> audio = onTextToAudio_cb_(element.modelName, element.text);
         if (audio.empty()) {
             SYS_WARN("TTSPlayer", "Empty audio generated from " + element.modelName);
             texto_en_proceso_.clear();
@@ -168,7 +197,7 @@
         }
 
         // Reproducir audio por el playback
-        bool result = fn_audioToPlayback(audio, playbackName_);
+        bool result = onAudioToPlayback_cb_(audio, playbackName_);
         if (!result) {
             SYS_WARN("TTSPlayer", "Cannot reproduce audio through playback '" + playbackName_ + "'");
             texto_en_proceso_.clear();

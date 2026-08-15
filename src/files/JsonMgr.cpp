@@ -11,7 +11,6 @@ JsonMgr& JsonMgr::instance() {
 
 
 #if defined JSON || defined JSON_VERSION
-    #include <string>
 
     // Gestión de archivo ----------------------------------------------------------------------
 
@@ -167,7 +166,7 @@ JsonMgr& JsonMgr::instance() {
 
 // Gestión de archivo -------------------------------------------------------------------
     json* JsonMgr::load(std::string const&)     { return nullptr; }
-    bool  JsonMgr::update(std::string const&)   { return false; }
+    bool  JsonMgr::update()                     { return false; }
     json* JsonMgr::getSubNode(std::string const&, std::string const&) { return nullptr; }
     json* JsonMgr::getSubNode(json* parent, std::string const& key)   { return nullptr; }
 

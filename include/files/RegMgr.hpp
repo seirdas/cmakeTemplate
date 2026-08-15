@@ -120,6 +120,7 @@ public:
 	*/
 	bool WaitUntilChange(std::wstring const& root, std::wstring const& path);
 
+	
 private:
 
 // General ------------------------------------------------------------------------------
@@ -148,7 +149,7 @@ private:
 	 * @param root Prefijo de ruta de registro en formato wstring
 	 * @return void*, equivalente a HKEY
 	 */
-	void* ResolveRoot(std::wstring const& path);
+	void* resolve_root(std::wstring const& path);
 
 	/**
 	 * @brief Consulta el tipo de una clave sin leer su valor.
@@ -157,12 +158,12 @@ private:
 	 * @param path Ruta del registro
 	 * @param clave Clave de registro
 	 */
-	uint32_t queryType(void* hRoot, const std::wstring& path, const std::wstring& clave);
+	uint32_t query_type(void* hRoot, const std::wstring& path, const std::wstring& clave);
 
 	/**
 	 * @brief Nombre legible del tipo de registro para mensajes de error
 	  */
-	const char* regTypeName(uint32_t type);
+	const char* reg_typename(uint32_t type);
 
 
 // Comunes por SO -----------------------------------------------------------------------

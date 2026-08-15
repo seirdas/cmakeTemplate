@@ -13,7 +13,7 @@ Persona::Persona() :
     spk_vol(0)
 {
     memset(&symIDs_, 0, sizeof(symIDs_));
-    memset(&tm_, 0, sizeof(tm_));
+    memset((void*)&tm_, 0, sizeof(tm_));
 }
 
 Persona::~Persona() {

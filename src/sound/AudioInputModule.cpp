@@ -96,7 +96,7 @@
                     peak = sampleAbs;
             }
             rawValue = static_cast<float>((peak / static_cast<float>(self->max_int16_val_)) * 100.0f); //de 0 a 100
-            self->peakLevel_ = (self->smoothedValues_) ? self->smoothLevel(rawValue, self->peakLevel_) : rawValue;
+            self->peakLevel_ = (self->smoothedValues_) ? self->smooth_level(rawValue, self->peakLevel_) : rawValue;
             if (self->peakLevel_ > 100.0f) self->peakLevel_ = 100.0f; // capar al máximo
             
 
@@ -109,7 +109,7 @@
             }
             double rms = std::sqrt(sum / targetSize); // La raiz es más eficiente hacerla fuera del bucle
             rawValue  = static_cast<float>((rms  / self->max_int16_val_) * 100.0); // de 0 a 100
-            self->rmsLevel_ = (self->smoothedValues_) ? self->smoothLevel(rawValue, self->rmsLevel_) : rawValue;
+            self->rmsLevel_ = (self->smoothedValues_) ? self->smooth_level(rawValue, self->rmsLevel_) : rawValue;
             if (self->rmsLevel_ > 100.0f) self->rmsLevel_ = 100.0f;
 
         
@@ -124,8 +124,8 @@
         // 3. CALLBACK: Envío de trama de datos de audio de entrada a "otro sitio" si el callback está definido
         {
             std::lock_guard<std::mutex> lk(self->onFrame_mtx_);
-            if (self->onFrame_ != nullptr) {
-                self->onFrame_(filteredSamples.data(), filteredSamples.size());
+            if (self->onFrame_cb_ != nullptr) {
+                self->onFrame_cb_(filteredSamples.data(), filteredSamples.size());
             }
         }
     }
@@ -150,7 +150,7 @@
 
     // General ------------------------------------------------------------------------------
 
-    AudioInputModule::AudioInputModule(void* ctx, void* const device_info) :
+    AudioInputModule::AudioInputModule(void* ctx, const void* device_info) :
     pimpl_(std::make_unique<Impl>(ctx, device_info)),
     is_valid_(false),
     initialized_(false),
@@ -165,22 +165,21 @@
     smoothedValues_(false),
     attackCoeff_(0),
     releaseCoeff_(0),
-    onFrame_(nullptr)
+    onFrame_cb_(nullptr)
     {
         deviceName_ = pimpl_->device_info.name;
     }
 
     AudioInputModule::~AudioInputModule() {
-        stop();
+        close();
     }
 
 
-    // Ejecución-----------------------------------------------------------------------------
+    // Inicialización -------------------------------------------------------------------
 
-    bool AudioInputModule::init(void* config) {
-        
-        if (is_valid_) return true; 
-        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
+    bool AudioInputModule::init(void* config, std::string const& captureName) {
+        if (initialized_)
+            return true;
 
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
@@ -192,6 +191,12 @@
                 + std::to_string(selectedChannel_) + ", channels: " + std::to_string(channels_));
             return false;
         }
+
+        // Ponerle nombre a este módulo (sobreescribe el de la config)
+        if (!captureName.empty()) name_ = captureName;
+
+        // Inicializar el dispositivo de captura
+        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
 
         // rellenar los parámetros de la configuración de miniaudio
         deviceConfig.capture.format       = ma_format_s16;
@@ -205,22 +210,20 @@
         // Inicializar
         if (ma_device_init(pimpl_->ctx, &deviceConfig, &pimpl_->device) != MA_SUCCESS) {
             SYS_WARN("AudioInputModule","Cannot initialize input device");
+            is_valid_ = false;
             return false;
         }
 
-        // Arrancar
-        if (ma_device_start(&pimpl_->device) != MA_SUCCESS){
-            SYS_WARN("AudioInputModule","Cannot start input device");
-            ma_device_uninit(&pimpl_->device);
-            return false;
-        }
+        // Comenzar a capturar audio
+        running_ = startCapture();
 
         // Llega hasta aquí si se ha inicializado bien
-        is_valid_ = true;
         initialized_ = true;
-        running_ = true;
-
         return initialized_; //<- true
+    }
+
+    bool AudioInputModule::isInitialized() const {
+        return initialized_;
     }
     
     void AudioInputModule::loadConfig(void* config) {
@@ -243,24 +246,18 @@
 
     }
 
-    void AudioInputModule::stop() {
+    void AudioInputModule::close() {
 
+        // Si no está inicializado, no hacer nada
         if (!initialized_)
             return;
-
-        // Si estaba grabando, parar la grabación (se guarda lo que hubiera)
-        if (recording_) {
-            SYS_WARN("AudioInputModule","Device stopped while recording.");
-            StopRec();
-            rec_buffer_.clear();
-        }
 
         // Marco running false para que no salga warn de "input closed unexpectedly"
         running_ = false;
 
-        // Detener la captura de audio
+        // Parar la captura
         SYS_INFO("AudioInputModule","Stopping device...");
-        ma_device_stop(&pimpl_->device);
+        stopCapture();
 
         // Desinicializa el dispositivo
         SYS_INFO("AudioInputModule","Uninit device...");
@@ -269,28 +266,64 @@
 
         // Limpia el callback
         SYS_INFO("AudioInputModule","Clearing onframe callback injected...");
-        clearOnFrameCallback();
+        clearCallback_OnFrame();
 
         initialized_ = false;
     }
 
     bool AudioInputModule::reload() {
+
+        SYS_INFO("AudioInputModule", "Reloading module...");
+        
         // Parar todo si está inicializado
         if (initialized_)
-            stop();
+            close();
 
         // Inicializa tomando los parámetros nuevos para la config (samplerate, channels, etc.)
         return init();
     }
 
 
-    // Información y parámetros -------------------------------------------------------------
+    // Ejecución ----------------------------------------------------------------------------
 
-    std::string AudioInputModule::getDeviceName() const { 
-        return deviceName_; 
+    bool AudioInputModule::startCapture() {
+        if (running_)
+            return true;
+
+        SYS_INFO("AudioInputModule","Initializing capture...");
+        if (ma_device_start(&pimpl_->device) != MA_SUCCESS){
+            SYS_WARN("AudioInputModule","Cannot start input device");
+            ma_device_uninit(&pimpl_->device);
+            return false;
+        }
+        else return true;
     }
 
-    std::string AudioInputModule::getName() const {
+    bool AudioInputModule::stopCapture() {
+        if (!running_)
+            return true;
+
+        // Si estaba grabando, parar la grabación (se guarda lo que hubiera)
+        if (recording_) {
+            SYS_WARN("AudioInputModule","Device stopped while recording.");
+            StopRec();
+            rec_buffer_.clear();
+        }
+
+        // Detener la captura de audio
+        SYS_INFO("AudioInputModule","Stopping device...");
+        ma_result res = ma_device_stop(&pimpl_->device);
+        return res == MA_SUCCESS;
+    }
+
+
+    // Parámetros del módulo ----------------------------------------------------------------
+
+    std::string AudioInputModule::getDeviceName() const { 
+        return pimpl_->device_info.name; 
+    }
+
+    std::string AudioInputModule::getModuleName() const {
         return name_;
     }
 
@@ -298,12 +331,12 @@
         return channels_;
     }
 
-    unsigned int AudioInputModule::getSampleRate() const {
-        return sampleRate_;
-    }
-
     unsigned short AudioInputModule::getSelectedChannel() const {
         return selectedChannel_;
+    }
+
+    unsigned int AudioInputModule::getSampleRate() const {
+        return sampleRate_;
     }
 
     bool AudioInputModule::setDeviceName(std::string const& deviceName) {
@@ -360,7 +393,7 @@
         return true;
     }
 
-    bool AudioInputModule::isValid() {
+    bool AudioInputModule::isValid() const {
         return is_valid_;
     };
 
@@ -375,24 +408,26 @@
         return peakLevel_; 
     }
     
-    size_t AudioInputModule::getBufferSize() {
+    size_t AudioInputModule::getBufferSize() const {
         return captureBuffer_.size();
     };
 
 
     // Callback expuesto --------------------------------------------------------------------
     
-    void AudioInputModule::setOnFrameCallback(AudioCallback cb) {
+    void AudioInputModule::setCallback_OnFrame(AudioCallback cb) {
         std::lock_guard<std::mutex> lk(onFrame_mtx_);
-        onFrame_ = std::move(cb); 
+        onFrame_cb_ = std::move(cb); 
     }
 
-    void AudioInputModule::clearOnFrameCallback() {
-        if (!onFrame_) 
-            return;
-
+    void AudioInputModule::clearCallback_OnFrame() {
+        if (!onFrame_cb_) return;
         std::lock_guard<std::mutex> lk(onFrame_mtx_);
-        onFrame_ = nullptr;
+        onFrame_cb_ = nullptr;
+    }
+
+    bool AudioInputModule::hasCallback_OnFrame() {
+        return static_cast<bool>(onFrame_cb_);
     }
 
 
@@ -401,7 +436,7 @@
     void AudioInputModule::StartRec(std::string const& filename) {
 
         // Inicializar el encoder (necesita el nombre de archivo)
-        InitRecEncoder(filename);
+        init_rec_encoder(filename);
 
         // Flag para activar la toma de samples en el buffer de grabación del callback de captura
         recording_ = true;
@@ -416,10 +451,10 @@
         recording_=false; 
 
         // Guarda las muestras grabadas en el buffer de grabación en el archivo
-        saveRecording();
+        save_recording();
 
         // Desinicializa el encoder
-        UninitRecEncoder();
+        uninit_rec_encoder();
     }
 
     size_t AudioInputModule::getRecBufferSize() {
@@ -433,22 +468,22 @@
 
     // Parámetros de suavizado de valores ---------------------------------------------------
 
-    void AudioInputModule::set_SmoothedValues(bool value) {
+    void AudioInputModule::enableSmoothedValues(bool value) {
         smoothedValues_ = value;
     }
 
-    void AudioInputModule::set_SmoothAttackCoeff(float value) {
+    void AudioInputModule::setSmoothAttackCoeff(float value) {
         attackCoeff_ = value;
     }
 
-    void AudioInputModule::set_SmoothReleaseCoeff(float value) {
+    void AudioInputModule::setSmoothReleaseCoeff(float value) {
         releaseCoeff_ = value;
     }
 
 
     // Codificador de grabación -------------------------------------------------------------
 
-    void AudioInputModule::InitRecEncoder(std::string const& filename) {
+    void AudioInputModule::init_rec_encoder(std::string const& filename) {
 
         // Le dices cómo quieres que sea el archivo.
         ma_encoder_config config = ma_encoder_config_init(
@@ -465,11 +500,11 @@
         rec_filename_=filename;
     }
 
-    void AudioInputModule::UninitRecEncoder() {
+    void AudioInputModule::uninit_rec_encoder() {
         ma_encoder_uninit(&pimpl_->encoder);
     }
 
-    void AudioInputModule::saveRecording() {
+    void AudioInputModule::save_recording() {
 
         // Variable donde miniaudio guarda cuantos frames ha escrito realmente
         ma_uint64 framesWritten = 0;
@@ -489,7 +524,7 @@
 
     // Suavizado de valores -----------------------------------------------------------------
 
-    float AudioInputModule::smoothLevel(
+    float AudioInputModule::smooth_level(
         float const     rawValue, 
         float const&    previousValue, 
         float           attackCoeff, 
@@ -514,26 +549,44 @@
 //  (Stubs)
 // ============================================================
 
+// Definición del struct de pimpl vacío
+struct AudioInputModule::Impl {};
+
 // General ------------------------------------------------------------------------------
-AudioInputModule::AudioInputModule(void*, const void*) {}
+AudioInputModule::AudioInputModule(void*, void* const) : 
+    max_int16_val_(std::numeric_limits<int16_t>::max())
+{}
 AudioInputModule::~AudioInputModule()   { return; }
 
 // Ejecución -----------------------------------------------------------------------------
-bool AudioInputModule::init(void* config) { return false; }
-void AudioInputModule::stop()             { return; }
-void AudioInputModule::loadConfig()     { return; }
+bool AudioInputModule::init(void*, std::string const&)  { return false; }
+bool AudioInputModule::isInitialized() const            { return false; }
+void AudioInputModule::loadConfig(void* config)         { return; }
+void AudioInputModule::close()                          { return; }
+bool AudioInputModule::reload()                         { return false; }
+bool AudioInputModule::startCapture()                          { return false; }
+bool AudioInputModule::stopCapture()                           { return false; }
 
 // Información y parámetros --------------------------------------------------------------
-std::string AudioInputModule::deviceName() const { return ""; }
-bool AudioInputModule::isValid()                 { return false; }
+std::string AudioInputModule::getDeviceName() const             { return ""; }
+std::string AudioInputModule::getModuleName() const             { return ""; }
+unsigned short AudioInputModule::getNumChannels() const         { return 0; }
+unsigned short AudioInputModule::getSelectedChannel() const     { return 0; }        
+unsigned int AudioInputModule::getSampleRate() const            { return 0; }
+bool AudioInputModule::setDeviceName(std::string const&)        { return false; }
+bool AudioInputModule::setNumChannels(unsigned short)           { return false; }
+bool AudioInputModule::setSampleRate(unsigned int)              { return false; }
+bool AudioInputModule::setSelectedChannel(unsigned short)       { return false; }
+bool AudioInputModule::isValid() const                          { return false; }
 
 // Captura ------------------------------------------------------------------------------
-float  AudioInputModule::getRmsLevel() const    { return 0.0f;  }
-size_t AudioInputModule::getBufferSize()        { return 0;     }
-float  AudioInputModule::getPeakLevel() const   { return 0;     }
+float  AudioInputModule::getRmsLevel()   const  { return 0.0f;  }
+float  AudioInputModule::getPeakLevel()  const  { return 0;     }
+size_t AudioInputModule::getBufferSize() const  { return 0;     }
 
 // Callback expuesto --------------------------------------------------------------------
-void AudioInputModule::setOnFrameCallback(AudioCallback cb);    { return; }
+void AudioInputModule::setCallback_OnFrame(AudioCallback)    { return; }
+void AudioInputModule::clearCallback_OnFrame()               { return; }
 
 // Grabación ----------------------------------------------------------------------------
 void AudioInputModule::StartRec(std::string const&) { return; }
@@ -542,8 +595,12 @@ size_t AudioInputModule::getRecBufferSize()         { return 0; }
 bool AudioInputModule::isRecording()                { return false; }
 
 // Codificador de grabación (Privados) --------------------------------------------------
-void AudioInputModule::InitRecEncoder(std::string const&) { return; }
-void AudioInputModule::UninitRecEncoder()                 { return; }
-void AudioInputModule::saveRecording()                    { return; }
+void AudioInputModule::init_rec_encoder(std::string const&) { return; }
+void AudioInputModule::uninit_rec_encoder()                 { return; }
+void AudioInputModule::save_recording()                    { return; }
+    
+// Suavizado de niveles -----------------------------------------------------------------
+float AudioInputModule::smooth_level(float const,float const&,float,float) { return 0; }
+
 
 #endif

@@ -155,17 +155,17 @@ public:
      * @param cb Función callback que será invocada con un objeto NetPacket cada vez 
      *  que se reciba un paquete válido.
      */
-    void setReceiveCallback(std::function<void(NetPacket)> cb);
+    void setCallback_onReceive(std::function<void(NetPacket)> cb);
 
     /**
      * @brief Limpia la función callback inyectada
      */
-    void clearReceiveCallback();
+    void clearCallback_onReceive();
 
     /**
      * @brief Indica si este socket tiene una función callback de recepción inyectada
      */
-    bool hasReceiveCalback() const;
+    bool hasCallback_onReceive() const;
 
 
 // Datos de socket ----------------------------------------------------------------------
@@ -203,13 +203,13 @@ private:
      * @brief Crear endpoint local con IP+puerto en variable miembro local_endpoint
      * @return true si se ha creado correctamente, false en caso contrario
      */
-    bool createLocalEndpoint(unsigned short local_port, const std::string& local_ip);
+    bool create_local_endpoint(unsigned short local_port, const std::string& local_ip);
 
     /**
      * @brief Inicialización y linkado (bind) del socket según endpoint local miembro
      * @returns true si se ha creado el socket correctamente, false en caso contrario.
      */
-    bool openSocket();
+    bool open_socket();
 
 
 // Callback de recepción ----------------------------------------------------------------
@@ -230,37 +230,37 @@ private:
     /**
      * @brief Añade un paquete recibido a la cola de datos. 
      */
-    void saveToQueue(std::vector<char> data);
+    void save_to_queue(std::vector<char> data);
 
     /**
      * @brief Devuelve si la cola de datos recibidos está vacía.
      * @return true si la cola está vacía, false en caso contrario.
      */
-    bool isQueueEmpty() const;
+    bool is_queue_empty() const;
 
     /**
      * @brief Devuelve si la cola de datos recibidos está llena
      * @return true si la cola está llena, false en caso contrario.
      */
-    bool isQueueFull() const;
+    bool is_queue_full() const;
 
     /**
      * @brief Devuelve el número de elementos en la cola.
      * @return Número de elementos de la cola.
      */
-    size_t getQueueSize() const;
+    size_t get_queue_size() const;
 
     /**
      * @brief Limpia la cola.
      * @details Crea una cola nueva en la misma variable.
      */
-    void clearQueue();
+    void clear_queue();
 
     /**
      * @brief Compara un paquete con el último elemento recibido (back de la cola)
      * @return true si es igual, false en caso contrario.
      */
-    bool compareLast(std::vector<char> const& data);
+    bool compare_last(std::vector<char> const& data);
 
 
 /************ Variables ****************************************************************/
@@ -283,7 +283,8 @@ private:
     bool                            has_rcv_packet_;            ///< Bandera para saber si ya hemos recibido al menos un paquete
 
 // Función inyectada
-    std::function<void(NetPacket)>  on_receive_cb_;             ///< Función callback para mandar paquete recibido a cola centralizada de gestor de red
+    std::function<void(NetPacket)>  onReceive_cb_;              ///< Función callback para mandar paquete recibido a cola centralizada de gestor de red
+    mutable std::mutex              onReceive_mtx_;             ///< Mutex para onReceive callback
 
 // Cola de datos recibidos
     std::queue<std::vector<char>>   queue_;                     ///< Cola de datos recibidos

@@ -67,7 +67,7 @@ void LogMgr::write(std::string const& txt) {
 
 	file_.open(filepath_, std::ios_base::out | std::ios_base::app);
 
-	std::string out = getTimestamp();
+	std::string out = get_timestamp();
 	out += " " + txt;
 
 	if (file_.is_open()) {
@@ -109,7 +109,7 @@ std::string LogMgr::getName() const {
 
 // Utilidades ---------------------------------------------------------------------------
 
-std::string LogMgr::getTimestamp() {
+std::string LogMgr::get_timestamp() {
 	// Obtener fecha y hora del sistema
     std::time_t now_time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     

@@ -221,7 +221,6 @@ private:
 
     /**
      * @brief Dark - Ayu-dark style by usrnatc from ImThemes
-     * 
      */
     void Style_AyuDark();
 
@@ -257,19 +256,16 @@ private:
 
     /**
      * @brief Dark - Gold style by CookiePLMonster from ImThemes
-     * 
      */
     void Style_Gold();
 
     /**
      * @brief Dark - Hazy Dark style by kaitabuchi314 from ImThemes
-     * 
      */
     void Style_HazyDark();
 
     /**
      * @brief Dark - Kazam's Cherry style by coyoteclan from ImThemes 
-     * 
      */
     void Style_KazamsCherry();
 
@@ -280,13 +276,11 @@ private:
 
     /**
      * @brief Dark - Quick minimal look style by 90th from ImThemes
-     * 
      */
     void Style_QuickMinimalLook();
 
     /**
      * @brief Dark - Modern style by LousyBook-01 from ImThemes 
-     * 
      */
     void Style_Modern();
 
@@ -302,7 +296,6 @@ private:
 
     /**
      * @brief Dark - Sonic Riders style by Sewer56 from ImThemes
-     * 
      */
     void Style_SonicRiders();
     

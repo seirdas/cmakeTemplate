@@ -55,10 +55,10 @@ bool TTSMgr::init(void* config) {
 
     // Inicialización de TTSCore (en hilo para no bloquear)
     SYS_INFO("TTSMgr","Starting TTSCore async load...");
-    hilo_ttscore_ = std::thread([this, config]() {
+    initTTS_thread_ = std::thread([this, config]() {
 
             // Inyectar función de notify al TTSCore
-            ttsCore_.set_notification_cb([this](){
+            ttsCore_.setCallback_onNotify([this](){
                 this->notify();
             });
 
@@ -74,7 +74,7 @@ bool TTSMgr::init(void* config) {
     
 
     // Hilo consumidor de paquetes TTS
-    hilo_consumer_ = std::thread(&TTSMgr::TWorker, this);
+    dataConsumer_thread_ = std::thread(&TTSMgr::t_data_consumer, this);
 
     
     // Marcar el módulo internamente como inicializado y corriendo
@@ -124,15 +124,15 @@ void TTSMgr::close() {
     ttsCore_.close();
 
     // Espera a que se cierre el hilo consumidor
-    if (hilo_consumer_.joinable()) {
+    if (dataConsumer_thread_.joinable()) {
         SYS_INFO("TTSMgr","Waiting for consumer thread...");
-        hilo_consumer_.join();
+        dataConsumer_thread_.join();
     }
 
     // Espera a que se cierre el hilo que inicia el TTSCore (si aplica)
-    if (hilo_ttscore_.joinable()) {
+    if (initTTS_thread_.joinable()) {
         SYS_INFO("TTSMgr","Waiting for TTSCore thread...");
-        hilo_ttscore_.join();
+        initTTS_thread_.join();
     }
 
     SYS_INFO("TTSMgr","TTSMgr closed successfully");
@@ -177,7 +177,7 @@ short TTSMgr::numAvailableModels() const {
 
 // Gestión de reproductores TTS ---------------------------------------------------------
 
-bool TTSMgr::add_tts_player(std::string const& TTSPlayerName, std::string const& playbackName) {
+bool TTSMgr::addTTSPlayer(std::string const& TTSPlayerName, std::string const& playbackName) {
     std::lock_guard<std::mutex> lock(queue_mtx_);
     
     if (ttsPlayers_.find(TTSPlayerName) != ttsPlayers_.end()) {
@@ -199,13 +199,13 @@ bool TTSMgr::add_tts_player(std::string const& TTSPlayerName, std::string const&
         player->setPlayback(playbackName);
 
     // INYECCIÓN: Generar audio del texto usando TTSCore
-    player->setTTSCallback([this](std::string const& modelName, std::string const& text) -> std::vector<float> {
+    player->setCallback_onTextToAudio([this](std::string const& modelName, std::string const& text) -> std::vector<float> {
         AudioData data = ttsCore_.generate(modelName, text);
         return data.samples;
     });
 
     // INYECCIÓN: Reproducir el audio usando SoundMgr
-    player->setPlaybackCallback([this](std::vector<float>& audio, const std::string& playbackName) -> bool {
+    player->setCallback_onAudioToPlayback([this](std::vector<float>& audio, const std::string& playbackName) -> bool {
         if (!snd_) {
             SYS_WARN("TTSPlayer","Cannot reproduce audio: Sound module not defined");
             return false;
@@ -219,7 +219,7 @@ bool TTSMgr::add_tts_player(std::string const& TTSPlayerName, std::string const&
     return true;
 }
 
-bool TTSMgr::remove_tts_player(std::string const& name) {
+bool TTSMgr::removeTTSPlayer(std::string const& name) {
     std::lock_guard<std::mutex> lock(queue_mtx_);
     return ttsPlayers_.erase(name) > 0;
 }
@@ -303,35 +303,6 @@ bool TTSMgr::play(
 }
 
 
-// Hilos --------------------------------------------------------------------------------
-
-void TTSMgr::TWorker() {
-
-    while (running_) {
-
-        // Salir si el programa se está cerrando (antes de bloqueo)
-        if (!running_)
-            break;
-
-        // Forzar la espera hasta que sea notificado de un paquete nuevo
-        std::unique_lock<std::mutex> lock(queue_mtx_);
-        queue_cv_.wait(lock, [this] {
-            return !running_ || !queue_.empty();
-        });
-
-        // Salir si el programa se está cerrando (después de bloqueo)
-        if (!running_)
-            break;
-
-        // Va consumiendo la cola de datos pasándoselo a los ttsPlayers
-        /* #TODO */
-
-        // Lógica de ejemplo (borrar al implementar la de verdad)
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-    }
-}
-
 // Observadores -------------------------------------------------------------------------
 
 void TTSMgr::addObserver(ITTSObserver* obs) {
@@ -358,3 +329,34 @@ void TTSMgr::notify() {
         obs->onTTSDataChanged(data);
     }
 }
+
+
+// Hilos --------------------------------------------------------------------------------
+
+void TTSMgr::t_data_consumer() {
+
+    while (running_) {
+
+        // Salir si el programa se está cerrando (antes de bloqueo)
+        if (!running_)
+            break;
+
+        // Forzar la espera hasta que sea notificado de un paquete nuevo
+        std::unique_lock<std::mutex> lock(queue_mtx_);
+        queue_cv_.wait(lock, [this] {
+            return !running_ || !queue_.empty();
+        });
+
+        // Salir si el programa se está cerrando (después de bloqueo)
+        if (!running_)
+            break;
+
+        // Va consumiendo la cola de datos pasándoselo a los ttsPlayers
+        /* #TODO */
+
+        // Lógica de ejemplo (borrar al implementar la de verdad)
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    }
+}
+

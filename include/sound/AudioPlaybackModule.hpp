@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <vector>
+#include <thread>
 
 
 /**
@@ -24,7 +25,7 @@ public:
      * @param device_info Información del dispositivo de audio.
      * @param audioFolder Carpeta donde buscar los archivos de audio de este playback (usada por playFromFolder).
      */
-    AudioPlaybackModule(void* ctx, void* const device_info, std::string const& audioFolder = "");
+    AudioPlaybackModule(void* ctx, const void* device_info, std::string const& audioFolder = "");
 
     /**
      * @brief Destructor de AudioPlaybackModule.
@@ -32,21 +33,43 @@ public:
     ~AudioPlaybackModule();
 
 
-// Ejecución ----------------------------------------------------------------------------
+// Inicialización -----------------------------------------------------------------------
 
     /**
      * @brief Inicializa el motor de audio
      * @return true si se inicia correctamente, false en caso contrario.
      */
-    bool init();
+    bool init(void* config = nullptr, std::string const& playbackName = "");
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
 
     /**
      * @brief Detiene la reproducción de audio y libera recursos.
      */
-    void stop();
+    bool close();
+
+    /**
+     * @brief Desinicializa y cierra el módulo 
+     *  y lo vuelve a inicializar con los nuevos parámetros
+     */
+    bool reload();
 
 
-// Acciones -----------------------------------------------------------------------------
+// Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Reproduce un archivo de audio con las configuraciones especificadas.
@@ -136,7 +159,19 @@ public:
     );
 
 
-// Datos del módulo ---------------------------------------------------------------------
+// Parámetros del módulo ----------------------------------------------------------------
+
+    /**
+     * @brief Devuelve el nombre del dispositivo
+     * @return Nombre del dispositivo
+     */
+    std::string getDeviceName() const;
+
+    /**
+     * @brief Obtiene el nombre de este AudioInputModule
+     * @return Nombre de este componente
+     */
+    std::string getModuleName() const;
 
     /**
      * @brief Verifica si un audio está en reproducción
@@ -158,6 +193,10 @@ public:
     std::string deviceName() const;
 
 
+    // #TODO Añadir método: Cuando se añadan varios dispositivos de reproducción,
+    // obtener un dispositivo libre que no esté reproduciendo (el siguiente, por ejemplo)
+
+
 private:
 
 
@@ -168,29 +207,29 @@ private:
      * @param filepath Ruta del archivo de audio.
      * @return true si la precarga tiene éxito, false en caso contrario.
      */
-    bool preloadAudioFile(const std::string& filepath);
+    bool preload_audio_file(const std::string& filepath);
 
 
 // Limpieza de sonidos ------------------------------------------------------------------
 
     /**
-     * @brief Comprueba los sonidos que han terminado y los desinicializa
+     * @brief Comprueba los sonidos que han terminado y los desinicializa 
      * @note Esta función está diseñada para correr en un hilo independiente
      */
-    void TCleanup();
+    void t_cleanup();
 
     /**
-     * @brief Marca un sonido como que ha terminado de reproducirse
+     * @brief Marca un sonido como que ha terminado de reproducirse 
      * @details Mueve la instancia de sonido a una cola de limpieza, la cual
      *   se desinicializarán en diferido por un hilo independiente.
      * @param sound sonido (ma_sound)
      */
-    void sendToCleanup(void* sound);
+    void send_to_cleanup(void* sound);
 
     /**
      * @brief Libera de la memoria los sonidos de la lista de limpieza
      */
-    void cleanupSounds();
+    void cleanup_sounds();
 
 
 // Limpieza de caché de audios ----------------------------------------------------------
@@ -203,7 +242,8 @@ private:
      * @note Esta función está diseñada para ejecutarse de manera continua
      *  en un hilo independiente.
      */
-    void TCacheReaperWorker();
+    void t_cache_reaper();
+
 
 // MORSE --------------------------------------------------------------------------------
 
@@ -219,7 +259,7 @@ private:
      * @param espacioEntreMorse Duración del silencio entre palabras (ms).
      * @return Vector de muestras PCM (mono). Vacío si no se generó nada.
      */
-    std::vector<float> generateMorseAudio(
+    std::vector<float> generate_morse_audio(
         std::string const& texto,
         float              frequencyHz,
         unsigned int       puntoMs,
@@ -230,6 +270,7 @@ private:
         unsigned int       espacioEntreMorse
     );
 
+    
 /************ Variables ****************************************************************/
 
 // Estructura PIMPL para no depender de la librería en el header
@@ -239,20 +280,21 @@ private:
 // Inicialización y ejecución
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>       running_;               ///< flag de aplicación corriendo (para hilos)
+    std::string             name_;                  ///< Nombre del módulo
     std::string             audioFolder_;           ///< Carpeta de archivos de audio de este playback (usada por playFromFolder)
 
 // Listas de sonidos
-    mutable std::mutex  playing_sounds_mtx_;    ///< Mutex para el mapa de sonidos
-    mutable std::mutex  sounds_cache_mtx_;      ///< Mutex para la lista de caché de sonidos
-    // SoundList       playing_sounds;          // variable en PIMPL
-    // CacheList       sounds_cache;            // variable en PIMPL
+    mutable std::mutex  playing_sounds_mtx_;        ///< Mutex para el mapa de sonidos
+    mutable std::mutex  sounds_cache_mtx_;          ///< Mutex para la lista de caché de sonidos
+    // SoundList        playing_sounds;              // variable en PIMPL
+    // CacheList        sounds_cache;                // variable en PIMPL
 
 // Limpieza de sonidos
-    /* Todo esto es necesario porque no se pueden hacer uninit de los audios según terminan, hay que hacerlo diferido*/
+    /* Todo esto es necesario porque no se pueden hacer uninit de los audios según terminan, hay que hacerlo diferido */
     std::thread             cleanup_thread_;        ///< Hilo de limpieza de sonidos en reproducción (cuando terminan)
     std::condition_variable cleanup_cv_;            ///< Variable de condición para despertar al hilo
-    // std::queue<ma_sound*>   cleanup_queue;       // variable en PIMPL
     std::mutex              cleanup_mtx_;           ///< Mutex para la cola de limpieza
+    // std::queue<ma_sound*>   cleanup_queue;       // variable en PIMPL
 
 // Limpieza de caché de sonidos por tiempo
     std::thread             cachereaper_thread_;    ///< Hilo para descargar sonidos cargados respecto a su timeout

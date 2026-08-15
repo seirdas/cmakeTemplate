@@ -7,9 +7,10 @@
 #include <memory>                       // unique_ptr
 
 
-// Evita los includes de los módulos:
+// Forward declaration
 class AudioInputModule;         // Evita el include de AudioInputModule
 class AudioPlaybackModule;      // Evita el include de AudioPlaybackModule
+
 
 /**
   * @class SoundMgr
@@ -56,9 +57,9 @@ public:
 
     /**
     * @brief Para el motor de audio.
-    * @returns True si la parada ha sido correcta, false en caso contrario.
+    * @returns @c true si la parada ha sido correcta, @c false en caso contrario. 
     */
-    bool stop();
+    bool close();
 
     /**
      * @brief Actualiza la información de los dispositivos Playback/Capture disponibles
@@ -101,69 +102,77 @@ public:
     void listAvailableCaptures() const;
 
     /**
-     * @brief Añadir un nuevo dispositivo de captura a partir de una config (json)
-     * @param config Puntero a parámetros de dispositivo (json)
+     * @brief Añadir un nuevo dispositivo de captura
+     * @details Usa los datos de la config (json) si se proporciona, 
+     *  si no, se inicializará con los valores por defecto
+     * @details Si hay algún nombre en captureName y deviceName, sobreescribirán
+     *  los valores de la configuración si se hubiera proporcionado
+     * @param config Puntero a configuración (json)
      * @param name Nombre asignado a esta captura (cualquiera)
      * @param deviceName Nombre del dispositivo de captura
      * @return @c true Si se ha creado correctamente, @c false en caso contrario
      */
-    bool addCaptureDevice(void* config, std::string const& captureName = "", std::string const& deviceName = "");
+    bool addCaptureDevice(
+        void*               config, 
+        std::string const&  captureName = "", 
+        std::string const&  deviceName  = ""
+    );
 
     /**
      * @brief Eliminar el dispositivo de captura
      * @param name Nombre del dispositivo de captura a eliminar
      */
-    bool removeCaptureDevice(std::string const& name);
+    bool removeCaptureDevice(std::string const& captureName); 
 
 
 // Ejecución y datos en dispositivos de captura -----------------------------------------
 
     /**
      * @brief Empieza a grabar en un dispositivo de captura determinado
-     * @param name Nombre del dispositivo de captura seleccionado
+     * @param captureName Nombre del dispositivo de captura seleccionado
      */
-    bool startRec(std::string const& name);
+    bool startRec(std::string const& captureName) const;
 
     /**
      * @brief Para de grabar en un dispositivo de captura determinado
-     * @param name Nombre del dispositivo de captura seleccionado
+     * @param captureName Nombre del dispositivo de captura seleccionado
      */
-    bool stopRec(std::string const& name);
+    bool stopRec(std::string const& captureName) const;
 
     /**
      * @brief Obtiene el nivel de RMS del audio
      *  en un dispositivo de captura determinado
-     * @param name Nombre del dispositivo de captura seleccionado
+     * @param captureName Nombre del dispositivo de captura seleccionado
      */
-    float getInputRmsLevel(std::string const& name);
+    float getInputRmsLevel(std::string const& captureName) const;
 
     /**
      * @brief Obtiene el nivel del pico del audio
      *  en un dispositivo de captura determinado
-     * @param name Nombre del dispositivo de captura seleccionado
+     * @param captureName Nombre del dispositivo de captura seleccionado
      */
-    float getInputPeakLevel(std::string const& name);
+    float getInputPeakLevel(std::string const& captureName) const;
 
     /**
      * @brief Comprobar si el dispositivo sigue activo y funcionando
      *  en un dispositivo de captura determinado
-     * @param name Nombre del dispositivo de captura seleccionado
+     * @param captureName Nombre del dispositivo de captura seleccionado
      */
-    bool isInputDeviceValid(std::string const& name) const;
+    bool isInputDeviceValid(std::string const& captureName) const;
 
      /**
       * @brief Tamaño del buffer del dispositivo de grabación
      *  de un dispositivo de captura determinado
-     * @param name Nombre del dispositivo de captura seleccionado
+     * @param captureName Nombre del dispositivo de captura seleccionado
       */
-    size_t getInputRecBufferSize(std::string const& name);
+    size_t getInputRecBufferSize(std::string const& captureName) const;
 
     /**
       * @brief Tamaño del buffer del dispositivo de captura
      *  de un dispositivo de captura determinado
-     * @param name Nombre del dispositivo de captura seleccionado
+     * @param captureName Nombre del dispositivo de captura seleccionado
       */
-    size_t getInputBufferSize(std::string const& name);
+    size_t getInputBufferSize(std::string const& captureName) const;
 
 
 // Gestión de dispositivos playbacks ----------------------------------------------------
@@ -188,13 +197,42 @@ public:
      */
     bool isOnManagedPlaybacks(std::string const& captureName) const;
 
+    /**
+     * @brief Obtiene el dispositivo de reproducción playback predeterminado
+     * @return Nombre del dispositivo de reproducción (predeterminado)
+     */
     std::string getDefaultPlaybackDevice() const;
 
+    /**
+     * @brief Muestra en el log del sistema la lista
+     *  de dispositivos de reproducción playback disponibles
+     */
     void listAvailablePlaybacks() const;
 
-    std::string addPlaybackDevice(std::string const& deviceName, std::string const& AudioFilesFolder);
+    /**
+     * @brief Añadir un nuevo dispositivo de reproducción playback
+     * @details Usa los datos de la config (json) si se proporciona, 
+     *  si no, se inicializará con los valores por defecto
+     * @details Si hay algún nombre en captureName y deviceName, sobreescribirán
+     *  los valores de la configuración si se hubiera proporcionado
+     * @param config Puntero a configuración (json)
+     * @param name Nombre asignado a esta captura (cualquiera)
+     * @param deviceName Nombre del dispositivo de captura
+     * @param AudioFilesFolder Nombre de la carpeta de la que se leerán los audios por defecto
+     * @return @c true Si se ha creado correctamente, @c false en caso contrario
+     */
+    bool addPlaybackDevice(
+        void*               config,
+        std::string const&  playbackName, 
+        std::string const&  deviceName,
+        std::string const&  AudioFilesFolder = ""
+    );
 
-    bool removePlaybackDevice(std::string const& name);
+    /**
+     * @brief Eliminar el dispositivo de reproducción playback
+     * @param playbackName Nombre del dispositivo de captura a eliminar
+     */ 
+    bool removePlaybackDevice(std::string const& playbackName);
 
     /**
     * @brief Registra los playbacks Dante de cada grupo de tonos (dynamic/morse/radio) según el JSON.
@@ -206,7 +244,13 @@ public:
 
 // Ejecución y datos de playbacks -------------------------------------------------------
 
+    /**
+     * @brief Realiza una prueba de reproducción a través del playback por defecto, 
+     *  utilizando la arquitectura de la clase (lista de playbacks, inicialización, etc.)
+     * @return @c true Si la prueba se ha realiza con éxito, @c false en caso contrario
+     */
     bool playbackTest();
+
     /**
     * @brief Genera y reproduce un mensaje morse por el primer playback libre del pool de MORSE.
     * @param toneLabel Etiqueta del tono (se usará como nombre del sonido, ej. "A").
@@ -225,7 +269,41 @@ public:
     */
     bool stopTone(std::string const& toneLabel);
 
+
 private:
+
+// Funciones internas auxiliares --------------------------------------------------------
+
+    /**
+     * @brief Busca el ma_device_info a partir de un nombre
+     * @note Localiza también por nombres incompletos ( 'tavo' -> 'Altavoces' ),
+     *  sustituyendo el nombre por parámetro por el nombre completo real
+     * @param myDeviceName Nombre del dispositivo
+     *  MODIFICABLE al nombre real completo si aplica
+     * @param isCapture Indica si es de la lista de dispositivos de captura. 
+     *  En su defecto, se utilizará la lista de dispositivos de reproducción playback
+     * @return (ma_device_info*) Información del dispositivo (si se encuentra)
+     */
+    const void* get_device_info(std::string& myDeviceName, bool isCapture) const;
+
+    /**
+     * @brief "Shortcut" para obtener ma_device_info de 
+     *  un dispositivo de reproducción playback a partir del nombre
+     * @param myDeviceName Nombre del dispositivo
+     *  MODIFICABLE al nombre real completo si aplica
+     * @return (ma_device_info*) Información del dispositivo (si se encuentra)
+     */
+    const void* get_playback_device_info(std::string& myDeviceName) const;
+
+    /**
+     * @brief "Shortcut" para obtener ma_device_info de 
+     *  un dispositivo de captura a partir del nombre
+     * @param myDeviceName Nombre del dispositivo
+     *  MODIFICABLE al nombre real completo si aplica
+     * @return (ma_device_info*) Información del dispositivo (si se encuentra)
+     */
+    const void* get_capture_device_info(std::string& myDeviceName) const;
+
 
 // Listas de dispositivos de audio ------------------------------------------------------
 
@@ -260,7 +338,7 @@ private:
     *  espacios se interpretan como separación entre palabras).
     * @return Vector de muestras PCM (mono, @c morseSampleRate_ Hz). Vacío si el tipo no existe.
     */
-    std::vector<float> generateMorse(std::string const& tipo, std::string const& texto) const;
+    std::vector<float> generate_morse(std::string const& tipo, std::string const& texto) const;
 
 
 /************ Variables ****************************************************************/
@@ -272,17 +350,17 @@ private:
 
 // Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;
-    std::unique_ptr<Impl>   pimpl_;         ///< Miembros dependientes de la librería externa
+    std::unique_ptr<Impl>       pimpl_;                     ///< Miembros dependientes de la librería externa
 
 // Inicialización y ejecución
-    bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
-    unsigned short          MAX_REINIT_ATTEMPTS;    ///< Número de reintentos para reinicializar dispositivo de entrada
+    bool                        initialized_;               ///< Bandera para indicar inicialización exitosa
+    unsigned short              MAX_REINIT_ATTEMPTS;        ///< Número de reintentos para reinicializar dispositivo de entrada
 
 // Listas de dispositivos de audio
-    std::vector<std::string>    available_inputs_;      ///< Lista de dispositivos de entrada disponibles
-    std::vector<std::string>    managed_inputs_;        ///< Lista de dispositivos de entrada gestionados
-    std::vector<std::string>    available_playbacks_;   ///< Lista de dispositivos playback disponibles
-    std::vector<std::string>    managed_playbacks_;     ///< Lista de dispositivos playback gestionados
+    std::vector<std::string>    available_inputs_;          ///< Lista de dispositivos de entrada disponibles
+    std::vector<std::string>    managed_inputs_;            ///< Lista de dispositivos de entrada gestionados
+    std::vector<std::string>    available_playbacks_;       ///< Lista de dispositivos playback disponibles
+    std::vector<std::string>    managed_playbacks_;         ///< Lista de dispositivos playback gestionados
 
     mutable std::mutex          available_inputs_mtx_;      ///< Mutex para lista de dispositivos de entrada disponibles
     mutable std::mutex          managed_inputs_mtx_;        ///< Mutex para lista de dispositivos de entrada gestionados
@@ -290,14 +368,14 @@ private:
     mutable std::mutex          managed_playbacks_mtx_;     ///< Mutex para lista de dispositivos playback gestionados
 
 // Módulos de audio
-    CapturesList            captures_;              ///< Vector con dispositivos inicializados de captura
-    PlaybacksList           playbacks_;             ///< Vector con dispositivos inicializados de playback
-    TonePoolsList           tonePools_;             ///< Pools de tonos: nombre del grupo -> lista de playbacks asignados
-
+    CapturesList                captures_;                  ///< Vector con dispositivos inicializados de captura
+    PlaybacksList               playbacks_;                 ///< Vector con dispositivos inicializados de playback
+    TonePoolsList               tonePools_;                 ///< Pools de tonos: nombre del grupo -> lista de playbacks asignados
+    
 // Parámetros de los módulos capture/playbacks
-    bool                    smoothedValues_;        ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
-    float                   attackCoeff_;           ///< Valor de ataque (+grande = subida lenta)
-    float                   releaseCoeff_;          ///< Valor de release (+grande = bajada lenta)
+    bool                        enabledSmoothedValues_;     ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
+    float                       attackCoeff_;               ///< Valor de ataque (+grande = subida lenta)
+    float                       releaseCoeff_;              ///< Valor de release (+grande = bajada lenta)
 
 // Playbacks: Parámetros Morse
     unsigned int                                  morseUnitMs_;              ///< Duración del punto, compartida por todo el grupo MORSE
@@ -309,3 +387,4 @@ private:
     std::unordered_map<std::string, unsigned int> espacioEntreMorse_;     ///< Por radioayuda: separación entre palabras (ms)
 
 };
+

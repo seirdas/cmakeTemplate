@@ -101,13 +101,13 @@
         recv_buffer_.resize(rcv_packet_size_ > 0 ? rcv_packet_size_ : MAX_UDP_PACKET_SIZE);
 
         // generar local_endpoint (Ip_local + puerto_local)
-        if (!createLocalEndpoint(local_port, local_ip)) {
+        if (!create_local_endpoint(local_port, local_ip)) {
             SYS_WARN("UdpSocket","Failed to create endpoint.");
             return false;
         }
 
         // Abrir (bind) el socket
-        if (!openSocket()) {
+        if (!open_socket()) {
             if (pimpl_->socket_.is_open()) {
                 ec = pimpl_->socket_.close(ec);
                 if (ec)
@@ -123,7 +123,7 @@
 
     void UdpSocket::start() {
         if (running_) return;
-        if (!pimpl_->socket_.is_open() && !openSocket()) {
+        if (!pimpl_->socket_.is_open() && !open_socket()) {
             SYS_WARN("UdpSocket","Cannot open socket" + name_ + ":" + std::to_string(pimpl_->local_endpoint_.port()));
             return;
         }
@@ -159,7 +159,7 @@
         condition_.notify_all(); 
 
         // Perparar por si hay reinicio
-        clearQueue();
+        clear_queue();
         
         running_ = false;
     }
@@ -247,11 +247,11 @@
     }
 
     void UdpSocket::clearRcvCache() {
-        clearQueue();
+        clear_queue();
     }
 
     bool UdpSocket::hasData() {
-        return !isQueueEmpty();
+        return !is_queue_empty();
     }
 
     unsigned long long UdpSocket::getLastPacketMs() const {
@@ -274,20 +274,19 @@
 
     // Callback de recepción ----------------------------------------------------------------
 
-    void UdpSocket::setReceiveCallback(std::function<void(NetPacket)> cb) 
-    { 
-        on_receive_cb_ = std::move(cb); 
+    void UdpSocket::setCallback_onReceive(std::function<void(NetPacket)> cb) {
+        std::lock_guard<std::mutex> lk(onReceive_mtx_);
+        onReceive_cb_ = std::move(cb); 
     }
 
-    void UdpSocket::clearReceiveCallback() {
-        if (!on_receive_cb_)
-            return;
-        
-        on_receive_cb_ = nullptr;
+    void UdpSocket::clearCallback_onReceive() {
+        std::lock_guard<std::mutex> lk(onReceive_mtx_);
+        onReceive_cb_ = nullptr;
     }
 
-    bool UdpSocket::hasReceiveCalback() const {
-        return (on_receive_cb_) ? true : false;
+    bool UdpSocket::hasCallback_onReceive() const {
+        std::lock_guard<std::mutex> lk(onReceive_mtx_);
+        return static_cast<bool>(onReceive_cb_);
     }
 
 
@@ -313,7 +312,7 @@
 
     // Creación de socket -------------------------------------------------------------------
 
-    bool UdpSocket::createLocalEndpoint(unsigned short local_port, const std::string& local_ip) {
+    bool UdpSocket::create_local_endpoint(unsigned short local_port, const std::string& local_ip) {
 
         // Variable para almacenar errores de asio
         asio::error_code ec;
@@ -336,7 +335,7 @@
         return true;
     }
 
-    bool UdpSocket::openSocket() {
+    bool UdpSocket::open_socket() {
 
         // Variable para almacenar errores de asio
         asio::error_code ec;
@@ -426,8 +425,8 @@
         }
 
         // Si el paquete ya no entra en la cola, lo descartamos
-        if (isQueueFull()){
-            SYS_WARN("UdpSocket","Reception queue overloaded with " + std::to_string(getQueueSize()) + " elements");
+        if (is_queue_full()){
+            SYS_WARN("UdpSocket","Reception queue overloaded with " + std::to_string(get_queue_size()) + " elements");
             return;
         }
         
@@ -435,7 +434,7 @@
         std::vector<char> data(recv_buffer_.begin(), recv_buffer_.begin() + bytes_recvd);
         
         // Descarta el paquete si es igual que el anterior (si está activada esta opción)
-        if(ignore_dupe_ && compareLast(data) ) {
+        if(ignore_dupe_ && compare_last(data) ) {
             SYS_INFO("UdpSocket", "Received packet same as last. Ignoring...");
             return;
         }
@@ -445,7 +444,7 @@
         has_rcv_packet_ = true;
 
         // Añade el paquete recibido a la cola listo para gestionar
-        if (on_receive_cb_) {
+        if (onReceive_cb_) {
             // Si NetMgr (o alguien) registró un callback, le pasamos los datos
             // Usamos std::move para no copiar el vector en memoria
             NetPacket packet;
@@ -454,43 +453,43 @@
             packet.data_rcv = std::move(data);
             
             // Pasamos el struct entero al callback
-            on_receive_cb_(std::move(packet));
+            onReceive_cb_(std::move(packet));
         } else {
             // Si el socket se usa de forma independiente, usa su propia cola local
-            saveToQueue(std::move(data)); 
+            save_to_queue(std::move(data)); 
         }
     }
 
     
     // Gestión de cola de datos recibidos ---------------------------------------------------
 
-    void UdpSocket::saveToQueue(std::vector<char> data) {
+    void UdpSocket::save_to_queue(std::vector<char> data) {
         std::lock_guard<std::mutex> lock(mutex_);
         queue_.push(std::move(data));
         condition_.notify_one(); // Avisa que hay datos
     }
 
-    bool UdpSocket::isQueueEmpty() const {
+    bool UdpSocket::is_queue_empty() const {
         std::lock_guard<std::mutex> lock(mutex_);
         return queue_.empty();
     }
 
-    bool UdpSocket::isQueueFull() const {
+    bool UdpSocket::is_queue_full() const {
         std::lock_guard<std::mutex> lock(mutex_);
         return (queue_.size() >= MAX_QUEUE_ELEMENTS);
     }
 
-    size_t UdpSocket::getQueueSize() const{
+    size_t UdpSocket::get_queue_size() const{
         std::lock_guard<std::mutex> lock(mutex_);
         return queue_.size();
     }
 
-    void UdpSocket::clearQueue() {
+    void UdpSocket::clear_queue() {
         std::lock_guard<std::mutex> lock(mutex_);
         queue_ = std::queue<std::vector<char>>{};
     }
 
-    bool UdpSocket::compareLast(std::vector<char> const& data) {
+    bool UdpSocket::compare_last(std::vector<char> const& data) {
         std::lock_guard<std::mutex> lock(mutex_);
 
         // Devuelve false si la cola está vacía
@@ -526,12 +525,12 @@ struct UdpSocket::Impl {};
 
 // Recepción ----------------------------------------------------------------------------
     std::vector<char> UdpSocket::getFirstPacket()  { return {};     }
-    void UdpSocket::setReceiveCallback(std::function<void(NetPacket)> cb) { return; }
-    void UdpSocket::clearReceiveCallback()         { return;        }
-    void UdpSocket::hasReceiveCalback() const      { return;        }
+    void UdpSocket::setCallback_onReceive(std::function<void(NetPacket)> cb) { return; }
+    void UdpSocket::clearCallback_onReceive()      { return;        }
+    bool UdpSocket::hasCallback_onReceive() const  { return false;  }
     void UdpSocket::discardOnDupe(bool)            { return;        }
     bool UdpSocket::hasData()                      { return false;  }
-    unsigned long long getLastPacketMs() const     { return 0;      }
+    unsigned long long UdpSocket::getLastPacketMs() const   { return 0;      }
     void* UdpSocket::getStrandNative()             { return nullptr;}
 
 // Datos de socket ----------------------------------------------------------------------
@@ -541,19 +540,19 @@ struct UdpSocket::Impl {};
     bool UdpSocket::isOpen() const                 { return false; }
 
 // Creación de socket -------------------------------------------------------------------
-    bool UdpSocket::createLocalEndpoint(unsigned short, const std::string&) { return false;}
-    bool UdpSocket::openSocket() { return false; }
+    bool UdpSocket::create_local_endpoint(unsigned short, const std::string&) { return false;}
+    bool UdpSocket::open_socket() { return false; }
 
 // Callback de recepción ----------------------------------------------------------------
     void UdpSocket::start_receive()                        { return; }
     void UdpSocket::handle_received_packet(std::size_t)    { return; }
 
 // Gestión de la cola de datos recibidos ------------------------------------------------
-    void UdpSocket::saveToQueue(std::vector<char>)         { return;       }
-    bool UdpSocket::isQueueEmpty() const                   { return false; }
-    bool UdpSocket::isQueueFull() const                    { return false; }
-    size_t UdpSocket::getQueueSize() const                 { return 0;     }
-    void UdpSocket::clearQueue()                           { return;       }
-    bool UdpSocket::compareLast(std::vector<char> const&)  { return false; }
+    void UdpSocket::save_to_queue(std::vector<char>)        { return;       }
+    bool UdpSocket::is_queue_empty() const                  { return false; }
+    bool UdpSocket::is_queue_full() const                   { return false; }
+    size_t UdpSocket::get_queue_size() const                { return 0;     }
+    void UdpSocket::clear_queue()                           { return;       }
+    bool UdpSocket::compare_last(std::vector<char> const&)  { return false; }
 
 #endif

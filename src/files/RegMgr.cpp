@@ -242,7 +242,7 @@
 
 	// Otros (privado) ------------------------------------------------------------------
 
-	void* RegMgr::ResolveRoot(std::wstring const& root) {
+	void* RegMgr::resolve_root(std::wstring const& root) {
 		// Se devuelve en void* y luego se castea a HKEY (debería ser lo mismo)
 		if (root == L"HKEY_CURRENT_USER" 	|| root == L"HKCU")	return (void*)HKEY_CURRENT_USER;
 		if (root == L"HKEY_LOCAL_MACHINE" 	|| root == L"HKLM")	return (void*)HKEY_LOCAL_MACHINE;
@@ -254,14 +254,14 @@
 		return nullptr;
 	}
 
-	uint32_t RegMgr::queryType(void* hRoot, const std::wstring& path, const std::wstring& clave) {
+	uint32_t RegMgr::query_type(void* hRoot, const std::wstring& path, const std::wstring& clave) {
 		DWORD type = REG_NONE;
 		DWORD size = 0;
 		RegGetValueW(static_cast<HKEY>(hRoot), path.c_str(), clave.c_str(), RRF_RT_ANY, &type, nullptr, &size);
 		return type;
 	}
 
-	const char* RegMgr::regTypeName(uint32_t type) {
+	const char* RegMgr::reg_typename(uint32_t type) {
 		switch (type) {
 			case (DWORD)REG_DWORD: return "REG_DWORD";
 			case (DWORD)REG_QWORD: return "REG_QWORD";
@@ -287,9 +287,9 @@
 	bool RegMgr::Set_STR  (std::wstring const&, std::wstring const&, std::wstring const&, std::wstring const&) { unsupported(); return false; }
 
 	bool 		RegMgr::WaitUntilChange(std::wstring const&, std::wstring const&)					 	{ unsupported(); return false;  }
-	void* 		RegMgr::ResolveRoot(std::wstring const&)     											{ unsupported(); return nullptr; }
-	uint32_t 	RegMgr::queryType(void*, const std::wstring&, const std::wstring&)						{ unsupported(); return 0; }
-	const char* RegMgr::regTypeName(uint32_t)															{ unsupported(); return 0; }
+	void* 		RegMgr::resolve_root(std::wstring const&)     											{ unsupported(); return nullptr; }
+	uint32_t 	RegMgr::query_type(void*, const std::wstring&, const std::wstring&)						{ unsupported(); return 0; }
+	const char* RegMgr::reg_typename(uint32_t)															{ unsupported(); return 0; }
 
 #endif
 

@@ -489,7 +489,7 @@ void Symetrix::loadConfig(void* config) {
 
         // Activar hilo que comprueba conexión a pings constantemente
         running_ = true;
-        connection_checker_ = std::thread(&Symetrix::ConnectionChecker, this);
+        connection_checker_thread_ = std::thread(&Symetrix::ConnectionChecker, this);
 
         return true;
     }

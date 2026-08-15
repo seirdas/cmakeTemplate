@@ -47,6 +47,9 @@ public:
 
 
         // #TODO
+
+        SYS_WARN("VoIPMgr","VoIPMgr not yet implemented");
+        return false;
     }
 
     void clear() {
@@ -107,6 +110,8 @@ public:
 
         // eliminar del vector
         voiprecs_.erase(it);
+
+        return true;
     }
 
 
@@ -119,6 +124,8 @@ public:
         // inicializar voipplay
 
         // añadir al vector
+
+        return false;
     }
 
     bool remove_voipplay(std::string name) { 
@@ -128,6 +135,8 @@ public:
         // parar voipplay
 
         // eliminar del vector
+
+        return false;
     }
 
 

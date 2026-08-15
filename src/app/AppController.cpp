@@ -174,11 +174,11 @@ bool AppController::init(int argc, char** argv) {
 
     // Hilo consumidor de paquetes online
     SYS_INFO("AppController","Starting net consumer thread...");
-    hilo_consumer_ = std::thread(&AppController::TWorker, this);
+    consumer_thread_ = std::thread(&AppController::TWorker, this);
 
     // Hilo para cout de pruebas
     SYS_INFO("AppController","Starting test thread...");
-    hilo_test_ = std::thread(&AppController::TPruebas, this);
+    test_thread_ = std::thread(&AppController::TPruebas, this);
 
 
     // Volcar datos que hayan escrito los módulos al config
@@ -227,7 +227,7 @@ void AppController::close() {
 
     if (snd_->isInitialized()) {
         SYS_INFO("AppController","Closing sound subsystem...");
-        snd_->stop();
+        snd_->close();
     }
     
     if (tmx_->isInitialized()) {
@@ -264,11 +264,11 @@ void AppController::close() {
     // Cerrar hilos pendientes de aplicación
     SYS_INFO("AppController","Waiting for running threads...");
     online_cv_.notify_all();
-    if (hilo_consumer_.joinable())
-        hilo_consumer_.join();
+    if (consumer_thread_.joinable())
+        consumer_thread_.join();
 
-    if (hilo_test_.joinable())
-        hilo_test_.join();
+    if (test_thread_.joinable())
+        test_thread_.join();
 
 
     SYS_INFO("AppController","AppController closed successfully");
