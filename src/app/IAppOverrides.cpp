@@ -2,7 +2,9 @@
 #include "system/SystemMgr.hpp"
 
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
-#include "sound/SoundMgr.hpp"   // Clase para gestionar audio
+#include "sound/SoundMgr.hpp"   // Clase para gestionar los módulos de audio
+#include "sound/AudioInputModule.hpp"       // Clase para utilizar las funciones de captura
+#include "sound/AudioPlaybackModule.hpp"    // Clase para utilizar las funciones de playbacks
 #include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
 
 /* 
@@ -87,32 +89,67 @@ bool AppController::removeInputDevice(std::string const& captureName) noexcept {
     return snd_->removeCaptureDevice(captureName);
 }
 
-bool AppController::StartRecording(std::string const& captureName) noexcept{
-    return snd_->startRec(captureName); 
+bool AppController::StartRecording(std::string const& captureName) noexcept {
+    auto* capture = snd_->getCapture(captureName);
+    if (!capture) {
+        SYS_WARN("IApp","Cannot find capture module");
+        return false;
+    }
+    return capture->StartRec("RECORD_" + captureName);
 }
 
-bool AppController::StopRecording(std::string const& captureName) noexcept{
-    return snd_->stopRec(captureName); 
+bool AppController::StopRecording(std::string const& captureName) noexcept {
+    auto* capture = snd_->getCapture(captureName);
+    if (!capture) {
+        SYS_WARN("IApp","Cannot find capture module");
+        return false;
+    }
+    return capture->StopRec(); 
 }
 
 size_t AppController::getInputBufferSize(std::string const& captureName) noexcept {
-    return snd_->getInputBufferSize(captureName); 
+    auto* capture = snd_->getCapture(captureName);
+    if (!capture) {
+        SYS_WARN("IApp","Cannot find capture module");
+        return 0;
+    }
+    return capture->getBufferSize(); 
 }
 
 size_t AppController::getInputRecBufferSize(std::string const& captureName) noexcept {
-    return snd_->getInputRecBufferSize(captureName); 
+    auto* capture = snd_->getCapture(captureName);
+    if (!capture) {
+        SYS_WARN("IApp","Cannot find capture module");
+        return 0;
+    }
+    return capture->getRecBufferSize(); 
 }
 
 bool AppController::isInputDeviceValid(std::string const& captureName) noexcept {
-    return snd_->isInputDeviceValid(captureName);
+    auto* capture = snd_->getCapture(captureName);
+    if (!capture) {
+        SYS_WARN("IApp","Cannot find capture module");
+        return false;
+    }
+    return capture->isValid();
 }
 
 float AppController::getInputRMSLevel(std::string const& captureName) noexcept {
-    return snd_->getInputRmsLevel(captureName);
+    auto* capture = snd_->getCapture(captureName);
+    if (!capture) {
+        SYS_WARN("IApp","Cannot find capture module");
+        return 0;
+    }
+    return capture->getRmsLevel();
 }
 
 float AppController::getInputPeakLevel(std::string const& captureName) noexcept {
-    return snd_->getInputPeakLevel(captureName);
+    auto* capture = snd_->getCapture(captureName);
+    if (!capture) {
+        SYS_WARN("IApp","Cannot find capture module");
+        return 0;
+    }
+    return capture->getPeakLevel();
 }
 
 

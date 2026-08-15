@@ -67,7 +67,15 @@ public:
     bool updateDevices();
 
 
-// Dispositivos de captura --------------------------------------------------------------
+// Dispositivos de Captura --------------------------------------------------------------
+
+    /**
+     * @brief Obtiene el módulo de captura asociado a un nombre
+     *  para utilizar las funciones del módulo de captura
+     * @param playbackName Nombre del dispositivo de captura seleccionado
+     * @return Puntero al módulo de captura o @c nullptr si no existe con ese nombre
+     */
+    AudioInputModule* getCapture(std::string captureName) const;
 
     /**
      * @brief Devuelve una lista con los nombres de todos
@@ -105,7 +113,7 @@ public:
      * @brief Añadir un nuevo dispositivo de captura
      * @details Usa los datos de la config (json) si se proporciona, 
      *  si no, se inicializará con los valores por defecto
-     * @details Si hay algún nombre en captureName y deviceName, sobreescribirán
+     * @note Si hay algún nombre en captureName y deviceName, sobreescribirán
      *  los valores de la configuración si se hubiera proporcionado
      * @param config Puntero a configuración (json)
      * @param name Nombre asignado a esta captura (cualquiera)
@@ -125,57 +133,15 @@ public:
     bool removeCaptureDevice(std::string const& captureName); 
 
 
-// Ejecución y datos en dispositivos de captura -----------------------------------------
+// Dispositivos Playback ----------------------------------------------------
 
     /**
-     * @brief Empieza a grabar en un dispositivo de captura determinado
-     * @param captureName Nombre del dispositivo de captura seleccionado
+     * @brief Obtiene el módulo de reproducción playback asociado a un nombre
+     *  para utilizar las funciones del módulo playback
+     * @param playbackName Nombre del dispositivo de reproducción playback seleccionado
+     * @return Puntero al módulo de reproducción o @c nullptr si no existe con ese nombre
      */
-    bool startRec(std::string const& captureName) const;
-
-    /**
-     * @brief Para de grabar en un dispositivo de captura determinado
-     * @param captureName Nombre del dispositivo de captura seleccionado
-     */
-    bool stopRec(std::string const& captureName) const;
-
-    /**
-     * @brief Obtiene el nivel de RMS del audio
-     *  en un dispositivo de captura determinado
-     * @param captureName Nombre del dispositivo de captura seleccionado
-     */
-    float getInputRmsLevel(std::string const& captureName) const;
-
-    /**
-     * @brief Obtiene el nivel del pico del audio
-     *  en un dispositivo de captura determinado
-     * @param captureName Nombre del dispositivo de captura seleccionado
-     */
-    float getInputPeakLevel(std::string const& captureName) const;
-
-    /**
-     * @brief Comprobar si el dispositivo sigue activo y funcionando
-     *  en un dispositivo de captura determinado
-     * @param captureName Nombre del dispositivo de captura seleccionado
-     */
-    bool isInputDeviceValid(std::string const& captureName) const;
-
-     /**
-      * @brief Tamaño del buffer del dispositivo de grabación
-     *  de un dispositivo de captura determinado
-     * @param captureName Nombre del dispositivo de captura seleccionado
-      */
-    size_t getInputRecBufferSize(std::string const& captureName) const;
-
-    /**
-      * @brief Tamaño del buffer del dispositivo de captura
-     *  de un dispositivo de captura determinado
-     * @param captureName Nombre del dispositivo de captura seleccionado
-      */
-    size_t getInputBufferSize(std::string const& captureName) const;
-
-
-// Gestión de dispositivos playbacks ----------------------------------------------------
+    AudioPlaybackModule* getPlayback(std::string captureName) const;
 
     /**
      * @brief Devuelve una lista con los nombres de todos
@@ -239,7 +205,6 @@ public:
      * @param playbackConfig Puntero al sub-nodo "Playback" del JSON, con la configuración de cada grupo.
     */
     int initTonePools(void* playbackConfig);
-
 
 
 // Ejecución y datos de playbacks -------------------------------------------------------
@@ -387,4 +352,3 @@ private:
     std::unordered_map<std::string, unsigned int> espacioEntreMorse_;     ///< Por radioayuda: separación entre palabras (ms)
 
 };
-

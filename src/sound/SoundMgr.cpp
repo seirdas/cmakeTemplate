@@ -211,7 +211,12 @@
     }
 
 
-    // Dispositivos de captura --------------------------------------------------------------
+    // Dispositivos de Captura --------------------------------------------------------------
+
+    AudioInputModule* SoundMgr::getCapture(std::string captureName) const {
+        auto it = captures_.find(captureName);
+        return (it != captures_.end() && it->second) ? it->second.get() : nullptr;
+    }
 
     std::vector<std::string> SoundMgr::getAvailableCaptures() const {
         std::lock_guard<std::mutex> lock(available_inputs_mtx_);
@@ -343,6 +348,12 @@
 
     bool SoundMgr::removeCaptureDevice(std::string const& captureName) {
 
+        // Comprobar que el contexto está inicializado
+        if (!initialized_) {
+            SYS_WARN("SoundMgr", "Audio context not initialized.");
+            return false;
+        }
+
         // comprobar si existe
         auto it = captures_.find(captureName);
         if (it == captures_.end()) {
@@ -364,62 +375,14 @@
         update_managed_inputs();
         return true;
     }
+    
 
+    // Dispositivos Playback ----------------------------------------------------------------
 
-    // Ejecución y datos en dispositivos de captura -----------------------------------------
-
-    bool SoundMgr::startRec(std::string const& captureName) const {
-        auto it = captures_.find(captureName);
-        if (it == captures_.end()) return false;
-
-        std::string filename = "grabacion_" + captureName;
-        it->second->StartRec(filename);
-
-        return true;
+    AudioPlaybackModule* SoundMgr::getPlayback(std::string captureName) const {
+        auto it = playbacks_.find(captureName);
+        return (it != playbacks_.end() && it->second) ? it->second.get() : nullptr;
     }
-
-    bool SoundMgr::stopRec(std::string const& captureName) const {
-        auto it = captures_.find(captureName);
-        if (it == captures_.end()) return false;
-
-        if(it->second->isRecording())
-            it->second->StopRec();
-
-        return true;
-    }
-
-    float SoundMgr::getInputRmsLevel(std::string const& captureName) const {
-        auto it = captures_.find(captureName);
-        if (it == captures_.end()) return 0.0f;
-        return it->second->getRmsLevel();
-    }
-
-    float SoundMgr::getInputPeakLevel(std::string const& captureName) const {
-        auto it = captures_.find(captureName);
-        if (it == captures_.end()) return 0.0f;
-        return it->second->getPeakLevel();
-    }
-
-    size_t SoundMgr::getInputBufferSize(std::string const& captureName) const {
-        auto it = captures_.find(captureName);
-        if (it == captures_.end()) return 0;
-        return it->second->getBufferSize();
-    }
-
-    size_t SoundMgr::getInputRecBufferSize(std::string const& captureName) const {
-        auto it = captures_.find(captureName);
-        if (it == captures_.end()) return 0;
-        return it->second->getRecBufferSize();
-    }
-
-    bool SoundMgr::isInputDeviceValid(std::string const& captureName) const {
-        auto it = captures_.find(captureName);
-        if (it == captures_.end()) return false;
-        return it->second->isValid();
-    }
-
-
-    // Gestión de dispositivos playbacks ----------------------------------------------------
 
     std::vector<std::string> SoundMgr::getAvailablePlaybacks() const {
         std::lock_guard<std::mutex> lock(managed_playbacks_mtx_);
@@ -432,8 +395,11 @@
     }
 
     bool SoundMgr::isOnManagedPlaybacks(std::string const& playbackName) const {
-        // Si no está inicializado no se puede hacer nada
-        if (!initialized_) return false;
+        // Comprobar que el contexto está inicializado
+        if (!initialized_) {
+            SYS_WARN("SoundMgr", "Audio context not initialized.");
+            return false;
+        }
 
         // Recorre todos los dispositivos de playback
         for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i)
@@ -444,8 +410,11 @@
     }
 
     std::string SoundMgr::getDefaultPlaybackDevice() const {
-        // Si no está inicializado no se puede hacer nada
-        if (!initialized_) return {};
+        // Comprobar que el contexto está inicializado
+        if (!initialized_) {
+            SYS_WARN("SoundMgr", "Audio context not initialized.");
+            return {};
+        }
 
         // Buscar en vector de dispositivos
         for (ma_uint32 i = 0; i < pimpl_->PlaybackDevCount_; ++i)
@@ -545,6 +514,11 @@
     }
 
     bool SoundMgr::removePlaybackDevice(std::string const& playbackName) {
+        // Comprobar que el contexto está inicializado
+        if (!initialized_) {
+            SYS_WARN("SoundMgr", "Audio context not initialized.");
+            return false;
+        }
 
         // comprobar si existe
         auto it = playbacks_.find(playbackName);
@@ -568,7 +542,7 @@
         return true;
     }
 
-    int SoundMgr::initTonePools(void* playbackConfig){
+    int SoundMgr::initTonePools(void* playbackConfig) {
         if(!playbackConfig)
         return 0;
 
@@ -717,6 +691,7 @@
 
        return false; 
     }
+
 
     // Funciones internas auxiliares --------------------------------------------------------
 

@@ -433,35 +433,36 @@
 
     // Grabación ----------------------------------------------------------------------------
 
-    void AudioInputModule::StartRec(std::string const& filename) {
-
-        // Inicializar el encoder (necesita el nombre de archivo)
-        init_rec_encoder(filename);
-
-        // Flag para activar la toma de samples en el buffer de grabación del callback de captura
-        recording_ = true;
+    bool AudioInputModule::StartRec(std::string const& filename) {
+        // Inicializar el encoder (necesita el nombre de archivo) con 
+        // flag para activar la toma de samples en el buffer de grabación del callback de captura
+        recording_ = init_rec_encoder(filename);
+        return recording_;
     }
 
-    void AudioInputModule::StopRec() {
+    bool AudioInputModule::StopRec() {
 
         // Si no está grabando, no hacer nada
-        if (!recording_) return;
+        if (!recording_) return false;
 
         // Flag para desactivar la toma de samples en el buffer de grabación del callback de captura
         recording_=false; 
 
         // Guarda las muestras grabadas en el buffer de grabación en el archivo
-        save_recording();
+        bool res = save_recording();
 
         // Desinicializa el encoder
         uninit_rec_encoder();
+
+        // Devuelve el resultado de save_recording
+        return res;
     }
 
-    size_t AudioInputModule::getRecBufferSize() {
+    size_t AudioInputModule::getRecBufferSize() const {
         return rec_buffer_.size();
     };
 
-    bool AudioInputModule::isRecording() {
+    bool AudioInputModule::isRecording() const {
         return recording_; 
     }
 
@@ -483,7 +484,7 @@
 
     // Codificador de grabación -------------------------------------------------------------
 
-    void AudioInputModule::init_rec_encoder(std::string const& filename) {
+    bool AudioInputModule::init_rec_encoder(std::string const& filename) {
 
         // Le dices cómo quieres que sea el archivo.
         ma_encoder_config config = ma_encoder_config_init(
@@ -494,23 +495,36 @@
         );
 
         // Crea el archivo en el disco y prepara el encoder_ para escribir en él
-        ma_encoder_init_file((filename + ".wav").c_str(), &config, &pimpl_->encoder);
+        ma_result res = ma_encoder_init_file((filename + ".wav").c_str(), &config, &pimpl_->encoder);
+
+        // Comprobar si se ha inicializado bien el encoder
+        if (res != MA_SUCCESS) {
+            SYS_WARN("AudioInputModule","init_rec_encoder: ma_encoder_init_file error");
+            return false;
+        }
 
         // Guarda el nombre para usarlo después
-        rec_filename_=filename;
+        rec_filename_ = filename;
+        return true;
     }
 
     void AudioInputModule::uninit_rec_encoder() {
         ma_encoder_uninit(&pimpl_->encoder);
     }
 
-    void AudioInputModule::save_recording() {
+    bool AudioInputModule::save_recording() {
 
         // Variable donde miniaudio guarda cuantos frames ha escrito realmente
         ma_uint64 framesWritten = 0;
         
         // Volcado a disco
-        ma_encoder_write_pcm_frames(&pimpl_->encoder, rec_buffer_.data(), rec_buffer_.size() / channels_, &framesWritten);
+        ma_result res = ma_encoder_write_pcm_frames(&pimpl_->encoder, rec_buffer_.data(), rec_buffer_.size() / channels_, &framesWritten);
+
+        // Comprobar si se ha volcado bien
+        if (res != MA_SUCCESS) {
+            SYS_WARN("AudioInputModule","save_recording: ma_encoder_write_pcm_frames error");
+            return false;
+        }
 
         // Mostrar info del tiempo grabado y el archivo de salida
         float recTime_s = static_cast<float>(framesWritten) / static_cast<float>(sampleRate_);
@@ -519,6 +533,9 @@
 
         // Limpiar el buffer de grabación
         rec_buffer_.clear();
+
+        // Sale exitosamente
+        return true;
     }
 
 
