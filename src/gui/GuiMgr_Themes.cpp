@@ -1031,7 +1031,7 @@
         style_->Colors[ImGuiCol_SliderGrabActive]      = ImVec4(0.9686f, 0.5882f, 0.0353f, 1.0000f);
         style_->Colors[ImGuiCol_Button]                = ImVec4(0.8824f, 0.8667f, 0.8510f, 1.0000f);
         style_->Colors[ImGuiCol_ButtonHovered]         = ImVec4(0.8196f, 0.8118f, 0.8039f, 1.0000f);
-        style_->Colors[ImGuiCol_ButtonActive]          = ImVec4(0.8471f, 0.8471f, 0.8471f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonActive]   = ImVec4(0.8554f, 0.5585f, 0.2226f, 1.0000f);   // <- Modificado
         style_->Colors[ImGuiCol_Header]                = ImVec4(0.8588f, 0.8353f, 0.7922f, 1.0000f);
         style_->Colors[ImGuiCol_HeaderHovered]         = ImVec4(0.8941f, 0.8941f, 0.8941f, 1.0000f);
         style_->Colors[ImGuiCol_HeaderActive]          = ImVec4(0.9216f, 0.9137f, 0.8980f, 1.0000f);
@@ -1624,12 +1624,26 @@
 //  (Stubs)
 // ============================================================
 
-	// Temas --------------------------------------------------------------------------------
-    void GuiMgr::Style_Confy();
-    void GuiMgr::Style_FutureDark();
-    void GuiMgr::Style_Moonlight();
-    void GuiMgr::Style_VisualStudio();
-    void GuiMgr::Style_Microfrost();
-    void GuiMgr::Style_AdobeInspired();
+// Temas --------------------------------------------------------------------------------
+    void GuiMgr::ApplyTheme()               { return; }
+    void GuiMgr::saveConfig()               { return; }
+    void GuiMgr::Style_AdobeInspired()      { return; }
+    void GuiMgr::Style_AyuDark()            { return; }
+    void GuiMgr::Style_Confy()              { return; }
+    void GuiMgr::Style_DarkCyan()           { return; }
+    void GuiMgr::Style_DefaultDark()        { return; }
+    void GuiMgr::Style_DefaultLight()       { return; }
+    void GuiMgr::Style_Everforest()         { return; }
+    void GuiMgr::Style_FutureDark()         { return; }
+    void GuiMgr::Style_Gold()               { return; }
+    void GuiMgr::Style_HazyDark()           { return; }
+    void GuiMgr::Style_KazamsCherry()       { return; }
+    void GuiMgr::Style_LightOrange()        { return; }
+    void GuiMgr::Style_QuickMinimalLook()   { return; }
+    void GuiMgr::Style_Modern()             { return; }
+    void GuiMgr::Style_Microfrost()         { return; }
+    void GuiMgr::Style_Moonlight()          { return; }
+    void GuiMgr::Style_SonicRiders()        { return; }
+    void GuiMgr::Style_VisualStudio()       { return; }
 
 #endif
