@@ -360,7 +360,7 @@
 
         // Si no encuentra ningún nombre salta fallo
         if(!selectedDeviceInfo){
-            SYS_WARN("SoundMgr", "Failed to found device: '" + deviceName + "'"); 
+            SYS_WARN("AudioInputModule", "Failed to found device: '" + deviceName + "'"); 
             return false; 
         }
 

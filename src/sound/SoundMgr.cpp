@@ -310,7 +310,7 @@
             
         // Si no encuentra ningún nombre sale con fallo
         if(!selectedDeviceInfo) {
-            SYS_WARN("SoundMgr", "Failed to found device: '" + deviceName + "'"); 
+            SYS_WARN("SoundMgr", "Failed to found device: '" + usedDeviceName + "'"); 
             return false; 
         }
 
@@ -327,7 +327,7 @@
 
         // Intenta inicializar
         SYS_INFO("SoundMgr", "Initializing capture module...");
-        if(!aim->init(config, captureName))
+        if(!aim->init(config, usedModuleName))
         {
             SYS_WARN("SoundMgr","Failed to initialize capture module");
             return false;
@@ -481,7 +481,7 @@
             
         // Si no encuentra ningún nombre sale con fallo
         if(!selectedDeviceInfo) {
-            SYS_WARN("SoundMgr", "Failed to found device: '" + deviceName + "'"); 
+            SYS_WARN("SoundMgr", "Failed to found device: '" + usedDeviceName + "'"); 
             return false; 
         }
 
@@ -498,7 +498,7 @@
 
         // Intentar inicializar
         SYS_INFO("SoundMgr", "Initializing playback module...");
-        if (!apm->init(config, playbackName))
+        if (!apm->init(config, usedModuleName))
         {
             SYS_WARN("SoundMgr","Failed to initialize playback module");
             return false;

@@ -7,6 +7,7 @@
     #include "datatypes/MorseDict.hpp"
     #include "sound/APMImp.hpp"
     #include <memory>
+    #include <cmath>
 
     // Ejecución ----------------------------------------------------------------------------
 
