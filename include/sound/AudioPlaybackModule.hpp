@@ -97,11 +97,18 @@ public:
 
     /**
      * @brief Detiene la reproduccitón de un sonido con el ID especificado.
-     * @param audioName Nombre del sonido a detener.
-     * @param force Forzar la parada, independientemente 
+     * @param audioName  Nombre del sonido a detener.
+     * @param force      Forzar la parada, independientemente
      *  del valor de forceStop de la instancia del sonido reproduciéndose.
+     * @param fadeOutMs  Parar bajando el volumen progresivamente durante x ms (0 = desactivado).
+     * @param pitchOutMs Parar bajando el pitch progresivamente durante x ms (0 = desactivado).
      */
-    void stopAudio(std::string const& audioName, bool force = false);
+    void stopAudio(
+        std::string const& audioName, 
+        bool force = false,
+        unsigned int fadeOutMs = 0,
+        unsigned int pitchOutMs = 0
+    );
 
     /**
      * @brief Establece el volumen de un sonido en ejecución.
@@ -183,7 +190,7 @@ protected:
      *   se desinicializarán en diferido por un hilo independiente.
      * @param sound sonido (ma_sound)
      */
-    void send_to_cleanup(void* sound);
+    void stop_and_send_to_cleanup(void* sound);
 
     /**
      * @brief Libera de la memoria los sonidos de la lista de limpieza
@@ -202,6 +209,36 @@ protected:
      *  en un hilo independiente.
      */
     void t_cache_reaper();
+
+
+// Thread de pitchOut -------------------------------------------------------------------
+
+    /**
+     * @brief Inicia un hilo asíncrono para reducir progresivamente el volumen de un sonido.
+     * @param audioName Nombre identificador del audio.
+     * @param soundPtr (ma_sound*) Puntero a la estructura ma_sound de miniaudio.
+     * @param totalTransitionMs Tiempo total de la transición en milisegundos.
+     */
+    void start_fadeout_thread(
+        std::string const&  audioName,
+        void*               soundPtr,
+        unsigned int        totalTransitionMs
+    );
+
+    /**
+     * @brief Inicia un hilo asíncrono para reducir progresivamente el pitch de un sonido.
+     * @param audioName Nombre identificador del audio.
+     * @param soundPtr (ma_sound*) Puntero a la estructura ma_sound de miniaudio.
+     * @param totalTransitionMs Tiempo total de la transición en milisegundos.
+     * @param cleanup Indica si se ha de gestionar la limpieza del audio o no.
+     */
+    void start_pitchout_thread(
+        std::string const& audioName,
+        void* soundPtr,
+        unsigned int totalTransitionMs,
+        float startPitch,
+        bool cleanup
+    );
 
 
 /************ Variables ****************************************************************/
@@ -233,5 +270,9 @@ protected:
     std::mutex              cachereaper_mtx_;       ///< Mutex para el acceso al mapa last_used
     std::condition_variable cachereaper_cv_;        ///< Condition variable para el acceso al hilo reaper
     std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida en segundos de los audios en caché
+
+// Hilos pitchout
+    std::atomic<size_t> active_fadeouts_threads_;   ///< Número de hilos pitchout ejecutándose
+    std::condition_variable pitch_threads_cv_;      ///< CV para esperar a que cierren los hilos pitchout en cierre
 
 };

@@ -3,9 +3,10 @@
 
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
-#include "sound/AudioPlaybackModule.hpp"
-#include <queue>
-#include <unordered_map>
+    #include <miniaudio.h>
+    #include "sound/AudioPlaybackModule.hpp"
+    #include <queue>
+    #include <unordered_map>
 
 
 // Implementación de miembros y métodos de PIMPL
@@ -63,13 +64,9 @@
         * @param sound Puntero al sonido que terminó de reproducirse.
         */
         inline static void endCallback(void* userData, ma_sound* sound) {
-            
             auto* self = reinterpret_cast<AudioPlaybackModule*>(userData);
-
             // Busca el sonido en la lista de sonidos reproduciéndose para eliminarlo
-            self->send_to_cleanup(sound);
-            self->cleanup_cv_.notify_one();
-            //self->cleanup();  // método directo (no diferido)
+            self->stop_and_send_to_cleanup(sound);
         }
     };
 

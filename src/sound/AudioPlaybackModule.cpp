@@ -1,4 +1,5 @@
 #include "sound/AudioPlaybackModule.hpp"
+#include <mutex>
 
 
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
@@ -6,18 +7,17 @@
     #include <miniaudio.h>
     #include "system/SystemMgr.hpp"
     #include "files/JsonMgr.hpp"
-    #include "datatypes/MorseDict.hpp"
-    #include "sound/APMImp.hpp"         // PIMPL de AudioPlaybackModule
     #include <filesystem>               // Controla directorios, rutas, etc.
-    #include <cmath>
-
+    
+    #include "sound/APMImp.hpp"         // PIMPL de AudioPlaybackModule
 
     // General ------------------------------------------------------------------------------
 
     AudioPlaybackModule::AudioPlaybackModule(void* ctx, const void* device_info) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
         initialized_(false),
-        keep_alive_seconds_(10)
+        keep_alive_seconds_(10),
+        active_fadeouts_threads_(0)
     {
 
     }
@@ -100,6 +100,17 @@
         SYS_INFO("PlaybackModule", "Stopping PlaybackModule...");
 
         running_ = false;
+
+        // Espera segura de hilos pitchout
+        if (active_fadeouts_threads_ > 0) {
+            SYS_INFO("PlaybackModule", "Waiting for active pitchout threads to finish...");
+            std::unique_lock<std::mutex> lock(playing_sounds_mtx_);
+            
+            // Espera bloqueante hasta que el contador de hilos llegue a 0
+            pitch_threads_cv_.wait(lock, [this]() { 
+                return active_fadeouts_threads_ == 0; 
+            });
+        }
 
         // Apagar el hilo de limpieza primero
         if (cleanup_thread_.joinable()) {
@@ -227,8 +238,12 @@
         }
     }
 
-    void AudioPlaybackModule::stopAudio(std::string const& audioName, bool force) {
-
+    void AudioPlaybackModule::stopAudio(
+        std::string const& audioName, 
+        bool force,
+        unsigned int fadeOutMs,
+        unsigned int pitchOutMs )
+    {
         // Info
         std::string stopType = (force) ? "forced" : "soft";
         SYS_INFO("PlaybackModule", "Commanded " + stopType + " stop to '" + audioName + "'");
@@ -241,25 +256,58 @@
             return;
         }
 
-        // Desbloquear mutex para evitar bloqueos de las funciones de después (sendToCleanup)
-        lock.unlock();
-
         // Obtener la SoundInstance
-        std::unique_ptr<AudioPlaybackModule::Impl::SoundInstance>& audioInstance = it->second;
+        std::unique_ptr<AudioPlaybackModule::Impl::SoundInstance>& inst = it->second;
 
-        // Si LoopMode activo, desactivar loop y dejar que acabe
-        if(audioInstance->loopMode)
-            ma_sound_set_looping(&audioInstance->sound, MA_FALSE);
+        // 1. Gestión de parada "inmediata" -----------------------------------
+        if (fadeOutMs == 0 && pitchOutMs == 0) {
 
-        // Si forceStop de la instancia o param force activo, cortar inmediatamente
-        else if(audioInstance->forceStop || force) {
-            ma_sound_stop(&audioInstance->sound);
-            send_to_cleanup(&audioInstance->sound);
-            SYS_INFO("PlaybackModule","'" + audioName + "': stop forced");
-            cleanup_cv_.notify_one();
+            // Si LoopMode activo, desactivar loop y dejar que acabe (lo gestiona el callback)
+            if(inst->loopMode) {
+                ma_sound_set_looping(&inst->sound, MA_FALSE);
+                inst->loopMode = false;
+            }
+    
+            // Si forceStop de la instancia o param force activo, cortar inmediatamente
+            if(inst->forceStop || force) {
+
+                // Anulación de callback para evitar que miniaudio limpie duplicado al hacer stop
+                ma_sound_set_end_callback(&inst->sound, nullptr, nullptr);
+
+                // Liberar el lock para evitar bloqueo en send_to_cleanup
+                lock.unlock();
+
+                // Manda el sonido a limpiar
+                stop_and_send_to_cleanup(&inst->sound);
+                SYS_INFO("PlaybackModule","'" + audioName + "': stop forced");
+            }
+
+            // si !forcestop, no hacer nada y dejar acabar el audio cuando termine
+
+            // !! SALE AQUÍ Y NO EJECUTA LÓGICA DE PARADA PROGRESIVA
+            return;
         }
 
-        // si !forcestop, no hacer nada y dejar acabar el audio cuando termine
+        // 2. Gestión de parada progresiva ------------------------------------
+
+        // Gestión de parada solo con fadeOut (mantendría loop si tuviera)
+        if (fadeOutMs > 0) {
+            SYS_INFO("PlaybackModule", "'" + audioName + "': fadeOut stop initiated");
+            start_fadeout_thread(audioName, &inst->sound, fadeOutMs);
+        }
+
+        // Gestión de parada con pitchOut (hilo manual)
+        if (pitchOutMs > 0) {
+            SYS_INFO("PlaybackModule", "'" + audioName + "': pitchOut stop initiated");
+            start_pitchout_thread(
+                audioName, 
+                &inst->sound, 
+                pitchOutMs, 
+                ma_sound_get_pitch(&inst->sound),   // toma el pìtch aquí bajo mutex
+                (fadeOutMs == 0) ? true : false     // Indica si debe limpiar el audio o no
+            );
+            
+        }
     }
 
     void AudioPlaybackModule::setVolume(std::string const& audioName, float volume) {
@@ -404,8 +452,11 @@
         }
     }
 
-    void AudioPlaybackModule::send_to_cleanup(void* sound) {
+    void AudioPlaybackModule::stop_and_send_to_cleanup(void* sound) {
         ma_sound* maSound = static_cast<ma_sound*>(sound);
+
+        // Parar el sonido
+        ma_sound_stop(maSound);
 
         // Proteger la lista PlayingSounds
         std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
@@ -515,6 +566,150 @@
             // Desbloquear el mutex de la lista de sonidos
             soundsLock.unlock();
         }
+    }
+
+
+    // Threads de paradas progresivas -------------------------------------------------------------------
+
+    void AudioPlaybackModule::start_fadeout_thread(
+        std::string const&  audioName,
+        void*               soundPtr,
+        unsigned int        totalTransitionMs)
+    {
+
+        // Obtener el sonido en su tipo ma_audio
+        ma_sound* sound = static_cast<ma_sound*>(soundPtr);
+
+        // Activar el fadeout de miniaudio
+        ma_sound_set_fade_in_milliseconds(
+            sound, ma_sound_get_volume(sound), 0.0f, totalTransitionMs);
+
+        // Incrementar el contador de hilos activos antes de lanzar
+        active_fadeouts_threads_++;
+
+        // Iniciar un hilo para gestionar la limpieza del sonido cuando acaba el fadeout
+        std::thread([this, audioName, sound, totalTransitionMs]() {
+            struct ThreadGuard {
+                AudioPlaybackModule* module;
+                ~ThreadGuard() {
+                    module->active_fadeouts_threads_--;
+                    module->pitch_threads_cv_.notify_all();
+                }
+            } guard{this};
+
+            // Esperar el tiempo exacto del fadeout
+            std::this_thread::sleep_for(std::chrono::milliseconds(totalTransitionMs));
+
+            if (!running_) return;
+
+            std::unique_lock<std::mutex> asyncLock(playing_sounds_mtx_);
+
+            // Verificar que el sonido no haya sido destruido durante el sleep
+            auto it = pimpl_->playing_sounds.find(audioName);
+            if (it != pimpl_->playing_sounds.end() && &it->second->sound == sound) {
+                
+                // Quitar loop y anular callback para evitar invocaciones duplicadas
+                ma_sound_set_looping(sound, MA_FALSE);
+                it->second->loopMode = false;
+                ma_sound_set_end_callback(sound, nullptr, nullptr);
+
+                // Unlocking previo a send_to_cleanup
+                asyncLock.unlock();
+
+                // Parar y enviar a limpiar
+                stop_and_send_to_cleanup(sound);
+            }
+        }).detach();
+    }
+
+    void AudioPlaybackModule::start_pitchout_thread(
+        std::string const& audioName,
+        void* soundPtr,
+        unsigned int totalTransitionMs,
+        float startPitch,
+        bool cleanup)
+    {
+        // Incrementar el contador de hilos activos antes de lanzar
+        active_fadeouts_threads_++;
+
+        std::thread([this, audioName, soundPtr, totalTransitionMs, startPitch, cleanup]() {
+
+            // Estructura lambda para decrementar el contador de hilos al salir siempre (RAII)
+            struct ThreadGuard {
+                AudioPlaybackModule* module;
+                ~ThreadGuard() {
+                    module->active_fadeouts_threads_--;
+                    module->pitch_threads_cv_.notify_all(); // Avisar a close() si está esperando
+                }
+            } guard{this};
+            
+            // Tiempo transcurrido entre bajadas de pitch
+            const unsigned int stepMs = 20;
+
+            // Tiempo transcurrido en el while
+            unsigned int elapsedTime = 0;
+
+            // Obtener el sonido en su tipo ma_audio
+            ma_sound* sound = static_cast<ma_sound*>(soundPtr);
+
+            // Bajar progresivamente el pitch en el tiempo establecido
+            while (elapsedTime < totalTransitionMs) {
+
+                // Abortar si se está cerrando (antes de esperar)
+                if (!running_)
+                    return;
+
+                // Esperar el tiempo entre bajadas de pitch
+                std::this_thread::sleep_for(std::chrono::milliseconds(stepMs));
+                elapsedTime += stepMs;
+
+                // Abortar si se está cerrando (después de esperar)
+                if (!running_)
+                    return;
+
+                // Proteger la lista de playingSounds
+                std::lock_guard<std::mutex> asyncLock(playing_sounds_mtx_);
+
+                // Comprobar si el sonido aún existe (pudo haber sido limpiado por endCallback u otro evento)
+                auto itAsync = pimpl_->playing_sounds.find(audioName);
+                if (itAsync == pimpl_->playing_sounds.end() || &itAsync->second->sound != sound) {
+                    return;
+                }
+
+                // Aplicar bajada de pitch
+                float progress = static_cast<float>(elapsedTime) / static_cast<float>(totalTransitionMs);
+                float currentPitch = startPitch * (1.0f - progress);
+                ma_sound_set_pitch(sound, std::max(0.01f, currentPitch));
+            }
+
+            SYS_INFO("PlaybackModule", "'" + audioName + "': pitchout stop complete");
+
+
+            // Comprobar si este hilo se encarga de limpiar el audio
+            if (!cleanup)
+                return;
+
+            // Proteger la lista de playingSounds
+            std::unique_lock<std::mutex> asyncLock(playing_sounds_mtx_);
+
+            // Comprobar si el sonido aún existe
+            auto itAsync = pimpl_->playing_sounds.find(audioName);
+            if (itAsync != pimpl_->playing_sounds.end() && &itAsync->second->sound == sound) {
+
+                // Apagar el modo loop (opcional)
+                ma_sound_set_looping(sound, MA_FALSE);
+                itAsync->second->loopMode = false;
+
+                // Anulación de callback para evitar que miniaudio limpie duplicado al hacer stop
+                ma_sound_set_end_callback(sound, nullptr, nullptr);
+
+                // Unlocking previo a send_to_cleanup
+                asyncLock.unlock();
+
+                // Parar y enviar a limpiar
+                stop_and_send_to_cleanup(sound);
+            }
+        }).detach();
     }
 
 
