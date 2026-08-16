@@ -570,7 +570,7 @@
 struct AudioInputModule::Impl {};
 
 // General ------------------------------------------------------------------------------
-AudioInputModule::AudioInputModule(void*, void* const) : 
+AudioInputModule::AudioInputModule(void*, const void*) : 
     max_int16_val_(std::numeric_limits<int16_t>::max())
 {}
 AudioInputModule::~AudioInputModule()   { return; }
@@ -606,15 +606,15 @@ void AudioInputModule::setCallback_OnFrame(AudioCallback)    { return; }
 void AudioInputModule::clearCallback_OnFrame()               { return; }
 
 // Grabación ----------------------------------------------------------------------------
-void AudioInputModule::StartRec(std::string const&) { return; }
-void AudioInputModule::StopRec()                    { return; }
-size_t AudioInputModule::getRecBufferSize()         { return 0; }
-bool AudioInputModule::isRecording()                { return false; }
+bool AudioInputModule::StartRec(std::string const&) { return false; }
+bool AudioInputModule::StopRec()                    { return false; }
+size_t AudioInputModule::getRecBufferSize() const   { return 0; }
+bool AudioInputModule::isRecording() const          { return false; }
 
 // Codificador de grabación (Privados) --------------------------------------------------
-void AudioInputModule::init_rec_encoder(std::string const&) { return; }
+bool AudioInputModule::init_rec_encoder(std::string const&) { return false; }
 void AudioInputModule::uninit_rec_encoder()                 { return; }
-void AudioInputModule::save_recording()                    { return; }
+bool AudioInputModule::save_recording()                     { return false; }
     
 // Suavizado de niveles -----------------------------------------------------------------
 float AudioInputModule::smooth_level(float const,float const&,float,float) { return 0; }

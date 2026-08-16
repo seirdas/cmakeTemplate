@@ -1,4 +1,6 @@
 #include "sound/SoundMgr.hpp"
+#include "sound/AudioInputModule.hpp"
+#include "sound/AudioPlaybackModule.hpp"
 
 
 // Macro de cmake al activar la librería
@@ -9,8 +11,6 @@
     #include <chrono>
     #include <thread>
     #include <algorithm>
-    #include "sound/AudioInputModule.hpp"
-    #include "sound/AudioPlaybackModule.hpp"
     #include "system/SystemMgr.hpp"
     #include "files/JsonMgr.hpp"    // Para conocer json
     #include "datatypes/MorseDict.hpp"
@@ -885,7 +885,8 @@ bool SoundMgr::isInitialized() const    { return false; }
 bool SoundMgr::close()                   { return false; }
 bool SoundMgr::updateDevices()          { return false; }
 
-// Capture Input ------------------------------------------------------------------------
+// Dispositivos de Captura --------------------------------------------------------------
+AudioInputModule* SoundMgr::getCapture(std::string captureName) const       { return nullptr;}
 std::vector<std::string> SoundMgr::getAvailableCaptures() const             { return {}; }
 std::vector<std::string> SoundMgr::getManagedCaptures() const               { return {}; }
 bool        SoundMgr::isOnManagedCaptures(std::string const&) const         { return false; }
@@ -894,31 +895,25 @@ void SoundMgr::listAvailableCaptures() const                                { re
 bool SoundMgr::addCaptureDevice(void*,std::string const&,std::string const&){ return false; }
 bool SoundMgr::removeCaptureDevice(std::string const&)                      { return false; }
 
-// Ejecución y datos en dispositivos de captura -----------------------------------------
-bool   SoundMgr::startRec(std::string const&) const              { return false; }
-bool   SoundMgr::stopRec(std::string const&) const               { return false; }
-float  SoundMgr::getInputRmsLevel(std::string const&) const      { return 0; }
-float  SoundMgr::getInputPeakLevel(std::string const&) const     { return 0; }
-bool   SoundMgr::isInputDeviceValid(std::string const&) const    { return false; }
-size_t SoundMgr::getInputRecBufferSize(std::string const&) const { return 0; }
-size_t SoundMgr::getInputBufferSize(std::string const&) const    { return 0; }
-
-// Gestión de dispositivos playbacks ----------------------------------------------------
+// Dispositivos Playback ----------------------------------------------------------------
+AudioPlaybackModule* SoundMgr::getPlayback(std::string captureName) const   { return nullptr; }
 std::vector<std::string> SoundMgr::getAvailablePlaybacks() const { return {}; }
 std::vector<std::string> SoundMgr::getManagedPlaybacks() const   { return {}; }
 bool SoundMgr::isOnManagedPlaybacks(std::string const&) const    { return false; }
 std::string SoundMgr::getDefaultPlaybackDevice() const           { return ""; }
 void SoundMgr::listAvailablePlaybacks() const                    { return; }
-bool SoundMgr::addPlaybackDevice(void*,std::string const&,std::string const&) { return false; }
+bool SoundMgr::addPlaybackDevice(void*,std::string const&,std::string const&, std::string const&) { return false; }
 bool SoundMgr::removePlaybackDevice(std::string const&)          { return false; }
 
 // Ejecución y datos de playbacks -------------------------------------------------------
 bool SoundMgr::playbackTest()                               { return false; }
+bool SoundMgr::playMorse(std::string const&, std::string const&, std::string const&, unsigned short, bool) { return false;}
+bool SoundMgr::stopTone(std::string const&) { return false;}
 
 // Funciones internas auxiliares --------------------------------------------------------
-void* SoundMgr::get_device_info(std::string*, bool) const    { return nullptr; }
-void* SoundMgr::get_playback_device_info(std::string*) const  { return nullptr; }
-void* SoundMgr::get_capture_device_info(std::string*) const   { return nullptr; }
+const void* SoundMgr::get_device_info(std::string&, bool) const     { return nullptr; }
+const void* SoundMgr::get_playback_device_info(std::string&) const  { return nullptr; }
+const void* SoundMgr::get_capture_device_info(std::string&) const   { return nullptr; }
 
 // Listas de dispositivos de audio ------------------------------------------------------
 void SoundMgr::update_available_inputs()    { return; }

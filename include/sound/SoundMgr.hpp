@@ -133,7 +133,7 @@ public:
     bool removeCaptureDevice(std::string const& captureName); 
 
 
-// Dispositivos Playback ----------------------------------------------------
+// Dispositivos Playback ----------------------------------------------------------------
 
     /**
      * @brief Obtiene el módulo de reproducción playback asociado a un nombre

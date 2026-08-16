@@ -1,4 +1,5 @@
 #include "sound/PlaybackFile.hpp"
+#include "sound/AudioPlaybackModule.hpp"
 
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
@@ -46,18 +47,20 @@
 // ============================================================
 
 // General ------------------------------------------------------------------------------
-    PlaybackFile(void* ctx, const void* device_info);
+PlaybackFile::PlaybackFile(void*, const void*) :
+    AudioPlaybackModule(nullptr, nullptr)
+{}
 
 // Ejecución ----------------------------------------------------------------------------
-    void playFromFolder(
-        std::string const&,
-        unsigned short,
-        bool,
-        bool,
-        unsigned short 
-    ) { return; }
+void PlaybackFile::playFromFolder(
+    std::string const&,
+    unsigned short,
+    bool,
+    bool,
+    unsigned short 
+) { return; }
 
 // Parámetros del módulo ----------------------------------------------------------------
-    void setAudioFolder(std::string const&)     { return; }
+void PlaybackFile::setAudioFolder(std::string const&)     { return; }
 
 #endif

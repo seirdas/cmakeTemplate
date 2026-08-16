@@ -9,6 +9,21 @@
     #include <memory>
     #include <cmath>
 
+
+    PlaybackMorse::PlaybackMorse(void* ctx, const void* device_info)
+        : AudioPlaybackModule(ctx, device_info),
+        frequency_Hz_(1350),
+        punto_ms_(100),
+        raya_ms_(300),
+        espacioEntreSimbolos_(100),
+        espacioEntreLetras_(300),
+        espacioEntreMorse_(500),
+        sampleRate_(48000)
+    {
+
+    }
+
+
     // Ejecución ----------------------------------------------------------------------------
 
     bool PlaybackMorse::playMorse(
@@ -108,7 +123,7 @@
             for (size_t s = 0; s < code.size(); ++s) {
 
                 // Punto o raya, según el símbolo
-                unsigned int toneMs = (code[s] == '-') ? raya_Ms_ : punto_Ms_;
+                unsigned int toneMs = (code[s] == '-') ? raya_ms_ : punto_ms_;
                 size_t toneSamples = sampleRate_ * toneMs / 1000;
 
                 // Generar el tono (onda senoidal) y guardarlo en audio
@@ -137,5 +152,60 @@
     }
 
 
+// Parámetros del módulo ----------------------------------------------------------------
+
+    void PlaybackMorse::setToneFrequency(float hz) {
+        frequency_Hz_ = hz;
+    }
+
+    void PlaybackMorse::setPuntoMs(unsigned int time_ms) {
+        punto_ms_ = time_ms;
+    }
+    
+    void PlaybackMorse::setRayaMs(unsigned int time_ms) {
+        raya_ms_ = time_ms;
+    }
+    
+    void PlaybackMorse::setEspacioEntreSimbolos(unsigned int time_ms) {
+        espacioEntreSimbolos_ = time_ms;
+    }
+    
+    void PlaybackMorse::setEspacioEntreLetras(unsigned int time_ms) {
+        espacioEntreLetras_ = time_ms;
+    }
+    
+    void PlaybackMorse::setEspacioEntreMorse(unsigned int time_ms) {
+        espacioEntreMorse_ = time_ms;
+    }
+    
+    void PlaybackMorse::setSampleRate(unsigned int hz) {
+        sampleRate_ = hz;
+    }
+
+
+#else
+// ============================================================
+//  (Stubs)
+// ============================================================
+
+// General ------------------------------------------------------------------------------
+PlaybackMorse::PlaybackMorse(void* ctx, const void* device_info) :
+    AudioPlaybackModule(nullptr, nullptr)
+{}
+
+// Ejecución ----------------------------------------------------------------------------
+bool PlaybackMorse::playMorse(std::string const&,std::string const&,unsigned short,bool) { return false; }
+
+// Parámetros del módulo ----------------------------------------------------------------
+void PlaybackMorse::setToneFrequency(float)                 { return; }
+void PlaybackMorse::setPuntoMs(unsigned int)                { return; }
+void PlaybackMorse::setRayaMs(unsigned int)                 { return; }
+void PlaybackMorse::setEspacioEntreSimbolos(unsigned int)   { return; }
+void PlaybackMorse::setEspacioEntreLetras(unsigned int)     { return; }
+void PlaybackMorse::setEspacioEntreMorse(unsigned int)      { return; }
+void PlaybackMorse::setSampleRate(unsigned int)             { return; }
+
+// Generación ---------------------------------------------------------------------------
+std::vector<float> generate_morse_audio(std::string const&)   { return {}; }
 
 #endif
