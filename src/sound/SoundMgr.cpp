@@ -491,13 +491,12 @@
         SYS_INFO("SoundMgr", "Initializing playback module: " + usedModuleName);
         std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(
             &pimpl_->snd_context_,
-            selectedDeviceInfo,
-            AudioFilesFolder
+            selectedDeviceInfo
         );
 
         // Intentar inicializar
         SYS_INFO("SoundMgr", "Initializing playback module...");
-        if (!apm->init(config, playbackName))
+        if (!apm->init(config, playbackName, AudioFilesFolder))
         {
             SYS_WARN("SoundMgr","Failed to initialize playback module");
             return false;

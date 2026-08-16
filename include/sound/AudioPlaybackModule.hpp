@@ -23,9 +23,8 @@ public:
      * @brief Constructor de AudioPlaybackModule.
      * @param ctx Contexto de mini audio.
      * @param device_info Información del dispositivo de audio.
-     * @param audioFolder Carpeta donde buscar los archivos de audio de este playback (usada por playFromFolder).
      */
-    AudioPlaybackModule(void* ctx, const void* device_info, std::string const& audioFolder = "");
+    AudioPlaybackModule(void* ctx, const void* device_info);
 
     /**
      * @brief Destructor de AudioPlaybackModule.
@@ -37,9 +36,16 @@ public:
 
     /**
      * @brief Inicializa el motor de audio
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @param playbackName Nombre asignado a este módulo
+     * @param audioFolder Carpeta donde buscar los archivos de audio de este playback
      * @return true si se inicia correctamente, false en caso contrario.
      */
-    bool init(void* config = nullptr, std::string const& playbackName = "");
+    bool init(
+        void*               config          = nullptr, 
+        std::string const&  playbackName    = "", 
+        std::string const&  audioFolder     = ""
+    );
 
     /**
      * @brief Devuelve si la inicialización ha sido exitosa
@@ -124,6 +130,12 @@ public:
      * @param pitch Tono del sonido.
      */
     void setPitch(std::string const& audioName, float pitch);
+
+    /**
+     * @brief Establece la ruta de la carpeta de audios de este módulo
+     */
+    void setAudioFolder(std::string const& audioFolder);
+
 
 // MORSE --------------------------------------------------------------------------------
 

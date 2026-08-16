@@ -16,6 +16,7 @@
     #include <string>
     #include <thread>
     #include <cmath>
+    #include <filesystem>
 
 
     // Implementación de miembros y métodos de la librería externa
@@ -93,10 +94,9 @@
 
     // General ------------------------------------------------------------------------------
 
-    AudioPlaybackModule::AudioPlaybackModule(void* ctx, const void* device_info, std::string const& audioFolder) :
+    AudioPlaybackModule::AudioPlaybackModule(void* ctx, const void* device_info) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
         initialized_(false),
-        audioFolder_(audioFolder),
         keep_alive_seconds_(10)
     {
 
@@ -109,13 +109,21 @@
 
     // Inicialización -----------------------------------------------------------------------
 
-    bool AudioPlaybackModule::init(void* config, std::string const& moduleName) {
+    bool AudioPlaybackModule::init(
+        void*               config, 
+        std::string const&  moduleName, 
+        std::string const&  audioFolder) 
+    {
         if (initialized_)
             return true;
 
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
+
+        // Obtener la carpeta de audios si está vacía y se ha pasado por parámetro
+        if (audioFolder_.empty() && !audioFolder.empty())
+            audioFolder_ = audioFolder;
 
         // Ponerle nombre a este módulo (sobreescribe el de la config)
         if (!moduleName.empty()) name_ = moduleName;
@@ -131,7 +139,7 @@
 
         // Inicializar
         if (ma_engine_init(&deviceConfig, &pimpl_->engine) != MA_SUCCESS) {
-            SYS_ERROR("AudioPlaybackModule","Engine init failed");
+            SYS_ERROR("AudioPlaybackModule", moduleName + ": ma_engine_init failed");
             return false;
         }
 
@@ -311,7 +319,7 @@
         unsigned short      pitch)
     {
         if (audioFolder_.empty()) {
-            SYS_WARN("AudioPlaybackModule", "playFromFolder: este playback no tiene carpeta de audios configurada");
+            SYS_WARN("AudioPlaybackModule", "playFromFolder: audioFolder not defined");
             return;
         }
 
@@ -379,6 +387,11 @@
         }
         else SYS_WARN("PlaybackModule", "Change pitch fail: '" + audioName + "' not found");
     }
+
+    void AudioPlaybackModule::setAudioFolder(std::string const& audioFolder) {
+        audioFolder_ = audioFolder;
+    }
+
 
 // MORSE --------------------------------------------------------------------------------
 
