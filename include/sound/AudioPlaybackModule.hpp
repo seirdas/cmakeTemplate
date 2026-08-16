@@ -5,7 +5,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include <vector>
 #include <thread>
 
 
@@ -113,9 +112,17 @@ public:
     /**
      * @brief Establece el volumen de un sonido en ejecución.
      * @param audioName Nombre del sonido a detener.
-     * @param volume Volumen del sonido (0.0f a 1.0f).
+     * @param volume Volumen del sonido (0 a 100).
      */
-    void setVolume(std::string const& audioName, float volume);
+    void setVolume(std::string const& audioName, unsigned short volume);
+
+    /**
+     * @brief Establece el volumen global del módulo de reproducción (global).
+     * @note Actualiza los sonidos que se están reproduciendo.
+     * @note Se limita el máximo a 100
+     * @param volume Volumen del sonido (0 a 100).
+     */
+    void setModuleVolume(unsigned short volume);
 
     /**
      * @brief Establece el tono de un sonido en ejecución.
@@ -138,6 +145,12 @@ public:
      * @return Nombre de este componente
      */
     std::string getModuleName() const;
+
+    /**
+     * @brief Devuelve el volumen global del módulo
+     * @return Volumen (0-100)
+     */
+    unsigned short getModuleVolume() const;
 
     /**
      * @brief Verifica si un audio está en reproducción
@@ -251,6 +264,7 @@ protected:
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>       running_;               ///< flag de aplicación corriendo (para hilos)
     std::string             name_;                  ///< Nombre del módulo
+    unsigned short          globalVol_;             ///< Volumen global del módulo (0-100)
 
 // Listas de sonidos
     mutable std::mutex  playing_sounds_mtx_;        ///< Mutex para el mapa de sonidos

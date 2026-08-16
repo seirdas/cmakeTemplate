@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sound/AudioPlaybackModule.hpp"
+#include <vector>
 
 class PlaybackMorse : public AudioPlaybackModule {
 

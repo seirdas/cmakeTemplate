@@ -16,6 +16,8 @@
     AudioPlaybackModule::AudioPlaybackModule(void* ctx, const void* device_info) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
         initialized_(false),
+        running_(false),
+        globalVol_(100),
         keep_alive_seconds_(10),
         active_fadeouts_threads_(0)
     {
@@ -210,7 +212,8 @@
         }
 
         // Establecer parámetros de la reproducción
-        ma_sound_set_volume(&inst->sound, static_cast<float>(volume)/100);  // (va de 0.0 a 1.0)
+        float ma_volume = (static_cast<float>(volume) / 100.0f) * static_cast<float>(globalVol_) / 100.0f;
+        ma_sound_set_volume(&inst->sound, ma_volume);  // (va de 0.0 a 1.0)
         ma_sound_set_pitch(&inst->sound, pitch);
         ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE : MA_FALSE);
 
@@ -225,6 +228,7 @@
         inst->loopMode  = loop;
         inst->forceStop = forceStop;
         inst->name      = filename;
+        inst->volume    = volume;
 
         // Guardar en el mapa y reproducir
         {
@@ -310,7 +314,7 @@
         }
     }
 
-    void AudioPlaybackModule::setVolume(std::string const& audioName, float volume) {
+    void AudioPlaybackModule::setVolume(std::string const& audioName, unsigned short volume) {
         std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
 
         float volume_normalized = static_cast<float>(volume)/100;
@@ -321,6 +325,23 @@
             ma_sound_set_volume(&it->second->sound, volume_normalized);
         }
         else SYS_WARN("PlaybackModule", "Change volume fail: '" + audioName + "' not found");
+    }
+
+    void AudioPlaybackModule::setModuleVolume(unsigned short volume) {
+
+        // Limitar el volumen global entre 0 y 100
+        globalVol_ = (volume < 100) ? volume : 100;
+
+        // Proteger la lista de sonidos activos con el mutex del módulo
+        std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
+
+        // Actualizar los sonidos en reproducción utilizando su volumen base
+        float finalVolume = 0;
+        float globalFactor = static_cast<float>(globalVol_) / 100.0f;
+        for (auto& [id, inst] : pimpl_->playing_sounds) {
+            finalVolume = inst->volume * globalFactor;
+            ma_sound_set_volume(&inst->sound, finalVolume);
+        }
     }
 
     void AudioPlaybackModule::setPitch(std::string const& audioName, float pitch) {
@@ -343,6 +364,10 @@
 
     std::string AudioPlaybackModule::getModuleName() const {
         return name_;
+    }
+
+    unsigned short AudioPlaybackModule::getModuleVolume() const {
+        return globalVol_;
     }
 
     bool AudioPlaybackModule::isPlaying(std::string const& name) const {

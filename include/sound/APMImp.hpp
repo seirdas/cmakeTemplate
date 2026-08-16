@@ -20,6 +20,7 @@
             std::string     name;               ///< Nombre del audio
             bool            loopMode   = false; ///< Indica reproducción en bucle del sonido
             bool            forceStop  = false; ///< Indica si el sonido debe pararse sin acabarlo completamente
+            unsigned short  volume     = 0;     ///< Volumen de reproducción (0-100)
             ma_audio_buffer buffer;             ///< Buffer en memoria (solo si el sonido viene de un morse, no de archivo)
             bool            isBuffer = false;   ///< Indica si "buffer" está inicializado y hay que liberarlo
         };
