@@ -270,7 +270,7 @@
 		running_ = false;
 		initialized_ = false;
 
-		return true;
+		return !initialized_; // <- true
 	}
 
 	bool GuiMgr::isRunning() const {
@@ -862,6 +862,11 @@
 	}
 
 	void GuiMgr::unloadImages() {
+
+		// No hace falta borrar si no hay nada
+		if (images_.empty())
+			return;
+
 		SYS_INFO("GuiMgr", "Unloading images...");
 
 		GLuint glTex;

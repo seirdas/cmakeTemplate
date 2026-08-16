@@ -158,13 +158,20 @@
         // No hacer nada si ya se ha cerrado.
         if (!initialized_) return true;
 
-        // Limpieza (destruir) los módulos creados
-        SYS_INFO("SoundMgr", "Closing capture modules...");
-        captures_.clear();
-        SYS_INFO("SoundMgr", "Closing playback modules...");
-        playbacks_.clear();
+        // Limpieza de módulos de captura
+        if (!captures_.empty()) {
+            SYS_INFO("SoundMgr", "Closing capture modules...");
+            captures_.clear();
+        }
+
+        // Limpieza de módulos playback
+        if (!playbacks_.empty()) {
+            SYS_INFO("SoundMgr", "Closing playback modules...");
+            playbacks_.clear();
+        }
 
         // Desinicializar el contexto global
+        SYS_INFO("SoundMgr", "Uninitializing sound context...");
         ma_context_uninit(&pimpl_->snd_context_);
         initialized_ = false;
 

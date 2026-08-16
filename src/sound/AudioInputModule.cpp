@@ -256,16 +256,16 @@
         running_ = false;
 
         // Parar la captura
-        SYS_INFO("AudioInputModule","Stopping device...");
+        SYS_INFO("AudioInputModule","'" + name_ + "': Stopping device...");
         stopCapture();
 
         // Desinicializa el dispositivo
-        SYS_INFO("AudioInputModule","Uninit device...");
+        SYS_INFO("AudioInputModule","'" + name_ + "': Uninit device...");
         ma_device_uninit(&pimpl_->device);
         is_valid_ = false;
 
         // Limpia el callback
-        SYS_INFO("AudioInputModule","Clearing onframe callback injected...");
+        SYS_INFO("AudioInputModule","'" + name_ + "': Clearing onframe callback injected...");
         clearCallback_OnFrame();
 
         initialized_ = false;

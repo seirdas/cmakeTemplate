@@ -221,7 +221,7 @@ void AppController::close() {
     }
 
     if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
-        SYS_INFO("AppController","Closing GUI subsystem...");
+        SYS_INFO("AppController","Closing net subsystem...");
         net_->close();
     }
 
@@ -262,13 +262,16 @@ void AppController::close() {
 
     
     // Cerrar hilos pendientes de aplicación
-    SYS_INFO("AppController","Waiting for running threads...");
     online_cv_.notify_all();
-    if (consumer_thread_.joinable())
+    if (consumer_thread_.joinable()) {
+        SYS_INFO("AppController","Waiting for consumer thread...");
         consumer_thread_.join();
+    }
 
-    if (test_thread_.joinable())
+    if (test_thread_.joinable()) {
+        SYS_INFO("AppController","Waiting for test thread...");
         test_thread_.join();
+    }
 
 
     SYS_INFO("AppController","AppController closed successfully");

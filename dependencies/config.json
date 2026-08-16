@@ -281,5 +281,5 @@
         "num_threads": 4,
         "models_path": "tts-voices"
     },
-    "version": "0.11.0"
+    "version": "0.11.4"
 }

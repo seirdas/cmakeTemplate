@@ -175,15 +175,19 @@
 
         // lazy_load, parar y unir el hilo reaper antes de tocar/destruir los modelos
         keepalive_cv_.notify_all();
-        if (keepalive_thread_.joinable())
+        if (keepalive_thread_.joinable()) {
+            SYS_INFO("TTSCore","Stopping keepalive thread... ");
             keepalive_thread_.join();
+        }
 
         // Esperar a que terminen las operaciones que se estaban ejecutando
-        std::unique_lock<std::mutex> lock(exit_mtx_);
-        SYS_INFO("TTSCore","Waiting for unfinished jobs... ");
-        exit_cv_.wait(lock, [this] {
-            return active_tasks_ == 0;
-        });
+        if (active_tasks_>0) {
+            std::unique_lock<std::mutex> lock(exit_mtx_);
+            SYS_INFO("TTSCore","Waiting for unfinished jobs... ");
+            exit_cv_.wait(lock, [this] {
+                return active_tasks_ == 0;
+            });
+        }
 
         // Destruye los modelos creados (opcional con cxx, mejor)
         std::lock_guard<std::mutex> lock2(models_mutex_);
