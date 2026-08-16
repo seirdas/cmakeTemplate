@@ -76,6 +76,7 @@
 		windowPosY_(0),
 		fullscreen_(false),
 		theme_selected_("DefaultLight"),
+		transparent_bk_(false),
 		fontSize_(16),
 		deviceRefreshInterval_(5),
 		window_(nullptr),
@@ -134,7 +135,7 @@
 		}
 
 		// Configuración de la ventana GLFW
-		glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE); // Fondo transparente
+		glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, (transparent_bk_) ? GLFW_TRUE : GLFW_FALSE); // Fondo transparente
 		glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);               // Bordes y barra de título
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
@@ -228,8 +229,9 @@
         jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosY_);
         jsonMgr.get_or_set(cfg, "fullscreen", 	fullscreen_);
         jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
-        jsonMgr.get_or_set(cfg, "deviceRefreshInterval", deviceRefreshInterval_);
-        jsonMgr.get_or_set(cfg, "theme_selected", theme_selected_);
+        jsonMgr.get_or_set(cfg, "deviceRefreshInterval",  deviceRefreshInterval_);
+        jsonMgr.get_or_set(cfg, "theme_selected", 		  theme_selected_);
+        jsonMgr.get_or_set(cfg, "transparent_background", transparent_bk_);
 
     }
 

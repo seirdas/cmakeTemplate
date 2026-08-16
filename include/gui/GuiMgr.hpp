@@ -330,6 +330,7 @@ private:
     unsigned int    windowPosY_;        ///< Posición vertical (y) de la ventana
     bool            fullscreen_;        ///< Modo ventana completa activo
     std::string     theme_selected_;    ///< Tema seleccionado
+    bool            transparent_bk_;    ///< Habilita transparencia en el fondo
 
 // Parámetros de fuente de letra
     float              fontSize_;           ///< Tamaño de fuente predeterminado
