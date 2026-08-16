@@ -21,30 +21,31 @@ public:
 
     /**
      * @brief Constructor de AudioPlaybackModule.
-     * @param ctx Contexto de mini audio.
-     * @param device_info Información del dispositivo de audio.
+     * @param ctx (ma_context*) Contexto de mini audio.
+     * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
     AudioPlaybackModule(void* ctx, const void* device_info);
 
     /**
      * @brief Destructor de AudioPlaybackModule.
+     * @note virtual para permitir poliformismo y 
+     *  destrucción segura en clases derivadas
      */
-    ~AudioPlaybackModule();
+    virtual ~AudioPlaybackModule();
 
 
 // Inicialización -----------------------------------------------------------------------
 
     /**
-     * @brief Inicializa el motor de audio
+     * @brief Inicializa el motor de audio para la reproducción
+     * @note virtual para poder "reemplazar" y sobreescribir el método y sus parámetros en clases derivadas
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @param playbackName Nombre asignado a este módulo
-     * @param audioFolder Carpeta donde buscar los archivos de audio de este playback
      * @return true si se inicia correctamente, false en caso contrario.
      */
     bool init(
         void*               config          = nullptr, 
-        std::string const&  playbackName    = "", 
-        std::string const&  audioFolder     = ""
+        std::string const&  playbackName    = ""
     );
 
     /**
@@ -95,80 +96,26 @@ public:
     );
 
     /**
-     * @brief Reproduce un archivo de audio buscándolo por nombre dentro de la carpeta
-     *  configurada para este playback (ver @p audioFolder del constructor).
-     * @param filename Nombre del archivo (ej. "ding.wav"), sin ruta.
-     * @param volume Volumen del sonido (0 a 100)
-     * @param loop Modo de repetición
-     * @param forceStop Fuerza la parada si se desactiva (de lo contrario, deja terminar el wav)
-     * @param pitch Tono del sonido (0.0f - )
-     */
-    void playFromFolder(
-        const std::string&  filename,
-        unsigned short      volume = 100,
-        bool                loop = false,
-        bool                forceStop = false,
-        unsigned short      pitch = 1
-    );
-
-    /**
      * @brief Detiene la reproduccitón de un sonido con el ID especificado.
-     * @param id Identificador del sonido a detener.
+     * @param audioName Nombre del sonido a detener.
+     * @param force Forzar la parada, independientemente 
+     *  del valor de forceStop de la instancia del sonido reproduciéndose.
      */
     void stopAudio(std::string const& audioName, bool force = false);
 
     /**
      * @brief Establece el volumen de un sonido en ejecución.
-     * @param id Identificador del sonido.
+     * @param audioName Nombre del sonido a detener.
      * @param volume Volumen del sonido (0.0f a 1.0f).
      */
     void setVolume(std::string const& audioName, float volume);
 
     /**
      * @brief Establece el tono de un sonido en ejecución.
-     * @param id Identificador del sonido.
+     * @param audioName Nombre del sonido a detener.
      * @param pitch Tono del sonido.
      */
     void setPitch(std::string const& audioName, float pitch);
-
-    /**
-     * @brief Establece la ruta de la carpeta de audios de este módulo
-     */
-    void setAudioFolder(std::string const& audioFolder);
-
-
-// MORSE --------------------------------------------------------------------------------
-
-     /**
-     * @brief Genera y reproduce un mensaje en morse a partir de un texto.
-     * @details El propio módulo convierte el texto a pitidos y lo gestiona igual que un
-     *  audio de archivo (identificado por @p audioName).
-     * @param texto Texto a codificar (letras/números soportados por el diccionario Morse).
-     * @param audioName Nombre con el que se identifica este sonido.
-     * @param frequencyHz Frecuencia del tono (Hz).
-     * @param puntoMs Duración del punto (ms).
-     * @param rayaMs Duración de la raya (ms).
-     * @param espacioEntreSimbolos Silencio entre símbolos de la misma letra (ms).
-     * @param espacioEntreLetras Silencio entre letras de la misma palabra (ms).
-     * @param sampleRate Frecuencia de muestreo (Hz) del audio generado.
-     * @param espacioEntreMorse Duración del silencio entre palabras (ms).
-     * @param volume Volumen del sonido (0 a 100).
-     * @param loop Modo de repetición.
-     * @return true si se ha generado y empezado a reproducir correctamente, false en caso contrario.
-     */
-    bool playMorse(
-        std::string const& texto,
-        std::string const& audioName,
-        float              frequencyHz,
-        unsigned int       puntoMs,
-        unsigned int       rayaMs,
-        unsigned int       espacioEntreSimbolos,
-        unsigned int       espacioEntreLetras,
-        unsigned int       sampleRate,
-        unsigned int       espacioEntreMorse,
-        unsigned short     volume = 100,
-        bool               loop = false
-    );
 
 
 // Parámetros del módulo ----------------------------------------------------------------
@@ -209,8 +156,8 @@ public:
     // obtener un dispositivo libre que no esté reproduciendo (el siguiente, por ejemplo)
 
 
-private:
-
+// #TODO revisar qué cosas deberían ser private y protected
+protected:
 
 // Caché --------------------------------------------------------------------------------
 
@@ -257,32 +204,6 @@ private:
     void t_cache_reaper();
 
 
-// MORSE --------------------------------------------------------------------------------
-
-   /**
-     * @brief Genera el audio (PCM mono, float 32) correspondiente a un texto en morse.
-     * @param texto Texto a codificar (letras/números soportados por el diccionario Morse).
-     * @param frequencyHz Frecuencia del tono (Hz).
-     * @param puntoMs Duración del punto (ms).
-     * @param rayaMs Duración de la raya (ms).
-     * @param espacioEntreSimbolos Silencio entre símbolos de la misma letra (ms).
-     * @param espacioEntreLetras Silencio entre letras de la misma palabra (ms).
-     * @param sampleRate Frecuencia de muestreo (Hz) del audio generado.
-     * @param espacioEntreMorse Duración del silencio entre palabras (ms).
-     * @return Vector de muestras PCM (mono). Vacío si no se generó nada.
-     */
-    std::vector<float> generate_morse_audio(
-        std::string const& texto,
-        float              frequencyHz,
-        unsigned int       puntoMs,
-        unsigned int       rayaMs,
-        unsigned int       espacioEntreSimbolos,
-        unsigned int       espacioEntreLetras,
-        unsigned int       sampleRate,
-        unsigned int       espacioEntreMorse
-    );
-
-    
 /************ Variables ****************************************************************/
 
 // Estructura PIMPL para no depender de la librería en el header
@@ -293,7 +214,6 @@ private:
     bool                    initialized_;           ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>       running_;               ///< flag de aplicación corriendo (para hilos)
     std::string             name_;                  ///< Nombre del módulo
-    std::string             audioFolder_;           ///< Carpeta de archivos de audio de este playback (usada por playFromFolder)
 
 // Listas de sonidos
     mutable std::mutex  playing_sounds_mtx_;        ///< Mutex para el mapa de sonidos

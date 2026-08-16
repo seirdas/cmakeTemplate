@@ -15,6 +15,8 @@
     #include "files/JsonMgr.hpp"    // Para conocer json
     #include "datatypes/MorseDict.hpp"
 
+    #include "sound/PlaybackFile.hpp"
+
 
     // Implementación de miembros de la clase de miniaudio (pimpl_)
     struct SoundMgr::Impl {
@@ -489,14 +491,14 @@
 
         // Crear módulo de audio
         SYS_INFO("SoundMgr", "Initializing playback module: " + usedModuleName);
-        std::unique_ptr<AudioPlaybackModule> apm = std::make_unique<AudioPlaybackModule>(
+        std::unique_ptr<PlaybackFile> apm = std::make_unique<PlaybackFile>(
             &pimpl_->snd_context_,
             selectedDeviceInfo
         );
 
         // Intentar inicializar
         SYS_INFO("SoundMgr", "Initializing playback module...");
-        if (!apm->init(config, playbackName, AudioFilesFolder))
+        if (!apm->init(config, playbackName))
         {
             SYS_WARN("SoundMgr","Failed to initialize playback module");
             return false;
@@ -632,7 +634,7 @@
         ultimoAPM->close();
 
         // Remover el APM de la lista
-        removePlaybackDevice(defDevice);
+        removePlaybackDevice("playbackTest");
 
         return true;
     }
@@ -662,7 +664,10 @@
             continue; 
 
             if(!it->second->isBusy()) {
-                return it->second->playMorse(texto, toneLabel, frequencyHz, morseUnitMs_, morseRayaMs_, morseEspacioEntreSimbolos_, morseEspacioEntreLetras_, morseSampleRate_, espacioEntreMorse, volume, loop);
+
+                // #TODO revisar, solo pasarle esto a un PlaybackMorse
+
+                //return it->second->playMorse(texto, toneLabel, frequencyHz, morseUnitMs_, morseRayaMs_, morseEspacioEntreSimbolos_, morseEspacioEntreLetras_, morseSampleRate_, espacioEntreMorse, volume, loop);
             }
         }
 
