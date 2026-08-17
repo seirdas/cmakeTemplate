@@ -1,4 +1,4 @@
-#include "comms/Persona.hpp"
+#include "logic/comms/Persona.hpp"
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
 #include <cstring>
