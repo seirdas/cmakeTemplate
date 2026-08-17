@@ -11,7 +11,7 @@ class IAppControl;  ///< Declaración implícita
 
 /** 
  * @class CommsCore
- * @brief Clase de gestión de comunicaciones entre personas
+ * @brief Clase de lógica de comunicaciones entre personas
  */
 class CommsCore {
 
@@ -84,7 +84,7 @@ private:
 
 // Conexión con AppController (y módulos)
     IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
-    size_t          last_packet_hash_;  ///< Hash del último data recibido, para comparar duplicados
+    unsigned long   last_packet_hash_;  ///< Hash del último data recibido, para comparar duplicados
 
 // Gestión de personas
     ListaPersonas   personas_;          ///< Lista de personas gestionadas

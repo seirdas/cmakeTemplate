@@ -1,5 +1,14 @@
 #pragma once
 
+
+// Foward declaration
+class IAppControl;
+
+
+/** 
+ * @class TonesCore
+ * @brief Clase de lógica de reproducción de tonos
+ */
 class TonesCore {
 
 public:
@@ -9,7 +18,7 @@ public:
     /**
      * @brief Constructor
      */
-    TonesCore();
+    TonesCore(IAppControl* ctrl = nullptr);
     
     /**
      * @brief Destructor
@@ -20,7 +29,8 @@ public:
 // Inicialización -----------------------------------------------------------------------
 
     /**
-     * @brief Inicializa la lógica de gestión de tonos
+     * @brief Inicializa la lógica de reproducción de tonos
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true si la inicialización fue exitosa, @c false si hubo algún error 
      */
     bool init(void* config);
@@ -52,7 +62,11 @@ private:
 
 /************ Variables ********************************************************/
 
+// Inicialización
     bool        initialized_;   ///< Bandera para indicar inicialización exitosa
 
+// Conexión con AppController (y módulos)
+    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
+    unsigned long   last_packet_hash_;  ///< Hash del último data recibido, para comparar duplicados
 
 };
