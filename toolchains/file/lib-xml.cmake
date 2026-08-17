@@ -36,7 +36,7 @@ fetchcontent_makeavailable(tinyxml2)
 
 # Crear la librería estática
 add_library(tinyxml2_lib STATIC "${tinyxml2_SOURCE_DIR}/tinyxml2.cpp")
-target_include_directories(tinyxml2_lib PUBLIC "${tinyxml2_SOURCE_DIR}")
+target_include_directories(tinyxml2_lib SYSTEM PUBLIC "${tinyxml2_SOURCE_DIR}")
 target_compile_definitions(tinyxml2_lib PUBLIC TINYXML2_DEBUG)
 
 # Omitir warnings de la propia librería

@@ -264,10 +264,23 @@ if(MSVC)
 
   # Opciones de compilación
   target_compile_options(${PROJECT_NAME} PRIVATE
-    /W4                       # Nivel de advertencia 4
-    /w44062                   # Advertencia cuando falta un caso en switch de enum
-    /EHa                     # Manejo de excepciones asíncronas en C++ (compatible con .NET)
-    /MP                       # Compilación multiproceso
+    /W4                     # Advertencias de nivel 4 (alto)
+    /w44062                 # Advertencia cuando falta un caso en switch de enum
+    /Wall                   # Habilita ABSOLUTAMENTE TODAS las advertencias de MSVC
+    /permissive-            # Modos de conformidad estricta con el estándar C++
+    /w44062                 # Warning si falta un case en enum switch
+    /w14263                 # Función miembro que oculta una función virtual de la clase base
+    /w14265                 # Clase con funciones virtuales pero sin destructor virtual
+    /w14296                 # Expresión simplificada (p. ej. unsigned < 0)
+    /w14545                 # Expresión previa a coma no tiene efecto
+    /w14555                 # Expresión sin efecto
+    /w14619                 # Pragmas inválidos
+    /w14826                 # Conversión de puntero firmada/no firmada
+    /w14905                 # Cast de string literal a WCHAR*
+    /w14906                 # Cast de string literal wchar_t a char*
+    /w14928                 # Conversión de copia explícita problemática
+    /EHa                    # Excepciones asíncronas C++ (requerido para /clr)
+    /MP                     # Compilación multiproceso
     # /WX                     # Tratar warnings como errores
 
     # Flags específicos por configuración
@@ -322,7 +335,6 @@ if(MSVC)
     source_group("Include\\CLI.NET" FILES ${CLI_HEADERS})
   endif()
 
-  
   # Incluir el módulo oficial de CMake para localizar el runtime completo
   include(InstallRequiredSystemLibraries)
   
@@ -355,14 +367,19 @@ elseif (MINGW)
     -Wall                       # Habilitar la mayoría de las advertencias comunes
     -Wextra                     # Habilitar advertencias adicionales de buenas prácticas
     -Wpedantic                  # Cumplimiento estricto del estándar ISO C++
-    -Wconversion                # Advertir sobre conversiones de tipos con pérdida de datos
-    -Wshadow                    # Advertir cuando una variable oculta otra de un ámbito superior
-    -Wformat=2                  # Advertencias estrictas para funciones printf/scanf
-    -Wunused-parameter          # Advertir sobre parámetros no utilizados en funciones
-    -Wnon-virtual-dtor          # Advertir si una clase polimórfica no tiene destructor virtual
-    -Wold-style-cast            # Advertir sobre el uso de casts estilo C (usar C++ casts)
-    -Wcast-align                # Advertir sobre punteros con alineación ineficiente
-    -Wdouble-promotion          # Advertir si float se convierte implícitamente a double
+    -Wconversion                # Pérdida de datos en conversiones implícitas
+    -Wshadow                    # Variables que ocultan otras de un ámbito superior
+    -Wformat=2                  # Verificación estricta de printf/scanf
+    -Wunused                    # Parámetros, variables y funciones no usadas
+    -Wnon-virtual-dtor          # Clases polimórficas sin destructor virtual
+    -Wold-style-cast            # Prohibir casts estilo C
+    -Wcast-align                # Punteros con alineación ineficiente
+    -Wdouble-promotion          # Conversión implícita de float a double
+    -Wnull-dereference          # Punteros nulos potenciales
+    -Woverloaded-virtual        # Sobrecargas virtuales ocultas
+    -Wduplicated-cond           # Condiciones duplicadas en if-else (GCC)
+    -Wduplicated-branches       # Ramas idénticas en if-else (GCC)
+    -Wlogical-op                # Uso sospechoso de operadores lógicos (GCC)
     # -Werror                   # Tratar warnings como errores
     
     # Flags específicos por configuración

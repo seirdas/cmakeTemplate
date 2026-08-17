@@ -36,6 +36,6 @@ FetchContent_MakeAvailable(stb)
 # Crear librería INTERFACE
 add_library(stb_lib INTERFACE)
 
-target_include_directories(stb_lib INTERFACE
+target_include_directories(stb_lib SYSTEM INTERFACE
     ${stb_SOURCE_DIR}
 )

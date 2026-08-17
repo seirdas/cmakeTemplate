@@ -4,7 +4,6 @@
 #include "sound/PlayerAudio.hpp"
 #include "sound/PlayerMorse.hpp"
 #include "sound/PlayerTTS.hpp"
-#include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommWrapper
 #include "sound/TTSCore.hpp"
 
 
@@ -14,7 +13,6 @@
     #include <miniaudio.h>
     #include <memory>
     #include <chrono>
-    #include <thread>
     #include <algorithm>
     #include "system/SystemMgr.hpp"
     #include "files/JsonMgr.hpp"    // Para conocer json
@@ -294,7 +292,7 @@
         // /* modificar mientras reproduce */
         ultimoAPM->setVolume("cat", 40);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        ultimoAPM->setVolume("click", 0.3f);
+        ultimoAPM->setVolume("click", 30);
         ultimoAPM->setPitch("cat", 1.7f);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 

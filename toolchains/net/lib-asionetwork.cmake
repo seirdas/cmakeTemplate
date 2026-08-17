@@ -35,7 +35,7 @@ FetchContent_MakeAvailable(asio_network)
 add_library(asio_lib STATIC "${asio_network_SOURCE_DIR}/src/asio.cpp")
 
 # Incluir rutas de encabezado
-target_include_directories(asio_lib PUBLIC "${asio_network_SOURCE_DIR}/include")
+target_include_directories(asio_lib SYSTEM PUBLIC "${asio_network_SOURCE_DIR}/include")
 
 # Macros de compilación
 target_compile_definitions(asio_lib PUBLIC 

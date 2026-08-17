@@ -30,4 +30,4 @@ else()
 endif()
 
 add_library(nlohmann_json INTERFACE)
-target_include_directories(nlohmann_json INTERFACE "${JSON_INSTALL_DIR}/single_include")
+target_include_directories(nlohmann_json SYSTEM INTERFACE "${JSON_INSTALL_DIR}/single_include")

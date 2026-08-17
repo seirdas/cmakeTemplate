@@ -4,6 +4,7 @@
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
     #include "system/SystemMgr.hpp"
+    #include <cmath>
 
     AudioCaptureModule::Impl::Impl(void* context, const void* devInfo) {
         ctx = static_cast<ma_context*>(context);

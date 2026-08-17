@@ -3,7 +3,6 @@
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
     #include <miniaudio.h>
-    #include <cmath>
     #include <limits>
     #include "system/SystemMgr.hpp"
     #include <files/JsonMgr.hpp>

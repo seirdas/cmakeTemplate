@@ -35,7 +35,7 @@ target_compile_definitions(daisysp_lib PUBLIC
   DAISYSP_DESKTOP=1   # Supone entorno de escritorio, no sistema embebido
   _USE_MATH_DEFINES
 )
-target_include_directories(daisysp_lib PUBLIC
+target_include_directories(daisysp_lib SYSTEM
   "${daisysp_SOURCE_DIR}/Include"
   "${daisysp_SOURCE_DIR}/Source"
 )

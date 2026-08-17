@@ -1,10 +1,13 @@
 #pragma once
 
+#include <atomic>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
 #include <memory>           // unique_ptr
+#include <thread>
+
 
 
 // Forward declaration (evita includes en hpp)

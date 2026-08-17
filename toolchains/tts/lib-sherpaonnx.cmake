@@ -153,7 +153,7 @@ if(WIN32)
         add_library(sherpa_lib INTERFACE)
 
         # Incluir headers
-        target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/include")
+        target_include_directories(sherpa_lib SYSTEM INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_BIN_GPU}/include")
 
         # Link de librerías
         foreach(LIB_NAME ${SHERPA_CHECK_LIBS})
@@ -177,7 +177,7 @@ if(WIN32)
         add_library(sherpa_lib INTERFACE)
 
         # Incluir headers (Todos son iguales, cualquier config vale)
-        target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_RELEASE}/include")
+        target_include_directories(sherpa_lib SYSTEM INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_WIN_RELEASE}/include")
 
         # Link de librerías (se va a elegir la de la configuración correspondiente)
         foreach(LIB_NAME ${SHERPA_CHECK_LIBS})
@@ -203,7 +203,7 @@ else()
     add_library(sherpa_lib INTERFACE)
 
     # Incluir headers
-    target_include_directories(sherpa_lib INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_LINUX_BIN}/include")
+    target_include_directories(sherpa_lib SYSTEM INTERFACE "${SHERPA_INSTALL_PATH}/${SHERPA_LINUX_BIN}/include")
 
     # Link de librerías 
     set(SHERPA_LIB_PATH "${SHERPA_INSTALL_PATH}/${SHERPA_LINUX_BIN}/lib")
@@ -225,30 +225,6 @@ else()
     endif()
 
 endif()
-
-# Omitir warnings de la propia librería
-if (MSVC)
-    # --- Configuración para MSVC (Visual Studio) ---
-    target_compile_options(sherpa_lib INTERFACE
-        /W0            # Nivel de advertencia 0 (silencio total)
-        /wd4244        # double a float
-        /wd4305        # truncamiento de constantes
-        /wd4267        # size_t a int
-        /external:W0   # (CMake 3.22+) Silencia cabeceras externas
-    )
-else()
-    # --- Configuración para GCC / Clang / MinGW ---
-    target_compile_options(sherpa_lib INTERFACE
-        -w             # Suprime todos los warnings
-        -Wno-conversion
-        -Wno-sign-compare
-        -Wno-unused-parameter
-        -Wno-unused-variable
-        -Wno-unused-but-set-variable
-        -Wno-shadow
-    )
-endif()
-
 
 
 # =================================
