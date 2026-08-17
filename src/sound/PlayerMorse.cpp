@@ -1,17 +1,17 @@
-#include "sound/PlaybackMorse.hpp"
+#include "sound/PlayerMorse.hpp"
 
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
 
     #include "miniaudio.h"
     #include "system/SystemMgr.hpp"
     #include "datatypes/MorseDict.hpp"
-    #include "sound/APMImp.hpp"
+    #include "sound/APM_Imp.hpp"
     #include <memory>
     #include <cmath>
 
 
-    PlaybackMorse::PlaybackMorse(void* ctx, const void* device_info)
-        : AudioPlaybackModule(ctx, device_info),
+    PlayerMorse::PlayerMorse(std::string const& moduleName, void* ctx, const void* device_info) :
+        AudioPlaybackModule(moduleName, ctx, device_info),
         frequency_Hz_(1350),
         punto_ms_(100),
         raya_ms_(300),
@@ -26,7 +26,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-    bool PlaybackMorse::playMorse(
+    bool PlayerMorse::playMorse(
         std::string const& texto,
         std::string const& audioName,
         unsigned short     volume,
@@ -93,9 +93,40 @@
     }
 
 
+// Parámetros del módulo ----------------------------------------------------------------
+
+    void PlayerMorse::setToneFrequency(float hz) {
+        frequency_Hz_ = hz;
+    }
+
+    void PlayerMorse::setPuntoMs(unsigned int time_ms) {
+        punto_ms_ = time_ms;
+    }
+    
+    void PlayerMorse::setRayaMs(unsigned int time_ms) {
+        raya_ms_ = time_ms;
+    }
+    
+    void PlayerMorse::setEspacioEntreSimbolos(unsigned int time_ms) {
+        espacioEntreSimbolos_ = time_ms;
+    }
+    
+    void PlayerMorse::setEspacioEntreLetras(unsigned int time_ms) {
+        espacioEntreLetras_ = time_ms;
+    }
+    
+    void PlayerMorse::setEspacioEntreMorse(unsigned int time_ms) {
+        espacioEntreMorse_ = time_ms;
+    }
+    
+    void PlayerMorse::setSampleRate(unsigned int hz) {
+        sampleRate_ = hz;
+    }
+
+
     // Generación ---------------------------------------------------------------------------
 
-    std::vector<float> PlaybackMorse::generate_morse_audio(std::string const& texto) {
+    std::vector<float> PlayerMorse::generate_morse_audio(std::string const& texto) {
         
         // Variable para almacenar el audio generado
         std::vector<float> audio;
@@ -103,10 +134,10 @@
         // Recorrer el texto letra por letra
         for (size_t c=0; c < texto.size(); ++c){
 
-            int letra = std::toupper(static_cast<unsigned char>(texto[c]));
+            int letra_mayuscula = std::toupper(static_cast<unsigned char>(texto[c]));
 
             // Espacio: separación entre palabras
-            if(letra == ' '){
+            if(letra_mayuscula == ' '){
                 size_t silentSamples = sampleRate_ * espacioEntreMorse_ / 1000;
                 for (size_t i = 0; i < silentSamples; ++i)
                     audio.push_back(0.0f);
@@ -114,10 +145,10 @@
             }
 
             // Letra no soportada por el diccionario: se ignora
-            if (MORSE_DICT.find(letra) == MORSE_DICT.end())
+            if (MORSE_DICT.find(letra_mayuscula) == MORSE_DICT.end())
                 continue;
 
-            std::string code = MORSE_DICT.at(letra);
+            std::string code = MORSE_DICT.at(letra_mayuscula);
 
             // Generar el pitido de cada letra: puntos, rayas y espacio entre símbolos
             for (size_t s = 0; s < code.size(); ++s) {
@@ -151,35 +182,71 @@
         return audio;
     }
 
+    std::vector<float> PlayerMorse::generate_morse(std::string const& tipo, std::string const& texto) const {
 
-// Parámetros del módulo ----------------------------------------------------------------
+        std::vector<float> audio;
 
-    void PlaybackMorse::setToneFrequency(float hz) {
-        frequency_Hz_ = hz;
-    }
+        // // Comprobar el tipo y sus valores de espacio y frecuencia
+        // if (morseFrequencies_.find(tipo) == morseFrequencies_.end() ||
+        //     espacioEntreMorse_.find(tipo) == espacioEntreMorse_.end()) {
+        //     SYS_WARN("SoundMgr", "generateMorse: tipo desconocido '" + tipo + "'");
+        //     return audio;
+        // }
 
-    void PlaybackMorse::setPuntoMs(unsigned int time_ms) {
-        punto_ms_ = time_ms;
-    }
-    
-    void PlaybackMorse::setRayaMs(unsigned int time_ms) {
-        raya_ms_ = time_ms;
-    }
-    
-    void PlaybackMorse::setEspacioEntreSimbolos(unsigned int time_ms) {
-        espacioEntreSimbolos_ = time_ms;
-    }
-    
-    void PlaybackMorse::setEspacioEntreLetras(unsigned int time_ms) {
-        espacioEntreLetras_ = time_ms;
-    }
-    
-    void PlaybackMorse::setEspacioEntreMorse(unsigned int time_ms) {
-        espacioEntreMorse_ = time_ms;
-    }
-    
-    void PlaybackMorse::setSampleRate(unsigned int hz) {
-        sampleRate_ = hz;
+        // // Guardar esos valores (y la unidad, compartida por todos los tipos)
+        // float        frequencyHz       = morseFrequencies_.at(tipo);
+        // unsigned int espacioEntreMorse = espacioEntreMorse_.at(tipo);
+        // unsigned int unitMs            = morseUnitMs_;
+
+        // Recorrer el texto que nos dan, letra a letra
+        for (size_t c = 0; c < texto.size(); ++c) {
+
+            int letra = std::toupper(static_cast<unsigned char>(texto[c]));
+
+            // Espacio: separación entre palabras
+            if (letra == ' ') {
+                size_t silentSamples = sampleRate_ * espacioEntreMorse_ / 1000;
+                for (size_t i = 0; i < silentSamples; ++i)
+                    audio.push_back(0.0f);
+                continue;
+            }
+
+            // Letra no soportada por el diccionario: se ignora
+            if (MORSE_DICT.find(letra) == MORSE_DICT.end())
+                continue;
+
+            std::string code = MORSE_DICT.at(letra);
+
+            // 4. Generar el pitido de cada letra: puntos, rayas y espacio entre símbolos
+            for (size_t s = 0; s < code.size(); ++s) {
+
+                // Punto = 1 unidad, raya = 3 unidades
+                unsigned int toneMs = (code[s] == '-') ? unit_ms_ * 3 : unit_ms_;
+                size_t toneSamples = sampleRate_ * toneMs / 1000;
+
+                // 5. Generar el tono (onda senoidal) y guardarlo en audio
+                for (size_t i = 0; i < toneSamples; ++i) {
+                    float t = static_cast<float>(i) / sampleRate_;
+                    audio.push_back(sin(2.0f * 3.14159265f * frequency_Hz_ * t));
+                }
+
+                // Silencio entre símbolos de la misma letra (1 unidad)
+                if (s + 1 < code.size()) {
+                    size_t gapSamples = sampleRate_ * unit_ms_ / 1000;
+                    for (size_t i = 0; i < gapSamples; ++i)
+                        audio.push_back(0.0f);
+                }
+            }
+
+            // Espacio entre letras de la misma palabra (3 unidades)
+            if (c + 1 < texto.size() && texto[c + 1] != ' ') {
+                size_t gapSamples = sampleRate_ * unit_ms_ * 3 / 1000;
+                for (size_t i = 0; i < gapSamples; ++i)
+                    audio.push_back(0.0f);
+            }
+        }
+
+        return audio;
     }
 
 
@@ -189,21 +256,21 @@
 // ============================================================
 
 // General ------------------------------------------------------------------------------
-PlaybackMorse::PlaybackMorse(void* ctx, const void* device_info) :
+PlayerMorse::PlayerMorse(void* ctx, const void* device_info) :
     AudioPlaybackModule(nullptr, nullptr)
 {}
 
 // Ejecución ----------------------------------------------------------------------------
-bool PlaybackMorse::playMorse(std::string const&,std::string const&,unsigned short,bool) { return false; }
+bool PlayerMorse::playMorse(std::string const&,std::string const&,unsigned short,bool) { return false; }
 
 // Parámetros del módulo ----------------------------------------------------------------
-void PlaybackMorse::setToneFrequency(float)                 { return; }
-void PlaybackMorse::setPuntoMs(unsigned int)                { return; }
-void PlaybackMorse::setRayaMs(unsigned int)                 { return; }
-void PlaybackMorse::setEspacioEntreSimbolos(unsigned int)   { return; }
-void PlaybackMorse::setEspacioEntreLetras(unsigned int)     { return; }
-void PlaybackMorse::setEspacioEntreMorse(unsigned int)      { return; }
-void PlaybackMorse::setSampleRate(unsigned int)             { return; }
+void PlayerMorse::setToneFrequency(float)                 { return; }
+void PlayerMorse::setPuntoMs(unsigned int)                { return; }
+void PlayerMorse::setRayaMs(unsigned int)                 { return; }
+void PlayerMorse::setEspacioEntreSimbolos(unsigned int)   { return; }
+void PlayerMorse::setEspacioEntreLetras(unsigned int)     { return; }
+void PlayerMorse::setEspacioEntreMorse(unsigned int)      { return; }
+void PlayerMorse::setSampleRate(unsigned int)             { return; }
 
 // Generación ---------------------------------------------------------------------------
 std::vector<float> generate_morse_audio(std::string const&)   { return {}; }

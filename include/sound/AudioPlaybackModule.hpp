@@ -23,7 +23,7 @@ public:
      * @param ctx (ma_context*) Contexto de mini audio.
      * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
-    AudioPlaybackModule(void* ctx, const void* device_info);
+    AudioPlaybackModule(std::string const& moduleName, void* ctx, const void* device_info);
 
     /**
      * @brief Destructor de AudioPlaybackModule.
@@ -141,8 +141,8 @@ public:
     std::string getDeviceName() const;
 
     /**
-     * @brief Obtiene el nombre de este AudioInputModule
-     * @return Nombre de este componente
+     * @brief Obtiene el nombre de este módulo
+     * @return Nombre
      */
     std::string getModuleName() const;
 

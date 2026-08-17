@@ -1,4 +1,4 @@
-#include "sound/PlaybackFile.hpp"
+#include "sound/PlayerAudio.hpp"
 #include "sound/AudioPlaybackModule.hpp"
 
 #if defined MINIAUDIO || defined MINIAUDIO_VERSION
@@ -8,8 +8,8 @@
 
     // General ------------------------------------------------------------------------------
 
-    PlaybackFile::PlaybackFile(void* ctx, const void* device_info)
-        : AudioPlaybackModule(ctx, device_info) 
+    PlayerAudio::PlayerAudio(std::string const& moduleName, void* ctx, const void* device_info)
+        : AudioPlaybackModule(moduleName, ctx, device_info) 
     {
 
     }
@@ -17,7 +17,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-        void PlaybackFile::playFromFolder(
+        void PlayerAudio::playFromFolder(
             std::string const&  filename,
             unsigned short      volume,
             bool                loop,
@@ -37,7 +37,7 @@
 
     // Parámetros del módulo ----------------------------------------------------------------
 
-    void PlaybackFile::setAudioFolder(std::string const& audioFolder) {
+    void PlayerAudio::setAudioFolder(std::string const& audioFolder) {
         audioFolder_ = audioFolder;
     }
 
@@ -47,12 +47,12 @@
 // ============================================================
 
 // General ------------------------------------------------------------------------------
-PlaybackFile::PlaybackFile(void*, const void*) :
-    AudioPlaybackModule(nullptr, nullptr)
+PlayerAudio::PlayerAudio(std::string const&, void*, const void*) :
+    AudioPlaybackModule("", nullptr, nullptr)
 {}
 
 // Ejecución ----------------------------------------------------------------------------
-void PlaybackFile::playFromFolder(
+void PlayerAudio::playFromFolder(
     std::string const&,
     unsigned short,
     bool,
@@ -61,6 +61,6 @@ void PlaybackFile::playFromFolder(
 ) { return; }
 
 // Parámetros del módulo ----------------------------------------------------------------
-void PlaybackFile::setAudioFolder(std::string const&)     { return; }
+void PlayerAudio::setAudioFolder(std::string const&)     { return; }
 
 #endif

@@ -1,6 +1,6 @@
 
 #include "tts/TTSMgr.hpp"
-#include "tts/TTSPlayer.hpp"
+#include "sound/PlayerTTS.hpp"
 #include "files/JsonMgr.hpp"
 #include "sound/SoundMgr.hpp"
 #include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommWrapper
@@ -15,17 +15,16 @@
 // Implementación de puente para clase administrada (iComm)
 struct TTSMgr::Impl {
     iCommBridge commBridge;
-    Impl(TTSMgr* parent) : commBridge(parent) {}
+    Impl(TTSMgr* parent) : commBridge() {}
 };
 
 
 // General ------------------------------------------------------------------------------
 
-TTSMgr::TTSMgr(SoundMgr* snd) :
+TTSMgr::TTSMgr() :
     pimpl_(std::make_unique<Impl>(this)),
     initialized_(false),
-    running_(false),
-    snd_(snd)
+    running_(false)
 {
 
 }
@@ -152,80 +151,7 @@ void TTSMgr::Ejecutar(const TTSPacket& packet) {
 }
 
 
-// TTSCore ------------------------------------------------------------------------------
-
-bool TTSMgr::generateWav(std::string const& modelName, std::string const& text, std::string wavname) {
-    return ttsCore_.generateWav(modelName, text, wavname);
-}
-
-std::vector<std::string> TTSMgr::getAvailableModels() {
-    return ttsCore_.getAvailableModels();
-}
-
-std::vector<std::string> TTSMgr::getLoadedModels() const {
-    return ttsCore_.getLoadedModels();
-}
-
-short TTSMgr::numLoadedModels() const {
-    return ttsCore_.numLoadedModels();
-}
-
-short TTSMgr::numAvailableModels() const {
-    return ttsCore_.numAvailableModels();
-}
-
-
-// Gestión de reproductores TTS ---------------------------------------------------------
-
-bool TTSMgr::addTTSPlayer(std::string const& TTSPlayerName, std::string const& playbackName) {
-    std::lock_guard<std::mutex> lock(queue_mtx_);
-    
-    if (ttsPlayers_.find(TTSPlayerName) != ttsPlayers_.end()) {
-        return false; // Ya existe un reproductor para ese canal/dispositivo
-    }
-
-    // No interesa crear nada si no hay módulo de sonidos para asignar playbacks
-    if (!snd_) {
-        SYS_WARN("TTSMgr","Cannot create TTSPlayer: Sound module not defined");
-        return false;
-    }
-
-    // Creamos el reproductor dedicado
-    std::unique_ptr<TTSPlayer> player = std::make_unique<TTSPlayer>(TTSPlayerName);
-    player->init(TTSPlayerName);
-
-    // Establece el dispositivo de reproducción si se ha indicado
-    if (!playbackName.empty())
-        player->setPlayback(playbackName);
-
-    // INYECCIÓN: Generar audio del texto usando TTSCore
-    player->setCallback_onTextToAudio([this](std::string const& modelName, std::string const& text) -> std::vector<float> {
-        AudioData data = ttsCore_.generate(modelName, text);
-        return data.samples;
-    });
-
-    // INYECCIÓN: Reproducir el audio usando SoundMgr
-    player->setCallback_onAudioToPlayback([this](std::vector<float>& audio, const std::string& playbackName) -> bool {
-        if (!snd_) {
-            SYS_WARN("TTSPlayer","Cannot reproduce audio: Sound module not defined");
-            return false;
-        }
-
-        // #TODO
-    });
-
-    // Guardar en TTSPlayer en la lista de TTSMgr
-    ttsPlayers_[TTSPlayerName] = std::move(player);
-    return true;
-}
-
-bool TTSMgr::removeTTSPlayer(std::string const& name) {
-    std::lock_guard<std::mutex> lock(queue_mtx_);
-    return ttsPlayers_.erase(name) > 0;
-}
-
-
-// TTSPlayer ----------------------------------------------------------------------------
+// PlayerTTS ----------------------------------------------------------------------------
 
 bool TTSMgr::play(
     std::string const& text, 
@@ -239,60 +165,54 @@ bool TTSMgr::play(
         return false;
     }
 
-    // Comprobar si en el playbackName se puede reproducir
-    if (!snd_->isOnManagedCaptures(playbackName)) {
-        SYS_WARN("TTSMgr","Play error: Playback device is not managed");
-        return false;
-    }
-
     //std::unique_lock<std::mutex> lock(queue_mtx_);
 
-    // Comprobar si la entidad existe ya en la info de algún player
-    TTSMgrInfo* myinfo = nullptr;
-    for (auto& it : ttsPlayers_) {
-        for (auto& info : PlayersInfo_[it.first])
-            if(entityName == info.entityName) {
-                myinfo = &info;
-                break;
-            }
-        if (myinfo) break;
-    }
+    // // Comprobar si la entidad existe ya en la info de algún player
+    // TTSMgrInfo* myinfo = nullptr;
+    // for (auto& it : ttsPlayers_) {
+    //     for (auto& info : PlayersInfo_[it.first])
+    //         if(entityName == info.entityName) {
+    //             myinfo = &info;
+    //             break;
+    //         }
+    //     if (myinfo) break;
+    // }
 
-    // Si se ha definido un nuevo modelo de voz, se asigna (exista o no la info)
-    if (!modelName.empty()) {
-        if (!ttsCore_.isModelLoaded(modelName)) {
-            SYS_WARN("TTSMgr","Play error: Model selected doesn't exist");
-            return false;
-        }
-        /* #TODO */
-        //myinfo->model_name_assigned = modelName;
-    }
+    // // Si se ha definido un nuevo modelo de voz, se asigna (exista o no la info)
+    // if (!modelName.empty()) {
+    //     if (!ttsCore_.isModelLoaded(modelName)) {
+    //         SYS_WARN("TTSMgr","Play error: Model selected doesn't exist");
+    //         return false;
+    //     }
+    //     /* #TODO */
+    //     //myinfo->model_name_assigned = modelName;
+    // }
 
-    // Caso cuando no existe la info (info nueva)
-    if (!myinfo) {
-        TTSMgrInfo newInfo;
-        newInfo.entityName = entityName;
+    // // Caso cuando no existe la info (info nueva)
+    // if (!myinfo) {
+    //     TTSMgrInfo newInfo;
+    //     newInfo.entityName = entityName;
 
-        // Si no se ha definido un modelo de voz, elegir uno cualquiera
-        if (modelName.empty()) {
-            std::vector<std::string> models = ttsCore_.getLoadedModels();
-            if (models.empty()) {
-                SYS_WARN("TTSMgr","Play error: Cannot gather any TTS model.");
-                return false;
-            }
-            unsigned short sel = rand() % models.size();
-            /* #TODO */
-            //myinfo->model_name_assigned = modelName;
-        }
+    //     // Si no se ha definido un modelo de voz, elegir uno cualquiera
+    //     if (modelName.empty()) {
+    //         std::vector<std::string> models = ttsCore_.getLoadedModels();
+    //         if (models.empty()) {
+    //             SYS_WARN("TTSMgr","Play error: Cannot gather any TTS model.");
+    //             return false;
+    //         }
+    //         unsigned short sel = rand() % models.size();
+    //         /* #TODO */
+    //         //myinfo->model_name_assigned = modelName;
+    //     }
 
-        // Guardar la entidad en la info
-        newInfo.entityName = entityName;
-    }
+    //     // Guardar la entidad en la info
+    //     newInfo.entityName = entityName;
+    // }
 
     // Desbloqueo de mutex antes de reproducir para evitar deadlocks
     //lock.unlock();
     
-    // Asignar a un TTSPlayer...
+    // Asignar a un PlayerTTS...
     /* #TODO */
 
     // Callback para mostrar texto mientras se está reproduciendo, quitar después

@@ -1,4 +1,4 @@
-#include "tts/TTSCore.hpp"
+#include "sound/TTSCore.hpp"
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
 
@@ -348,7 +348,7 @@
     
     // Control de modelos individuales ------------------------------------------------------
 
-    AudioData TTSCore::generate(std::string const& modelName, std::string const& text) {
+    std::vector<float> TTSCore::generate(std::string const& modelName, std::string const& text) {
         if (!running_) return {};
 
         // Comprobar que el texto contiene algo para generar
@@ -440,24 +440,33 @@
         // Notifica al terminar de generar
         exit_cv_.notify_all();
 
-        // Retornar el audio generado copiando samples y sample_rate a un AudioData
-        AudioData out_audio;
-        out_audio.samples.assign(audio->samples, audio->samples + audio->n);
-        out_audio.sample_rate = audio->sample_rate;
+        /*
+            // Retornar el audio generado copiando samples y sample_rate a un AudioData
+            AudioData out_audio;
+            out_audio.samples.assign(audio->samples, audio->samples + audio->n);
+            out_audio.sample_rate = audio->sample_rate;
+        */
+
+        std::vector<float> samples;
+        samples.assign(audio->samples, audio->samples + audio->n);
+
 
         // Liberar el audio (ya guardado en AudioData)
         SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
 
-        return out_audio;
+        return samples;
     };
 
     bool TTSCore::generateWav(std::string const& modelName, std::string const& text, std::string wavname) {
         
         // Generar audio
-        AudioData audio = generate(modelName, text);
+        std::vector<float> samples = generate(modelName, text);
+
+        // establecer una frecuencia de muestreo ( #TODO revisar )
+        unsigned int sample_rate = 48000;
 
         // Comprobar si se ha generado audio
-        if (audio.empty()) {
+        if (samples.empty()) {
             SYS_WARN("TTSCore", "Cannot generate audio for WAV file: Empty audio generated");
             return false;
         }
@@ -465,9 +474,9 @@
         // Generar archivo de audio
         SYS_INFO("TTSCore","Writing to file...");
         SherpaOnnxWriteWave(
-            audio.samples.data(), 
-            static_cast<int32_t>(audio.samples.size()), 
-            audio.sample_rate, 
+            samples.data(), 
+            static_cast<int32_t>(samples.size()), 
+            sample_rate, 
             (wavname + ".wav").c_str()
         );
 

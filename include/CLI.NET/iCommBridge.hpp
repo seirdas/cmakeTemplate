@@ -22,7 +22,7 @@ public:
      * @brief Constructor.
      * @param parent Puntero a TTSMgr para que el código .NET pueda llamarlo de vuelta
      */
-    iCommBridge(TTSMgr* parent);
+    iCommBridge();
 
     /**
      * @brief Destructor

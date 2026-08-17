@@ -7,14 +7,8 @@
 
 // intentar quitar esto si es posible:
 #include "datatypes/TTSDataTypes.hpp"
-#include "tts/TTSCore.hpp"
+#include "sound/TTSCore.hpp"
 #include "tts/ITTSObserver.hpp"     // Clase para observadores
-
-
-// Declaración implícita
-class TTSCore;
-class SoundMgr;
-class TTSPlayer;
 
 
 class TTSMgr {
@@ -26,7 +20,7 @@ public:
     /**
      * @brief Constructor 
      */
-    TTSMgr(SoundMgr* snd = nullptr);
+    TTSMgr();
     
     /**
      * @brief Destructor 
@@ -73,64 +67,8 @@ public:
      */
     void Ejecutar(const TTSPacket& packet);
 
-    
-// TTSCore ------------------------------------------------------------------------------
 
-    /**
-     * @brief Genera un archivo '.wav' a partir de un texto con una voz determinada
-     * @param modelName Nombre del modelo
-     * @param text Texto del que generar el audio
-     * @param wavname Nombre del archivo resultante
-     * @return @c true Si se ha generado correctamente, @c false en caso contrario
-     */
-    bool generateWav(std::string const& modelName, std::string const& text, std::string wavname);
-
-    /**
-     * @brief Obtiene una lista con los nombres de los modelos disponibles
-     * @note Los nombres SÍ incluyen el tipo de modelo (ej. "vits-piper-*")
-     */
-    std::vector<std::string> getAvailableModels();
-
-    /**
-     * @brief Obtiene una lista con los nombres de los modelos cargados
-     * @note Los nombres NO incluyen el tipo de modelo (ej. "vits-piper-*")
-     * @note Con lazy_load activo, los modelos disponibles se consideran como cargados
-     */
-    std::vector<std::string> getLoadedModels() const;
-
-    /**
-     * @brief Obtiene el número de modelos disponibles
-     */
-    short numAvailableModels() const;
-
-    /**
-     * @brief Obtiene el número de modelos cargados
-     * @returns Número de modelos cargados disponibles
-     *  Con lazy_load activo, NO CUENTA los modelos disponibles no cargados
-     */
-    short numLoadedModels() const;
-
-
-// Gestión de reproductores TTS ---------------------------------------------------------
-
-    /**
-     * @brief Añade un nuevo reproductor TTS
-     * @param TTSPlayerName Nombre del reproductor TTS
-     * @param playbackName Nombre del dispositivo playback por el que se reproducen los audios
-     *  El dispositivo playback debe estar gestionado por el gestor de audio (SoundMgr)
-     * @return @c true si se ha creado el reproductor correctamente, @c false en caso contrario
-     */
-    bool addTTSPlayer(std::string const& TTSPlayerName, std::string const& playbackName = "");
-
-    /**
-     * @brief Borra un reproductor TTS
-     * @param name Nombre del reproductor TTS a borrar
-     * @return @c true si se ha eliminado el reproductor correctamente, @c false en caso contrario
-     */
-    bool removeTTSPlayer(std::string const& name);
-
-
-// TTSPlayer ----------------------------------------------------------------------------
+// PlaybackTTS ----------------------------------------------------------------------------
 
     bool play(
         std::string const& text, 
@@ -169,7 +107,6 @@ private:
 /************ Variables ********************************************************/
 
 // Aliases
-    using TTSPlayers    = std::unordered_map<std::string, std::unique_ptr<TTSPlayer>>;
 
     /**
      * @brief Estructura de información de elementos en reproducción
@@ -197,12 +134,10 @@ private:
     std::condition_variable     queue_cv_;              ///< Conditional variable para mutex de cola
 
 // Módulos
-    SoundMgr*                   snd_;                   ///< Puntero a clase de gestión de audio para reproducción
     TTSCore                     ttsCore_;               ///< Clase núcleo de tts
 
 // Reproductores TTS (usan playback de soundmgr)
-    TTSPlayers                  ttsPlayers_;            ///< Lista de reproductores TTS
-    TTSInfos                    PlayersInfo_;           ///< Lista de información de cada TTSPlayer
+    TTSInfos                    PlayersInfo_;           ///< Lista de información de cada PlaybackTTS
     std::mutex                  playersInfo_mtx_;       ///< Mutex para la lista de información
 
 // Observadores

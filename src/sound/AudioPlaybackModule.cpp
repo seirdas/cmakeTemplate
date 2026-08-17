@@ -9,12 +9,13 @@
     #include "files/JsonMgr.hpp"
     #include <filesystem>               // Controla directorios, rutas, etc.
     
-    #include "sound/APMImp.hpp"         // PIMPL de AudioPlaybackModule
+    #include "sound/APM_Imp.hpp"         // PIMPL de AudioPlaybackModule
 
     // General ------------------------------------------------------------------------------
 
-    AudioPlaybackModule::AudioPlaybackModule(void* ctx, const void* device_info) :
+    AudioPlaybackModule::AudioPlaybackModule(std::string const& moduleName, void* ctx, const void* device_info) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
+        name_(moduleName),
         initialized_(false),
         running_(false),
         globalVol_(100),

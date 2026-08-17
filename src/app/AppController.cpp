@@ -9,7 +9,7 @@
 #include "tts/TTSMgr.hpp"       // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
-#include "comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
+#include "logic/comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
 #include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
 #include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
 #include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
@@ -30,7 +30,6 @@ AppController::AppController() :
     net_(std::make_unique<NetMgr>()),
     gui_(std::make_unique<GuiMgr>(this)),
     snd_(std::make_unique<SoundMgr>()),
-    tts_(std::make_unique<TTSMgr>(snd_.get())),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     voip_(std::make_unique<VoIPMgr>()),
@@ -100,20 +99,12 @@ bool AppController::init(int argc, char** argv) {
     else SYS_INFO("AppController","Network subsystem OK");
 
 
-    // Iniciar gestor de sonidos
+    // Iniciar gestor de sonidos (+TTS)
     SYS_INFO("AppController","Sound subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"sound");
     if(!snd_->init(config_node))
         SYS_ERROR("AppController","Sound subsystem FAIL");
     else SYS_INFO("AppController","Sound subsystem OK");
-
-    // --- prueba temporal ---
-    bool ok = snd_->playMorse("A", "ILS2", "SOS AYUDA");
-    SYS_INFO("AppController", ok ? "playMorse: lanzado" : "playMorse: fallo");
-
-    bool ok2 = snd_->playMorse("B", "VOR1", "SOS AYUDA");
-    SYS_INFO("AppController", ok2 ? "playMorse: lanzado" : "playMorse: fallo");
-    // --- fin prueba temporal ---
 
 
     // Iniciar conexión Totalmix
@@ -148,25 +139,17 @@ bool AppController::init(int argc, char** argv) {
     else SYS_INFO("AppController","FastDDS manager OK");
 
     
-    // Inicialización FastDDS
+    // Inicialización CycloneDDS
     SYS_INFO("AppController","CycloneDDS manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"cyclonedds");
     if(!cds_->init(config_node))
         SYS_WARN("AppController","CycloneDDS manager FAIL");
     else SYS_INFO("AppController","CycloneDDS manager OK");
 
-    
-    // Inicialización de TTS (al final para que no se mezcle en el log)
-    SYS_INFO("AppController","TTS manager loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"tts");
-    if(!tts_->init(config_node))
-        SYS_WARN("AppController","TTS manager FAIL");
-    else SYS_INFO("AppController","TTS manager OK");
 
-
-    // Vincular módulos a través de patrón observador a GUI
-    if (gui_->isInitialized() && tts_->isInitialized())
-        tts_->addObserver(gui_.get());
+    // Vincular módulos a través de patrón observador a GUI ( #TODO )
+    // if (gui_->isInitialized() && tts_->isInitialized())
+    //     tts_->addObserver(gui_.get());
     
 
     // Activar running para los hilos
@@ -221,7 +204,7 @@ void AppController::close() {
     }
 
     if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
-        SYS_INFO("AppController","Closing net subsystem...");
+        SYS_INFO("AppController","Closing GUI subsystem...");
         net_->close();
     }
 
@@ -254,12 +237,6 @@ void AppController::close() {
         SYS_INFO("AppController","Closing CycloneDDS manager...");
         cds_->close();
     }
-
-    if (tts_->isInitialized()) {
-        SYS_INFO("AppController","Closing TTS manager...");
-        tts_->close();
-    }
-
     
     // Cerrar hilos pendientes de aplicación
     online_cv_.notify_all();

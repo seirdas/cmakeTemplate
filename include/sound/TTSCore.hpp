@@ -145,7 +145,7 @@ public:
      * @param text El texto a convertir en audio.
      * @return audio
      */
-    AudioData generate(std::string const& modelName, std::string const& text);
+    std::vector<float> generate(std::string const& modelName, std::string const& text);
 
     /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.

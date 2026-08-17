@@ -10,26 +10,26 @@
 
 
 /**
- * @class AudioInputModule
+ * @class AudioCaptureModule
  * @brief Clase para la captura de audio utilizando miniaudio.
  */
-class AudioInputModule {
+class AudioCaptureModule {
 
 public: 
 
 // General ------------------------------------------------------------------------------
 
     /**
-     * @brief Constructor de AudioInputModule.
+     * @brief Constructor de AudioCaptureModule.
      * @param ctx Contexto de mini audio.
      * @param device_info Información del dispositivo de audio.
      */
-    AudioInputModule(void* ctx, const void* device_info);
+    AudioCaptureModule(std::string const& moduleName, void* ctx, const void* device_info);
 
     /**
-     * @brief Destructor de AudioInputModule.
+     * @brief Destructor de AudioCaptureModule.
      */
-    ~AudioInputModule();
+    ~AudioCaptureModule();
 
 
 // Inicialización -------------------------------------------------------------------
@@ -97,7 +97,7 @@ public:
     std::string getDeviceName() const;
 
     /**
-     * @brief Obtiene el nombre de este AudioInputModule
+     * @brief Obtiene el nombre de este AudioCaptureModule
      * @return Nombre de este componente 
      */
     std::string getModuleName() const;

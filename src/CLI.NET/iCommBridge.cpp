@@ -5,12 +5,14 @@
 
 // General ------------------------------------------------------------------------------
 
-iCommBridge::iCommBridge(TTSMgr* parent) :
+iCommBridge::iCommBridge() :
     initialized_(true)
 {
     // Crea el ref class y lo protege en modo gestionado
-    gcroot<iCommWrapper^>* handle = new gcroot<iCommWrapper^>(gcnew iCommWrapper(parent));
-    managedWrapper_ = static_cast<void*>(handle);
+    
+    /* #TODO Le debería pasar el "padre" para ejecutar acciones de vuelta al código C++ */
+    // gcroot<iCommWrapper^>* handle = new gcroot<iCommWrapper^>(gcnew iCommWrapper(parent));
+    //managedWrapper_ = static_cast<void*>(handle);
 }
 
 iCommBridge::~iCommBridge() {

@@ -2,8 +2,9 @@
 
 #include "sound/AudioPlaybackModule.hpp"
 #include <vector>
+#include <string>
 
-class PlaybackMorse : public AudioPlaybackModule {
+class PlayerMorse : public AudioPlaybackModule {
 
 public:
 
@@ -15,13 +16,13 @@ public:
      * @param ctx (ma_context*) Contexto de mini audio.
      * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
-    PlaybackMorse(void* ctx, const void* device_info);
+    PlayerMorse(std::string const& moduleName, void* ctx, const void* device_info);
 
     /**
      * @brief Destructor del módulo
      *  Utiliza el destructor de la clase padre
      */
-    ~PlaybackMorse() override = default;
+    ~PlayerMorse() override = default;
 
 
 // Ejecución ----------------------------------------------------------------------------
@@ -100,6 +101,16 @@ private:
      */
     std::vector<float> generate_morse_audio(std::string const& texto);
 
+    /**
+    * @brief Genera el audio (PCM mono, float 32) correspondiente a un texto en morse.
+    * @param tipo Radioayuda a la que pertenece el mensaje (ADF1, VOR1...), usada para
+    *  obtener su frecuencia de tono y el espaciado entre palabras desde la config.
+    * @param texto Texto a codificar (letras/números soportados por MORSE_DICT; los
+    *  espacios se interpretan como separación entre palabras).
+    * @return Vector de muestras PCM (mono, @c morseSampleRate_ Hz). Vacío si el tipo no existe.
+    */
+    std::vector<float> generate_morse(std::string const& tipo, std::string const& texto) const;
+
 
 /************ Variables ****************************************************************/
 
@@ -111,5 +122,5 @@ private:
     unsigned int       espacioEntreLetras_;     ///< Silencio entre letras de la misma palabra (ms).
     unsigned int       espacioEntreMorse_;      ///< Duración del silencio entre palabras (loop) (ms).
     unsigned int       sampleRate_;             ///< Frecuencia de muestreo (Hz) del audio generado.
-
+    unsigned int       unit_ms_;                ///< Unidad de tiempo para duraciones
 };

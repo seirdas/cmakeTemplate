@@ -2,7 +2,7 @@
 
 #include "sound/AudioPlaybackModule.hpp"
 
-class PlaybackFile : public AudioPlaybackModule {
+class PlayerAudio : public AudioPlaybackModule {
 
 public:
 
@@ -14,13 +14,13 @@ public:
      * @param ctx (ma_context*) Contexto de mini audio.
      * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
-    PlaybackFile(void* ctx, const void* device_info);
+    PlayerAudio(std::string const& moduleName, void* ctx, const void* device_info);
 
     /**
      * @brief Destructor del módulo
      *  Utiliza el destructor de la clase padre
      */
-    ~PlaybackFile() override = default;
+    ~PlayerAudio() override = default;
 
 
 // Ejecución ----------------------------------------------------------------------------

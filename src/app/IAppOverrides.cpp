@@ -3,7 +3,7 @@
 
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar los módulos de audio
-#include "sound/AudioInputModule.hpp"       // Clase para utilizar las funciones de captura
+#include "sound/AudioCaptureModule.hpp"       // Clase para utilizar las funciones de captura
 #include "sound/AudioPlaybackModule.hpp"    // Clase para utilizar las funciones de playbacks
 #include "tts/TTSMgr.hpp"     // Clase para gestionar TTS
 
@@ -69,7 +69,7 @@ std::vector<std::string> AppController::getAvailableInputDevices() noexcept {
 }
 
 std::vector<std::string> AppController::getManagedCaptures() noexcept {
-    return snd_->getManagedCaptures();
+    return snd_->getCaptureModuleNames();
 }
 
 std::vector<std::string> AppController::getAvailablePlaybackDevices() noexcept {
@@ -161,7 +161,8 @@ bool AppController::TTSgenerate(
     std::string const& text, 
     std::string const& wavname)
     noexcept {
-        return tts_->generateWav(modelName, text, wavname);
+        TTSCore* tts = snd_->getTTSCore();
+        return (tts) ? tts->generateWav(modelName, text, wavname) : false;
     };
 
 bool AppController::TTSPlay(
@@ -197,7 +198,7 @@ bool AppController::addVoiprec(
         //voip_->add_voiprec(voiprecName, networkSendLambda);
 
         // Conectar el flujo de audio de SoundMgr hacia ese VoIPRec específico
-        // Usamos el callback expuesto de AudioInputModule implementado
+        // Usamos el callback expuesto de AudioCaptureModule implementado
         // (Nota: Tendrás que añadir un método en SoundMgr para acceder al dispositivo o setear el callback por índice/nombre)
         
         /* Suponiendo que SoundMgr te permite hacer esto: */
