@@ -21,10 +21,10 @@
 // General ------------------------------------------------------------------------------
 
 AppController::AppController() :
-    initialized_(false),
-    online_mode_(true),
-    running_(false),
     version_("0.0.0"),
+    initialized_(false),
+    running_(false),
+    online_mode_(true),
     argc_(0),
     argv_(nullptr),
     config_filename_("config.json"),
@@ -33,10 +33,19 @@ AppController::AppController() :
     snd_(std::make_unique<SoundMgr>()),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
-    voip_(std::make_unique<VoIPMgr>()),
+    vip_(std::make_unique<VoIPMgr>()),
     com_(std::make_unique<CommsCore>()),
     dds_(std::make_unique<FastDDS>()),
-    cds_(std::make_unique<CycloneDDS>())
+    cds_(std::make_unique<CycloneDDS>()),
+    enable_net_(true),
+    enable_gui_(true),
+    enable_snd_(true),
+    enable_tmx_(true),
+    enable_sym_(true),
+    enable_vip_(true),
+    enable_com_(true),
+    enable_dds_(true),
+    enable_cds_(true)
 {
 
 }
@@ -85,67 +94,83 @@ bool AppController::init(int argc, char** argv) {
     // Iniciar GUI, salir si no se carga bien
     SYS_INFO("AppController","GUI subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"gui");
-    if (!gui_->init(config_node)) {
-        SYS_ERROR("AppController","GUI subsystem FAIL");
-        return false;   // Está diseñado para salir directamente si no hay GUI
+    if (enable_gui_) {
+        if (!gui_->init(config_node)) {
+            SYS_ERROR("AppController","GUI subsystem FAIL");
+            return false;   // Está diseñado para salir directamente si no hay GUI
+        }
+        else SYS_INFO("AppController","GUI subsystem OK");
     }
-    else SYS_INFO("AppController","GUI subsystem OK");
 
 
     // Iniciar gestor de red
     SYS_INFO("AppController","Network subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"network");
-    if(!net_->init(config_node))
-        SYS_ERROR("AppController","Network subsystem FAIL");
-    else SYS_INFO("AppController","Network subsystem OK");
+    if (enable_net_) {
+        if(!net_->init(config_node))
+            SYS_ERROR("AppController","Network subsystem FAIL");
+        else SYS_INFO("AppController","Network subsystem OK");
+    }
 
 
     // Iniciar gestor de sonidos (+TTS)
     SYS_INFO("AppController","Sound subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"sound");
-    if(!snd_->init(config_node))
-        SYS_ERROR("AppController","Sound subsystem FAIL");
-    else SYS_INFO("AppController","Sound subsystem OK");
+    if (enable_snd_) {
+        if(!snd_->init(config_node))
+            SYS_ERROR("AppController","Sound subsystem FAIL");
+        else SYS_INFO("AppController","Sound subsystem OK");
+    }
 
 
     // Iniciar conexión Totalmix
     SYS_INFO("AppController","Totalmix manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"totalmix");
-    if(!tmx_->init(config_node))
-        SYS_WARN("AppController","Totalmix manager FAIL");
-    else SYS_INFO("AppController","Totalmix manager OK");
+    if (enable_tmx_) {
+        if(!tmx_->init(config_node))
+            SYS_WARN("AppController","Totalmix manager FAIL");
+        else SYS_INFO("AppController","Totalmix manager OK");
+    }
 
 
     // Iniciar conexión Symetrix    
     SYS_INFO("AppController","Symetrix manager loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"symetrix");
-    if(!sym_->init(config_node))
-        SYS_WARN("AppController","Symetrix manager FAIL");
-    else SYS_INFO("AppController","Symetrix manager OK");
+    if (enable_sym_) {
+        if(!sym_->init(config_node))
+            SYS_WARN("AppController","Symetrix manager FAIL");
+        else SYS_INFO("AppController","Symetrix manager OK");
+    }
 
     
     // Inicialización lógica Comms
     SYS_INFO("AppController","Comms logic module loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"comms");
-    if(!com_->init(config_node))
-        SYS_WARN("AppController","Comms logic module FAIL");
-    else SYS_INFO("AppController","Comms logic module OK");
+    if (enable_com_) {
+        if(!com_->init(config_node))
+            SYS_WARN("AppController","Comms logic module FAIL");
+        else SYS_INFO("AppController","Comms logic module OK");
+    }
 
     
     // Inicialización FastDDS
-    SYS_INFO("AppController","FastDDS manager loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"fastdds");
-    if(!dds_->init(config_node))
-        SYS_WARN("AppController","FastDDS manager FAIL");
-    else SYS_INFO("AppController","FastDDS manager OK");
+    if (enable_dds_) {
+        SYS_INFO("AppController","FastDDS manager loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"fastdds");
+        if(!dds_->init(config_node))
+            SYS_WARN("AppController","FastDDS manager FAIL");
+        else SYS_INFO("AppController","FastDDS manager OK");
+    }
 
     
     // Inicialización CycloneDDS
-    SYS_INFO("AppController","CycloneDDS manager loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"cyclonedds");
-    if(!cds_->init(config_node))
-        SYS_WARN("AppController","CycloneDDS manager FAIL");
-    else SYS_INFO("AppController","CycloneDDS manager OK");
+    if (enable_cds_) {
+        SYS_INFO("AppController","CycloneDDS manager loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"cyclonedds");
+        if(!cds_->init(config_node))
+            SYS_WARN("AppController","CycloneDDS manager FAIL");
+        else SYS_INFO("AppController","CycloneDDS manager OK");
+    }
 
 
     // Vincular módulos a través de patrón observador a GUI ( #TODO )
@@ -187,6 +212,15 @@ void AppController::loadConfig(void* config) {
     JsonMgr& jsonMgr = JsonMgr::instance();
 
     jsonMgr.get_or_set(cfg, "version",  version_);
+    jsonMgr.get_or_set(cfg, "enable_net_",  enable_net_);
+    jsonMgr.get_or_set(cfg, "enable_gui_",  enable_gui_);
+    jsonMgr.get_or_set(cfg, "enable_snd_",  enable_snd_);
+    jsonMgr.get_or_set(cfg, "enable_tmx_",  enable_tmx_);
+    jsonMgr.get_or_set(cfg, "enable_sym_",  enable_sym_);
+    jsonMgr.get_or_set(cfg, "enable_voip_",  enable_vip_);
+    jsonMgr.get_or_set(cfg, "enable_com_",  enable_com_);
+    jsonMgr.get_or_set(cfg, "enable_dds_",  enable_dds_);
+    jsonMgr.get_or_set(cfg, "enable_cds_",  enable_cds_);
 
 }
 
