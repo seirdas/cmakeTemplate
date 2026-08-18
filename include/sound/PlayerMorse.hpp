@@ -39,7 +39,7 @@ public:
      */
     bool playMorse(
         std::string const& texto,
-        std::string const& audioName,
+        std::string const& audioName    = "",
         unsigned short     volume       = 100,
         bool               loop         = false
     );
@@ -94,22 +94,12 @@ private:
 
 // Generación ---------------------------------------------------------------------------
 
-   /**
+    /**
      * @brief Genera el audio (PCM mono, float 32) correspondiente a un texto en morse.
      * @param texto Texto a codificar (letras/números soportados por el diccionario Morse)
      * @return Vector de muestras PCM (mono). Vacío si no se generó nada.
      */
     std::vector<float> generate_morse_audio(std::string const& texto);
-
-    /**
-    * @brief Genera el audio (PCM mono, float 32) correspondiente a un texto en morse.
-    * @param tipo Radioayuda a la que pertenece el mensaje (ADF1, VOR1...), usada para
-    *  obtener su frecuencia de tono y el espaciado entre palabras desde la config.
-    * @param texto Texto a codificar (letras/números soportados por MORSE_DICT; los
-    *  espacios se interpretan como separación entre palabras).
-    * @return Vector de muestras PCM (mono, @c morseSampleRate_ Hz). Vacío si el tipo no existe.
-    */
-    std::vector<float> generate_morse(std::string const& tipo, std::string const& texto) const;
 
 
 /************ Variables ****************************************************************/
@@ -122,5 +112,4 @@ private:
     unsigned int       espacioEntreLetras_;     ///< Silencio entre letras de la misma palabra (ms).
     unsigned int       espacioEntreMorse_;      ///< Duración del silencio entre palabras (loop) (ms).
     unsigned int       sampleRate_;             ///< Frecuencia de muestreo (Hz) del audio generado.
-    unsigned int       unit_ms_;                ///< Unidad de tiempo para duraciones
 };
