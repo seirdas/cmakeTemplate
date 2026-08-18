@@ -153,9 +153,10 @@
                 ]
             },
             {
-                "name": "TONES",
+                "name": "Reproducción de tonos",
+                "type" : 1,
                 "process_buffer_size": 1024,
-                "sample_rate": 48000,
+                "audioFolder": "audios/RADIO",
                 "device": [
                     {
                         "name":"Dante (1+2)",
@@ -180,50 +181,9 @@
                 ]
             },
             {
-                "name": "MORSE",
-                "frequency_hz": 1350,
-                "punto_ms": 100,
-                "raya_ms": 300,
-                "espacio_entre_simbolos_ms": 100,
-                "espacio_entre_letras_ms": 300,
-                "sample_rate": 48000,
-                "Type": [
-                    {
-                        "name":"ADF1",
-                        "espacioEntreMorse": 7000,
-                        "frequency_hz": 1350
-                    },
-                    {
-                        "name":"ADF2",
-                        "espacioEntreMorse": 7000
-                    },
-                    {
-                        "name":"DME",
-                        "espacioEntreMorse": 7000,
-                        "frequency_hz": 1350
-                    },
-                    {
-                        "name":"ILS1",
-                        "espacioEntreMorse": 7000,
-                        "frequency_hz": 1350
-                    },
-                    {
-                        "name":"ILS2",
-                        "espacioEntreMorse": 7000,
-                        "frequency_hz": 2000
-                    },
-                    {
-                        "name":"VOR1",
-                        "espacioEntreMorse": 7000,
-                        "frequency_hz": 1350
-                    },
-                    {
-                        "name":"VOR2",
-                        "espacioEntreMorse": 7000,
-                        "frequency_hz": 1350
-                    }
-                ],
-                
+                "name": "ADF",
+                "process_buffer_size": 1024,
+                "type" : 2,
                 "device": [
                     {
                         "name":"auriculares",
@@ -245,8 +205,13 @@
                         "channels":2,
                         "channelSelected":1
                     }
-
-                ]
+                ],
+                "frequency_hz": 1350,
+                "punto_ms": 100,
+                "raya_ms": 300,
+                "espacio_entre_simbolos_ms": 100,
+                "espacio_entre_letras_ms": 300,
+                "sample_rate": 48000
             }
         ],
 

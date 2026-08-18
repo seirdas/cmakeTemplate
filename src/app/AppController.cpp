@@ -15,6 +15,7 @@
 #include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
 #include "files/JsonMgr.hpp"    // Gestión de archivos json
 #include "system/SystemMgr.hpp" // Gestión de log del sistema
+#include "sound/PlayerMorse.hpp"
 
 
 // General ------------------------------------------------------------------------------
@@ -255,6 +256,19 @@ void AppController::close() {
 }
 
 bool AppController::run() {
+
+    snd_->addPlayerMorse(nullptr, "MORSE_ALTAVOCES", "");
+    snd_->addPlayerMorse(nullptr, "MORSE_AURICULARES", "");
+
+    PlayerMorse* morse1 = snd_->getPlayerMorse("MORSE_ALTAVOCES");
+    if (morse1)
+        morse1->playMorse("AYUDA");
+
+    PlayerMorse* morse2 = snd_->getPlayerMorse("MORSE_AURICULARES");
+    if (morse2)
+        morse2->playMorse("SOS");
+
+
     SYS_INFO("AppController","Running app...");
     return gui_->run(); // ← Bloquea hasta cerrar
 }
