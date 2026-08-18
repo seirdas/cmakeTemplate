@@ -26,6 +26,14 @@ public:
      * Se asegura de cerrar correctamente el flujo del archivo si estaba abierto.
      */
     ~LogMgr();
+    
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    LogMgr(LogMgr const&) = delete;
+    LogMgr& operator=(LogMgr const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    LogMgr(LogMgr&&) = delete;
+    LogMgr& operator=(LogMgr&&) = delete;
 
 
 // Inicialización y ejecución -----------------------------------------------------------

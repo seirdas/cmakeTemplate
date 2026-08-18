@@ -46,6 +46,14 @@ public:
      */
     ~GuiMgr();
     
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    GuiMgr(GuiMgr const&) = delete;
+    GuiMgr& operator=(GuiMgr const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    GuiMgr(GuiMgr&&) = delete;
+    GuiMgr& operator=(GuiMgr&&) = delete;
+    
     /**
      * @brief Establece el controlador que usa para manejar otras clases.
      */

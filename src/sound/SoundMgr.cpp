@@ -144,25 +144,53 @@
 
         /* PLAYBACKS */
         // Recorrer elementos de playbacks dentro del nodo json (reutilizar json*)
-        config_module_nodes = jsonMgr.getArrayElements(cfg, "Playbacks");
-        for (json* node : config_module_nodes) {
-            
-            // Obtener el nombre para la inicialización
-            std::string name = "";
-            jsonMgr.get(node, "name", name);
+    config_module_nodes = jsonMgr.getArrayElements(cfg, "Playbacks");
+    for (json* node : config_module_nodes) {
 
-            // Comprobar que el nombre no esté vacío
-            if (name.empty()) {
-                SYS_WARN("SoundMgr","Cannot initialize playback module: Name is empty");
-                continue;
-            }
+        // Obtener el nombre para la inicialización
+        std::string name = "";
+        jsonMgr.get(node, "name", name);
 
-            // Identificar el tipo de módulo
-
-            // #TODO
+        // Comprobar que el nombre no esté vacío
+        if (name.empty()) {
+            SYS_WARN("SoundMgr","Cannot initialize playback module: Name is empty");
+            continue;
         }
-    }
 
+        // Identificar el tipo de módulo
+        if (name == "MORSE") {
+            addPlayerMorse(nullptr, name, "");   // el fallback interno elige el primer dispositivo libre
+
+            PlayerMorse* morse = getPlayerMorse(name);
+            if (morse) {
+                float frequencyHz = 1350.0f;
+                jsonMgr.get_or_set(node, "frequency_hz", frequencyHz);
+                morse->setToneFrequency(frequencyHz);
+
+                unsigned int puntoMs = 100;
+                jsonMgr.get_or_set(node, "punto_ms", puntoMs);
+                morse->setPuntoMs(puntoMs);
+
+                unsigned int rayaMs = 300;
+                jsonMgr.get_or_set(node, "raya_ms", rayaMs);
+                morse->setRayaMs(rayaMs);
+
+                unsigned int espacioSimbolos = 100;
+                jsonMgr.get_or_set(node, "espacio_entre_simbolos_ms", espacioSimbolos);
+                morse->setEspacioEntreSimbolos(espacioSimbolos);
+
+                unsigned int espacioLetras = 300;
+                jsonMgr.get_or_set(node, "espacio_entre_letras_ms", espacioLetras);
+                morse->setEspacioEntreLetras(espacioLetras);
+
+                unsigned int sampleRate = 48000;
+                jsonMgr.get_or_set(node, "sample_rate", sampleRate);
+                morse->setSampleRate(sampleRate);
+            }
+        }
+    // #TODO: else if (name == "CCAS" / "TCAS" / "TONES") -> addPlayerAudio(...)
+    }
+}
     bool SoundMgr::close() {
         // No hacer nada si ya se ha cerrado.
         if (!initialized_) return true;
@@ -277,34 +305,34 @@
             return false;
 
         // puntero al APM que acabamos de meter
-        AudioPlaybackModule* ultimoAPM = it->second.get();
+        PlayerAudio* pm = getPlayerAudio("playbackTest");
         SYS_INFO("SoundMgr", "Testing module: '"
-            + ultimoAPM->getModuleName() + "' ("
-            + ultimoAPM->getDeviceName() + ")");
+            + pm->getModuleName() + "' ("
+            + pm->getDeviceName() + ")");
 
         /* reproducir */
-        ultimoAPM->playAudio("audio/ding.mp3", 100, true);
-        ultimoAPM->playAudio("audio/cat.mp3");
+        pm->playAudio("audio/ding.mp3", 100, true);
+        pm->playAudio("audio/cat.mp3");
 
         SYS_INFO("SoundMgr", "Sleep for 500ms...");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // /* modificar mientras reproduce */
-        ultimoAPM->setVolume("cat", 40);
+        pm->setVolume("cat", 40);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        ultimoAPM->setVolume("click", 30);
-        ultimoAPM->setPitch("cat", 1.7f);
+        pm->setVolume("click", 30);
+        pm->setPitch("cat", 1.7f);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         /* cortar música */
-        ultimoAPM->stopAudio("cat", true, 2000, 5000);  // (forzado)
+        pm->stopAudio("cat", true, 2000, 5000);  // (forzado)
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-        ultimoAPM->stopAudio("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
+        pm->stopAudio("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
         // Opcional: limpiar el módulo (destruir sonidos)
-        ultimoAPM->close();
+        pm->close();
 
         // Remover el APM de la lista
         removePlayerAudio("playbackTest");
@@ -529,19 +557,33 @@
         std::string usedDeviceName  = deviceName;    // Nombre completo del dispositivo
         std::string usedModuleName  = moduleName;  // Nombre definitivo del módulo (del param o json)
         JsonMgr& jsonMgr = JsonMgr::instance();
-        if (usedDeviceName.empty() || usedModuleName.empty()) {
-            if (!config) {
-                SYS_WARN("SoundMgr","Cannot retrieve module name");
-                return false;
-            }
-            // Intentar obtener del json el nombre del módulo y el nombre del dispositivo
+
+        // Intentar obtener del json el nombre del módulo y el nombre del dispositivo
+        if (config) {
             if (usedDeviceName.empty())
                 jsonMgr.get(static_cast<json*>(config), "device", usedDeviceName);
-
-            // Intentar obtener del json el nombre del dispositivo
             if (usedModuleName.empty())
                 jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
         }
+
+        // Si sigue vacío, coger el primer dispositivo disponible que no esté ya en uso
+        if (usedDeviceName.empty()) {
+            std::lock_guard<std::mutex> lock(available_playbacks_mtx_);
+            for (std::string const& candidate : available_playbacks_) {
+                bool enUso = false;
+                for (auto const& [name, player] : playersMorse_) {
+                    if (player->getDeviceName() == candidate) {
+                        enUso = true;
+                        break;
+                    }
+                }
+                if (!enUso) {
+                    usedDeviceName = candidate;
+                    break;
+                }
+            }
+        }
+
 
         // Comprobar si se ha obtenido bien el dispositivo
         if (usedDeviceName.empty()) {
@@ -584,8 +626,9 @@
             return false;
         }
 
-        // Guardar en PlayerTTS en la lista de Players
+        // Guardar en la lista de Players de Morse
         playersMorse_[usedModuleName] = std::move(pm);
+        SYS_INFO("SoundMgr", "New playback module added: '" + usedModuleName + "' (" + realDeviceName + ")");
         return true;
     }
 
@@ -636,7 +679,7 @@
 
         // Comprobar si se ha obtenido bien el dispositivo
         if (usedDeviceName.empty()) {
-            SYS_WARN("SoundMgr","addPlayerAudio: Cannot retrieve device name");
+            SYS_WARN("SoundMgr","Cannot retrieve device name");
             return false;
         }
         // Comprobación del nombre: Le ponemos un nombre random si no tiene

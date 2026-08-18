@@ -181,7 +181,12 @@
             },
             {
                 "name": "MORSE",
-                "unit_ms": 100,
+                "frequency_hz": 1350,
+                "punto_ms": 100,
+                "raya_ms": 300,
+                "espacio_entre_simbolos_ms": 100,
+                "espacio_entre_letras_ms": 300,
+                "sample_rate": 48000,
                 "Type": [
                     {
                         "name":"ADF1",

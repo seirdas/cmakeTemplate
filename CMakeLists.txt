@@ -279,6 +279,8 @@ if(MSVC)
     /w14905                 # Cast de string literal a WCHAR*
     /w14906                 # Cast de string literal wchar_t a char*
     /w14928                 # Conversión de copia explícita problemática
+    /wd4820                 # Desactiva: warning C4820: '...': relleno de bytes 'N' agregado después de miembro
+    /wd4866                 # Desactiva Left-to-right evaluation order for operator[]
     /EHa                    # Excepciones asíncronas C++ (requerido para /clr)
     /MP                     # Compilación multiproceso
     # /WX                     # Tratar warnings como errores

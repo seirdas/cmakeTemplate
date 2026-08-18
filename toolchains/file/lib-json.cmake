@@ -30,4 +30,11 @@ else()
 endif()
 
 add_library(nlohmann_json INTERFACE)
+
+# Usar SYSTEM INTERFACE para que MSVC ignore warnings de cabeceras de terceros
 target_include_directories(nlohmann_json SYSTEM INTERFACE "${JSON_INSTALL_DIR}/single_include")
+
+# Desactivar explícitamente el warning C5045 para cualquier target que enlace esta librería
+if(MSVC)
+    target_compile_options(nlohmann_json INTERFACE /wd5045)
+endif()

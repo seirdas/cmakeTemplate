@@ -50,6 +50,14 @@ public:
      */
     ~AppController();
 
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    AppController(AppController const&) = delete;
+    AppController& operator=(AppController const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    AppController(AppController&&) = delete;
+    AppController& operator=(AppController&&) = delete;
+
 
 // Inicialización y ejecución -----------------------------------------------------------
 

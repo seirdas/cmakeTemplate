@@ -41,6 +41,14 @@ public:
      * @brief Destructor de TTSCore.
      */
     ~TTSCore();
+    
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    TTSCore(TTSCore const&) = delete;
+    TTSCore& operator=(TTSCore const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    TTSCore(TTSCore&&) = delete;
+    TTSCore& operator=(TTSCore&&) = delete;    
 
     
 // Ejecución ----------------------------------------------------------------------------

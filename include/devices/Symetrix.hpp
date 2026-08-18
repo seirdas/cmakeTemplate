@@ -56,6 +56,14 @@ public:
      */
     ~Symetrix();
 
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    Symetrix(Symetrix const&) = delete;
+    Symetrix& operator=(Symetrix const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    Symetrix(Symetrix&&) = delete;
+    Symetrix& operator=(Symetrix&&) = delete;
+
 
 // Ejecución ----------------------------------------------------------------------------
 

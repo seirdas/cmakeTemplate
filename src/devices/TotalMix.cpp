@@ -474,8 +474,8 @@ void TotalMix::loadConfig(void* config) {
 
         if (htonl(1) != 1) {   // big-endian byte swap
             int* p = reinterpret_cast<int*>(oscBuf_.ptr);
-            p[0] = htonl(p[0]);
-            p[1] = htonl(p[1]);
+            p[0] = static_cast<int>(htonl(p[0]));
+            p[1] = static_cast<int>(htonl(p[1]));
         }
         oscBuf_.ptr += sizeof(OscTimeTag);
 

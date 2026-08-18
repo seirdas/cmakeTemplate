@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 // Diccionario Morse Internacional — compartido entre motor de audio y visualización UI
-inline const std::unordered_map<char, std::string> MORSE_DICT = {
+inline const std::unordered_map<unsigned char, std::string> MORSE_DICT = {
     {'A',".-"},  {'B',"-..."}, {'C',"-.-."}, {'D',"-.."}, {'E',"."},   {'F',"..-."},
     {'G',"--."}, {'H',"...."}, {'I',".."},   {'J',".---"},{'K',"-.-"}, {'L',".-.."},
     {'M',"--"},  {'N',"-."},   {'O',"---"},  {'P',".--."}, {'Q',"--.-"},{'R',".-."},

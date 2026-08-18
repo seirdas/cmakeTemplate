@@ -25,10 +25,10 @@
     TTSCore::TTSCore(std::size_t const& thread_count) :
         num_threads_(thread_count == 0 ? 1 : thread_count),
         concurrent_init_(false),
+        num_available_models_(0),
+        models_path_(VOICES_PATH),
         lazy_load_(true),
         keep_alive_seconds_(20),
-        models_path_(VOICES_PATH),
-        num_available_models_(0),
         active_tasks_(0),
         num_load_retries_(2),
         running_(false),
