@@ -7,6 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include "sound/AudioPlaybackModule.hpp"
+#include "sound/TTSCore.hpp"          // Para el tipo AudioData (samples + sample_rate)
 
 
 class PlayerTTS : public AudioPlaybackModule {
@@ -22,23 +23,47 @@ public:
      * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
     PlayerTTS(std::string const& moduleName, void* ctx, const void* device_info);
-    
+
     /**
-     * @brief Destructor del módulo
-     *  Utiliza el destructor de la clase padre
+     * @brief Destructor del módulo.
+     *  Para y une el hilo consumidor de textos antes de liberar los
+     *  recursos de audio de la clase padre.
      */
-    ~PlayerTTS() override = default;
+    ~PlayerTTS() override;
+
+
+// Inicialización -----------------------------------------------------------------------
+
+    /**
+     * @brief Inicializa el módulo (motor de audio de la clase padre) y arranca
+     *  el hilo consumidor de textos encargado de generar y reproducir el TTS.
+     * @param config Datos de configuración (diseñado para recibir un puntero a json).
+     * @param playbackName Nombre asignado a este módulo.
+     * @return true si se ha iniciado correctamente, false en caso contrario.
+     */
+    bool init(void* config = nullptr, std::string const& playbackName = "");
+
+    /**
+     * @brief Detiene el hilo consumidor de textos y cierra el módulo
+     *  (motor de audio) de la clase padre.
+     */
+    bool close();
 
 
 // Ejecución ----------------------------------------------------------------------------
 
     /**
-     * @brief 
-     * @param modelName 
-     * @param text 
-     * @return 
+     * @brief Encola un texto para ser convertido a audio (con el modelo indicado)
+     *  y reproducido. El hilo consumidor procesa la cola en orden de llegada.
+     * @details El audio generado se gestiona igual que un audio de archivo o un
+     *  morse (identificado por @p audioName), por lo que se puede usar ese nombre
+     *  con las funciones heredadas de AudioPlaybackModule (setVolume, setPitch, stopAudio...).
+     * @param modelName Nombre del modelo tts a usar
+     * @param text Texto a reproducir
+     * @param audioName Nombre con el que se identifica este sonido una vez generado.
+     * @return true si el texto se ha encolado correctamente, false en caso contrario.
      */
-    bool playTTS(std::string const& modelName, std::string const& text);
+    bool playTTS(std::string const& modelName, std::string const& text, std::string const& audioName);
 
 
 // Inyección de función texto a audio ---------------------------------------------------
@@ -47,13 +72,13 @@ public:
      * @brief Función inyectada que utiliza el núcleo de tts para pasar un texto a audio
      * @param modelName Nombre del modelo tts a usar
      * @param text Texto para convertir a audio
-     * @returns std::vector<float> Vector de muestras de audio en formato float
+     * @returns AudioData Muestras de audio generadas junto con su sample rate real
      */
-    using TTSFunction = std::function<std::vector<float>(std::string const& modelName, std::string const& text)>;
+    using TTSFunction = std::function<AudioData(std::string const& modelName, std::string const& text)>;
 
     /**
      * @brief Registra un callback externo para procesar un texto y devolver una trama de datos de audio.
-     * @param fn Función callback inyectada: std::vector<float> func(std::string const& modelName, std::string const& text)
+     * @param fn Función callback inyectada: AudioData func(std::string const& modelName, std::string const& text)
      */
     void setCallback_onTextToAudio(TTSFunction fn);
 
@@ -100,6 +125,7 @@ private:
     struct queueElement {
         std::string text;       ///< Texto a reproducir
         std::string modelName;  ///< Nombre del modelo de voz TTS a usar
+        std::string audioName;  ///< Nombre con el que se identifica este sonido una vez generado
     };
     std::queue<queueElement>    cola_textos_;       ///< Cola de textos pendientes de reproducir
     std::mutex                  cola_textos_mtx_;   ///< Mutex para cola de textos

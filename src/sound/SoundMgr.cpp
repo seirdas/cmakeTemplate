@@ -676,7 +676,7 @@
         }
 
         // INYECCIÓN: Generar audio del texto usando TTSCore
-        pt->setCallback_onTextToAudio([this](std::string const& modelName, std::string const& text) -> std::vector<float> {
+        pt->setCallback_onTextToAudio([this](std::string const& modelName, std::string const& text) -> AudioData {
             return tts_->generate(modelName, text);
         });
 

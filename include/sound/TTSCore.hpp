@@ -143,9 +143,9 @@ public:
      * @brief Genera un audio a partir de un texto usando un modelo de voz especificado.
      * @param modelName Nombre del modelo (nombre de carpeta sin vits-piper-*)
      * @param text El texto a convertir en audio.
-     * @return audio
+     * @return Audio generado (muestras + sample rate real del modelo usado). Vacío si falla.
      */
-    std::vector<float> generate(std::string const& modelName, std::string const& text);
+    AudioData generate(std::string const& modelName, std::string const& text);
 
     /**
      * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.

@@ -348,7 +348,7 @@
     
     // Control de modelos individuales ------------------------------------------------------
 
-    std::vector<float> TTSCore::generate(std::string const& modelName, std::string const& text) {
+    AudioData TTSCore::generate(std::string const& modelName, std::string const& text) {
         if (!running_) return {};
 
         // Comprobar que el texto contiene algo para generar
@@ -440,33 +440,26 @@
         // Notifica al terminar de generar
         exit_cv_.notify_all();
 
-        /*
-            // Retornar el audio generado copiando samples y sample_rate a un AudioData
-            AudioData out_audio;
-            out_audio.samples.assign(audio->samples, audio->samples + audio->n);
-            out_audio.sample_rate = audio->sample_rate;
-        */
-
-        std::vector<float> samples;
-        samples.assign(audio->samples, audio->samples + audio->n);
-
+        // Retornar el audio generado copiando samples y sample_rate a un AudioData
+        AudioData out_audio;
+        out_audio.samples.assign(audio->samples, audio->samples + audio->n);
+        out_audio.sample_rate = audio->sample_rate;
 
         // Liberar el audio (ya guardado en AudioData)
         SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
 
-        return samples;
+        return out_audio;
     };
 
     bool TTSCore::generateWav(std::string const& modelName, std::string const& text, std::string wavname) {
         
-        // Generar audio
-        std::vector<float> samples = generate(modelName, text);
-
-        // establecer una frecuencia de muestreo ( #TODO revisar )
-        unsigned int sample_rate = 48000;
+        // #revisado por adri: generate() ahora devuelve AudioData (samples + sample_rate real
+        // del modelo), en vez de un vector suelto con una frecuencia inventada. Así el mismo
+        // dato le llega también a PlayerTTS a través del callback inyectado onTextToAudio_cb_.
+        AudioData audio = generate(modelName, text);
 
         // Comprobar si se ha generado audio
-        if (samples.empty()) {
+        if (audio.empty()) {
             SYS_WARN("TTSCore", "Cannot generate audio for WAV file: Empty audio generated");
             return false;
         }
@@ -474,9 +467,9 @@
         // Generar archivo de audio
         SYS_INFO("TTSCore","Writing to file...");
         SherpaOnnxWriteWave(
-            samples.data(), 
-            static_cast<int32_t>(samples.size()), 
-            sample_rate, 
+            audio.samples.data(),
+            static_cast<int32_t>(audio.samples.size()),
+            audio.sample_rate,
             (wavname + ".wav").c_str()
         );
 
@@ -880,7 +873,7 @@
     short   TTSCore::numLoadedModels() const                     { return 0; }
 
     // Datos y control de modelos -----------------------------------------------------------
-    bool    TTSCore::generate(std::string const&, std::string const&, std::string const&) { return false; }
+    AudioData TTSCore::generate(std::string const&, std::string const&) { return {}; }
     int     TTSCore::getSampleRate(std::string const&) const         { return 0; }
     int     TTSCore::getNumSpeakers(std::string const&) const        { return 0; }
     std::string TTSCore::getProccesingText(std::string const&) const { return ""; }

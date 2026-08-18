@@ -1,5 +1,10 @@
 #include "sound/PlayerTTS.hpp"
-#include "system/SystemMgr.hpp"
+
+#if defined MINIAUDIO || defined MINIAUDIO_VERSION
+
+    #include "miniaudio.h"
+    #include "system/SystemMgr.hpp"
+    #include "sound/APM_Imp.hpp"
 
 
 // General ------------------------------------------------------------------------------
@@ -11,10 +16,51 @@
 
     }
 
+    PlayerTTS::~PlayerTTS() {
+        close();
+    }
+
+
+// Inicialización -----------------------------------------------------------------------
+
+    bool PlayerTTS::init(void* config, std::string const& playbackName) {
+
+        // Guardar si ya estaba inicializado antes de llamar al padre (evita relanzar el hilo)
+        bool wasInitialized = initialized_;
+
+        if (!AudioPlaybackModule::init(config, playbackName))
+            return false;
+
+        // Arrancar el hilo consumidor de textos solo la primera vez
+        if (!wasInitialized) {
+            SYS_INFO("PlayerTTS","Starting text consumer thread...");
+            data_consumer_thread_ = std::thread(&PlayerTTS::t_data_consumer, this);
+        }
+
+        return true;
+    }
+
+    bool PlayerTTS::close() {
+        if (!initialized_)
+            return true;
+
+        SYS_INFO("PlayerTTS","Stopping text consumer thread...");
+
+        // Marcar como no corriendo para que el hilo consumidor salga del bucle
+        running_ = false;
+        cola_textos_cv_.notify_all();
+
+        if (data_consumer_thread_.joinable())
+            data_consumer_thread_.join();
+
+        // Cierra el motor de audio y el resto de hilos de la clase padre
+        return AudioPlaybackModule::close();
+    }
+
 
 // Ejecución ----------------------------------------------------------------------------
 
-    bool PlayerTTS::playTTS(std::string const& modelName, std::string const& text) {
+    bool PlayerTTS::playTTS(std::string const& modelName, std::string const& text, std::string const& audioName) {
 
         // Comprobaciones previas
         if (modelName.empty()) {
@@ -25,17 +71,22 @@
             SYS_WARN("PlayerTTS","Cannot play: Text empty.");
             return false;
         }
+        if (audioName.empty()) {
+            SYS_WARN("PlayerTTS","Cannot play: AudioName empty.");
+            return false;
+        }
         if (!onTextToAudio_cb_) {
             SYS_WARN("PlayerTTS","Cannot generate audio: Callback functions don't exist.");
             return false;
         }
 
         std::lock_guard<std::mutex> lock(cola_textos_mtx_);
-        
+
         // Encolamos los datos para que el hilo los procese
         queueElement element;
         element.modelName = modelName;
         element.text = text;
+        element.audioName = audioName;
         cola_textos_.push(element);
 
         // Despertamos al hilo de procesamiento si estaba dormido
@@ -110,8 +161,8 @@
         // Guardar el texto que se está procesando
         texto_en_proceso_ = element.text;
 
-        // Generar audio
-        std::vector<float> audio = onTextToAudio_cb_(element.modelName, element.text);
+        // Generar audio (muestras + sample rate real del modelo usado)
+        AudioData audio = onTextToAudio_cb_(element.modelName, element.text);
         if (audio.empty()) {
             SYS_WARN("PlayerTTS", "Empty audio generated from " + element.modelName);
             texto_en_proceso_.clear();
@@ -119,8 +170,61 @@
         }
 
         // Reproducir audio por el playback
-        
-        // #TODO
+
+        // Crear la instancia de sonido
+        auto inst = std::make_unique<Impl::SoundInstance>();
+
+        // Describir el audio generado (formato, canales, tamaño, puntero a los datos)
+        ma_audio_buffer_config config = ma_audio_buffer_config_init(
+            ma_format_f32,
+            1,
+            audio.samples.size(),
+            audio.samples.data(),
+            nullptr
+        );
+        config.sampleRate = audio.sample_rate;
+
+        // Copiar los datos generados a un buffer propio de miniaudio
+        if (ma_audio_buffer_init_copy(&config, &inst->buffer) != MA_SUCCESS) {
+            SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al crear el buffer de audio");
+            texto_en_proceso_.clear();
+            return false;
+        }
+        inst->isBuffer = true;
+
+        // Envolver el buffer como un sonido reproducible por el motor
+        if (ma_sound_init_from_data_source(&pimpl_->engine, &inst->buffer, 0, nullptr, &inst->sound) != MA_SUCCESS) {
+            ma_audio_buffer_uninit(&inst->buffer);
+            SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al inicializar el sonido");
+            texto_en_proceso_.clear();
+            return false;
+        }
+
+        // Establecer parámetros de la reproducción
+        ma_sound_set_volume(&inst->sound, static_cast<float>(globalVol_) / 100.0f);
+        ma_sound_set_looping(&inst->sound, MA_FALSE);
+
+        // Vincular el fin de la reproducción al endCallback
+        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
+
+        // Guardar parámetros en la instancia de sonido. Aunque un TTS no admite loop ni
+        // volumen por llamada (playTTS no recibe esos parámetros), estos campos los siguen
+        // leyendo funciones heredadas de AudioPlaybackModule sobre este mismo SoundInstance:
+        // - loopMode/forceStop: los usa stopAudio() para decidir cómo cortar el sonido.
+        // - volume: lo usa setModuleVolume() para recalcular el volumen al cambiar el global.
+        inst->loopMode  = false;              // Un TTS nunca repite
+        inst->forceStop = true;               // stopAudio(nombre, true) corta la frase de inmediato
+        inst->name      = element.audioName;
+        inst->volume    = 100;                // Volumen base (playTTS no admite volumen por llamada)
+
+        // Guardar en el mapa y reproducir
+        {
+            std::lock_guard<std::mutex> soundsLock(playing_sounds_mtx_);
+            pimpl_->playing_sounds[element.audioName] = std::move(inst);
+
+            SYS_INFO("PlayerTTS","'" + element.audioName + "': init playing TTS...");
+            ma_sound_start(&pimpl_->playing_sounds[element.audioName]->sound);
+        }
 
         // Limpiar el texto que se está procesando
         texto_en_proceso_.clear();
@@ -130,3 +234,37 @@
 
         return true;
     }
+
+
+#else
+// ============================================================
+//  (Stubs)
+// ============================================================
+
+// General ------------------------------------------------------------------------------
+PlayerTTS::PlayerTTS(std::string const&, void*, const void*) :
+    AudioPlaybackModule("", nullptr, nullptr),
+    onTextToAudio_cb_(nullptr)
+{}
+
+PlayerTTS::~PlayerTTS() {}
+
+// Inicialización -----------------------------------------------------------------------
+bool PlayerTTS::init(void*, std::string const&) { return false; }
+bool PlayerTTS::close()                          { return false; }
+
+// Ejecución ----------------------------------------------------------------------------
+bool PlayerTTS::playTTS(std::string const&, std::string const&, std::string const&) { return false; }
+
+// Inyección de función texto a audio ---------------------------------------------------
+void PlayerTTS::setCallback_onTextToAudio(TTSFunction) { return; }
+void PlayerTTS::clearCallback_onTextToAudio()           { return; }
+bool PlayerTTS::hasCallback_onTextToAudio()             { return false; }
+
+// Hilos --------------------------------------------------------------------------------
+void PlayerTTS::t_data_consumer()                       { return; }
+
+// Procesado de elementos de la cola -----------------------------------------------------
+bool PlayerTTS::reproducir_elemento(queueElement)       { return false; }
+
+#endif

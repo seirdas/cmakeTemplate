@@ -257,6 +257,10 @@ void AppController::close() {
 bool AppController::run() {
     SYS_INFO("AppController","Running app...");
     return gui_->run(); // ← Bloquea hasta cerrar
+
+    
+
+
 }
 
 
