@@ -22,8 +22,8 @@
 
 AppController::AppController() :
     initialized_(false),
-    running_(false),
     online_mode_(true),
+    running_(false),
     version_("0.0.0"),
     argc_(0),
     argv_(nullptr),

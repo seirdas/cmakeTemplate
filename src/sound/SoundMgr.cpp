@@ -305,34 +305,34 @@
             return false;
 
         // puntero al APM que acabamos de meter
-        AudioPlaybackModule* ultimoAPM = it->second.get();
+        PlayerAudio* pm = getPlayerAudio("playbackTest");
         SYS_INFO("SoundMgr", "Testing module: '"
-            + ultimoAPM->getModuleName() + "' ("
-            + ultimoAPM->getDeviceName() + ")");
+            + pm->getModuleName() + "' ("
+            + pm->getDeviceName() + ")");
 
         /* reproducir */
-        ultimoAPM->playAudio("audio/ding.mp3", 100, true);
-        ultimoAPM->playAudio("audio/cat.mp3");
+        pm->playAudio("audio/ding.mp3", 100, true);
+        pm->playAudio("audio/cat.mp3");
 
         SYS_INFO("SoundMgr", "Sleep for 500ms...");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // /* modificar mientras reproduce */
-        ultimoAPM->setVolume("cat", 40);
+        pm->setVolume("cat", 40);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-        ultimoAPM->setVolume("click", 30);
-        ultimoAPM->setPitch("cat", 1.7f);
+        pm->setVolume("click", 30);
+        pm->setPitch("cat", 1.7f);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         /* cortar música */
-        ultimoAPM->stopAudio("cat", true, 2000, 5000);  // (forzado)
+        pm->stopAudio("cat", true, 2000, 5000);  // (forzado)
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-        ultimoAPM->stopAudio("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
+        pm->stopAudio("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
         // Opcional: limpiar el módulo (destruir sonidos)
-        ultimoAPM->close();
+        pm->close();
 
         // Remover el APM de la lista
         removePlayerAudio("playbackTest");
@@ -679,7 +679,7 @@
 
         // Comprobar si se ha obtenido bien el dispositivo
         if (usedDeviceName.empty()) {
-            SYS_WARN("SoundMgr","addPlayerAudio: Cannot retrieve device name");
+            SYS_WARN("SoundMgr","Cannot retrieve device name");
             return false;
         }
         // Comprobación del nombre: Le ponemos un nombre random si no tiene

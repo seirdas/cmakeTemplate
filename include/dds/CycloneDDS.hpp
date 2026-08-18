@@ -31,6 +31,14 @@ public:
      */
     ~CycloneDDS();
 
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    CycloneDDS(CycloneDDS const&) = delete;
+    CycloneDDS& operator=(CycloneDDS const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    CycloneDDS(CycloneDDS&&) = delete;
+    CycloneDDS& operator=(CycloneDDS&&) = delete;
+
 
 // Inicialización -----------------------------------------------------------------------
 

@@ -24,6 +24,14 @@ public:
      */
     ~PlayerMorse() override = default;
 
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    PlayerMorse(PlayerMorse const&) = delete;
+    PlayerMorse& operator=(PlayerMorse const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    PlayerMorse(PlayerMorse&&) = delete;
+    PlayerMorse& operator=(PlayerMorse&&) = delete;
+
 
 // Ejecución ----------------------------------------------------------------------------
 

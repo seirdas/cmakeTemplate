@@ -31,6 +31,14 @@ public:
      */
     ~AudioCaptureModule();
 
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    AudioCaptureModule(AudioCaptureModule const&) = delete;
+    AudioCaptureModule& operator=(AudioCaptureModule const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    AudioCaptureModule(AudioCaptureModule&&) = delete;
+    AudioCaptureModule& operator=(AudioCaptureModule&&) = delete;
+
 
 // Inicialización -------------------------------------------------------------------
 

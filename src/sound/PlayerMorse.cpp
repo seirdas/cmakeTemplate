@@ -136,7 +136,7 @@
         // Recorrer el texto letra por letra
         for (size_t c = 0; c < texto.size(); ++c) {
 
-            int letra_mayuscula = std::toupper(static_cast<unsigned char>(texto[c]));
+            unsigned char letra_mayuscula = std::toupper(static_cast<unsigned char>(texto[c]));
 
             // Espacio: separación entre palabras
             if (letra_mayuscula == ' ') {
@@ -161,7 +161,7 @@
 
                 // Generar el tono (onda senoidal) y guardarlo en audio
                 for (size_t i = 0; i < toneSamples; ++i) {
-                    float t = static_cast<float>(i) / sampleRate_;
+                    float t = static_cast<float>(i) / static_cast<float>(sampleRate_);
                     audio.push_back(sin(2.0f * 3.14159265f * frequency_Hz_ * t));
                 }
 

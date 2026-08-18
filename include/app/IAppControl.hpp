@@ -3,7 +3,7 @@
 #include <string>               // Maneja cadenas de texto
 #include <vector>
 
-class TTSCoreData;
+struct TTSCoreData;
 
 /**
  * @brief Interfaz de intercomunicación entre los miembros de la aplicación.

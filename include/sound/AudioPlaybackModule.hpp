@@ -32,6 +32,15 @@ public:
      */
     virtual ~AudioPlaybackModule();
 
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    AudioPlaybackModule(AudioPlaybackModule const&) = delete;
+    AudioPlaybackModule& operator=(AudioPlaybackModule const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    AudioPlaybackModule(AudioPlaybackModule&&) = delete;
+    AudioPlaybackModule& operator=(AudioPlaybackModule&&) = delete;
+
+
 
 // Inicialización -----------------------------------------------------------------------
 

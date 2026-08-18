@@ -27,6 +27,14 @@ public:
      */
     ~TTSMgr();
 
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    TTSMgr(TTSMgr const&) = delete;
+    TTSMgr& operator=(TTSMgr const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    TTSMgr(TTSMgr&&) = delete;
+    TTSMgr& operator=(TTSMgr&&) = delete;
+
 
 // Ejecución ----------------------------------------------------------------------------
 
