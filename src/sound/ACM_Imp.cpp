@@ -62,7 +62,7 @@
                 if (sampleAbs > peak)
                     peak = sampleAbs;
             }
-            rawValue = static_cast<float>((peak / static_cast<float>(self->max_int16_val_)) * 100.0f); //de 0 a 100
+            rawValue = static_cast<float>(peak) / static_cast<float>(self->max_int16_val_) * 100.0f; //de 0 a 100
             self->peakLevel_ = (self->smoothedValues_) ? self->smooth_level(rawValue, self->peakLevel_) : rawValue;
             if (self->peakLevel_ > 100.0f) self->peakLevel_ = 100.0f; // capar al máximo
             

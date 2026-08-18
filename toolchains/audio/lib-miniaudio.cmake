@@ -38,7 +38,7 @@ fetchcontent_makeavailable(miniaudio)
 add_library(miniaudio_lib STATIC
   ${miniaudio_SOURCE_DIR}/miniaudio.c
 )
-target_include_directories(miniaudio_lib PUBLIC ${miniaudio_SOURCE_DIR})
+target_include_directories(miniaudio_lib SYSTEM PUBLIC ${miniaudio_SOURCE_DIR})
 target_link_libraries(miniaudio_lib PUBLIC
   $<$<PLATFORM_ID:Windows>:               # Windows
     winmm                                 # Bibliotecas de Multimedia de Windows

@@ -13,6 +13,7 @@
 
     AudioCaptureModule::AudioCaptureModule(std::string const& moduleName, void* ctx, const void* device_info) :
     pimpl_(std::make_unique<Impl>(ctx, device_info)),
+    name_(moduleName),
     is_valid_(false),
     initialized_(false),
     running_(false),
@@ -212,12 +213,16 @@
             nullptr, nullptr, 
             &pCaptureDevInfos, &captureDevCount);
 
+        // Comprobar si se han obtenido bien (si no, continúa igual...)
+        if (res != MA_SUCCESS)
+            SYS_WARN("CaptureModule","Failed retrieving available captures");
+
+        // Obtener el dispositivo a partir del nombre (No hace comprobación de duplicados ni inferencia de nombre)
         for (unsigned int i = 0; i < captureDevCount; ++i)
             if (deviceName == pCaptureDevInfos[i].name) {  
                 selectedDeviceInfo = &pCaptureDevInfos[i];
                 break;
             }
-        // No hace comprobación de duplicados ni inferencia de nombre
 
         // Si no encuentra ningún nombre salta fallo
         if(!selectedDeviceInfo){

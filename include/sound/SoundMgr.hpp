@@ -38,6 +38,14 @@ public:
      * @brief Destructor.
      */
     ~SoundMgr();
+    
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    SoundMgr(SoundMgr const&) = delete;
+    SoundMgr& operator=(SoundMgr const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    SoundMgr(SoundMgr&&) = delete;
+    SoundMgr& operator=(SoundMgr&&) = delete;
 
 
 // Inicialización -----------------------------------------------------------------------
@@ -351,10 +359,7 @@ private:
 
 // Listas de dispositivos de audio
     std::vector<std::string>    available_inputs_;          ///< Lista de dispositivos de entrada disponibles
-    std::vector<std::string>    managed_inputs_;            ///< Lista de dispositivos de entrada gestionados
     std::vector<std::string>    available_playbacks_;       ///< Lista de dispositivos playback disponibles
-    std::vector<std::string>    managed_playbacks_;         ///< Lista de dispositivos playback gestionados
-
     mutable std::mutex          available_inputs_mtx_;      ///< Mutex para lista de dispositivos de entrada disponibles
     mutable std::mutex          available_playbacks_mtx_;   ///< Mutex para lista de dispositivos playback disponibles
 
