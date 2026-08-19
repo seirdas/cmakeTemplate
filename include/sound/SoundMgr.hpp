@@ -150,8 +150,8 @@ public:
      */
     bool addPlayerAudio(
         void*               config,
-        std::string const&  moduleName, 
-        std::string const&  deviceName
+        std::string const&  moduleName = "",
+        std::string const&  deviceName = ""
     );
 
     /**
@@ -167,6 +167,12 @@ public:
      * @return Puntero al módulo de reproducción o @c nullptr si no existe con ese nombre
      */
     PlayerAudio* getPlayerAudio(std::string moduleName) const;
+
+    /**
+     * @brief Devuelve una lista con los nombres de todos
+     *  los módulos PlayerAudio agregados.
+     */
+    std::vector<std::string> getPlayerAudioNames() const;
 
 
 // Módulos PlayerMorse ------------------------------------------------------------------
@@ -184,8 +190,8 @@ public:
      */
     bool addPlayerMorse(
         void*               config,
-        std::string const&  moduleName, 
-        std::string const&  deviceName
+        std::string const&  moduleName = "",
+        std::string const&  deviceName = ""
     );
 
     /**
@@ -203,15 +209,10 @@ public:
     PlayerMorse* getPlayerMorse(std::string moduleName) const;
 
     /**
-     * @brief Obtiene el módulo de reproducción de morse de un grupo concreto (ej. "ADF")
-     *  que suena por un dispositivo concreto (ej. "altavoces").
-     * @details No se crea nada hasta que se pide por primera vez ("bajo demanda"):
-     *  la primera llamada lo crea. Las siguientes llamadas devuelven el mismo módulo ya creado.
-     * @param nombre Nombre del grupo de morse (el "name" de la entrada en el json).
-     * @param deviceName Nombre del dispositivo por el que quieres que suene.
-     * @return Puntero al módulo de reproducción o @c nullptr si no existe esa combinación.
+     * @brief Devuelve una lista con los nombres de todos
+     *  los módulos PlayerMorse agregados.
      */
-    PlayerMorse* getPlayerMorse(std::string const& nombre, std::string const& deviceName);
+    std::vector<std::string> getPlayerMorseNames() const;
 
 
 // Módulos PlayerTTS --------------------------------------------------------------------
@@ -229,8 +230,8 @@ public:
      */
     bool addPlayerTTS(
         void*               config,
-        std::string const&  moduleName, 
-        std::string const&  deviceName
+        std::string const&  moduleName = "",
+        std::string const&  deviceName = ""
     );
 
     /**
@@ -246,6 +247,12 @@ public:
      * @return Puntero al módulo de reproducción o @c nullptr si no existe con ese nombre
      */
     PlayerTTS* getPlayerTTS(std::string moduleName) const;
+
+    /**
+     * @brief Devuelve una lista con los nombres de todos
+     *  los módulos PlayerMorse agregados.
+     */
+    std::vector<std::string> getPlayerTTSNames() const;
 
     /**
      * @brief Obtiene el gestor de TTS
@@ -325,6 +332,21 @@ private:
      * @return (ma_device_info*) Información del dispositivo (si se encuentra)
      */
     const void* get_capture_device_info(std::string& myDeviceName) const;
+
+    /**
+     * @brief Helper común para añadir un nuevo módulo a una lista
+     * @tparam MapT 
+     * @param name Nombre del módulo
+     * @param map Mapa al que añadir el módulo
+     * @return @c true Si el módulo se ha añadido, @c false en caso contrario
+     */
+    template <typename MapT>
+    bool add_module(
+        void*               config, 
+        std::string const&  moduleName, 
+        std::string const&  deviceName, 
+        MapT&               map,
+        bool                isCapture);
 
     /**
      * @brief Helper común para eliminar un módulo de una lista

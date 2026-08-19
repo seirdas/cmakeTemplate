@@ -71,7 +71,7 @@
         cleanup_thread_ = std::thread(&AudioPlaybackModule::t_cleanup, this);
 
         // Iniciar el hilo del tiempo de vida de la caché de audios
-        SYS_INFO("PlaybackModule","Starting audio caché cleanup on timeout thread...");
+        SYS_INFO("PlaybackModule","Starting audio cache cleanup on timeout thread...");
         cachereaper_thread_ = std::thread(&AudioPlaybackModule::t_cache_reaper, this);
 
         // Llega hasta aquí si se ha inicializado bien
