@@ -13,7 +13,7 @@ struct AudioData {
     int32_t sample_rate = 0;
 
     // Método utilitario para saber si está vacío
-    bool empty() const { return samples.empty(); }
+    inline bool empty() const { return samples.empty(); }
 };
 
 
@@ -35,7 +35,7 @@ public:
      * @brief Constructor de TTSCore. Recibe el número de hilos a usar para la generación de audios.
      * @param num_threads_ Número de hilos a usar para la generación de audios.
      */
-    TTSCore(std::size_t const& thread_count = std::thread::hardware_concurrency());
+    TTSCore(int const& thread_count = std::thread::hardware_concurrency());
 
     /**
      * @brief Destructor de TTSCore.
@@ -129,14 +129,14 @@ public:
     /**
      * @brief Obtiene el número de modelos disponibles
      */
-    short numAvailableModels() const;
+    unsigned short numAvailableModels() const;
 
     /**
      * @brief Obtiene el número de modelos cargados
      * @returns Número de modelos cargados disponibles. 
      *  Con lazy_load activo, NO CUENTA los modelos disponibles no cargados
      */
-    short numLoadedModels() const;
+    unsigned short numLoadedModels() const;
 
     /**
      * @brief Comprueba si un modelo está cargado
@@ -337,8 +337,8 @@ private:
 
 // Modelos de voz
     TTSModelsMap            loaded_models_;         ///< Mapa de modelos TTS cargados
-    short                   num_available_models_;  ///< Número de modelos disponibles
-    size_t                  num_threads_;           ///< Número de hilos con los que se generarán los audios
+    unsigned short          num_available_models_;  ///< Número de modelos disponibles
+    int                     num_threads_;           ///< Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       ///< Activa/desactiva la inicialización concurrente (experimental)
     std::string             models_path_;           ///< Ruta de carpetas donde residen los modelos
     mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos

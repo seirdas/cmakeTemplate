@@ -22,16 +22,17 @@
 
     // General ------------------------------------------------------------------------------
 
-    TTSCore::TTSCore(std::size_t const& thread_count) :
+    TTSCore::TTSCore(int const& thread_count) :
+        initialized_(false),
+        running_(false),
+        active_tasks_(0),
+        num_available_models_(0),
         num_threads_(thread_count == 0 ? 1 : thread_count),
         concurrent_init_(false),
-        num_available_models_(0),
         models_path_(VOICES_PATH),
         lazy_load_(true),
         keep_alive_seconds_(20),
-        active_tasks_(0),
         num_load_retries_(2),
-        running_(false),
         loading_(false)
     {
 
@@ -85,8 +86,11 @@
             }
         }
 
-        short numLoaded     = (lazy_load_) ? getLoadedModels().size() : numLoadedModels();  // con lazy_load, numLoaded es = 0
-        short numAvailable  = numAvailableModels();
+        // Obtener el número de modelos cargados
+        unsigned short numLoaded    = 
+            (lazy_load_) ? static_cast<unsigned short>(getLoadedModels().size()) : numLoadedModels();  // con lazy_load, numLoaded es = 0
+        unsigned short numAvailable = 
+            numAvailableModels();
 
         // Salir de este init si se ha cerrado la app mientras cargaba modelos
         if (!running_) return false;
@@ -94,6 +98,8 @@
         // Mensaje de info: finalizando init
         std::string msg = std::to_string(numLoaded) + "/" + std::to_string(numAvailable) + " TTS models loaded";
         if (lazy_load_) msg += (" (lazy load enabled)");
+        
+        // Comprobar si se han cargado todos los modelos bien
         if (numLoaded == numAvailable || lazy_load_) {
             SYS_INFO("TTSCore", msg);
         } else {
@@ -141,7 +147,7 @@
         jsonMgr.get_or_set(cfg, "models_path", models_path_);
         
         // Establecer dentro de rango: 0=auto, >max = max
-        unsigned short max_threads = std::thread::hardware_concurrency();
+        unsigned short max_threads = static_cast<unsigned short>(std::thread::hardware_concurrency());
         if (max_threads < 1) max_threads = 1;
         if (num_threads_ == 0) {
             SYS_INFO("TTSCore","Thread_count set auto to max hw concurrency (" + std::to_string(max_threads)+")");
@@ -269,7 +275,7 @@
                 available_models.push_back(entry.path().filename().string());
 
         // Guarda internamente el número de modelos
-        num_available_models_ = static_cast<short>(available_models.size());
+        num_available_models_ = static_cast<unsigned short>(available_models.size());
 
         // Devuelve la lista de nombres de los modelos
         return available_models;
@@ -288,7 +294,7 @@
                 available_models.push_back(fs::absolute(entry.path()).string());
 
         // Guarda internamente el número de modelos
-        num_available_models_ = static_cast<short>(available_models.size());
+        num_available_models_ = static_cast<unsigned short>(available_models.size());
 
         // Devuelve la lista de nombres de los modelos
         return available_models;
@@ -319,11 +325,11 @@
         return {};
     }
 
-    short TTSCore::numAvailableModels() const {
+    unsigned short TTSCore::numAvailableModels() const {
         return num_available_models_;
     }
 
-    short TTSCore::numLoadedModels() const {
+    unsigned short TTSCore::numLoadedModels() const {
         std::lock_guard<std::mutex> lock(models_mutex_);
 
         // en lazy_load, solo devolver el número de los modelos cargados de verdad
@@ -334,7 +340,7 @@
                     num++;
             return num;
         }
-        else return loaded_models_.size();
+        else return static_cast<unsigned short>(loaded_models_.size());
     };
 
     bool TTSCore::isModelLoaded(std::string const& modelName) const {
