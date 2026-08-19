@@ -305,7 +305,7 @@ bool AppController::run() {
     if (pepe != nullptr) {
         pepe->playTTS("en_US-amy-low", "ATIS information alfa connection, hello my name is Adri I like to fly and to play league of legends", "atis1");
         std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-        pepe->stopAudio("atis1", false, 0, 2000);
+        pepe->stop("atis1", false, 0, 2000);
     }
 
 

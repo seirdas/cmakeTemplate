@@ -210,10 +210,10 @@
         // Guardar parámetros en la instancia de sonido. Aunque un TTS no admite loop ni
         // volumen por llamada (playTTS no recibe esos parámetros), estos campos los siguen
         // leyendo funciones heredadas de AudioPlaybackModule sobre este mismo SoundInstance:
-        // - loopMode/forceStop: los usa stopAudio() para decidir cómo cortar el sonido.
+        // - loopMode/forceStop: los usa stop() para decidir cómo cortar el sonido.
         // - volume: lo usa setModuleVolume() para recalcular el volumen al cambiar el global.
         inst->loopMode  = false;              // Un TTS nunca repite
-        inst->forceStop = true;               // stopAudio(nombre, true) corta la frase de inmediato
+        inst->forceStop = true;               // stop(nombre, true) corta la frase de inmediato
         inst->name      = element.audioName;
         inst->volume    = 100;                // Volumen base (playTTS no admite volumen por llamada)
 

@@ -65,7 +65,7 @@ public:
      *  y reproducido. El hilo consumidor procesa la cola en orden de llegada.
      * @details El audio generado se gestiona igual que un audio de archivo o un
      *  morse (identificado por @p audioName), por lo que se puede usar ese nombre
-     *  con las funciones heredadas de AudioPlaybackModule (setVolume, setPitch, stopAudio...).
+     *  con las funciones heredadas de AudioPlaybackModule (setVolume, setPitch, stop...).
      * @param modelName Nombre del modelo tts a usar
      * @param text Texto a reproducir
      * @param audioName Nombre con el que se identifica este sonido una vez generado.

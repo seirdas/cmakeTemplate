@@ -247,7 +247,7 @@
         }
     }
 
-    void AudioPlaybackModule::stopAudio(
+    void AudioPlaybackModule::stop(
         std::string const& audioName, 
         bool force,
         unsigned int fadeOutMs,
@@ -364,6 +364,7 @@
         selectedChannel_ = channel; 
     }
 
+
     // Parámetros del módulo ----------------------------------------------------------------
 
     std::string AudioPlaybackModule::getDeviceName() const {
@@ -378,23 +379,21 @@
         return globalVol_;
     }
 
-    bool AudioPlaybackModule::isPlaying(std::string const& name) const {
+    bool AudioPlaybackModule::isPlaying(std::string const& audioName) const {
         std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
 
-        auto it = pimpl_->playing_sounds.find(name);
+        // Si no hay nombre, devuelve si la lista de sonidos en reproducción está vacía
+        if(audioName.empty()) 
+            return !pimpl_->playing_sounds.empty();
+
+        // si hay nombre, busca si ese nombre está en la lista de sonidos en reproducción
+        auto it = pimpl_->playing_sounds.find(audioName);
         if (it == pimpl_->playing_sounds.end())
             return false;
 
         return ma_sound_is_playing(&it->second->sound);
     }
-
-    bool AudioPlaybackModule::isBusy() const {
-        std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
-
-        // Devuelve si hay algún sonido en la lista de playing_sounds
-        return !pimpl_->playing_sounds.empty();
-    }
-
+    
 
     // Caché --------------------------------------------------------------------------------
 
@@ -767,7 +766,7 @@ bool AudioPlaybackModule::reload()                           { return false; }
 
 // Acciones -----------------------------------------------------------------------------
 void AudioPlaybackModule::playAudio(const std::string&, unsigned short, bool, bool, unsigned short) { return; }
-void AudioPlaybackModule::stopAudio(std::string const&, bool, unsigned int, unsigned int)           { return; }
+void AudioPlaybackModule::stop(std::string const&, bool, unsigned int, unsigned int)           { return; }
 void AudioPlaybackModule::setVolume(std::string const&, unsigned short) { return; }
 void AudioPlaybackModule::setModuleVolume(unsigned short)               { return; }
 void AudioPlaybackModule::setPitch(std::string const&, float)           { return; }

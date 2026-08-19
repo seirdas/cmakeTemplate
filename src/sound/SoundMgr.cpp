@@ -315,10 +315,10 @@
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         /* cortar música */
-        pm->stopAudio("cat", true, 2000, 5000);  // (forzado)
+        pm->stop("cat", true, 2000, 5000);  // (forzado)
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-        pm->stopAudio("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
+        pm->stop("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
         // Opcional: limpiar el módulo (destruir sonidos)

@@ -111,7 +111,7 @@ public:
      * @param fadeOutMs  Parar bajando el volumen progresivamente durante x ms (0 = desactivado).
      * @param pitchOutMs Parar bajando el pitch progresivamente durante x ms (0 = desactivado).
      */
-    void stopAudio(
+    void stop(
         std::string const& audioName, 
         bool force = false,
         unsigned int fadeOutMs = 0,
@@ -145,7 +145,8 @@ public:
      * @param channel Canal seleccionado: 0 = ambos canales, 1 = canal 1, 2 = canal 2.
      */
     void setSelectedChannel(unsigned short channel);
-    
+   
+
 // Parámetros del módulo ----------------------------------------------------------------
 
     /**
@@ -168,22 +169,11 @@ public:
 
     /**
      * @brief Verifica si un audio está en reproducción
-     * @param audioName Nombre del audio
+     * @param audioName Nombre del audio. Si no se proporciona, 
+     *  devuelve si está reproduciendo cualquier cosa en cualquier sitio
      * @return @c true si el sonido está en reproducción, @c false en caso contrario.
      */
-    bool isPlaying(std::string const& audioName) const;
-
-    /**
-    * @brief Comprueba si el módulo tiene algún sonido activo reproduciéndose.
-    * @return true si hay al menos un sonido sin terminar (ocupado), false si está libre.
-    */
-    bool isBusy() const;
-
-    /**
-     * @brief Devuelve el nombre del dispositivo de audio.
-     * @return Nombre del dispositivo.
-     */
-    std::string deviceName() const;
+    bool isPlaying(std::string const& audioName = "") const;
 
 
     // #TODO Añadir método: Cuando se añadan varios dispositivos de reproducción,
