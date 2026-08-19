@@ -292,16 +292,11 @@ void AppController::close() {
 
 bool AppController::run() {
 
-    snd_->addPlayerMorse(nullptr, "MORSE_ALTAVOCES", "");
-    snd_->addPlayerMorse(nullptr, "MORSE_AURICULARES", "");
-
-    PlayerMorse* morse1 = snd_->getPlayerMorse("MORSE_ALTAVOCES");
+    // Prueba simple de PlayerMorse
+    snd_->addPlayerMorse(nullptr, "morse1", "");
+    PlayerMorse* morse1 = snd_->getPlayerMorse("morse1");
     if (morse1)
         morse1->playMorse("AYUDA");
-
-    PlayerMorse* morse2 = snd_->getPlayerMorse("MORSE_AURICULARES");
-    if (morse2)
-        morse2->playMorse("SOS");
 
 
     // Prueba simple de PlayerTTS
@@ -314,15 +309,9 @@ bool AppController::run() {
     }
 
 
-    
-
 
     SYS_INFO("AppController","Running app...");
     return gui_->run(); // ← Bloquea hasta cerrar
-
-    
-
-
 }
 
 
