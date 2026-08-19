@@ -279,7 +279,7 @@ private:
      * @brief Buble bloqueante para permitir entrada
      * de comandos en la terminal
      */
-    void run_cli_loop();
+    bool run_cli_loop();
 
 
 /************ Variables ********************************************************/

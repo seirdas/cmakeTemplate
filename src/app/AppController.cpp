@@ -20,10 +20,13 @@
 
 // Soporte de consola en Linux
 #ifdef _WIN32
+    #include <conio.h> // Para _getch()
     #include <windows.h>
 #else
-    #include <unistd.h> // Para isatty() y STDIN_FILENO
+    #include <termios.h> 
+    #include <unistd.h> 
 #endif
+
 
 // General ------------------------------------------------------------------------------
 
@@ -69,21 +72,7 @@ bool AppController::init(int argc, char** argv) {
     // Obtiene los parámetros de entrada
     this->argc_ = argc;
     this->argv_ = argv;
-
-    // Fallback a uso de terminal
-    if (!enable_gui_) {
-        launch_console();
-    }
-
-    SYS_INFO("AppController","Initializating application...");
-
-
-    // Obtener el nombre del ejecutable e inicializar SystemMgr con ese nombre
-    std::filesystem::path path = std::filesystem::absolute(argv[0]);
-    app_name_ = path.stem().string();
-    SystemMgr::instance().init(app_name_);
-
-
+    
     // Leer valores del json para AppController
     SYS_INFO("AppController","Reading app config files...");
     JsonMgr& jsonMgr = JsonMgr::instance();
@@ -91,22 +80,32 @@ bool AppController::init(int argc, char** argv) {
     // Almacenamiento temporal de nodos de json para cada módulo
     json* config_node = nullptr;
 
-
     // Validar y asignar valores de variables miembro a partir de la config pasada (json)
     if (config)
         loadConfig(config);
-    else
+
+    // Fallback a uso de terminal si no hay GUI
+    if (!enable_gui_)
+        launch_console();
+
+    SYS_INFO("AppController","Initializating application...");
+    if (!config)
         SYS_WARN("AppController","Cannot load config. Using default values.");
 
+
+    // Obtener el nombre del ejecutable e inicializar SystemMgr con ese nombre
+    std::filesystem::path path = std::filesystem::absolute(argv[0]);
+    app_name_ = path.stem().string();
+    SystemMgr::instance().init(app_name_);
 
     // Mostrar versión en log
     SYS_INFO("AppController","Welcome to " + std::string(app_name_) + ", version " + version_ + "!");
 
 
     // Iniciar GUI, salir si no se carga bien
-    SYS_INFO("AppController","GUI subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"gui");
     if (enable_gui_) {
+        SYS_INFO("AppController","GUI subsystem loading...");
         if (!gui_->init(config_node))
             SYS_ERROR("AppController","GUI subsystem FAIL");
         else SYS_INFO("AppController","GUI subsystem OK");
@@ -119,9 +118,9 @@ bool AppController::init(int argc, char** argv) {
     }
 
     // Iniciar gestor de red
-    SYS_INFO("AppController","Network subsystem loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"network");
     if (enable_net_) {
+        SYS_INFO("AppController","Network subsystem loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"network");
         if(!net_->init(config_node))
             SYS_ERROR("AppController","Network subsystem FAIL");
         else SYS_INFO("AppController","Network subsystem OK");
@@ -129,9 +128,9 @@ bool AppController::init(int argc, char** argv) {
 
 
     // Iniciar gestor de sonidos (+TTS)
-    SYS_INFO("AppController","Sound subsystem loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"sound");
     if (enable_snd_) {
+        SYS_INFO("AppController","Sound subsystem loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"sound");
         if(!snd_->init(config_node))
             SYS_ERROR("AppController","Sound subsystem FAIL");
         else SYS_INFO("AppController","Sound subsystem OK");
@@ -139,9 +138,9 @@ bool AppController::init(int argc, char** argv) {
 
 
     // Iniciar conexión Totalmix
-    SYS_INFO("AppController","Totalmix manager loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"totalmix");
     if (enable_tmx_) {
+        SYS_INFO("AppController","Totalmix manager loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"totalmix");
         if(!tmx_->init(config_node))
             SYS_WARN("AppController","Totalmix manager FAIL");
         else SYS_INFO("AppController","Totalmix manager OK");
@@ -149,9 +148,9 @@ bool AppController::init(int argc, char** argv) {
 
 
     // Iniciar conexión Symetrix    
-    SYS_INFO("AppController","Symetrix manager loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"symetrix");
     if (enable_sym_) {
+        SYS_INFO("AppController","Symetrix manager loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"symetrix");
         if(!sym_->init(config_node))
             SYS_WARN("AppController","Symetrix manager FAIL");
         else SYS_INFO("AppController","Symetrix manager OK");
@@ -159,9 +158,9 @@ bool AppController::init(int argc, char** argv) {
 
     
     // Inicialización lógica Comms
-    SYS_INFO("AppController","Comms logic module loading...");
-    config_node = jsonMgr.getSubNode(config_filename_,"comms");
     if (enable_com_) {
+        SYS_INFO("AppController","Comms logic module loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"comms");
         if(!com_->init(config_node))
             SYS_WARN("AppController","Comms logic module FAIL");
         else SYS_INFO("AppController","Comms logic module OK");
@@ -305,31 +304,11 @@ void AppController::close() {
 }
 
 bool AppController::run() {
-
-    // Prueba simple de PlayerMorse
-    snd_->addPlayerMorse(nullptr, "morse1", "");
-    PlayerMorse* morse1 = snd_->getPlayerMorse("morse1");
-    if (morse1)
-        morse1->playMorse("AYUDA");
-
-
-    // Prueba simple de PlayerTTS
-    snd_->addPlayerTTS(nullptr, "pepe", "");
-    PlayerTTS* pepe = snd_->getPlayerTTS("pepe");
-    if (pepe != nullptr) {
-        pepe->playTTS("en_US-amy-low", "ATIS information alfa connection, hello my name is Adri I like to fly and to play league of legends", "atis1");
-        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-        pepe->stop("atis1", false, 0, 2000);
-    }
-
-
     SYS_INFO("AppController","Running app...");
     if (enable_gui_ && gui_ && gui_->isInitialized())
-        return gui_->run(); // Bloquea en la ventana ImGui
-    else {
-        run_cli_loop();       // Bloquea en la consola de comandos de texto
-        return true;
-    }
+        return gui_->run();         // Bloquea en la ventana en modo GUI
+    else
+        return run_cli_loop();      // Bloquea en la consola
 }
 
 
@@ -469,22 +448,77 @@ bool AppController::launch_console() {
     #endif
 }
 
-void AppController::run_cli_loop() {
+bool AppController::run_cli_loop() {
+    
     SYS_INFO("AppController", "Running in CLI Mode. Type 'help' for commands or 'exit' to quit.");
+    
     std::string command;
     
-    while (running_) {
-        if (!(std::cin >> command)) break;
+    // Ocultar cursor en terminales ANSI para eliminar flicker visual
+    //std::cerr << "\033[?25l";
+    
+    SystemMgr::instance().setCliActive(true);
+    SystemMgr::instance().updateCliInput(command); // Pinta el primer prompt
 
-        if (command == "exit" || command == "quit") {
-            close();
-            break;
-        } else if (command == "status") {
-            std::cout << "Online mode: " << (isOnlineMode() ? "YES" : "NO") << "\n";
-        } else if (command == "help") {
-            std::cout << "Commands: status, exit\n";
-        } else {
-            std::cout << "Unknown command: " << command << "\n";
+    #ifndef _WIN32
+        // LINUX: Apagar el "Cooked Mode" y el "Echo" automático de la terminal
+        struct termios oldt, newt;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    #endif
+
+    while (running_) {
+        char c;
+
+        #ifdef _WIN32
+            c = _getch(); // WINDOWS: Lee tecla sin imprimirla en pantalla
+        #else
+            c = getchar(); // LINUX: Como hemos apagado el echo, no se imprime
+        #endif
+
+        // Procesar pulsación
+        if (c == '\n' || c == '\r') {
+            // ENTER: Ejecutar comando
+            SystemMgr::instance().setCliActive(false); 
+            std::cout << "\n"; // Forzar salto real
+            
+            // Lógica de comandos
+            if (command == "exit" || command == "quit") {
+                close();
+                break;
+            } else if (command == "status") {
+                SYS_INFO("CLI", "Online mode: " + std::string(isOnlineMode() ? "YES" : "NO"));
+            } else if (!command.empty()) {
+                SYS_WARN("CLI", "Unknown command: " + command);
+            }
+            
+            command.clear();
+            SystemMgr::instance().setCliActive(true);
+            SystemMgr::instance().updateCliInput(command); // Repinta el prompt vacío
+
+        } else if (c == '\b' || c == 127) {
+            // BACKSPACE (127 en la mayoría de UNIX)
+            if (!command.empty()) {
+                command.pop_back();
+                SystemMgr::instance().updateCliInput(command);
+            }
+        } else if (c >= 32 && c <= 126) {
+            // CARÁCTER IMPRIMIBLE ESTÁNDAR
+            command += c;
+            SystemMgr::instance().updateCliInput(command);
         }
+        // Nota: Ignoramos silenciosamente teclas raras como flechas por ahora
     }
+
+    // Restaurar visibilidad del cursor al salir
+    //std::cerr << "\033[?25h" << std::flush;
+
+    #ifndef _WIN32
+        // LINUX: Restaurar la terminal a su estado original al salir
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    #endif
+
+    return true;
 }

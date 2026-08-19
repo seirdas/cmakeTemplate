@@ -37,15 +37,6 @@ SystemMgr& SystemMgr::instance() {
     return instance;
 }
 
-SystemMgr::SystemMgr()
-{
-
-}
-
-SystemMgr::~SystemMgr() {
-    
-}
-
 
 // Datos de aplicación ------------------------------------------------------------------
 
@@ -95,146 +86,157 @@ bool SystemMgr::isInitialized() const {
 
 // Log ----------------------------------------------------------------------------------
 
-void SystemMgr::error(std::string const& module, std::string const& msg) {
-    std::string prefix = "[ERROR]   ";
+void SystemMgr::info(std::string const& module, std::string const& msg) {
+    std::string prefix = "[INFO]   ";
     std::string module_brackets = "[" + module + "]";
-    const int width = 20; // Ancho estandarizado
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(width) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
     log_.write(ss.str());
-    errlog_.write(ss.str());
     
-    // Para la consola
+    // Protección para la consola
     std::lock_guard<std::mutex> lock(console_mtx);
-    std::cerr << ANSI_RED << prefix 
-              << std::left << std::setw(width) << module_brackets 
-              << msg << ANSI_RESET << std::endl;
 
-    // Mostrar también ventana de error
-    showPopup(msg, app_name_);            // <- !! Bloqueante
+    // Borra el prefijo de comandos
+    if (is_cli_active_)
+        std::cerr << "\r\033[2K";
+
+    // Escribir el mensaje
+    std::cerr << prefix 
+              << std::left << std::setw(split_width_) << module_brackets 
+              << msg << std::endl;
+
+    // Poner otra vez el prefijo de comandos
+    if (is_cli_active_)
+        redrawPrompt_unlocked();
+
 }
 
 void SystemMgr::warning(std::string const& module, std::string const& msg) {
     std::string prefix = "[WARN]   ";
     std::string module_brackets = "[" + module + "]";
-    const int width = 20; // Ancho estandarizado
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(width) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
     log_.write(ss.str());
     errlog_.write(ss.str());
     
-    // Para la consola
+    // Protección para la consola
     std::lock_guard<std::mutex> lock(console_mtx);
+
+    // Borra el prefijo de comandos
+    if (is_cli_active_)
+        std::cerr << "\r\033[2K";
+
+    // Escribir el mensaje
     std::cerr << ANSI_YELLOW << prefix 
-              << std::left << std::setw(width) << module_brackets 
+              << std::left << std::setw(split_width_) << module_brackets 
               << msg << ANSI_RESET << std::endl;
+
+    // Poner otra vez el prefijo de comandos
+    if (is_cli_active_)
+        redrawPrompt_unlocked();
 }
 
-void SystemMgr::info(std::string const& module, std::string const& msg) {
-    std::string prefix = "[INFO]   ";
+void SystemMgr::error(std::string const& module, std::string const& msg) {
+    std::string prefix = "[ERROR]   ";
     std::string module_brackets = "[" + module + "]";
-    const int width = 20; // Ancho estandarizado
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(width) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
     log_.write(ss.str());
+    errlog_.write(ss.str());
     
-    // Para la consola
-    std::lock_guard<std::mutex> lock(console_mtx);
-    std::cerr << prefix 
-              << std::left << std::setw(width) << module_brackets 
-              << msg << std::endl;
+    // Protección para la consola
+    std::unique_lock<std::mutex> lock(console_mtx);
+
+    // Borra el prefijo de comandos
+    if (is_cli_active_)
+        std::cerr << "\r\033[2K";
+
+    // Escribir el mensaje
+    std::cerr << ANSI_RED << prefix 
+              << std::left << std::setw(split_width_) << module_brackets 
+              << msg << ANSI_RESET << std::endl;
+
+    // Poner otra vez el prefijo de comandos
+    if (is_cli_active_)
+        redrawPrompt_unlocked();
+
+    // Liberar el mutex para el popup
+    lock.unlock();
+
+    // Mostrar también ventana de error
+    show_popup(msg, app_name_);            // <- !! Bloqueante
 }
 
 void SystemMgr::solved(std::string const& module, std::string const& msg) {
     std::string prefix = "[SOLV]   ";
     std::string module_brackets = "[" + module + "]";
-    const int width = 20; // Ancho estandarizado
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(width) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
     log_.write(ss.str());
     errlog_.write(ss.str());
     
-    // Para la consola
+    // Protección para la consola
     std::lock_guard<std::mutex> lock(console_mtx);
+
+    // Borra el prefijo de comandos
+    if (is_cli_active_)
+        std::cerr << "\r\033[2K";
+
+    // Escribir el mensaje
     std::cerr << ANSI_GREEN << prefix 
-              << std::left << std::setw(width) << module_brackets 
+              << std::left << std::setw(split_width_) << module_brackets 
               << msg << ANSI_RESET << std::endl;
+
+    // Poner otra vez el prefijo de comandos
+    if (is_cli_active_)
+        redrawPrompt_unlocked();
 }
 
 
-// Conversiones -------------------------------------------------------------------------
+// Escritura en consola -----------------------------------------------------------------
 
-inline std::wstring stringToWString(std::string const& str) {
-    if (str.empty()) return {};
-
-    #ifdef _WIN32
-        int size = MultiByteToWideChar(CP_UTF8, 0,
-                                    str.c_str(), static_cast<int>(str.size()),
-                                    nullptr, 0);
-        if (size <= 0) return {};
-
-        std::wstring result(size, L'\0');
-        MultiByteToWideChar(CP_UTF8, 0,
-                            str.c_str(), static_cast<int>(str.size()),
-                            result.data(), size);
-        return result;
-
-    #else
-        // Asegura que el locale soporte UTF-8
-        const char* locale = setlocale(LC_ALL, "");
-        (void)locale;
-
-        std::mbstate_t state{};
-        const char* src = str.c_str();
-        std::size_t size = std::mbsrtowcs(nullptr, &src, 0, &state);
-        if (size == static_cast<std::size_t>(-1)) return {};
-
-        std::wstring result(size, L'\0');
-        src = str.c_str();  // mbsrtowcs avanza el puntero, hay que resetearlo
-        std::mbsrtowcs(result.data(), &src, size, &state);
-        return result;
-    #endif
+void SystemMgr::setCliActive(bool active) {
+    std::lock_guard<std::mutex> lock(console_mtx);
+    is_cli_active_ = active;
 }
 
-inline std::string wstringToString(std::wstring const& ws) {
-    if (ws.empty()) return "";
+void SystemMgr::updateCliInput(const std::string& input) {
+    std::lock_guard<std::mutex> lock(console_mtx);
+    current_cli_input_ = input;
+    if (is_cli_active_) 
+        redrawPrompt_unlocked();
+}
 
-    #ifdef _WIN32
-        // 1. Obtener el tamaño necesario para el buffer string (ANSI/UTF-8)
-        int size_needed = WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), static_cast<int>(ws.size()), NULL, 0, NULL, NULL);
-        
-        // 2. Crear el string y convertir
-        std::string strTo(size_needed, 0);
-        WideCharToMultiByte(CP_UTF8, 0, ws.c_str(), static_cast<int>(ws.size()), &strTo[0], size_needed, NULL, NULL);
-        return strTo;
-    #else
-        // Versión para Linux/Posix
-        std::mbstate_t state = std::mbstate_t();
-        const wchar_t* src = ws.c_str();
-        
-        // 1. Calcular tamaño necesario
-        size_t len = std::wcsrtombs(NULL, &src, 0, &state);
-        if (len == static_cast<size_t>(-1)) return "";
+void SystemMgr::redrawPrompt() {
+    std::lock_guard<std::mutex> lock(console_mtx);
+    redrawPrompt_unlocked();
+}
 
-        // 2. Convertir
-        std::string strTo(len, 0);
-        std::wcsrtombs(&strTo[0], &src, len, &state);
-        return strTo;
-    #endif
+// General ------------------------------------------------------------------------------
+
+SystemMgr::SystemMgr() :
+    split_width_(20),
+    is_cli_active_(false)
+{
+
+}
+
+SystemMgr::~SystemMgr() {
+    
 }
 
 
 // Pop-ups ------------------------------------------------------------------------------
 
-void SystemMgr::showPopup(std::string const& msg, std::string const& title, bool bloq) {
+void SystemMgr::show_popup(std::string const& msg, std::string const& title, bool bloq) {
     #ifdef _WIN32
 
         if(bloq)
@@ -257,4 +259,14 @@ void SystemMgr::showPopup(std::string const& msg, std::string const& title, bool
             _exit(1); // si falla
         }
     #endif
+}
+
+
+// Redraw privado -----------------------------------------------------------------------
+
+void SystemMgr::redrawPrompt_unlocked() {
+    // \r       -> Mueve el cursor al inicio de la línea
+    // \033[K   -> Borra únicamente desde el cursor hasta el final
+    std::cerr << "\r" << ANSI_BRIGHT_CYAN << app_name_ << "> " << ANSI_RESET 
+              << current_cli_input_ << "\033[K" << std::flush;
 }

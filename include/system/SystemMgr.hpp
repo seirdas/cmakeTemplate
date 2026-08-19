@@ -60,13 +60,13 @@ public:
     
 // Log ----------------------------------------------------------------------------------
 
+
     /**
-     * @brief Genera un mensaje de error en cout, log.
-     * @warning Bloqueante, con pop-up en windows y linux (con zenity)
+     * @brief Genera un mensaje de información en cout, log.
      * @param module Módulo (Clase) desde donde se genera el error
      * @param msg Mensaje de error
      */
-    void error(std::string const& module, std::string const& msg);
+    void info(std::string const& module, std::string const& msg);
 
     /**
      * @brief Genera un mensaje de warning en cout, log.
@@ -76,11 +76,12 @@ public:
     void warning(std::string const& module, std::string const& msg);
 
     /**
-     * @brief Genera un mensaje de información en cout, log.
+     * @brief Genera un mensaje de error en cout, log.
+     * @warning Bloqueante, con pop-up en windows y linux (con zenity)
      * @param module Módulo (Clase) desde donde se genera el error
      * @param msg Mensaje de error
      */
-    void info(std::string const& module, std::string const& msg);
+    void error(std::string const& module, std::string const& msg);
     
     /**
      * @brief Genera un mensaje de solved (solucionado) en cout, log.
@@ -90,17 +91,23 @@ public:
     void solved(std::string const& module, std::string const& msg);
 
 
-// Conversiones -------------------------------------------------------------------------
+// Escritura en consola -----------------------------------------------------------------
 
     /**
-     * @brief Convierte std::string a std::wstring
+     * @brief Activa o desactiva la captura visual del CLI
      */
-    inline std::wstring stringToWString(std::string const& str);
+    void setCliActive(bool active);
 
     /**
-     * @brief Convierte std::wstring a std::string 
+     * @brief Actualiza el texto que el usuario lleva escrito y redibuja la línea
      */
-    inline std::string wstringToString(std::wstring const& ws);
+    void updateCliInput(const std::string& input);
+
+    /**
+     * @brief Redibuja el prefijo de escritura a la fuerza
+     */
+    void redrawPrompt();
+
 
 private:
 
@@ -128,10 +135,16 @@ private:
     /** 
      * @brief Muestra una ventana de error según el SO
      */
-    void showPopup(std::string const& msg, std::string const& title, bool bloq = true);
+    void show_popup(std::string const& msg, std::string const& title, bool bloq = true);
 
-    
-private:
+
+// Redraw privado -----------------------------------------------------------------------
+
+    /**
+     * @brief Dibuja el prompt asumiendo que console_mtx ya fue adquirido
+     */
+    void redrawPrompt_unlocked();
+
 
 /************ Variables ****************************************************************/
 
@@ -140,10 +153,15 @@ private:
     bool        initialized_;   ///< Bandera para indicar inicialización exitosa
 
 // Logs de aplicación
-    LogMgr log_;             ///< Log de ejecución de aplicación
-    LogMgr errlog_;          ///< Log de errores de las ejecuciones (persistente)
+    LogMgr      log_;           ///< Log de ejecución de aplicación
+    LogMgr      errlog_;        ///< Log de errores de las ejecuciones (persistente)
 
 // Sincronización de mensajes
-    std::mutex  console_mtx;     ///< Mutex para evitar solapamientos de mensajes en paralelo
+    std::mutex          console_mtx;        ///< Mutex para evitar solapamientos de mensajes en paralelo
+
+// Parámetros
+    const unsigned int  split_width_;       ///< Ancho de separación entre el tipo y el texto
+    bool                is_cli_active_;     ///< La terminal está activa para escritura de comandos
+    std::string         current_cli_input_; ///< Entrada del comando temporal para no mezclar con logs
 
 };
