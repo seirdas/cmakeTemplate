@@ -97,6 +97,20 @@ public:
      */
     void setSampleRate(unsigned int hz);
 
+    /**
+     * @brief Establece el nombre del grupo de morse al que pertenece este módulo (ej. "ADF", "VOR").
+     * @details Es el "name" de la entrada del json de la que salió este módulo. Sirve para
+     *  poder buscarlo luego por nombre + dispositivo, sin tener que reconstruir ningún texto.
+     * @param nombre Nombre del grupo de morse.
+     */
+    void setNombre(std::string const& nombre);
+
+    /**
+     * @brief Devuelve el nombre del grupo de morse al que pertenece este módulo (ej. "ADF", "VOR").
+     * @return Nombre del grupo de morse.
+     */
+    std::string getNombre() const;
+
 
 private:
 
@@ -120,4 +134,5 @@ private:
     unsigned int       espacioEntreLetras_;     ///< Silencio entre letras de la misma palabra (ms).
     unsigned int       espacioEntreMorse_;      ///< Duración del silencio entre palabras (loop) (ms).
     unsigned int       sampleRate_;             ///< Frecuencia de muestreo (Hz) del audio generado.
+    std::string        nombre_;                 ///< Nombre del grupo de morse al que pertenece (ej. "ADF", "VOR").
 };

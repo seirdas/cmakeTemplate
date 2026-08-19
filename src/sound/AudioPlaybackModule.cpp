@@ -20,7 +20,8 @@
         running_(false),
         globalVol_(100),
         keep_alive_seconds_(10),
-        active_fadeouts_threads_(0)
+        active_fadeouts_threads_(0),
+        selectedChannel_(0)
     {
 
     }
@@ -217,6 +218,9 @@
         ma_sound_set_volume(&inst->sound, ma_volume);  // (va de 0.0 a 1.0)
         ma_sound_set_pitch(&inst->sound, pitch);
         ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE : MA_FALSE);
+        float pan = (selectedChannel_ == 1) ? -1.0f : (selectedChannel_ == 2) ? 1.0f : 0.0f;
+        ma_sound_set_pan(&inst->sound, pan);
+
 
         // Vincular el fin de la reproducción al endCallback
         ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
@@ -356,6 +360,9 @@
         else SYS_WARN("PlaybackModule", "Change pitch fail: '" + audioName + "' not found");
     }
 
+    void AudioPlaybackModule::setSelectedChannel(unsigned short channel){
+        selectedChannel_ = channel; 
+    }
 
     // Parámetros del módulo ----------------------------------------------------------------
 

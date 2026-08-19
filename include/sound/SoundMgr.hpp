@@ -195,12 +195,23 @@ public:
     bool removePlayerMorse(std::string const& moduleName);
 
     /**
-     * @brief Obtiene el módulo de reproducción playback de texto en morse 
+     * @brief Obtiene el módulo de reproducción playback de texto en morse
      *  asociado a un nombre para utilizar las funciones del módulo playback
      * @param moduleName Nombre del módulo seleccionado
      * @return Puntero al módulo de reproducción o @c nullptr si no existe con ese nombre
      */
     PlayerMorse* getPlayerMorse(std::string moduleName) const;
+
+    /**
+     * @brief Obtiene el módulo de reproducción de morse de un grupo concreto (ej. "ADF")
+     *  que suena por un dispositivo concreto (ej. "altavoces").
+     * @details No se crea nada hasta que se pide por primera vez ("bajo demanda"):
+     *  la primera llamada lo crea. Las siguientes llamadas devuelven el mismo módulo ya creado.
+     * @param nombre Nombre del grupo de morse (el "name" de la entrada en el json).
+     * @param deviceName Nombre del dispositivo por el que quieres que suene.
+     * @return Puntero al módulo de reproducción o @c nullptr si no existe esa combinación.
+     */
+    PlayerMorse* getPlayerMorse(std::string const& nombre, std::string const& deviceName);
 
 
 // Módulos PlayerTTS --------------------------------------------------------------------
@@ -366,7 +377,8 @@ private:
 // Módulos de audio
     CapturesList                captures_;                  ///< Vector con dispositivos inicializados de captura
     PlayersAudioList            playersAudios_;             ///< Lista con módulos reproductores de archivos
-    PlayersMorseList            playersMorse_;              ///< Lista con módulos reproductores de morse
+    PlayersMorseList            playersMorse_;              ///< Lista con módulos reproductores de morse ya creados
+    std::unordered_map<std::string, void*> morseConfigs_;   ///< Nodo json de cada tipo de morse (para crearlos bajo demanda)
     PlayerTTSList               playersTTS_;                ///< Lista con módulos reproductores de TTS
     
 // Módulo TTS
