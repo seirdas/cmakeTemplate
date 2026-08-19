@@ -356,6 +356,7 @@ private:
     bool                        initialized_;               ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>           running_;                   ///< flag de aplicación corriendo (para hilos)
     unsigned short              MAX_REINIT_ATTEMPTS;        ///< Número de reintentos para reinicializar dispositivo de entrada
+    bool                        fallbackToDefault_;         ///< Fallback a dispositivo por defecto
 
 // Listas de dispositivos de audio
     std::vector<std::string>    available_inputs_;          ///< Lista de dispositivos de entrada disponibles

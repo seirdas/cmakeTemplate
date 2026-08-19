@@ -40,10 +40,11 @@
         initialized_(false),
         running_(false),
         MAX_REINIT_ATTEMPTS(3),
+        fallbackToDefault_(true),
         tts_(std::make_unique<TTSCore>()),
         enabledSmoothedValues_(true),
-        attackCoeff_(0.5),
-        releaseCoeff_(0.1)
+        attackCoeff_(0.5f),
+        releaseCoeff_(0.1f)
     {
 
     }
@@ -120,6 +121,7 @@
         jsonMgr.get_or_set(cfg, "attack_coefficient",   attackCoeff_);
         attackCoeff_= std::clamp(attackCoeff_, minValue, maxValue);
         jsonMgr.get_or_set(cfg, "release_coefficient",  releaseCoeff_);
+        jsonMgr.get_or_set(cfg, "fallback_to_default",  fallbackToDefault_);
         releaseCoeff_= std::clamp(releaseCoeff_, minValue, maxValue);
 
 
@@ -375,11 +377,16 @@
                 jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
         }
 
+        // Fallback a dispositivo por defecto (si esta opción está activada)
+        if (usedDeviceName.empty() && fallbackToDefault_)
+            usedDeviceName = getDefaultCaptureDevice();
+
         // Comprobar si se ha obtenido bien el dispositivo
         if (usedDeviceName.empty()) {
             SYS_WARN("SoundMgr","addCaptureDevice: Cannot retrieve device name.");
             return false;
         }
+        
         // Comprobación del nombre: Le ponemos un nombre random si no tiene
         if (usedModuleName.empty())
             usedModuleName = "CAPTURE#" + std::to_string(rand());
@@ -478,11 +485,16 @@
                 jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
         }
 
+        // Fallback a dispositivo por defecto (si esta opción está activada)
+        if (usedDeviceName.empty() && fallbackToDefault_)
+            usedDeviceName = getDefaultPlaybackDevice();
+
         // Comprobar si se ha obtenido bien el dispositivo
         if (usedDeviceName.empty()) {
             SYS_WARN("SoundMgr","Cannot retrieve device name");
             return false;
         }
+        
         // Comprobación del nombre: Le ponemos un nombre random si no tiene
         if (usedModuleName.empty())
             usedModuleName = "PLAYBACK#" + std::to_string(rand());
@@ -566,30 +578,16 @@
                 jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
         }
 
-        // Si sigue vacío, coger el primer dispositivo disponible que no esté ya en uso
-        if (usedDeviceName.empty()) {
-            std::lock_guard<std::mutex> lock(available_playbacks_mtx_);
-            for (std::string const& candidate : available_playbacks_) {
-                bool enUso = false;
-                for (auto const& [name, player] : playersMorse_) {
-                    if (player->getDeviceName() == candidate) {
-                        enUso = true;
-                        break;
-                    }
-                }
-                if (!enUso) {
-                    usedDeviceName = candidate;
-                    break;
-                }
-            }
-        }
-
+        // Fallback a dispositivo por defecto (si esta opción está activada)
+        if (usedDeviceName.empty() && fallbackToDefault_)
+            usedDeviceName = getDefaultPlaybackDevice();
 
         // Comprobar si se ha obtenido bien el dispositivo
         if (usedDeviceName.empty()) {
-            SYS_WARN("SoundMgr","Cannot retrieve device name");
-            return false;
+                SYS_WARN("SoundMgr","Cannot retrieve device name");
+                return false;
         }
+
         // Comprobación del nombre: Le ponemos un nombre random si no tiene
         if (usedModuleName.empty())
             usedModuleName = "PLAYBACK#" + std::to_string(rand());
@@ -676,6 +674,10 @@
             if (usedModuleName.empty())
                 jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
         }
+
+        // Fallback a dispositivo por defecto (si esta opción está activada)
+        if (usedDeviceName.empty() && fallbackToDefault_)
+            usedDeviceName = getDefaultPlaybackDevice();
 
         // Comprobar si se ha obtenido bien el dispositivo
         if (usedDeviceName.empty()) {
