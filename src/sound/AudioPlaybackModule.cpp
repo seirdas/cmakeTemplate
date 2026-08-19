@@ -15,13 +15,13 @@
 
     AudioPlaybackModule::AudioPlaybackModule(std::string const& moduleName, void* ctx, const void* device_info) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
-        name_(moduleName),
         initialized_(false),
         running_(false),
+        name_(moduleName),
         globalVol_(100),
+        selectedChannel_(0),
         keep_alive_seconds_(10),
-        active_fadeouts_threads_(0),
-        selectedChannel_(0)
+        active_fadeouts_threads_(0)
     {
 
     }
@@ -391,7 +391,9 @@
         if (it == pimpl_->playing_sounds.end())
             return false;
 
-        return ma_sound_is_playing(&it->second->sound);
+        ma_result res = ma_sound_is_playing(&it->second->sound);
+
+        return (res == MA_SUCCESS) ? true : false;
     }
     
 
