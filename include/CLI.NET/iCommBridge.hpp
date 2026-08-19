@@ -1,7 +1,7 @@
 #pragma once
 
 // Declaración anticipada para evitar incluir TTSMgr.hpp aquí
-class TTSMgr;
+class TTSDispatcher;
 
 /**
  * @class iCommBridge
@@ -20,9 +20,10 @@ public:
 
     /**
      * @brief Constructor.
-     * @param parent Puntero a TTSMgr para que el código .NET pueda llamarlo de vuelta
+     * @param parent Referencia a clase padre para que 
+     *   el código .NET pueda llamarlo de vuelta
      */
-    iCommBridge();
+    iCommBridge(TTSDispatcher* parent);
 
     /**
      * @brief Destructor
@@ -82,7 +83,7 @@ private:
 
 // Ejecución ----------------------------------------------------------------------------
     inline bool iCommBridge::init()     { 
-        SYS_WARN("iCommBridge","iCommWrapper only compatible with MSVC compiler (Windows)");
+        SYS_WARN("iCommBridge","iCommMgr only compatible with MSVC compiler (Windows)");
         return false; 
     }
     inline bool iCommBridge::isInitialized() const  { return false; }

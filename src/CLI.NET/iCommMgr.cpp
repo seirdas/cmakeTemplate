@@ -1,4 +1,4 @@
-#include "CLI.NET/iCommWrapper.hpp"
+#include "CLI.NET/iCommMgr.hpp"
 #include "system/SystemMgr.hpp"
 #include <msclr/marshal_cppstd.h>
 #include <algorithm>
@@ -13,12 +13,14 @@
 // Datos para el paquete al TTS
 #include "datatypes/TTSDataTypes.hpp"
 
+#include "logic/tts/TTSDispatcher.hpp"
+
 
 // General ------------------------------------------------------------------------------
 
-iCommWrapper::iCommWrapper(TTSMgr* tts) :
+iCommMgr::iCommMgr(TTSDispatcher* tts) :
     tts_(tts),
-    iCommMgr(iComm::iCommManager::GetInstance()),
+    icomm(iComm::iCommManager::GetInstance()),
     initialized_(false),
     ATIS_ID_(0),
     ATC_ID_(0)
@@ -26,32 +28,32 @@ iCommWrapper::iCommWrapper(TTSMgr* tts) :
 
 };
 
-iCommWrapper::~iCommWrapper() {
+iCommMgr::~iCommMgr() {
     close();
 
     // Borrar puntero a iCommMgr
-    if (iCommMgr != nullptr) {
-        delete iCommMgr; 
-        iCommMgr = nullptr;
+    if (icomm != nullptr) {
+        delete icomm; 
+        icomm = nullptr;
     }
 }
 
 
 // Ejecución ----------------------------------------------------------------------------
 
-bool iCommWrapper::init() {
+bool iCommMgr::init() {
 
     // Obtener parámetros de configuración de iCommConfigFile.xml
-    SYS_INFO("iCommWrapper","Parsing iCommConfigFile.xml...");
-	iCommMgr->ParseConfigFile("iCommConfigFile.xml");
+    SYS_INFO("iCommMgr","Parsing iCommConfigFile.xml...");
+	icomm->ParseConfigFile("iCommConfigFile.xml");
 
 	// recoge el ID de ATIS y el ID de ATC a partir del localID de las conexiones activas del xml de config del iComm
-    SYS_INFO("iCommWrapper","Gathering ATIS/ATC IDs...");
+    SYS_INFO("iCommMgr","Gathering ATIS/ATC IDs...");
     std::string name;
-    for each (iComm::Net::Config::ConnectionConfigData^ connection in iCommMgr->GetLocalConnectionsInfo()) {
+    for each (iComm::Net::Config::ConnectionConfigData^ connection in icomm->GetLocalConnectionsInfo()) {
         // Comprueba si existe el nombre
         if(!connection->Name) {
-            SYS_WARN("iCommWrapper","iComm fail: connection->Name empty");
+            SYS_WARN("iCommMgr","iComm fail: connection->Name empty");
             return false;
         }
 
@@ -72,15 +74,15 @@ bool iCommWrapper::init() {
 	/* Inicialización de Funciones Delegadas (callbacks) del iComm. */
 
     // Función registrada para cuando se establece la conexión
-    SYS_INFO("iCommWrapper","Subscribing onConnected event...");
-	iCommMgr->AddEventConnected(
-		gcnew iComm::iCommManager::DelegateOnConnected(this, &iCommWrapper::OnConnected_Wrapper)
+    SYS_INFO("iCommMgr","Subscribing onConnected event...");
+	icomm->AddEventConnected(
+		gcnew iComm::iCommManager::DelegateOnConnected(this, &iCommMgr::on_connected)
     );
 
     // Función registrada para cuando llega información de conexión
-    SYS_INFO("iCommWrapper","Subscribing OnInfoConnection event...");
-	iCommMgr->AddEventInfoStatusConnection(
-		gcnew iComm::iCommManager::DelegateOnInfoConnection(this, &iCommWrapper::OnInfoConnection_Wrapper)
+    SYS_INFO("iCommMgr","Subscribing OnInfoConnection event...");
+	icomm->AddEventInfoStatusConnection(
+		gcnew iComm::iCommManager::DelegateOnInfoConnection(this, &iCommMgr::on_info_connection)
     );
 
 	/*	Salta a la funcion OnReceivedINFO_DACS_Wrapper cuando recibe un mensaje de iComm
@@ -89,83 +91,83 @@ bool iCommWrapper::init() {
 	*	 iComm::iATC::Identifiers::MessageID::MSG_INFO_DACS	== El NetData es de tipo MSG_INFO_DACS (del iComm.iATC.dll)
     *   aquí el iComm::Net::Data::NetData -> iComm::Net::Data::DataDACS
 	*/
-    SYS_INFO("iCommWrapper","Subscribing OnReceivedINFO_DACS event...");
-	iCommMgr->AddDelegateToMessage(
+    SYS_INFO("iCommMgr","Subscribing OnReceivedINFO_DACS event...");
+	icomm->AddDelegateToMessage(
         iComm::iATC::Identifiers::FACTORY_NAME,
 		(int)iComm::iATC::Identifiers::MessageID::MSG_INFO_DACS,
-		gcnew iComm::iCommManager::DelegateOnNetMessage(this, &iCommWrapper::OnReceived_InfoDacs)
+		gcnew iComm::iCommManager::DelegateOnNetMessage(this, &iCommMgr::on_received_info_dacs)
     );
 
 	// Datos Delegados (callbacks) de datos.
 
-	/*	Salta a la funcion OnReceived_TextVoiceCommand cuando recibe un mensaje de iComm 
+	/*	Salta a la funcion on_received_text_voice_command cuando recibe un mensaje de iComm 
 	*	Siendo:
 	*	 iComm::iATC::Identifiers::FACTORY_NAME == iComm.iATC	(del iComm.iATC.dll)
 	*	 iComm::iATC::Identifiers::MessageID::MSG_TEXT_VOICE_COMMAND	== El NetData es de tipo DataTextVoiceCommand (del iComm.iATC.dll)
     *   aquí el iComm::Net::Data::NetData -> iComm::Net::Data::DataTextVoiceCommand
 	*/
-    SYS_INFO("iCommWrapper","Subscribing OnReceivedTEXT_VOICE_COMMAND event...");
-	iCommMgr->AddDelegateToMessage(
+    SYS_INFO("iCommMgr","Subscribing OnReceivedTEXT_VOICE_COMMAND event...");
+	icomm->AddDelegateToMessage(
 		iComm::iATC::Identifiers::FACTORY_NAME,
 		(int)iComm::iATC::Identifiers::MessageID::MSG_TEXT_VOICE_COMMAND,
-		gcnew iComm::iCommManager::DelegateOnNetMessage(this, &iCommWrapper::OnReceived_TextVoiceCommand)
+		gcnew iComm::iCommManager::DelegateOnNetMessage(this, &iCommMgr::on_received_text_voice_command)
     );
 
 
-    SYS_INFO("iCommWrapper","Starting iComm Client...");
-    iCommMgr->Start();
+    SYS_INFO("iCommMgr","Starting iComm Client...");
+    icomm->Start();
 
     
-    SYS_INFO("iCommWrapper","iComm initializing OK");
+    SYS_INFO("iCommMgr","iComm initializing OK");
     initialized_ = true;
     return initialized_;       // <- true
 }
 
-bool iCommWrapper::close() {
-    if(iCommMgr->Active) 
-        iCommMgr->Stop();
+bool iCommMgr::close() {
+    if(icomm->Active) 
+        icomm->Stop();
 
-    return !iCommMgr->Active;
+    return !icomm->Active;
 }
 
-bool iCommWrapper::isInitialized() {
+bool iCommMgr::isInitialized() {
     return initialized_;
 }
 
-bool iCommWrapper::isRunning() {
-	return iCommMgr->Active;
+bool iCommMgr::isRunning() {
+	return icomm->Active;
 }
 
 
 // Información --------------------------------------------------------------------------
 
-unsigned short iCommWrapper::get_ATIS_ID() { 
+unsigned short iCommMgr::get_ATIS_ID() { 
     return ATIS_ID_; 
 }
 
-unsigned short iCommWrapper::get_ATC_ID() { 
+unsigned short iCommMgr::get_ATC_ID() { 
     return ATC_ID_; 
 }
 
 
 // Notify functions (to use externally) -------------------------------------------------
 
-void iCommWrapper::notifyFinished(unsigned int MsgID, unsigned int LocalID) {
+void iCommMgr::notifyFinished(unsigned int MsgID, unsigned int LocalID) {
 
 	iComm::iATC::DataRadioMsgStatus^ dataRadioMsgStatus = gcnew iComm::iATC::DataRadioMsgStatus();
 	dataRadioMsgStatus->MsgID = MsgID;
 	dataRadioMsgStatus->Status = iComm::iATC::DataRadioMsgStatus::EStatus::FINISHED;
 
-	iCommMgr->SendMessage(LocalID, dataRadioMsgStatus, true, false);
+	icomm->SendMessage(LocalID, dataRadioMsgStatus, true, false);
 }
 
 
 // Delegate functions (iComm Callbacks) -------------------------------------------------
 
-void iCommWrapper::OnConnected_Wrapper(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs) {
+void iCommMgr::on_connected(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs) {
 	/* #TODO */
 
-    SYS_INFO("iCommWrapper","OnConnected callback called");
+    SYS_INFO("iCommMgr","OnConnected callback called");
 
     unsigned short _IConnectionID = 10;
     short _IMsgID = -1;
@@ -174,25 +176,25 @@ void iCommWrapper::OnConnected_Wrapper(iComm::Net::ConnectionEventArgs^ _pConnec
 	// tts->OnConnected(_pConnectionEventArgs);
 }
 
-void iCommWrapper::OnInfoConnection_Wrapper(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs) {
+void iCommMgr::on_info_connection(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs) {
     /* #TODO */
     
     /* No lo pongo porque salta cada sec aprox. */
-    //SYS_INFO("iCommWrapper","OnInfoConnection callback called");
+    //SYS_INFO("iCommMgr","OnInfoConnection callback called");
 
 	// tts->OnInfoConnection(_pConnectionEventArgs);
 }
 
-void iCommWrapper::OnReceived_InfoDacs(iComm::Net::Data::NetData^ _pNetData) {
+void iCommMgr::on_received_info_dacs(iComm::Net::Data::NetData^ _pNetData) {
     /* #TODO */
-    SYS_INFO("iCommWrapper","OnReceived_InfoDacs callback called");
+    SYS_INFO("iCommMgr","on_received_info_dacs callback called");
 
 	// tts->OnReceivedINFO_DACS(static_cast<iComm::iATC::DataDACS^>(_pNetData));
 }
 
-void iCommWrapper::OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetData) {
+void iCommMgr::on_received_text_voice_command(iComm::Net::Data::NetData^ _pNetData) {
 
-    SYS_INFO("iCommWrapper","OnReceived_TextVoiceCommand callback called");
+    SYS_INFO("iCommMgr","on_received_text_voice_command callback called");
 
     // El paquete que llega aquí es de tipo DataDACS
 	iComm::iATC::DataTextVoiceCommand^ packet = static_cast<iComm::iATC::DataTextVoiceCommand^>(_pNetData);
@@ -208,18 +210,18 @@ void iCommWrapper::OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetD
 	data.MsgID      = packet->RadioMsgID;
 	data.ID_TX      = packet->SenderRemoteRadioID;
 	data.entityID   = packet->SenderRadioID;
-	data.entityName = getEntity(packet);        // Sustituye al cálculo de la voz
+	data.entityName = get_entity(packet);        // Sustituye al cálculo de la voz
     data.texto      = converter.to_bytes(msclr::interop::marshal_as<std::wstring>(packet->VoiceText));
-    data.lang       = getLanguage(packet);
+    data.lang       = get_language(packet);
 
-    SYS_WARN("iCommWrapper","OnReceived_TextVoiceCommand not implemented");
+    SYS_WARN("iCommMgr","on_received_text_voice_command not implemented");
 	//tts_->play(data);
 }
 
 
 // Funciones auxiliares -----------------------------------------------------------------
 
-std::string iCommWrapper::getEntity(iComm::iATC::DataTextVoiceCommand^ packet) {
+std::string iCommMgr::get_entity(iComm::iATC::DataTextVoiceCommand^ packet) {
     
     // debería ser una voz de mujer (podría ser la misma siempre)
     if (packet->NetCreator->ConnectionConfigData->LocalID == ATIS_ID_)
@@ -243,7 +245,7 @@ std::string iCommWrapper::getEntity(iComm::iATC::DataTextVoiceCommand^ packet) {
     return "OTHER";		// voz por defecto si no se cumplen las condiciones anteriores
 }
 
-std::string iCommWrapper::getLanguage(iComm::iATC::DataTextVoiceCommand^ packet) {
+std::string iCommMgr::get_language(iComm::iATC::DataTextVoiceCommand^ packet) {
     switch (packet->Language) {
         case iComm::iATC::Identifiers::Language::ENGLISH:
             return "en";

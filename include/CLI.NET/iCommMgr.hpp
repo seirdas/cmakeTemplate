@@ -8,11 +8,11 @@
 
 
 // Declaración implícita
-class TTSMgr;
+class TTSDispatcher;
 
 
 /**
- * @class iCommWrapper
+ * @class iCommMgr
  * @brief Managed class (C++/CLI) for .NET iComm dll
  *   Clase para compatibilidad con .NET de iComm
  *  especial para manejar los eventos y las funciones delegadas de la librería iComm
@@ -20,7 +20,7 @@ class TTSMgr;
  *   Administrada con gc (garbage collector)
  *   Le pasa los datos necesarios a la logica del TTS.
  */
-public ref class iCommWrapper {
+public ref class iCommMgr {
 
 public:
 
@@ -30,13 +30,13 @@ public:
      * @brief Constructor
      *  Inicializa el módulo TTSMgr y obtiene instancia de iComm
      */
-    iCommWrapper(TTSMgr* tts);
+    iCommMgr(TTSDispatcher* tts);
 
     /**
      * @brief Destructor.
      *  Libera memoria del puntero inicializado a iComm
      */
-    ~iCommWrapper();
+    ~iCommMgr();
 
 
 // Ejecución ----------------------------------------------------------------------------
@@ -104,25 +104,25 @@ private:
      * @brief Función registrada para cuando se ha conectado
      * @param _pConnectionEventArgs 
      */
-    void OnConnected_Wrapper(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs);
+    void on_connected(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs);
 
     /**
      * @brief LLAMADO POR ICOMM - Función registrada para cuando llega información determinada
      * @param _pConnectionEventArgs 
      */
-    void OnInfoConnection_Wrapper(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs);
+    void on_info_connection(iComm::Net::ConnectionEventArgs^ _pConnectionEventArgs);
 
     /**
      * @brief Función registrada para cuando llega información para DACS (coberturas, radios, etc.)
      * @param _pNetData 
      */
-    void OnReceived_InfoDacs(iComm::Net::Data::NetData^ _pNetData);
+    void on_received_info_dacs(iComm::Net::Data::NetData^ _pNetData);
 
     /**
      * @brief Función registrada para cuando llega Texto,ID,etc. para DACS
      * @param _pNetData 
      */
-    void OnReceived_TextVoiceCommand(iComm::Net::Data::NetData^ _pNetData);
+    void on_received_text_voice_command(iComm::Net::Data::NetData^ _pNetData);
 
 
 // Funciones auxiliares -----------------------------------------------------------------
@@ -131,14 +131,15 @@ private:
      * @brief Devuelve el nombre de entidad en función de parámetros del iComm
      * @return Nombre de entidad
      */
-    std::string getEntity(iComm::iATC::DataTextVoiceCommand^ packet);
+    std::string get_entity(iComm::iATC::DataTextVoiceCommand^ packet);
 
     /**
      * @brief Devuelve el idioma de entidad en función de parámetros del iComm
      * @return Idioma de entidad
      */
-    std::string getLanguage(iComm::iATC::DataTextVoiceCommand^ packet);
-    
+    std::string get_language(iComm::iATC::DataTextVoiceCommand^ packet);
+   
+
 /************ Variables ********************************************************/
 
 // Inicialización y ejecución
@@ -149,7 +150,7 @@ private:
     long long   ATC_ID_;         ///< Identificador de ATC
 
 // Módulos
-    iComm::IMessageSender^  iCommMgr;   ///< icomm manager pointer instance (.NET)
-    TTSMgr*                 tts_;       ///< Puntero a TTSMgr para usar sus funciones
+    iComm::IMessageSender^  icomm;   ///< icomm manager pointer instance (.NET)
+    TTSDispatcher*          tts_;       ///< Puntero a TTSMgr para usar sus funciones
 
 };

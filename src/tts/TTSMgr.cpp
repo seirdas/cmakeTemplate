@@ -1,9 +1,24 @@
 
+
+
+
+
+/* !!!!!!!!!!! ATENCION !!!!!!!!!!!!
+* ESTOY SUSTITUYENDO ESTA CLASE POR TTSDISPATCHER
+* NO TENER EN CUENTA NADA DE LO QUE HAY AQUÍ 
+*/
+
+
+
+
+
+
+
 #include "tts/TTSMgr.hpp"
 #include "sound/PlayerTTS.hpp"
 #include "files/JsonMgr.hpp"
 #include "sound/SoundMgr.hpp"
-#include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommWrapper
+#include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommMgr
 #include "system/SystemMgr.hpp"
 
 #include <mutex>
@@ -12,17 +27,9 @@
 #include <vector>
 
 
-// Implementación de puente para clase administrada (iComm)
-struct TTSMgr::Impl {
-    iCommBridge commBridge;
-    Impl(TTSMgr* parent) : commBridge() {}
-};
-
-
 // General ------------------------------------------------------------------------------
 
 TTSMgr::TTSMgr() :
-    pimpl_(std::make_unique<Impl>(this)),
     initialized_(false),
     running_(false)
 {
@@ -44,14 +51,6 @@ bool TTSMgr::init(void* config) {
     else
         SYS_WARN("TTSMgr","Cannot load config. Using default values.");
     
-
-    // Inicialización de iComm (CLI.NET)
-    SYS_INFO("TTSMgr","Starting iComm (.NET) client...");
-    if(!pimpl_->commBridge.init())
-        SYS_WARN("TTSMgr","iComm FAIL");
-    else SYS_INFO("TTSMgr","iComm OK");
-
-
     // Inicialización de TTSCore (en hilo para no bloquear)
     SYS_INFO("TTSMgr","Starting TTSCore async load...");
     initTTS_thread_ = std::thread([this, config]() {
@@ -110,17 +109,6 @@ void TTSMgr::close() {
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
     queue_cv_.notify_all();
-
-    // Cierra el cliente de iComm
-    if (pimpl_->commBridge.isInitialized()) {
-        SYS_INFO("TTSMgr","Closing iComm (.NET) client...");
-        if(!pimpl_->commBridge.close())
-            SYS_WARN("TTSMgr","Closing iComm FAIL");
-    }
-
-    // Cierra el núcleo de TTS
-    SYS_INFO("TTSMgr","Closing ttsCore...");
-    ttsCore_.close();
 
     // Espera a que se cierre el hilo consumidor
     if (dataConsumer_thread_.joinable()) {

@@ -1,23 +1,21 @@
 #include "CLI.NET/iCommBridge.hpp"
-#include "CLI.NET/iCommWrapper.hpp"
+#include "CLI.NET/iCommMgr.hpp"
 #include "tts/TTSMgr.hpp"
 #include <vcclr.h>
 
 // General ------------------------------------------------------------------------------
 
-iCommBridge::iCommBridge() :
+iCommBridge::iCommBridge(TTSDispatcher* parent) :
     initialized_(true)
 {
-    // Crea el ref class y lo protege en modo gestionado
-    
-    /* #TODO Le debería pasar el "padre" para ejecutar acciones de vuelta al código C++ */
-    // gcroot<iCommWrapper^>* handle = new gcroot<iCommWrapper^>(gcnew iCommWrapper(parent));
-    //managedWrapper_ = static_cast<void*>(handle);
+    // Crea el ref class y lo protege en modo gestionado    
+     gcroot<iCommMgr^>* handle = new gcroot<iCommMgr^>(gcnew iCommMgr(parent));
+    managedWrapper_ = static_cast<void*>(handle);
 }
 
 iCommBridge::~iCommBridge() {
     if (managedWrapper_) {
-        auto handle = static_cast<gcroot<iCommWrapper^>*>(managedWrapper_);
+        auto handle = static_cast<gcroot<iCommMgr^>*>(managedWrapper_);
         delete handle; // Liberamos la referencia para el Garbage Collector
         managedWrapper_ = nullptr;
     }
@@ -26,7 +24,7 @@ iCommBridge::~iCommBridge() {
 // Inicialización y ejecución -----------------------------------------------------------
 
 bool iCommBridge::init() {
-    auto handle = static_cast<gcroot<iCommWrapper^>*>(managedWrapper_);
+    auto handle = static_cast<gcroot<iCommMgr^>*>(managedWrapper_);
     return (*handle)->init();
 }
 
@@ -35,6 +33,6 @@ bool iCommBridge::isInitialized() const {
 }
 
 bool iCommBridge::close() {
-    auto handle = static_cast<gcroot<iCommWrapper^>*>(managedWrapper_);
+    auto handle = static_cast<gcroot<iCommMgr^>*>(managedWrapper_);
     return (*handle)->close();
 }

@@ -1,5 +1,17 @@
 #pragma once
 
+
+
+
+/* !!!!!!!!!!! ATENCION !!!!!!!!!!!!
+* ESTOY SUSTITUYENDO ESTA CLASE POR TTSDISPATCHER
+* NO TENER EN CUENTA NADA DE LO QUE HAY AQUÍ 
+*/
+
+
+
+
+
 #include <memory>   // unique_ptr
 #include <string>
 #include <queue>
@@ -125,10 +137,6 @@ private:
         std::string             model_name_assigned;    ///< Nombre del modelo asociado a la entidad
     };
     using TTSInfos      = std::unordered_map<std::string, std::vector<TTSMgrInfo>>;
-
-// Pointer to implementation (PIMPL) para añadir iComm (clase administrada CLI.NET)
-    struct Impl;
-    std::unique_ptr<Impl> pimpl_;
     
 // Inicialización y ejecución
     std::atomic<bool>           running_;               ///< flag de aplicación corriendo (para hilos)

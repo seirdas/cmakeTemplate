@@ -26,13 +26,13 @@ bool TonesCore::init(void* config) {
     if (config)
         loadConfig(config);
     else  // Puede llegar aquí cuando se hace reload()
-        SYS_WARN("CommsCore","Cannot load config. Using default values.");
+        SYS_WARN("TonesCore","Cannot load config. Using default values.");
 
 
     // #TODO
 
     
-    SYS_WARN("CommsCore","Comms logic not yet fully implemented");
+    SYS_WARN("TonesCore","Comms logic not yet fully implemented");
     
     initialized_ = true;
     return initialized_;    //<- true
