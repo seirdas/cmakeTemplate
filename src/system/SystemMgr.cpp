@@ -110,7 +110,7 @@ void SystemMgr::error(std::string const& module, std::string const& msg) {
     std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << ANSI_RED << prefix 
               << std::left << std::setw(width) << module_brackets 
-              << msg << ANSI_RESET << "\n";
+              << msg << ANSI_RESET << std::endl;
 
     // Mostrar también ventana de error
     showPopup(msg, app_name_);            // <- !! Bloqueante
@@ -131,7 +131,7 @@ void SystemMgr::warning(std::string const& module, std::string const& msg) {
     std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << ANSI_YELLOW << prefix 
               << std::left << std::setw(width) << module_brackets 
-              << msg << ANSI_RESET << "\n";
+              << msg << ANSI_RESET << std::endl;
 }
 
 void SystemMgr::info(std::string const& module, std::string const& msg) {
@@ -148,7 +148,7 @@ void SystemMgr::info(std::string const& module, std::string const& msg) {
     std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << prefix 
               << std::left << std::setw(width) << module_brackets 
-              << msg << "\n";
+              << msg << std::endl;
 }
 
 void SystemMgr::solved(std::string const& module, std::string const& msg) {
@@ -166,7 +166,7 @@ void SystemMgr::solved(std::string const& module, std::string const& msg) {
     std::lock_guard<std::mutex> lock(console_mtx);
     std::cerr << ANSI_GREEN << prefix 
               << std::left << std::setw(width) << module_brackets 
-              << msg << ANSI_RESET << "\n";
+              << msg << ANSI_RESET << std::endl;
 }
 
 

@@ -411,9 +411,20 @@ bool AppController::launch_console() {
             freopen_s(&dummy, "CONIN$", "r", stdin);
             freopen_s(&dummy, "CONOUT$", "w", stderr);
             
-            // Limpiar indicadores de error de std::cin / std::cout
+            // Desincronizar C y C++ stream buffers e inicializar estados
+            std::ios::sync_with_stdio();
             std::cin.clear();
             std::cout.clear();
+            std::cerr.clear();
+
+            // Opcional: Activar procesamiento de colores ANSI en la consola de Windows 10/11
+            HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (hOut != INVALID_HANDLE_VALUE) {
+                DWORD dwMode = 0;
+                if (GetConsoleMode(hOut, &dwMode)) {
+                    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                }
+            }
             
             SYS_INFO("AppController", "Windows console allocated successfully.");
             return true;
