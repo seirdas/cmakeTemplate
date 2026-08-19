@@ -78,7 +78,7 @@ private:
     #include "system/SystemMgr.hpp"
 
 // General ------------------------------------------------------------------------------
-    inline iCommBridge::iCommBridge() : initialized_(true)   {}
+    inline iCommBridge::iCommBridge(TTSDispatcher* parent) : initialized_(true)   {}
     inline iCommBridge::~iCommBridge()              {}
 
 // Ejecución ----------------------------------------------------------------------------

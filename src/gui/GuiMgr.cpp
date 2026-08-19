@@ -65,7 +65,10 @@
 
 	GuiMgr::GuiMgr(IAppControl* controller) : 
         pimpl_(std::make_unique<Impl>()),
+		ctrl_(controller),
 		config_(nullptr),
+		running_(false),
+		initialized_(false),
 		style_(nullptr),
 		io_(nullptr),
 		captureKeys_(false),
@@ -79,9 +82,7 @@
 		transparent_bk_(false),
 		fontSize_(16),
 		deviceRefreshInterval_(5),
-		window_(nullptr),
-		ctrl_(controller),
-		running_(false)
+		window_(nullptr)
 	{
 		
 		// Avisa si se ha inicializado sin interfaz de comunicación para saber de otros módulos
