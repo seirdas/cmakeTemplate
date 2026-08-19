@@ -290,10 +290,21 @@ private:
     std::unique_ptr<SoundMgr>    snd_;          ///< Gestor de audio
     std::unique_ptr<TotalMix>    tmx_;          ///< Gestor módulo Totalmix
     std::unique_ptr<Symetrix>    sym_;          ///< Gestor módulo Symetrix
-    std::unique_ptr<VoIPMgr>     voip_;         ///< Gestor módulos Voiprec / Voipplay
+    std::unique_ptr<VoIPMgr>     vip_;          ///< Gestor módulos Voiprec / Voipplay
     std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
     std::unique_ptr<FastDDS>     dds_;          ///< Gestor DDS (FastDDS)
     std::unique_ptr<CycloneDDS>  cds_;          ///< Gestor DDS (CycloneDDS)
+
+// Variables de activación de módulos
+    bool    enable_net_;                        ///< Variable de activación de red (network)
+    bool    enable_gui_;                        ///< Variable de activación de GUI
+    bool    enable_snd_;                        ///< Variable de activación de sonido
+    bool    enable_tmx_;                        ///< Variable de activación de Totalmix
+    bool    enable_sym_;                        ///< Variable de activación de Symetrix
+    bool    enable_vip_;                        ///< Variable de activación de VoIP
+    bool    enable_com_;                        ///< Variable de activación de lógica de Comms
+    bool    enable_dds_;                        ///< Variable de activación de DDS (FastDDS)
+    bool    enable_cds_;                        ///< Variable de activación de DDS (CycloneDDS)
 
 // Gestión de hilos
     std::thread             test_thread_;       ///< Hilo de pruebas
