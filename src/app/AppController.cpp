@@ -2,11 +2,11 @@
 #include <string>               // Strings de texto
 #include <chrono>               // Controla tiempos de espera
 #include <filesystem>           // Controla directorios, rutas, etc.
+#include <iostream>             // Consola
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "tts/TTSMgr.hpp"       // Clase para gestionar TTS
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
 #include "logic/comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
@@ -18,6 +18,10 @@
 #include "sound/PlayerMorse.hpp"
 #include "sound/PlayerTTS.hpp"
 
+// Soporte de consola en Linux
+#ifndef _WIN32
+  #include <unistd.h> // Para isatty() y STDIN_FILENO
+#endif
 
 // General ------------------------------------------------------------------------------
 
@@ -60,19 +64,24 @@ AppController::~AppController() {
 
 bool AppController::init(int argc, char** argv) {
 
-    SYS_INFO("AppController","Initializating application...");
-
     // Obtiene los parámetros de entrada
     this->argc_ = argc;
     this->argv_ = argv;
 
-    
+    // Fallback a uso de terminal
+    if (!enable_gui_) {
+        launch_console();
+    }
+
+    SYS_INFO("AppController","Initializating application...");
+
+
     // Obtener el nombre del ejecutable e inicializar SystemMgr con ese nombre
     std::filesystem::path path = std::filesystem::absolute(argv[0]);
     app_name_ = path.stem().string();
     SystemMgr::instance().init(app_name_);
 
-    
+
     // Leer valores del json para AppController
     SYS_INFO("AppController","Reading app config files...");
     JsonMgr& jsonMgr = JsonMgr::instance();
@@ -96,13 +105,16 @@ bool AppController::init(int argc, char** argv) {
     SYS_INFO("AppController","GUI subsystem loading...");
     config_node = jsonMgr.getSubNode(config_filename_,"gui");
     if (enable_gui_) {
-        if (!gui_->init(config_node)) {
+        if (!gui_->init(config_node))
             SYS_ERROR("AppController","GUI subsystem FAIL");
-            return false;   // Está diseñado para salir directamente si no hay GUI
-        }
         else SYS_INFO("AppController","GUI subsystem OK");
     }
 
+    // Comprobar si se ha iniciado GUI, si no, lanzar terminal
+    if (enable_gui_ && !gui_->isInitialized()) {
+        launch_console();
+        SYS_INFO("AppController","Cannot initialize GUI . Fallback to terminal");
+    }
 
     // Iniciar gestor de red
     SYS_INFO("AppController","Network subsystem loading...");
@@ -213,15 +225,15 @@ void AppController::loadConfig(void* config) {
     JsonMgr& jsonMgr = JsonMgr::instance();
 
     jsonMgr.get_or_set(cfg, "version",  version_);
-    jsonMgr.get_or_set(cfg, "enable_net_",  enable_net_);
-    jsonMgr.get_or_set(cfg, "enable_gui_",  enable_gui_);
-    jsonMgr.get_or_set(cfg, "enable_snd_",  enable_snd_);
-    jsonMgr.get_or_set(cfg, "enable_tmx_",  enable_tmx_);
-    jsonMgr.get_or_set(cfg, "enable_sym_",  enable_sym_);
-    jsonMgr.get_or_set(cfg, "enable_voip_",  enable_vip_);
-    jsonMgr.get_or_set(cfg, "enable_com_",  enable_com_);
-    jsonMgr.get_or_set(cfg, "enable_dds_",  enable_dds_);
-    jsonMgr.get_or_set(cfg, "enable_cds_",  enable_cds_);
+    jsonMgr.get_or_set(cfg, "app_enable_net_",  enable_net_);
+    jsonMgr.get_or_set(cfg, "app_enable_gui_",  enable_gui_);
+    jsonMgr.get_or_set(cfg, "app_enable_snd_",  enable_snd_);
+    jsonMgr.get_or_set(cfg, "app_enable_tmx_",  enable_tmx_);
+    jsonMgr.get_or_set(cfg, "app_enable_sym_",  enable_sym_);
+    jsonMgr.get_or_set(cfg, "app_enable_voip_", enable_vip_);
+    jsonMgr.get_or_set(cfg, "app_enable_com_",  enable_com_);
+    jsonMgr.get_or_set(cfg, "app_enable_dds_",  enable_dds_);
+    jsonMgr.get_or_set(cfg, "app_enable_cds_",  enable_cds_);
 
 }
 
@@ -240,12 +252,12 @@ void AppController::close() {
     }
 
     if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
-        SYS_INFO("AppController","Closing GUI subsystem...");
+        SYS_INFO("AppController","Closing Network subsystem...");
         net_->close();
     }
 
     if (snd_->isInitialized()) {
-        SYS_INFO("AppController","Closing sound subsystem...");
+        SYS_INFO("AppController","Closing Sound subsystem...");
         snd_->close();
     }
     
@@ -309,9 +321,13 @@ bool AppController::run() {
     }
 
 
-
     SYS_INFO("AppController","Running app...");
-    return gui_->run(); // ← Bloquea hasta cerrar
+    if (enable_gui_ && gui_ && gui_->isInitialized())
+        return gui_->run(); // Bloquea en la ventana ImGui
+    else {
+        run_cli_loop();       // Bloquea en la consola de comandos de texto
+        return true;
+    }
 }
 
 
@@ -369,5 +385,93 @@ void AppController::TPruebas() {
     */
 }
 
+// IAppControl methods ------------------------------------------------------------------
 
-// IAppControl methods en IAppOverrides.cpp
+/* IAppControl methods en IAppOverrides.cpp */
+
+
+// Consola ------------------------------------------------------------------------------
+
+bool AppController::launch_console() {
+
+    SYS_INFO("AppController","Trying to launch console...");
+
+    #ifdef _WIN32
+
+        // Comprobar si ya hay una terminal
+        if (GetConsoleWindow() != NULL) {
+            SYS_INFO("AppController","Console already opened.");
+            return false;
+        }
+
+        // Abrir terminal en Windows
+        if (AllocConsole()) {
+            FILE* dummy = nullptr;
+            freopen_s(&dummy, "CONOUT$", "w", stdout);
+            freopen_s(&dummy, "CONIN$", "r", stdin);
+            freopen_s(&dummy, "CONOUT$", "w", stderr);
+            
+            // Limpiar indicadores de error de std::cin / std::cout
+            std::cin.clear();
+            std::cout.clear();
+            
+            SYS_INFO("AppController", "Windows console allocated successfully.");
+            return true;
+        }
+
+        return false;
+
+    #else
+        /* (WIP) */
+
+        // Si la aplicación no tiene una TTY estándar asignada (lanzada por GUI/Doble clic)
+        if (isatty(STDIN_FILENO)) {
+            SYS_INFO("AppController","Console already opened.");
+            return false;
+        }
+
+        SYS_INFO("AppController", "No TTY detected. Launching external terminal window...");
+        std::string exe_path = argv_[0];
+
+        // Lanzar terminal ejecutando binario dentro de ella
+        std::string cmd = 
+            "qterminal -e \"" + exe_path + "\" & || "
+            "xfce4-terminal -e \"" + exe_path + "\" & || "
+            "konsole -e \"" + exe_path + "\" & || "
+            "alacritty -e \"" + exe_path + "\" & || "
+            "xterm -e \"" + exe_path + "\" &";
+
+        int ret = std::system(cmd.c_str());
+
+        if (ret == 0) {
+            // Al lanzar una instancia vinculada en la nueva ventana,
+            // cerramos el proceso padre actual "ciego" que no tenía TTY.
+            SYS_INFO("AppController", "Delegated execution to new terminal window. Exiting background process.");
+            std::exit(0); 
+        }
+
+        SYS_ERROR("AppController", "Failed to launch external terminal.");
+        return false;
+
+    #endif
+}
+
+void AppController::run_cli_loop() {
+    SYS_INFO("AppController", "Running in CLI Mode. Type 'help' for commands or 'exit' to quit.");
+    std::string command;
+    
+    while (running_) {
+        if (!(std::cin >> command)) break;
+
+        if (command == "exit" || command == "quit") {
+            close();
+            break;
+        } else if (command == "status") {
+            std::cout << "Online mode: " << (isOnlineMode() ? "YES" : "NO") << "\n";
+        } else if (command == "help") {
+            std::cout << "Commands: status, exit\n";
+        } else {
+            std::cout << "Unknown command: " << command << "\n";
+        }
+    }
+}

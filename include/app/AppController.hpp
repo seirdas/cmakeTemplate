@@ -91,6 +91,7 @@ public:
 
     /**
      * @brief Ejecuta la aplicación. Inicia el receptor UDP y la ventana UI.
+     * @note BLOQUEANTE hasta que se cierre la GUI o en su defecto la terminal
      * @return @c true si todo se ejecutó correctamente, @c false en caso de error.
      */
     bool run();
@@ -265,6 +266,21 @@ public:
     // Añadir aquí métodos de IAppControl...
 
 private:
+
+    // Consola ------------------------------------------------------------------------------
+
+    /**
+     * @brief Lanza la consola. 
+     * @details Diferencia sistema Windows y Linux.
+     */
+    bool launch_console();
+
+    /**
+     * @brief Buble bloqueante para permitir entrada
+     * de comandos en la terminal
+     */
+    void run_cli_loop();
+
 
 /************ Variables ********************************************************/
 
