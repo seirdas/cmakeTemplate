@@ -19,8 +19,10 @@
 #include "sound/PlayerTTS.hpp"
 
 // Soporte de consola en Linux
-#ifndef _WIN32
-  #include <unistd.h> // Para isatty() y STDIN_FILENO
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <unistd.h> // Para isatty() y STDIN_FILENO
 #endif
 
 // General ------------------------------------------------------------------------------
