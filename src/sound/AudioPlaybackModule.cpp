@@ -391,9 +391,7 @@
         if (it == pimpl_->playing_sounds.end())
             return false;
 
-        ma_result res = ma_sound_is_playing(&it->second->sound);
-
-        return (res == MA_SUCCESS) ? true : false;
+        return ma_sound_is_playing(&it->second->sound);
     }
     
 
