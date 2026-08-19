@@ -146,8 +146,8 @@
 
         /* PLAYBACKS */
         // Recorrer elementos de playbacks dentro del nodo json (reutilizar json*)
-    config_module_nodes = jsonMgr.getArrayElements(cfg, "Playbacks");
-    for (json* node : config_module_nodes) {
+        config_module_nodes = jsonMgr.getArrayElements(cfg, "Playbacks");
+        for (json* node : config_module_nodes) {
 
         // Obtener el nombre para la inicialización
         std::string name = "";
@@ -159,36 +159,15 @@
             continue;
         }
 
+        // Obtener el tipo de módulo (morse, tonos, ...)
+        std::string type = "";
+        jsonMgr.get(node, "type", type);
+
         // Identificar el tipo de módulo
-        if (name == "MORSE") {
-            addPlayerMorse(nullptr, name, "");   // el fallback interno elige el primer dispositivo libre
-
-            PlayerMorse* morse = getPlayerMorse(name);
-            if (morse) {
-                float frequencyHz = 1350.0f;
-                jsonMgr.get_or_set(node, "frequency_hz", frequencyHz);
-                morse->setToneFrequency(frequencyHz);
-
-                unsigned int puntoMs = 100;
-                jsonMgr.get_or_set(node, "punto_ms", puntoMs);
-                morse->setPuntoMs(puntoMs);
-
-                unsigned int rayaMs = 300;
-                jsonMgr.get_or_set(node, "raya_ms", rayaMs);
-                morse->setRayaMs(rayaMs);
-
-                unsigned int espacioSimbolos = 100;
-                jsonMgr.get_or_set(node, "espacio_entre_simbolos_ms", espacioSimbolos);
-                morse->setEspacioEntreSimbolos(espacioSimbolos);
-
-                unsigned int espacioLetras = 300;
-                jsonMgr.get_or_set(node, "espacio_entre_letras_ms", espacioLetras);
-                morse->setEspacioEntreLetras(espacioLetras);
-
-                unsigned int sampleRate = 48000;
-                jsonMgr.get_or_set(node, "sample_rate", sampleRate);
-                morse->setSampleRate(sampleRate);
-            }
+        if (type == "morse") {
+            // No se crea nada todavía: solo guardamos el nodo json de este tipo,
+            // para poder crear el PlayerMorse que haga falta "bajo demanda" (getPlayerMorse)
+            morseConfigs_[name] = node;
         }
     // #TODO: else if (name == "CCAS" / "TCAS" / "TONES") -> addPlayerAudio(...)
     }
@@ -567,15 +546,65 @@
 
         // Intentar obtener nombre y dispositivo del param o de la config
         std::string usedDeviceName  = deviceName;    // Nombre completo del dispositivo
-        std::string usedModuleName  = moduleName;  // Nombre definitivo del módulo (del param o json)
+        std::string usedModuleName  = moduleName;    // Nombre definitivo del módulo (del param o json)
         JsonMgr& jsonMgr = JsonMgr::instance();
+        unsigned short usedChannelSelected = 0;      //Canal seleccionado 
 
-        // Intentar obtener del json el nombre del módulo y el nombre del dispositivo
-        if (config) {
-            if (usedDeviceName.empty())
-                jsonMgr.get(static_cast<json*>(config), "device", usedDeviceName);
-            if (usedModuleName.empty())
-                jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
+        // Intentar obtener del json el nombre del módulo
+        if (config && usedModuleName.empty()) 
+            jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
+
+        // Si no nos han dado un dispositivo explícito, recorrer la lista "device" del json
+        if (usedDeviceName.empty() && config){
+
+            // Sacar todos los candidatos de la lista "device" del json
+            std::vector<json*> deviceElements = jsonMgr.getArrayElements(static_cast<json*>(config), "device");
+
+            // Recorrer los candidatos en orden de preferencia
+            for (json* dev : deviceElements) {
+
+                // Ficha en blanco para este candidato: nombre y canal
+                std::string candidateName;
+                unsigned short candidateChannel = 0;
+
+                // Rellenar la ficha con los datos de este candidato
+                jsonMgr.get(dev, "name", candidateName);
+                jsonMgr.get(dev, "channelSelected", candidateChannel);
+
+                // Si no trae nombre, es un candidato inválido: probar el siguiente
+                if (candidateName.empty())
+                continue;
+
+                // Copiar el nombre (get_playback_device_info lo sobreescribe si lo encuentra)
+                std::string realName = candidateName;
+
+                // ¿Existe de verdad este dispositivo en el sistema ahora mismo?
+                if(!get_playback_device_info(realName))
+                continue;   // No existe: probar el siguiente candidato
+
+                // Bandera: ¿algún PlayerMorse ya existente está usando este dispositivo?
+                bool enUso = false;
+
+                // Recorrer todos los PlayerMorse ya creados
+                for (auto const& [name, player] : playersMorse_){
+                    // Si alguno ya está enchufado a este mismo dispositivo
+                    if(player->getDeviceName() == realName) {
+                        enUso = true;   // marcarlo como ocupado
+                        break;          // y dejar de buscar, ya lo sabemos
+                    }
+                }
+
+                // Si está en uso, descartar este candidato y probar el siguiente
+                if(enUso)
+                continue;
+
+                // Este candidato existe y está libre: nos lo quedamos
+                usedDeviceName      = realName;
+                usedChannelSelected = candidateChannel;
+                jsonMgr.set(dev, "name", realName);   // corrige el nombre de ESTE candidato en el json
+                break;   // Ya tenemos dispositivo, dejar de buscar en la lista
+            }
+
         }
 
         // Fallback a dispositivo por defecto (si esta opción está activada)
@@ -604,10 +633,6 @@
             return false; 
         }
 
-        // Corrige la config con el nombre real completo del dispositivo encontrado
-        if (config) 
-            jsonMgr.set(static_cast<json*>(config), "device", realDeviceName);
-
         // Crear módulo de audio
         SYS_INFO("SoundMgr", "Initializing playback module: " + usedModuleName);
         std::unique_ptr<PlayerMorse> pm = std::make_unique<PlayerMorse>(
@@ -622,6 +647,44 @@
         {
             SYS_WARN("SoundMgr","Failed to initialize playback module");
             return false;
+        }
+
+        // Aplicar el canal seleccionado para este dispositivo
+        pm->setSelectedChannel(usedChannelSelected);
+
+        // Si tenemos un json, leemos de ahí la frecuencia y los tiempos de morse, y se
+        // los aplicamos al PlayerMorse. El patrón se repite: valor por defecto -> leer
+        // del json (o guardar el default si no está) -> aplicarlo con su setter.
+        if (config) {
+            json* cfg = static_cast<json*>(config);             // el void* convertido a json*, para poder usarlo
+
+            std::string nombre;                                 // aquí guardamos el "name" del json (ej. "ADF")
+            jsonMgr.get(cfg, "name", nombre);
+            pm->setNombre(nombre);                               // le decimos a este PlayerMorse de qué grupo es
+
+            float frequencyHz = 1350.0f;
+            jsonMgr.get_or_set(cfg, "frequency_hz", frequencyHz);
+            pm->setToneFrequency(frequencyHz);
+
+            unsigned int puntoMs = 100;
+            jsonMgr.get_or_set(cfg, "punto_ms", puntoMs);
+            pm->setPuntoMs(puntoMs);
+
+            unsigned int rayaMs = 300;
+            jsonMgr.get_or_set(cfg, "raya_ms", rayaMs);
+            pm->setRayaMs(rayaMs);
+
+            unsigned int espacioSimbolos = 100;
+            jsonMgr.get_or_set(cfg, "espacio_entre_simbolos_ms", espacioSimbolos);
+            pm->setEspacioEntreSimbolos(espacioSimbolos);
+
+            unsigned int espacioLetras = 300;
+            jsonMgr.get_or_set(cfg, "espacio_entre_letras_ms", espacioLetras);
+            pm->setEspacioEntreLetras(espacioLetras);
+
+            unsigned int sampleRate = 48000;
+            jsonMgr.get_or_set(cfg, "sample_rate", sampleRate);
+            pm->setSampleRate(sampleRate);
         }
 
         // Guardar en la lista de Players de Morse
@@ -639,7 +702,45 @@
         return (it != playersMorse_.end() && it->second) ? it->second.get() : nullptr;
     }
 
-    
+    PlayerMorse* SoundMgr::getPlayerMorse(std::string const& nombre, std::string const& deviceName) {
+
+        // Función pequeña para comparar dos nombres de dispositivo sin liarnos con
+        // mayúsculas/minúsculas ni con que uno sea el nombre corto y el otro el largo
+        auto mismoDispositivo = [](std::string a, std::string b) {
+            std::transform(a.begin(), a.end(), a.begin(), [](unsigned char c){ return std::tolower(c); }); // a en minúsculas
+            std::transform(b.begin(), b.end(), b.begin(), [](unsigned char c){ return std::tolower(c); }); // b en minúsculas
+            return a.find(b) != std::string::npos || b.find(a) != std::string::npos;  // ¿uno contiene al otro?
+        };
+
+        // Paso 1: mirar si ya tenemos uno hecho para este grupo y este dispositivo
+        for (auto const& [name, player] : playersMorse_) {         // recorremos todos los que ya existen
+            if (player->getNombre() == nombre && mismoDispositivo(player->getDeviceName(), deviceName))
+                return player.get();                                // sí lo tenemos -> lo devolvemos y ya está
+        }
+
+        // Paso 2: no lo teníamos. Buscar si tenemos guardada la "receta" de ese grupo
+        auto it = morseConfigs_.find(nombre);                       // buscamos "ADF" en el mapa de recetas
+        if (it == morseConfigs_.end()) {                            // si no hay ninguna receta con ese nombre...
+            SYS_WARN("SoundMgr", "getPlayerMorse: unknown morse group '" + nombre + "'");
+            return nullptr;                                         // ...no podemos crear nada, salimos
+        }
+
+        // crearlo ahora mismo (el nombre de aquí es solo una etiqueta para guardarlo
+        // en el mapa; para buscarlo no la usamos, usamos el "Paso 1" de arriba)
+        std::string internalName = nombre + "_" + deviceName;
+        SYS_INFO("SoundMgr", "getPlayerMorse: creating '" + internalName + "' on demand...");
+        if (!addPlayerMorse(it->second, internalName, deviceName))  // lo creamos con la receta encontrada
+            return nullptr;                                         // si falla la creación, salimos
+
+        // Paso 4: ahora que ya existe, lo buscamos otra vez para devolverlo
+        for (auto const& [name, player] : playersMorse_) {
+            if (player->getNombre() == nombre && mismoDispositivo(player->getDeviceName(), deviceName))
+                return player.get();
+        }
+        return nullptr;
+    }
+
+
     // Módulos PlayerTTS -------------------------------------------------------------
 
     bool SoundMgr::addPlayerTTS(
@@ -661,16 +762,11 @@
         std::string usedDeviceName  = deviceName;    // Nombre completo del dispositivo
         std::string usedModuleName  = moduleName;  // Nombre definitivo del módulo (del param o json)
         JsonMgr& jsonMgr = JsonMgr::instance();
-        if (usedDeviceName.empty() || usedModuleName.empty()) {
-            if (!config) {
-                SYS_WARN("SoundMgr","Cannot retrieve module name");
-                return false;
-            }
-            // Intentar obtener del json el nombre del módulo y el nombre del dispositivo
+
+        // Intentar obtener del json el nombre del módulo y el nombre del dispositivo
+        if (config) {
             if (usedDeviceName.empty())
                 jsonMgr.get(static_cast<json*>(config), "device", usedDeviceName);
-
-            // Intentar obtener del json el nombre del dispositivo
             if (usedModuleName.empty())
                 jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
         }
@@ -687,21 +783,21 @@
         // Comprobación del nombre: Le ponemos un nombre random si no tiene
         if (usedModuleName.empty())
             usedModuleName = "PLAYBACK#" + std::to_string(rand());
-        
+
         // Obtiene la información del dispositivo (ma_device_info)
         /* (Sobreescribe la variable realDeviceName por el nombre real) */
         std::string realDeviceName = usedDeviceName;        // Nombre real del dispositivo
-        const ma_device_info* selectedDeviceInfo 
+        const ma_device_info* selectedDeviceInfo
             = static_cast<const ma_device_info*>(get_playback_device_info(realDeviceName)); // aquí sobreescribe
-            
+
         // Si no encuentra ningún nombre sale con fallo
         if(!selectedDeviceInfo) {
-            SYS_WARN("SoundMgr", "Failed to found device: '" + usedDeviceName + "'"); 
-            return false; 
+            SYS_WARN("SoundMgr", "Failed to found device: '" + usedDeviceName + "'");
+            return false;
         }
 
         // Corrige la config con el nombre real completo del dispositivo encontrado
-        if (config) 
+        if (config)
             jsonMgr.set(static_cast<json*>(config), "device", realDeviceName);
 
         // Crear módulo de audio
