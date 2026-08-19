@@ -663,18 +663,31 @@
         std::string usedDeviceName  = deviceName;    // Nombre completo del dispositivo
         std::string usedModuleName  = moduleName;  // Nombre definitivo del módulo (del param o json)
         JsonMgr& jsonMgr = JsonMgr::instance();
-        if (usedDeviceName.empty() || usedModuleName.empty()) {
-            if (!config) {
-                SYS_WARN("SoundMgr","Cannot retrieve module name");
-                return false;
-            }
-            // Intentar obtener del json el nombre del módulo y el nombre del dispositivo
+
+        // Intentar obtener del json el nombre del módulo y el nombre del dispositivo
+        if (config) {
             if (usedDeviceName.empty())
                 jsonMgr.get(static_cast<json*>(config), "device", usedDeviceName);
-
-            // Intentar obtener del json el nombre del dispositivo
             if (usedModuleName.empty())
                 jsonMgr.get(static_cast<json*>(config), "name", usedModuleName);
+        }
+
+        // Si sigue vacío, coger el primer dispositivo disponible que no esté ya en uso
+        if (usedDeviceName.empty()) {
+            std::lock_guard<std::mutex> lock(available_playbacks_mtx_);
+            for (std::string const& candidate : available_playbacks_) {
+                bool enUso = false;
+                for (auto const& [name, player] : playersTTS_) {
+                    if (player->getDeviceName() == candidate) {
+                        enUso = true;
+                        break;
+                    }
+                }
+                if (!enUso) {
+                    usedDeviceName = candidate;
+                    break;
+                }
+            }
         }
 
         // Comprobar si se ha obtenido bien el dispositivo
@@ -685,21 +698,21 @@
         // Comprobación del nombre: Le ponemos un nombre random si no tiene
         if (usedModuleName.empty())
             usedModuleName = "PLAYBACK#" + std::to_string(rand());
-        
+
         // Obtiene la información del dispositivo (ma_device_info)
         /* (Sobreescribe la variable realDeviceName por el nombre real) */
         std::string realDeviceName = usedDeviceName;        // Nombre real del dispositivo
-        const ma_device_info* selectedDeviceInfo 
+        const ma_device_info* selectedDeviceInfo
             = static_cast<const ma_device_info*>(get_playback_device_info(realDeviceName)); // aquí sobreescribe
-            
+
         // Si no encuentra ningún nombre sale con fallo
         if(!selectedDeviceInfo) {
-            SYS_WARN("SoundMgr", "Failed to found device: '" + usedDeviceName + "'"); 
-            return false; 
+            SYS_WARN("SoundMgr", "Failed to found device: '" + usedDeviceName + "'");
+            return false;
         }
 
         // Corrige la config con el nombre real completo del dispositivo encontrado
-        if (config) 
+        if (config)
             jsonMgr.set(static_cast<json*>(config), "device", realDeviceName);
 
         // Crear módulo de audio

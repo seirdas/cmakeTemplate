@@ -16,6 +16,7 @@
 #include "files/JsonMgr.hpp"    // Gestión de archivos json
 #include "system/SystemMgr.hpp" // Gestión de log del sistema
 #include "sound/PlayerMorse.hpp"
+#include "sound/PlayerTTS.hpp"
 
 
 // General ------------------------------------------------------------------------------
@@ -301,6 +302,19 @@ bool AppController::run() {
     PlayerMorse* morse2 = snd_->getPlayerMorse("MORSE_AURICULARES");
     if (morse2)
         morse2->playMorse("SOS");
+
+
+    // Prueba simple de PlayerTTS
+    snd_->addPlayerTTS(nullptr, "pepe", "");
+    PlayerTTS* pepe = snd_->getPlayerTTS("pepe");
+    if (pepe != nullptr) {
+        pepe->playTTS("en_US-amy-low", "ATIS information alfa connection, hello my name is Adri I like to fly and to play league of legends", "atis1");
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        pepe->stopAudio("atis1", false, 0, 2000);
+    }
+
+
+    
 
 
     SYS_INFO("AppController","Running app...");
