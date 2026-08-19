@@ -75,6 +75,9 @@
         //Establecer parámetros de la reproducción
         ma_sound_set_volume(&inst->sound, static_cast<float>(volume) / 100.0f);
         ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE :MA_FALSE);
+        float pan = (selectedChannel_ == 1) ? -1.0f : (selectedChannel_ == 2) ? 1.0f : 0.0f;
+        ma_sound_set_pan(&inst->sound, pan);
+
 
         // Vincluar el fin de la reproducción al endCallback
         ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
@@ -124,6 +127,14 @@
     
     void PlayerMorse::setSampleRate(unsigned int hz) {
         sampleRate_ = hz;
+    }
+
+    void PlayerMorse::setNombre(std::string const& nombre) {
+        nombre_ = nombre;
+    }
+
+    std::string PlayerMorse::getNombre() const {
+        return nombre_;
     }
 
 
@@ -207,6 +218,8 @@ void PlayerMorse::setEspacioEntreSimbolos(unsigned int)   { return; }
 void PlayerMorse::setEspacioEntreLetras(unsigned int)     { return; }
 void PlayerMorse::setEspacioEntreMorse(unsigned int)      { return; }
 void PlayerMorse::setSampleRate(unsigned int)             { return; }
+void PlayerMorse::setNombre(std::string const&)             { return; }
+std::string PlayerMorse::getNombre() const                  { return ""; }
 
 // Generación ---------------------------------------------------------------------------
 std::vector<float> PlayerMorse::generate_morse_audio(std::string const&)   { return {}; }

@@ -140,7 +140,12 @@ public:
      */
     void setPitch(std::string const& audioName, float pitch);
 
-
+    /**
+     * @brief Establece por qué canal del dispositivo (estéreo) se reproduce el audio.
+     * @param channel Canal seleccionado: 0 = ambos canales, 1 = canal 1, 2 = canal 2.
+     */
+    void setSelectedChannel(unsigned short channel);
+    
 // Parámetros del módulo ----------------------------------------------------------------
 
     /**
@@ -274,6 +279,7 @@ protected:
     std::atomic<bool>       running_;               ///< flag de aplicación corriendo (para hilos)
     std::string             name_;                  ///< Nombre del módulo
     unsigned short          globalVol_;             ///< Volumen global del módulo (0-100)
+    unsigned short          selectedChannel_;       ///< Selección del canal 
 
 // Listas de sonidos
     mutable std::mutex  playing_sounds_mtx_;        ///< Mutex para el mapa de sonidos

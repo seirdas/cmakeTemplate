@@ -154,7 +154,7 @@
             },
             {
                 "name": "Reproducción de tonos",
-                "type" : 1,
+                "type" : "tonos",
                 "process_buffer_size": 1024,
                 "audioFolder": "audios/RADIO",
                 "device": [
@@ -183,12 +183,12 @@
             {
                 "name": "ADF",
                 "process_buffer_size": 1024,
-                "type" : 2,
+                "type" : "morse",
                 "device": [
                     {
                         "name":"auriculares",
                         "channels":2,
-                        "channelSelected":1
+                        "channelSelected":2
                     },
                     {
                         "name":"altavoces",
