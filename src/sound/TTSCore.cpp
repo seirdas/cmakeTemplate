@@ -141,10 +141,10 @@
         JsonMgr& jsonMgr = JsonMgr::instance();
 
         // Thread_count
-        jsonMgr.get_or_set(cfg, "num_threads", num_threads_);
+        jsonMgr.get_or_set(cfg, "tts_num_threads", num_threads_);
 
         // Ruta de modelos de voz
-        jsonMgr.get_or_set(cfg, "models_path", models_path_);
+        jsonMgr.get_or_set(cfg, "tts_models_path", models_path_);
         
         // Establecer dentro de rango: 0=auto, >max = max
         unsigned short max_threads = static_cast<unsigned short>(std::thread::hardware_concurrency());
@@ -160,18 +160,18 @@
 
 
         // Carga de la sección lazy
-        json* lazyCfg = jsonMgr.getSubNode(cfg, "lazy_load");
+        json* lazyCfg = jsonMgr.getSubNode(cfg, "tts_lazy_load");
         jsonMgr.get_or_set(lazyCfg, "active", lazy_load_);
 
         int keep_alive_raw = static_cast<int>(keep_alive_seconds_.count()); // numero a segundos
-        jsonMgr.get_or_set(lazyCfg, "keep_alive_seconds", keep_alive_raw);
+        jsonMgr.get_or_set(lazyCfg, "tts_model_keep_alive_seconds", keep_alive_raw);
         keep_alive_seconds_ = std::chrono::seconds(keep_alive_raw);
 
 
         // Carga de la sección concurrent
-        json* concurrentCfg = jsonMgr.getSubNode(cfg, "concurrent_init_");
+        json* concurrentCfg = jsonMgr.getSubNode(cfg, "tts_concurrent_init_");
         jsonMgr.get_or_set(concurrentCfg, "active", concurrent_init_);
-        jsonMgr.get_or_set(concurrentCfg, "num_load_retries", num_load_retries_);
+        jsonMgr.get_or_set(concurrentCfg, "tts_model_num_load_retries", num_load_retries_);
 
     }
 

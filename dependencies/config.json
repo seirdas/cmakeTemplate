@@ -67,16 +67,16 @@
         ]
     },
     "gui": {
-        "AppName": "Audio Control Center",
-        "deviceRefreshInterval": 5.0,
-        "fontSize": 16.0,
+        "app_name_window": "Audio Control Center",
+        "device_refresh_interval": 5.0,
+        "font_size": 16.0,
         "fullscreen": false,
         "theme_selected": "DefaultLight",
         "transparent_background": false,
-        "windowPosX": 720,
-        "windowPosY": 0,
-        "windowSizeX": 1280,
-        "windowSizeY": 720
+        "window_pos_x": 0,
+        "window_pos_y": 0,
+        "window_size_x": 1280,
+        "window_size_y": 720
     },
     "network": {
         "num_threads": 4,
@@ -120,8 +120,19 @@
         ],
         "Playbacks": null,
         "attack_coefficient": 0.5,
+        "fallback_to_default": true,
         "release_coefficient": 0.1,
-        "smoothedValues": true
+        "smoothedValues": true,
+        "tts_concurrent_init_": {
+            "active": false,
+            "tts_model_num_load_retries": 2
+        },
+        "tts_lazy_load": {
+            "active": true,
+            "tts_model_keep_alive_seconds": 20
+        },
+        "tts_models_path": "tts-voices",
+        "tts_num_threads": 16
     },
     "symetrix": {
         "composer_port": 48631,
