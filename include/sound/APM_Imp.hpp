@@ -25,16 +25,9 @@
             bool            isBuffer = false;   ///< Indica si "buffer" está inicializado y hay que liberarlo
         };
 
-        /** @brief Elemento de caché de archivo de audio */
-        struct AudioCacheInstance {
-            ma_sound    sound;                              ///< Archivo de audio cacheado
-            std::chrono::steady_clock::time_point time;     ///< Marca de tiempo en el que se cacheó el audio
-        };
-
-
+        
         // Aliases
         using PlayingSoundsList = std::unordered_map<std::string, std::unique_ptr<SoundInstance>>;
-        using CacheList         = std::unordered_map<std::string, std::unique_ptr<AudioCacheInstance>>;
         using ColaCleanup       = std::queue<std::unique_ptr<SoundInstance>>;
 
         // Componentes de miniaudio
@@ -44,7 +37,6 @@
 
         // Listas de sonidos
         PlayingSoundsList   playing_sounds;     ///< Mapa de instancias de sonido reproduciéndose (nombreWav -> SoundInstance)
-        CacheList           sounds_cache;       ///< Mapa de caché de archivos de audio
         ColaCleanup         cleanup_queue;      ///< Cola de limpieza de sonidos a desinicializar
         
         /**

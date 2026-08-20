@@ -23,7 +23,11 @@ public:
      * @param ctx (ma_context*) Contexto de mini audio.
      * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
-    AudioPlaybackModule(std::string const& moduleName, void* ctx, const void* device_info);
+    AudioPlaybackModule(
+        std::string const&  moduleName, 
+        void*               ctx, 
+        const void*         device_info
+    );
 
     /**
      * @brief Destructor de AudioPlaybackModule.
@@ -41,7 +45,6 @@ public:
     AudioPlaybackModule& operator=(AudioPlaybackModule&&) = delete;
 
 
-
 // Inicialización -----------------------------------------------------------------------
 
     /**
@@ -51,7 +54,7 @@ public:
      * @param playbackName Nombre asignado a este módulo
      * @return true si se inicia correctamente, false en caso contrario.
      */
-    bool init(
+    virtual bool init(
         void*               config          = nullptr, 
         std::string const&  playbackName    = ""
     );
@@ -75,7 +78,7 @@ public:
     /**
      * @brief Detiene la reproducción de audio y libera recursos.
      */
-    bool close();
+    virtual bool close();
 
     /**
      * @brief Desinicializa y cierra el módulo 
@@ -86,22 +89,8 @@ public:
 
 // Ejecución ----------------------------------------------------------------------------
 
-    /**
-     * @brief Reproduce un archivo de audio con las configuraciones especificadas.
-     * @param filepath Ruta del archivo de audio.
-     * @param volume Volumen del sonido (0 a 100)
-     * @param loop Modo de repetición
-     * @param forceStop Fuerza la parada si se desactiva (de lo contrario, deja terminar el wav)
-     * @param pitch Tono del sonido (0.0f - )
-     * @return Un identificador único para la instancia del sonido
-     */
-    void playAudio(
-        const std::string&  filepath,
-        unsigned short      volume = 100,
-        bool                loop = false,
-        bool                forceStop = false,
-        unsigned short      pitch = 1
-    );
+    /* Play es específico de cada reproductor en las clases heredadas */
+    // void play();
 
     /**
      * @brief Detiene la reproduccitón de un sonido con el ID especificado.
@@ -179,18 +168,20 @@ public:
     // #TODO Añadir método: Cuando se añadan varios dispositivos de reproducción,
     // obtener un dispositivo libre que no esté reproduciendo (el siguiente, por ejemplo)
 
+    // Necesario declarar Impl en público para que lo vean (y añadan cosas) las hijas
+    struct Impl;
 
 // #TODO revisar qué cosas deberían ser private y protected
 protected:
 
-// Caché --------------------------------------------------------------------------------
+// Constructor para clases derivadas ----------------------------------------------------
 
     /**
-     * @brief Precarga un archivo de audio en la caché.
-     * @param filepath Ruta del archivo de audio.
-     * @return true si la precarga tiene éxito, false en caso contrario.
+     * @brief Constructor protegido que permite a las hijas pasar su propio Impl derivado
+     * @param moduleName 
+     * @param customImpl 
      */
-    bool preload_audio_file(const std::string& filepath);
+    AudioPlaybackModule(std::string const& moduleName, std::unique_ptr<Impl> customImpl);
 
 
 // Limpieza de sonidos ------------------------------------------------------------------
@@ -213,19 +204,6 @@ protected:
      * @brief Libera de la memoria los sonidos de la lista de limpieza
      */
     void cleanup_sounds();
-
-
-// Limpieza de caché de audios ----------------------------------------------------------
-
-    /**
-     * @brief Hilo de trabajo para la limpieza y descarga diferida de audios en caché.
-     * @details Revisa de forma periódica el tiempo de inactividad de los audios cargados
-     *  en la caché. Si un audio supera el tiempo de vida especificado y no se
-     *  encuentra actualmente en reproducción, libera el audio de la memoria.
-     * @note Esta función está diseñada para ejecutarse de manera continua
-     *  en un hilo independiente.
-     */
-    void t_cache_reaper();
 
 
 // Thread de pitchOut -------------------------------------------------------------------
@@ -261,7 +239,7 @@ protected:
 /************ Variables ****************************************************************/
 
 // Estructura PIMPL para no depender de la librería en el header
-    struct Impl;
+    // struct Impl;                                 // Declarado antes como público para hijas
     std::unique_ptr<Impl>   pimpl_;                 ///< Miembros dependientes de la librería externa
 
 // Inicialización y ejecución
@@ -273,7 +251,6 @@ protected:
 
 // Listas de sonidos
     mutable std::mutex  playing_sounds_mtx_;        ///< Mutex para el mapa de sonidos
-    mutable std::mutex  sounds_cache_mtx_;          ///< Mutex para la lista de caché de sonidos
     // SoundList        playing_sounds;              // variable en PIMPL
     // CacheList        sounds_cache;                // variable en PIMPL
 
@@ -283,12 +260,6 @@ protected:
     std::condition_variable cleanup_cv_;            ///< Variable de condición para despertar al hilo
     std::mutex              cleanup_mtx_;           ///< Mutex para la cola de limpieza
     // std::queue<ma_sound*>   cleanup_queue;       // variable en PIMPL
-
-// Limpieza de caché de sonidos por tiempo
-    std::thread             cachereaper_thread_;    ///< Hilo para descargar sonidos cargados respecto a su timeout
-    std::mutex              cachereaper_mtx_;       ///< Mutex para el acceso al mapa last_used
-    std::condition_variable cachereaper_cv_;        ///< Condition variable para el acceso al hilo reaper
-    std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida en segundos de los audios en caché
 
 // Hilos pitchout
     std::atomic<size_t> active_fadeouts_threads_;   ///< Número de hilos pitchout ejecutándose

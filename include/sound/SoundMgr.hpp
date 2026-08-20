@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <atomic>
 #include <mutex>
 #include <string>
@@ -7,7 +8,6 @@
 #include <vector>
 #include <memory>           // unique_ptr
 #include <thread>
-
 
 
 // Forward declaration (evita includes en hpp)
@@ -401,7 +401,6 @@ private:
     CapturesList                captures_;                  ///< Vector con dispositivos inicializados de captura
     PlayersAudioList            playersAudios_;             ///< Lista con módulos reproductores de archivos
     PlayersMorseList            playersMorse_;              ///< Lista con módulos reproductores de morse ya creados
-    std::unordered_map<std::string, void*> morseConfigs_;   ///< Nodo json de cada tipo de morse (para crearlos bajo demanda)
     PlayerTTSList               playersTTS_;                ///< Lista con módulos reproductores de TTS
     
 // Módulo TTS

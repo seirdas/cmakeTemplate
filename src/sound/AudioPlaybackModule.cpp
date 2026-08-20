@@ -13,14 +13,17 @@
 
     // General ------------------------------------------------------------------------------
 
-    AudioPlaybackModule::AudioPlaybackModule(std::string const& moduleName, void* ctx, const void* device_info) :
+    AudioPlaybackModule::AudioPlaybackModule(
+        std::string const&  moduleName, 
+        void*               ctx, 
+        const void*         device_info
+    ) :
         pimpl_(std::make_unique<Impl>(ctx, device_info)),
         initialized_(false),
         running_(false),
         name_(moduleName),
         globalVol_(100),
         selectedChannel_(0),
-        keep_alive_seconds_(10),
         active_fadeouts_threads_(0)
     {
 
@@ -43,7 +46,6 @@
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
-
 
         // Ponerle nombre a este módulo (sobreescribe el de la config)
         if (!moduleName.empty()) name_ = moduleName;
@@ -69,11 +71,7 @@
         // Inicializar el hilo de limpieza diferida
         SYS_INFO("PlaybackModule","Starting audio cleanup thread...");
         cleanup_thread_ = std::thread(&AudioPlaybackModule::t_cleanup, this);
-
-        // Iniciar el hilo del tiempo de vida de la caché de audios
-        SYS_INFO("PlaybackModule","Starting audio cache cleanup on timeout thread...");
-        cachereaper_thread_ = std::thread(&AudioPlaybackModule::t_cache_reaper, this);
-
+        
         // Llega hasta aquí si se ha inicializado bien
         initialized_ = true;
         return initialized_; //<- true
@@ -123,13 +121,6 @@
             cleanup_thread_.join();
         }
 
-        // Despertar y unir hilo del Reaper de caché
-        if (cachereaper_thread_.joinable()) {
-            SYS_INFO("PlaybackModule","'" + name_ + "': Closing sounds reaper thread...");
-            cachereaper_cv_.notify_all();
-            cachereaper_thread_.join();
-        }
-
         // Limpiar instancias de sonidos activos
         {
             std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
@@ -142,15 +133,6 @@
             pimpl_->playing_sounds.clear();
         }
         cleanup_sounds();    // Asegurar limpieza
-
-        // Limpiar cache de audios
-        {
-            std::lock_guard<std::mutex> lock(sounds_cache_mtx_);
-            SYS_INFO("PlaybackModule","Cleaning audio cache...");
-            for (auto& [wavname, snd] : pimpl_->sounds_cache)
-                ma_sound_uninit(&snd->sound);
-            pimpl_->sounds_cache.clear();
-        }
 
         // Desinicializar el sistema
         SYS_INFO("PlaybackModule","'" + name_ + "': Unitializing audio engine...");
@@ -174,74 +156,6 @@
 
 
     // Ejecución ----------------------------------------------------------------------------
-
-    void AudioPlaybackModule::playAudio(
-        std::string const&  filepath,
-        unsigned short      volume,
-        bool                loop,
-        bool                forceStop,
-        unsigned short      pitch)
-    {
-        if (!initialized_)
-            return;
-
-        // Asegurar precarga de audio en caché (devuelve true si ya estaba precargado)
-        if (!preload_audio_file(filepath)) {
-            SYS_WARN("AudioPlaybackModule", "Could not preload: " + filepath);
-            return;
-        }
-
-        // Crear la instancia de sonido
-        auto inst = std::make_unique<Impl::SoundInstance>();
-
-        // Bloquear caché para leer la muestra precargada de forma segura
-        {
-            std::lock_guard<std::mutex> cacheLock(sounds_cache_mtx_);
-            auto it = pimpl_->sounds_cache.find(filepath);
-            if (it == pimpl_->sounds_cache.end()) return;
-
-            ma_result res = ma_sound_init_copy(
-                &pimpl_->engine,
-                &it->second->sound,
-                0,
-                nullptr,
-                &inst->sound);
-
-            if (res != MA_SUCCESS) {
-                SYS_WARN("AudioPlaybackModule", "ma_sound_init_copy error");
-                return;
-            }
-        }
-
-        // Establecer parámetros de la reproducción
-        float ma_volume = (static_cast<float>(volume) / 100.0f) * static_cast<float>(globalVol_) / 100.0f;
-        ma_sound_set_volume(&inst->sound, ma_volume);  // (va de 0.0 a 1.0)
-        ma_sound_set_pitch(&inst->sound, pitch);
-        ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE : MA_FALSE);
-        float pan = (selectedChannel_ == 1) ? -1.0f : (selectedChannel_ == 2) ? 1.0f : 0.0f;
-        ma_sound_set_pan(&inst->sound, pan);
-
-
-        // Vincular el fin de la reproducción al endCallback
-        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
-
-        // Guardar parámetros en la instancia de sonido guardado
-        inst->loopMode  = loop;
-        inst->forceStop = forceStop;
-        inst->name      = filepath;
-        inst->volume    = volume;
-
-        // Guardar en el mapa y reproducir
-        {
-            // Guardar la instancia de sonido en la lista de sonidos reproduciéndose
-            std::lock_guard<std::mutex> soundsLock(playing_sounds_mtx_);
-            pimpl_->playing_sounds[filepath] = std::move(inst);
-
-            // Comenzar a reproducir (tomo directamente el sonido de la lista de playing_sounds)
-            SYS_INFO("PlaybackModule","'" + filepath + "': init playing...");
-            ma_sound_start(&pimpl_->playing_sounds[filepath]->sound);
-        }
-    }
 
     void AudioPlaybackModule::stop(
         std::string const& audioName, 
@@ -389,55 +303,26 @@
 
         return ma_sound_is_playing(&it->second->sound);
     }
+
+
+    // Constructor para clases derivadas ----------------------------------------------------
+
+    AudioPlaybackModule::AudioPlaybackModule(
+        std::string const&      moduleName, 
+        std::unique_ptr<Impl>   customImpl
+    ) :
+        pimpl_(std::move(customImpl)),
+        initialized_(false),
+        running_(false),
+        name_(moduleName),
+        globalVol_(100),
+        selectedChannel_(0),
+        active_fadeouts_threads_(0)
+    {}
     
 
-    // Caché --------------------------------------------------------------------------------
 
-    bool AudioPlaybackModule::preload_audio_file(const std::string& filepath) {
-        if (!initialized_)
-            return false;
-
-        std::unique_lock<std::mutex> lock(sounds_cache_mtx_);
-
-        // Comprobar si ya está precargado
-        if (pimpl_->sounds_cache.count(filepath))
-            return true;
-
-        // Desbloquear para la carga
-        lock.unlock();
-
-        // Crear una instancia de la estructura de la caché de audios
-        auto inst = std::make_unique<Impl::AudioCacheInstance>();
-
-        // Inicializar el audio de la instancia a partir del archivo
-        if (ma_sound_init_from_file(
-            &pimpl_->engine,
-            filepath.c_str(),
-            MA_SOUND_FLAG_DECODE,
-            nullptr,
-            nullptr,
-            &inst->sound) != MA_SUCCESS)
-        {
-            SYS_WARN("AudioPlaybackModule", "Failed to load audio file: " + filepath);
-            return false;
-        }
-
-        // Guardar la marca de tiempo
-        std::unique_lock<std::mutex> reaperLock(cachereaper_mtx_);
-        inst->time = std::chrono::steady_clock::now();
-        reaperLock.unlock();
-
-        // Bloquear de nuevo para el acceso a la caché
-        lock.lock();
-
-        // Guardar el audio generado en la caché
-        pimpl_->sounds_cache[filepath] = std::move(inst);
-
-        return true;
-    }
-
-
-    // Limpieza -----------------------------------------------------------------------------
+    // Limpieza de sonidos ------------------------------------------------------------------
 
     void AudioPlaybackModule::t_cleanup() {
 
@@ -525,74 +410,6 @@
                 if (instanceToClean->isBuffer)
                     ma_audio_buffer_uninit(&instanceToClean->buffer);
             }
-        }
-    }
-
-
-    // Limpieza de caché de audios ----------------------------------------------------------
-
-    void AudioPlaybackModule::t_cache_reaper() {
-
-        // Tiempo de comprobación, cada tiempoVida/10 con mínimo de 1seg
-        std::chrono::duration<long> poll_interval = std::max(std::chrono::seconds(1), keep_alive_seconds_ / 10);
-
-        // Mutex del reaper (se desbloquea en el wait_for)
-        std::unique_lock<std::mutex> lock(cachereaper_mtx_);
-
-        while (running_) {
-
-            // Espera hasta: cierre, haya algo que vigilar
-            cachereaper_cv_.wait_for(lock, poll_interval, [this] {
-                return !running_;
-            });
-
-            // Salir si no está activo el módulo (se está cerrando)
-            if (!running_) break;
-
-            /* #TODO */
-
-            // Bloquear mutex de la lista de sonidos
-            std::unique_lock<std::mutex> soundsLock(sounds_cache_mtx_);
-
-            // Comprobar si hay algo que comprobar (xd)
-            if (pimpl_->sounds_cache.empty()) continue;
-
-            // Compara el tiempo de los modelos con el actual
-            auto now = std::chrono::steady_clock::now();
-
-            // Borrar si se ha superado el tiempo y no se está usando (así para evitar segmentation-fault)
-            bool isCurrentlyPlaying = false;
-            for (auto it = pimpl_->sounds_cache.begin(); it != pimpl_->sounds_cache.end(); ) {
-                if (now - it->second->time >= keep_alive_seconds_) {
-
-                    // No liberar de la caché si hay algún sonido sonando
-                    isCurrentlyPlaying = false;
-                    {
-                        std::unique_lock<std::mutex> pLock(playing_sounds_mtx_);
-                        // Comprobar si la ruta coincide con alguno de los activos
-                        std::filesystem::path p(it->first);
-                        std::string stem = p.stem().string();
-                        if (pimpl_->playing_sounds.count(stem)) {
-                            isCurrentlyPlaying = true;
-                        }
-                    }
-
-                    if (!isCurrentlyPlaying) {
-                        SYS_INFO("PlaybackModule", "Freeing cached sound: " + it->first);
-                        ma_sound_uninit(&it->second->sound);
-                        it = pimpl_->sounds_cache.erase(it);
-                    } else {
-                        // Renovar expiración para reintentar en el siguiente ciclo
-                        it->second->time = now;
-                        ++it;
-                    }
-                } else {
-                    ++it;
-                }
-            }
-
-            // Desbloquear el mutex de la lista de sonidos
-            soundsLock.unlock();
         }
     }
 
@@ -774,7 +591,7 @@ bool AudioPlaybackModule::isPlaying(std::string const&) const    { return false;
 bool AudioPlaybackModule::isBusy() const                         { return false; }
 
 // Caché --------------------------------------------------------------------------------
-bool AudioPlaybackModule::preload_audio_file(const std::string&)   { return false; }
+bool AudioPlaybackModule::preload_audio_on_cache(const std::string&)   { return false; }
 
 // Limpieza de sonidos ------------------------------------------------------------------
 void AudioPlaybackModule::t_cleanup()                           { return; }
