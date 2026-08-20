@@ -281,6 +281,33 @@ private:
      */
     bool run_cli_loop();
 
+    /**
+     * @brief Interpreta y ejecuta un comando de texto recibido por la CLI.
+     * @details Tokeniza la línea (respetando comillas) y usa una tabla de dispatch
+     *  (nombre de comando -> handler)
+     * @param cmd Línea de comando completa introducida por el usuario.
+     */
+    void execute_command(const std::string& cmd);
+
+    /**
+     * @brief Subcomandos del comando "sounds"
+     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
+     */
+    void execute_sounds_command(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos del comando "symetrix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
+     */
+    void execute_symetrix_command(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos del comando "totalmix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
+     */
+    void execute_totalmix_command(std::vector<std::string> const& tokens);
+
+
 
 /************ Variables ********************************************************/
 

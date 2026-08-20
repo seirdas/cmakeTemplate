@@ -208,10 +208,11 @@ void SystemMgr::setCliActive(bool active) {
     is_cli_active_ = active;
 }
 
-void SystemMgr::updateCliInput(const std::string& input) {
+void SystemMgr::updateCliInput(const std::string& input, size_t cursorPos) {
     std::lock_guard<std::mutex> lock(console_mtx);
-    current_cli_input_ = input;
-    if (is_cli_active_) 
+    current_cli_input_  = input;
+    current_cli_cursor_ = (cursorPos == std::string::npos) ? input.size() : cursorPos;
+    if (is_cli_active_)
         redrawPrompt_unlocked();
 }
 
@@ -224,7 +225,8 @@ void SystemMgr::redrawPrompt() {
 
 SystemMgr::SystemMgr() :
     split_width_(20),
-    is_cli_active_(false)
+    is_cli_active_(false),
+    current_cli_cursor_(0)
 {
 
 }
@@ -267,6 +269,14 @@ void SystemMgr::show_popup(std::string const& msg, std::string const& title, boo
 void SystemMgr::redrawPrompt_unlocked() {
     // \r       -> Mueve el cursor al inicio de la línea
     // \033[K   -> Borra únicamente desde el cursor hasta el final
-    std::cerr << "\r" << ANSI_BRIGHT_CYAN << app_name_ << "> " << ANSI_RESET 
-              << current_cli_input_ << "\033[K" << std::flush;
+    std::cerr << "\r" << ANSI_BRIGHT_CYAN << app_name_ << "> " << ANSI_RESET
+              << current_cli_input_ << "\033[K";
+
+    // Si el cursor lógico no está al final del texto, hay que retroceder el
+    // cursor visual lo que sobre (siempre se pinta la línea entera arriba).
+    const size_t charsAfterCursor = current_cli_input_.size() - current_cli_cursor_;
+    if (charsAfterCursor > 0)
+        std::cerr << "\033[" << charsAfterCursor << "D";
+
+    std::cerr << std::flush;
 }

@@ -100,8 +100,11 @@ public:
 
     /**
      * @brief Actualiza el texto que el usuario lleva escrito y redibuja la línea
+     * @param input Texto completo actual del comando
+     * @param cursorPos Posición del cursor dentro de @p input. Por defecto
+     *  (std::string::npos) se coloca al final del texto.
      */
-    void updateCliInput(const std::string& input);
+    void updateCliInput(const std::string& input, size_t cursorPos = std::string::npos);
 
     /**
      * @brief Redibuja el prefijo de escritura a la fuerza
@@ -163,5 +166,6 @@ private:
     const unsigned int  split_width_;       ///< Ancho de separación entre el tipo y el texto
     bool                is_cli_active_;     ///< La terminal está activa para escritura de comandos
     std::string         current_cli_input_; ///< Entrada del comando temporal para no mezclar con logs
+    size_t              current_cli_cursor_; ///< Posición del cursor dentro de current_cli_input_
 
 };
