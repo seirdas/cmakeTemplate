@@ -28,14 +28,79 @@
     #include <unistd.h> 
 #endif
 
-// Función auxiliar de consola
-void setConsoleTitle(const std::string& title) {
-    #ifdef _WIN32
-        SetConsoleTitleA(title.c_str());
-    #else
-        std::cout << "\033]0;" << title << "\007" << std::flush;
-    #endif
-}
+// Funciones de consola (pendiente de meter en una clase aparte)
+namespace {
+
+    /**
+     * @brief Establece el nombre de la ventana de terminal
+     * @param title Nombre de ventana
+     */
+    void setConsoleTitle(const std::string& title) {
+        #ifdef _WIN32
+            SetConsoleTitleA(title.c_str());
+        #else
+            std::cout << "\033]0;" << title << "\007" << std::flush;
+        #endif
+    }
+    
+    /**
+     * @brief Divide una línea de comandos en tokens, respetando comillas dobles
+     * @details Obtiene de una línea de palabras, un vector con las palabras divididas
+     * @note Respeta las comillas ( "Hola mundo" es solo un token -> Hola mundo)
+     * @param line Línea de palabras
+     * @return Vector con las palabras divididas
+     */
+    std::vector<std::string> tokenize_cli(std::string const& line) {
+        std::vector<std::string> tokens;
+        std::string current;
+        bool inQuotes = false;
+
+        for (char c : line) {
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ' ' && !inQuotes) {
+                if (!current.empty()) {
+                    tokens.push_back(current);
+                    current.clear();
+                }
+            } else {
+                current += c;
+            }
+        }
+        if (!current.empty())
+            tokens.push_back(current);
+
+        return tokens;
+    }
+
+    /**
+     * @brief Extrae pares --flag valor de una lista de tokens
+     * @param tokens Vector de palabras divididas
+     * @param size 
+     * @return 
+     */
+    std::unordered_map<std::string, std::string> parse_flags(
+        std::vector<std::string> const& tokens, size_t size)
+    {
+        std::unordered_map<std::string, std::string> flags;
+
+        // Recorrer el vector de palabras
+        for (size_t token = size; token < tokens.size(); ++token)
+
+            // Si tiene --, es una clave para el mapa
+            if (tokens[token].rfind("--", 0) == 0) {
+
+                // Coge el valor siguiente como valor del mapa
+                std::string value = (token + 1 < tokens.size()) ? tokens[token + 1] : "";
+                flags[tokens[token]] = value;
+
+                // saltar el valor ya consumido
+                ++token;
+            }
+        return flags;
+    }
+
+} // namespace
 
 
 // General ------------------------------------------------------------------------------
@@ -94,8 +159,8 @@ bool AppController::init(int argc, char** argv) {
         loadConfig(config);
 
     // Comprobar si se solicitó modo terminal explícito desde comandos
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
+    for (int token = 1; token < argc; ++token) {
+        std::string arg = argv[token];
         if (arg == "-c" || arg == "--cli" || arg == "--console" || "/c") {
             enable_gui_ = false;
             SYS_INFO("AppController", "CLI-only mode forced via command-line argument.");
@@ -137,6 +202,7 @@ bool AppController::init(int argc, char** argv) {
         launch_console();
         SYS_INFO("AppController","Cannot initialize GUI . Fallback to terminal");
     }
+
 
     // Iniciar gestor de red
     if (enable_net_) {
@@ -219,11 +285,6 @@ bool AppController::init(int argc, char** argv) {
     // Hilo consumidor de paquetes online
     SYS_INFO("AppController","Starting net consumer thread...");
     consumer_thread_ = std::thread(&AppController::TWorker, this);
-
-    // Hilo para cout de pruebas
-    SYS_INFO("AppController","Starting test thread...");
-    test_thread_ = std::thread(&AppController::TPruebas, this);
-
 
     // Volcar datos que hayan escrito los módulos al config
     SYS_INFO("AppController","Updating json config files...");
@@ -315,12 +376,6 @@ void AppController::close() {
         consumer_thread_.join();
     }
 
-    if (test_thread_.joinable()) {
-        SYS_INFO("AppController","Waiting for test thread...");
-        test_thread_.join();
-    }
-
-
     SYS_INFO("AppController","AppController closed successfully");
 }
 
@@ -377,15 +432,6 @@ void AppController::TWorker() {
     SYS_INFO("TWorker", "Consumer thread stopped.");
 }
 
-void AppController::TPruebas() {
-    // Poner aquí las pruebas o lo que sea
-    /*
-    while (running_) {
-        SYS_INFO("TPruebas","Udp queue size: " + std::to_string(net_.numUdpRcvElements()));
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-    */
-}
 
 // IAppControl methods ------------------------------------------------------------------
 
@@ -596,7 +642,11 @@ bool AppController::run_cli_loop() {
             }
         } else if (c >= 32 && c <= 126) {
             // CARÁCTER IMPRIMIBLE ESTÁNDAR: se inserta en la posición del cursor
-            command.insert(command.begin() + cursor, c);
+            command.insert(
+                command.begin() +
+                static_cast<std::string::difference_type>(cursor),
+                c
+            );
             cursor++;
             SystemMgr::instance().updateCliInput(command, cursor);
         }
@@ -613,77 +663,51 @@ bool AppController::run_cli_loop() {
     return true;
 }
 
-
-namespace {
-
-    // Divide una línea de comandos en tokens, respetando comillas dobles
-    // ("MORSE 2" se convierte en un único token sin comillas: MORSE 2).
-    std::vector<std::string> tokenize_cli(std::string const& line) {
-        std::vector<std::string> tokens;
-        std::string current;
-        bool inQuotes = false;
-
-        for (char c : line) {
-            if (c == '"') {
-                inQuotes = !inQuotes;
-            } else if (c == ' ' && !inQuotes) {
-                if (!current.empty()) {
-                    tokens.push_back(current);
-                    current.clear();
-                }
-            } else {
-                current += c;
-            }
-        }
-        if (!current.empty())
-            tokens.push_back(current);
-
-        return tokens;
-    }
-
-    // Extrae pares --flag valor de una lista de tokens (estilo rclone), a partir de "from".
-    std::unordered_map<std::string, std::string> parse_flags(
-        std::vector<std::string> const& tokens, size_t from)
-    {
-        std::unordered_map<std::string, std::string> flags;
-        for (size_t i = from; i < tokens.size(); ++i) {
-            if (tokens[i].rfind("--", 0) == 0) {
-                std::string value = (i + 1 < tokens.size()) ? tokens[i + 1] : "";
-                flags[tokens[i]] = value;
-                ++i; // saltar el valor ya consumido
-            }
-        }
-        return flags;
-    }
-
-} // namespace
-
-
 void AppController::execute_command(const std::string& cmd) {
 
+    // Obtener las palabras por separado
     std::vector<std::string> tokens = tokenize_cli(cmd);
+
+    // Comprobar que hay palabras
     if (tokens.empty())
         return;
 
     std::string const& name = tokens[0];
 
-    // Tabla de dispatch: nombre de comando -> handler(tokens).
+    // Switch con strings -> Tabla de dispatch: nombre de comando -> handler(tokens).
     // Para añadir un comando nuevo basta con añadir una entrada aquí.
     using CliHandler = std::function<void(std::vector<std::string> const&)>;
     const std::unordered_map<std::string, CliHandler> handlers = {
 
         { "help", [](std::vector<std::string> const&) {
             std::cout << "Available commands:\n";
-            std::cout << "  help                                 - Show this help message\n";
-            std::cout << "  status                               - Show online/offline mode\n";
-            std::cout << "  sounds help                          - Show sound-related commands\n";
-            std::cout << "  symetrix help                        - Show symetrix-related commands\n";
-            std::cout << "  totalmix help                        - Show totalmix-related commands\n";
-            std::cout << "  exit, quit                           - Exit the application\n";
+            std::cout << "  help                - Show this help message\n";
+            std::cout << "  status              - Show app general status\n";
+            std::cout << "  sounds [args]       - Show sound-related commands\n";
+            std::cout << "  symetrix [args]     - Show symetrix-related commands\n";
+            std::cout << "  totalmix [args]     - Show totalmix-related commands\n";
+            std::cout << "  exit                - Exit the application\n";
+            std::cout << "\n";
+            std::cout << "Use '[command] help' for more information about a command\n";
+            std::cout << "\n";
         }},
 
-        { "status", [this](std::vector<std::string> const&) {
-            SYS_INFO("CLI", "Online mode: " + std::string(isOnlineMode() ? "YES" : "NO"));
+        { "status", [this](std::vector<std::string> const& tokens) {
+            
+            std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
+
+            if(tokens.size() == 1)
+                SYS_INFO("CLI", "Online mode: " + std::string(isOnlineMode() ? "YES" : "NO"));
+            else if(tokens.size() == 2) {
+                if (tokens[1] == "help") {
+                    std::cout << "  Shows app general status.\n";
+                    return;
+                }
+                else
+                    SYS_WARN("CLI", "Unknown subcommand: " + sub);
+            }
+            else
+                SYS_WARN("CLI", "Unknown subcommand: " + sub);
         }},
 
         { "sounds", [this](std::vector<std::string> const& t) {
@@ -702,10 +726,7 @@ void AppController::execute_command(const std::string& cmd) {
             SYS_INFO("AppController", "Exiting application...");
             running_ = false;
         }},
-        { "quit", [this](std::vector<std::string> const&) {
-            SYS_INFO("AppController", "Exiting application...");
-            running_ = false;
-        }},
+
     };
 
     auto it = handlers.find(name);
@@ -715,62 +736,70 @@ void AppController::execute_command(const std::string& cmd) {
         SYS_WARN("CLI", "Unknown command: " + name);
 }
 
-
 void AppController::execute_sounds_command(std::vector<std::string> const& tokens) {
 
     // tokens[0] == "sounds"; tokens[1] es el subcomando
     std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
 
     if (sub == "help") {
-        std::cout << "Sound commands:\n";
-        std::cout << "  sounds devices                              - List available playback/capture devices\n";
-        std::cout << "  sounds list                                 - List active audio/morse/tts modules\n";
-        std::cout << "  sounds morse \"<text>\" [--player \"<name>\"]  (default player: ADF)\n";
+        std::cout << "Available 'sound' commands:\n";
+        std::cout << "  sounds devices          - List available playback/capture devices\n";
+        std::cout << "  sounds players          - List active audio/morse/tts modules\n";
+        std::cout << "  sounds morse \"<text>\" [--player \"<name>\"]\n";
+        std::cout << "\n";
+        std::cout << "Use 'sounds [command] help' for more information about a command\n";
+        std::cout << "\n";
         return;
     }
 
     if (sub == "devices") {
         std::cout << "Available playback devices:\n";
         for (auto const& name : snd_->getAvailablePlaybacks())
-            std::cout << "  " << name << "\n";
+            std::cout << "  - " << name << "\n";
 
         std::cout << "Available capture devices:\n";
         for (auto const& name : snd_->getAvailableCaptures())
-            std::cout << "  " << name << "\n";
+            std::cout << "  - " << name << "\n";
         return;
     }
 
-    if (sub == "list") {
+    if (sub == "players") {
+        std::cout << "Available Player modules:\n";
+        std::cout << "\n";
         std::cout << "PlayerAudio modules:\n";
         for (auto const& name : snd_->getPlayerAudioNames())
-            std::cout << "  " << name << "\n";
+            std::cout << "  - " << name << "\n";
 
         std::cout << "PlayerMorse modules:\n";
         for (auto const& name : snd_->getPlayerMorseNames())
-            std::cout << "  " << name << "\n";
+            std::cout << "  - " << name << "\n";
 
         std::cout << "PlayerTTS modules:\n";
         for (auto const& name : snd_->getPlayerTTSNames())
-            std::cout << "  " << name << "\n";
+            std::cout << "  - " << name << "\n";
         return;
     }
 
     if (sub == "morse") {
-        // Argumento posicional obligatorio: tokens[2] = texto a codificar
+
+        // Comprobar que mínimo tiene 3 argumentos (el texto)
         if (tokens.size() < 3) {
-            SYS_WARN("CLI", "Usage: sounds morse \"<text>\" [--player \"<name>\"]");
+            std::cout << "Available 'sound morse' commands:\n";
+            std::cout << "  sounds morse \"<text>\" [--player \"<name>\"]\n";
+            std::cout << "\n";
             return;
         }
 
+        // Argumento posicional obligatorio: tokens[2] = texto a codificar
         std::string const& text = tokens[2];
 
-        auto flags = parse_flags(tokens, 3);
+        std::unordered_map<std::string, std::string> flags = parse_flags(tokens, 3);
         auto playerIt = flags.find("--player");
 
-        std::string playerName = "ADF";
+        std::string playerName = "";
         if (playerIt != flags.end()) {
             if (playerIt->second.empty())
-                SYS_WARN("CLI", "--player requires a value, using default 'ADF'.");
+                SYS_WARN("CLI", "--player requires a value.");
             else
                 playerName = playerIt->second;
         }
@@ -788,15 +817,15 @@ void AppController::execute_sounds_command(std::vector<std::string> const& token
     SYS_WARN("CLI", "Unknown sounds subcommand: " + sub);
 }
 
-
 void AppController::execute_symetrix_command(std::vector<std::string> const& tokens) {
 
     // tokens[0] == "symetrix"; tokens[1] es el subcomando
     std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
 
     if (sub == "help") {
-        std::cout << "Symetrix commands:\n";
+        std::cout << "Available 'symetrix' commands:\n";
         std::cout << "  symetrix status  - Show connection status\n";
+        std::cout << "\n";
         return;
     }
 
@@ -808,18 +837,18 @@ void AppController::execute_symetrix_command(std::vector<std::string> const& tok
     SYS_WARN("CLI", "Unknown symetrix subcommand: " + sub);
 }
 
-
 void AppController::execute_totalmix_command(std::vector<std::string> const& tokens) {
 
     // tokens[0] == "totalmix"; tokens[1] es el subcomando
     std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
 
     if (sub == "help") {
-        std::cout << "Totalmix commands:\n";
+        std::cout << "Available 'totalmix' commands:\n";
         std::cout << "  totalmix status                 - Show module status\n";
-        std::cout << "  totalmix volume <out> <value>  - Set output volume (0-100)\n";
-        std::cout << "  totalmix mute <out>            - Mute an output\n";
-        std::cout << "  totalmix unmute <out>          - Unmute an output\n";
+        std::cout << "  totalmix volume <out> <value>   - Set output volume (0-100)\n";
+        std::cout << "  totalmix mute <out>             - Mute an output\n";
+        std::cout << "  totalmix unmute <out>           - Unmute an output\n";
+        std::cout << "\n";
         return;
     }
 

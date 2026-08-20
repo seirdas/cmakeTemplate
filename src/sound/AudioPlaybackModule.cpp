@@ -318,8 +318,9 @@
         globalVol_(100),
         selectedChannel_(0),
         active_fadeouts_threads_(0)
-    {}
-    
+    {
+
+    }
 
 
     // Limpieza de sonidos ------------------------------------------------------------------
