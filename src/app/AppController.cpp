@@ -27,6 +27,15 @@
     #include <unistd.h> 
 #endif
 
+// Función auxiliar de consola
+void setConsoleTitle(const std::string& title) {
+    #ifdef _WIN32
+        SetConsoleTitleA(title.c_str());
+    #else
+        std::cout << "\033]0;" << title << "\007" << std::flush;
+    #endif
+}
+
 
 // General ------------------------------------------------------------------------------
 
@@ -74,9 +83,8 @@ bool AppController::init(int argc, char** argv) {
     this->argv_ = argv;
     
     // Leer valores del json para AppController
-    SYS_INFO("AppController","Reading app config files...");
     JsonMgr& jsonMgr = JsonMgr::instance();
-    json* config = jsonMgr.load(config_filename_);
+    json* config = jsonMgr.load(config_filename_); // si no hay, nullptr
     // Almacenamiento temporal de nodos de json para cada módulo
     json* config_node = nullptr;
 
@@ -99,6 +107,16 @@ bool AppController::init(int argc, char** argv) {
     std::filesystem::path path = std::filesystem::absolute(argv[0]);
     app_name_ = path.stem().string();
     SystemMgr::instance().init(app_name_);
+
+    // Fallback a uso de terminal si no hay GUI
+    if (!enable_gui_) {
+        launch_console();
+        setConsoleTitle(app_name_);
+    }
+
+    SYS_INFO("AppController","Initializating application...");
+    if (!config)
+        SYS_WARN("AppController","Cannot load config. Using default values.");
 
     // Mostrar versión en log
     SYS_INFO("AppController","Welcome to " + std::string(app_name_) + ", version " + version_ + "!");
@@ -227,16 +245,16 @@ void AppController::loadConfig(void* config) {
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
-    jsonMgr.get_or_set(cfg, "version",  version_);
-    jsonMgr.get_or_set(cfg, "app_enable_net_",  enable_net_);
-    jsonMgr.get_or_set(cfg, "app_enable_gui_",  enable_gui_);
-    jsonMgr.get_or_set(cfg, "app_enable_snd_",  enable_snd_);
-    jsonMgr.get_or_set(cfg, "app_enable_tmx_",  enable_tmx_);
-    jsonMgr.get_or_set(cfg, "app_enable_sym_",  enable_sym_);
-    jsonMgr.get_or_set(cfg, "app_enable_voip_", enable_vip_);
-    jsonMgr.get_or_set(cfg, "app_enable_com_",  enable_com_);
-    jsonMgr.get_or_set(cfg, "app_enable_dds_",  enable_dds_);
-    jsonMgr.get_or_set(cfg, "app_enable_cds_",  enable_cds_);
+    jsonMgr.get_or_set(cfg, "version",                  version_);
+    jsonMgr.get_or_set(cfg, "app_enable_network",       enable_net_);
+    jsonMgr.get_or_set(cfg, "app_enable_gui",           enable_gui_);
+    jsonMgr.get_or_set(cfg, "app_enable_sounds",        enable_snd_);
+    jsonMgr.get_or_set(cfg, "app_enable_totalmix",      enable_tmx_);
+    jsonMgr.get_or_set(cfg, "app_enable_symetrix",      enable_sym_);
+    jsonMgr.get_or_set(cfg, "app_enable_voip",          enable_vip_);
+    jsonMgr.get_or_set(cfg, "app_enable_comms",         enable_com_);
+    jsonMgr.get_or_set(cfg, "app_enable_fastdds",       enable_dds_);
+    jsonMgr.get_or_set(cfg, "app_enable_cycloneds",     enable_cds_);
 
 }
 

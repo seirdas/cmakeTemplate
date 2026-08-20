@@ -101,13 +101,13 @@
         if (!initialized_)
             return true;
 
-        SYS_INFO("PlaybackModule", "Stopping PlaybackModule...");
+        SYS_INFO("PlaybackModule", "'" + name_ + "': Stopping PlaybackModule...");
 
         running_ = false;
 
         // Espera segura de hilos pitchout
         if (active_fadeouts_threads_ > 0) {
-            SYS_INFO("PlaybackModule", "Waiting for active pitchout threads to finish...");
+            SYS_INFO("PlaybackModule", "'" + name_ + "': Waiting for active pitchout threads to finish...");
             std::unique_lock<std::mutex> lock(playing_sounds_mtx_);
             
             // Espera bloqueante hasta que el contador de hilos llegue a 0
@@ -118,14 +118,14 @@
 
         // Apagar el hilo de limpieza primero
         if (cleanup_thread_.joinable()) {
-            SYS_INFO("PlaybackModule","Closing cleanup thread...");
+            SYS_INFO("PlaybackModule", "'" + name_ + "':Closing cleanup thread...");
             cleanup_cv_.notify_all(); // Despertar al hilo para que finalice
             cleanup_thread_.join();
         }
 
         // Despertar y unir hilo del Reaper de caché
         if (cachereaper_thread_.joinable()) {
-            SYS_INFO("PlaybackModule","Closing sounds reaper thread...");
+            SYS_INFO("PlaybackModule","'" + name_ + "': Closing sounds reaper thread...");
             cachereaper_cv_.notify_all();
             cachereaper_thread_.join();
         }
@@ -133,7 +133,7 @@
         // Limpiar instancias de sonidos activos
         {
             std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
-            SYS_INFO("PlaybackModule","Unitializing active sounds...");
+            SYS_INFO("PlaybackModule","'" + name_ + "': Unitializing active sounds...");
             for (auto& [id, snd] : pimpl_->playing_sounds) {
                 ma_sound_uninit(&snd->sound);
                 if (snd->isBuffer)
@@ -153,7 +153,7 @@
         }
 
         // Desinicializar el sistema
-        SYS_INFO("PlaybackModule","Unitializing audio engine...");
+        SYS_INFO("PlaybackModule","'" + name_ + "': Unitializing audio engine...");
         ma_engine_uninit(&pimpl_->engine);
 
         initialized_ = false;
