@@ -72,7 +72,7 @@
 		style_(nullptr),
 		io_(nullptr),
 		captureKeys_(false),
-		AppName_("Demo"),
+		AppName_("app"),
 		windowSizeX_(1280),
 		windowSizeY_(720),
 		windowPosX_(0),
@@ -223,16 +223,16 @@
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
         
-        jsonMgr.get_or_set(cfg, "AppName", 		AppName_);
-        jsonMgr.get_or_set(cfg, "windowSizeX", 	windowSizeX_);
-        jsonMgr.get_or_set(cfg, "windowSizeY", 	windowSizeY_);
-        jsonMgr.get_or_set(cfg, "windowPosX", 	windowPosX_);
-        jsonMgr.get_or_set(cfg, "windowPosY", 	windowPosY_);
-        jsonMgr.get_or_set(cfg, "fullscreen", 	fullscreen_);
-        jsonMgr.get_or_set(cfg, "fontSize", 	fontSize_);
-        jsonMgr.get_or_set(cfg, "deviceRefreshInterval",  deviceRefreshInterval_);
-        jsonMgr.get_or_set(cfg, "theme_selected", 		  theme_selected_);
-        jsonMgr.get_or_set(cfg, "transparent_background", transparent_bk_);
+        jsonMgr.get_or_set(cfg, "app_name_window",	AppName_);
+        jsonMgr.get_or_set(cfg, "window_size_x",	windowSizeX_);
+        jsonMgr.get_or_set(cfg, "window_size_y", 	windowSizeY_);
+        jsonMgr.get_or_set(cfg, "window_pos_x", 	windowPosX_);
+        jsonMgr.get_or_set(cfg, "window_pos_y", 	windowPosY_);
+        jsonMgr.get_or_set(cfg, "fullscreen", 		fullscreen_);
+        jsonMgr.get_or_set(cfg, "font_size", 		fontSize_);
+        jsonMgr.get_or_set(cfg, "device_refresh_interval",	deviceRefreshInterval_);
+        jsonMgr.get_or_set(cfg, "theme_selected", 		  	theme_selected_);
+        jsonMgr.get_or_set(cfg, "transparent_background", 	transparent_bk_);
 
     }
 

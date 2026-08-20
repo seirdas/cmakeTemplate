@@ -13,13 +13,13 @@ void TotalMix::loadConfig(void* config) {
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
-    jsonMgr.get_or_set(cfg, "localIP",        localIP_);
-    jsonMgr.get_or_set(cfg, "localPort",      localPort_);
-    jsonMgr.get_or_set(cfg, "remoteIP",       remoteIP_);
-    jsonMgr.get_or_set(cfg, "remotePort",     remotePort_);
-    jsonMgr.get_or_set(cfg, "numInputs",      numInputs_);
-    jsonMgr.get_or_set(cfg, "numOutputs",     numOutputs_);
-    jsonMgr.get_or_set(cfg, "numPlaybacks",   numPlaybacks_);
+    jsonMgr.get_or_set(cfg, "local_ip",        localIP_);
+    jsonMgr.get_or_set(cfg, "local_port",      localPort_);
+    jsonMgr.get_or_set(cfg, "remote_ip",       remoteIP_);
+    jsonMgr.get_or_set(cfg, "remote_port",     remotePort_);
+    jsonMgr.get_or_set(cfg, "num_inputs",      numInputs_);
+    jsonMgr.get_or_set(cfg, "num_outputs",     numOutputs_);
+    jsonMgr.get_or_set(cfg, "num_playbacks",   numPlaybacks_);
 
 }
 
@@ -137,18 +137,15 @@ void TotalMix::loadConfig(void* config) {
 
     // Control de volumen -------------------------------------------------------------------
 
-    bool TotalMix::SetOutputVolume(int out, float value, bool in_dB_units)
-    {
+    bool TotalMix::SetOutputVolume(int out, float value, bool in_dB_units) {
         return SendVolume(Bus::Output, 0, out,  (in_dB_units) ? (value) : PctTodB(value));
     }
 
-    bool TotalMix::SetInputVolume(int out, int in, float value, bool in_dB_units)
-    {
+    bool TotalMix::SetInputVolume(int out, int in, float value, bool in_dB_units) {
         return SendVolume(Bus::Input, in, out, (in_dB_units) ? (value) : PctTodB(value));
     }
 
-    bool TotalMix::SetPlaybackVolume(int out, int pb, float value, bool in_dB_units)
-    {
+    bool TotalMix::SetPlaybackVolume(int out, int pb, float value, bool in_dB_units) {
         return SendVolume(Bus::Playback, pb, out, (in_dB_units) ? (value) : PctTodB(value));
     }
 

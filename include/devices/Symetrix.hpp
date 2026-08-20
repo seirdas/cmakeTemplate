@@ -110,13 +110,13 @@ public:
      * @brief Establece el número de entradas de la supermatrix.
      * @param num Número de entradas de la supermatrix.
      */
-    void setSupermatrixINs(unsigned int num);
+    void setSupermatrixINs(unsigned short num);
 
     /**
      * @brief Establece el número de salidas de la supermatrix.
      * @param num Número de salidas de la supermatrix.
      */
-    void setSupermatrixOUTs(unsigned int num);
+    void setSupermatrixOUTs(unsigned short num);
 
 
 // Control de componentes Symetrix Composer ---------------------------------------------

@@ -35,11 +35,11 @@ void Symetrix::loadConfig(void* config) {
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
-    jsonMgr.get_or_set(cfg, "SymetrixIP",                   SymetrixIP_);
+    jsonMgr.get_or_set(cfg, "symetrix_ip",                  SymetrixIP_);
     jsonMgr.get_or_set(cfg, "connection_ping_timeout_ms",   connection_ping_timeout_ms_);
-    jsonMgr.get_or_set(cfg, "ComposerPort",                 ComposerPort_);
+    jsonMgr.get_or_set(cfg, "composer_port",                ComposerPort_);
     jsonMgr.get_or_set(cfg, "tolerance_percent",            tolerance_percent_);            // Por defecto tolerancias de un 2% sobre el rango
-    jsonMgr.get_or_set(cfg, "dBcurve_gamma",                dBcurve_gamma_);
+    jsonMgr.get_or_set(cfg, "dB_curve_gamma",               dBcurve_gamma_);
     jsonMgr.get_or_set(cfg, "supermatrix_ins",              supermatrix_ins_);             // Por defecto para tener 20 entradas (se puede cambiar por método)
     jsonMgr.get_or_set(cfg, "supermatrix_outs",             supermatrix_outs_);            // Por defecto para tener 20 salidas (se puede cambiar por método)
     jsonMgr.get_or_set(cfg, "kBootPreset",                  kBootPreset_);
@@ -144,11 +144,11 @@ void Symetrix::loadConfig(void* config) {
 
     // Parámetros ---------------------------------------------------------------------------
 
-    void Symetrix::setSupermatrixINs(unsigned int num) {
+    void Symetrix::setSupermatrixINs(unsigned short num) {
         supermatrix_ins_ = num;
     }
 
-    void Symetrix::setSupermatrixOUTs(unsigned int num) {
+    void Symetrix::setSupermatrixOUTs(unsigned short num) {
         supermatrix_outs_ = num;
     }
 
@@ -760,8 +760,8 @@ bool Symetrix::close()                  { return false; }
 bool Symetrix::isConnected() const      { return false; }
 
 // Parámetros ---------------------------------------------------------------------------
-void Symetrix::setSupermatrixINs(unsigned int)  {}
-void Symetrix::setSupermatrixOUTs(unsigned int) {}
+void Symetrix::setSupermatrixINs(unsigned short)  {}
+void Symetrix::setSupermatrixOUTs(unsigned short) {}
 
 // Comandos -----------------------------------------------------------------------------
 bool Symetrix::LoadPreset(unsigned int) { return false; }

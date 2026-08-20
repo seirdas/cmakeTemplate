@@ -1,4 +1,13 @@
 {
+    "app_enable_comms": true,
+    "app_enable_cycloneds": true,
+    "app_enable_fastdds": true,
+    "app_enable_gui": true,
+    "app_enable_network": true,
+    "app_enable_sounds": true,
+    "app_enable_symetrix": true,
+    "app_enable_totalmix": true,
+    "app_enable_voip": true,
     "comms": {
         "positions": [
             {
@@ -32,49 +41,38 @@
                     "supermatrix_in": 0,
                     "supermatrix_out": 0
                 },
-                "tm_channels": {
+                "totalmix": {
                     "fx": 0,
                     "in": 0,
                     "out": 0,
                     "spk_out": 0
-                },
-                "totalmix": {
-                    "fx": 0,
-                    "id_in_fx_input_selector": 0,
-                    "id_in_input_sel": 0,
-                    "id_in_vox_threshold": 0,
-                    "id_out_gain_fader": 0,
-                    "id_out_gain_mute": 0,
-                    "in": 0,
-                    "out": 0,
-                    "spk_out": 0,
-                    "supermatrix_in": 0,
-                    "supermatrix_out": 0
                 }
             }
         ]
     },
+    "cyclonedds": {},
     "fastdds": {
-        "enable": true,
         "DOMAIN_ID": 0,
+        "enable": true,
         "pqos_name": "DDSMonitorParticipant",
         "topics": [
             {
-                "name": "cualquiera",
-                "type": "HelloWorld",
-                "publish": true,
-                "subscribe": true,
                 "history_depth": 10,
-                "reliability": "RELIABLE"
+                "name": "cualquiera",
+                "publish": true,
+                "reliability": "RELIABLE",
+                "subscribe": true,
+                "type": "HelloWorld"
             }
         ]
     },
     "gui": {
         "AppName": "Audio Control Center",
-        "deviceRefreshInterval": 5,
-        "fontSize": 16,
+        "deviceRefreshInterval": 5.0,
+        "fontSize": 16.0,
         "fullscreen": false,
         "theme_selected": "DefaultLight",
+        "transparent_background": false,
         "windowPosX": 720,
         "windowPosY": 0,
         "windowSizeX": 1280,
@@ -120,136 +118,30 @@
                 "selected_channel": 0
             }
         ],
-
-
-        "Playbacks": [
-            {
-                "name": "CCAS",
-                "process_buffer_size": 1024,
-                "sample_rate": 48000,
-                "device": [
-                    {
-                        "name":"(Dante (1+2)",
-                        "channels":2,
-                        "channelSelected":1
-                    }
-                ]
-            },
-            {
-                "name": "TCAS",
-                "process_buffer_size": 1024,
-                "sample_rate": 48000,
-                "device": [
-                    {
-                        "name":"Dante (1+2)",
-                        "channels":2,
-                        "channelSelected":2
-                    },
-                    {
-                        "name":"AES",
-                        "channels":2,
-                        "channelSelected":1
-                    }
-                ]
-            },
-            {
-                "name": "Reproducción de tonos",
-                "type" : "tonos",
-                "process_buffer_size": 1024,
-                "audioFolder": "audios/RADIO",
-                "device": [
-                    {
-                        "name":"Dante (1+2)",
-                        "channels":2,
-                        "channelSelected":1
-                    },
-                    {
-                        "name":"Dante (1+2)",
-                        "channels":2,
-                        "channelSelected":2
-                    },
-                    {
-                        "name":"Dante (3+4)",
-                        "channels":2,
-                        "channelSelected":1
-                    },
-                    {
-                        "name":"AES",
-                        "channels":2,
-                        "channelSelected":1
-                    }
-                ]
-            },
-            {
-                "name": "ADF",
-                "process_buffer_size": 1024,
-                "type" : "morse",
-                "device": [
-                    {
-                        "name":"auriculares",
-                        "channels":2,
-                        "channelSelected":2
-                    },
-                    {
-                        "name":"altavoces",
-                        "channels":2,
-                        "channelSelected":2
-                    },
-                    {
-                        "name":"Dante (3+4)",
-                        "channels":2,
-                        "channelSelected":1
-                    },
-                    {
-                        "name":"AES",
-                        "channels":2,
-                        "channelSelected":1
-                    }
-                ],
-                "frequency_hz": 1350,
-                "punto_ms": 100,
-                "raya_ms": 300,
-                "espacio_entre_simbolos_ms": 100,
-                "espacio_entre_letras_ms": 300,
-                "sample_rate": 48000
-            }
-        ],
-
+        "Playbacks": null,
         "attack_coefficient": 0.5,
         "release_coefficient": 0.1,
         "smoothedValues": true
     },
     "symetrix": {
-        "ComposerPort": 48631,
-        "SymetrixIP": "192.168.7.21",
+        "composer_port": 48631,
         "connection_check_seconds": 5,
         "connection_ping_timeout_ms": 500,
-        "dBcurve_gamma": 0.415,
+        "dB_curve_gamma": 0.415,
         "kBootPreset": 1,
         "supermatrix_ins": 20,
         "supermatrix_outs": 20,
+        "symetrix_ip": "192.168.7.21",
         "tolerance_percent": 2
     },
     "totalmix": {
-        "localIP": "127.0.0.1",
-        "localPort": 12321,
-        "numInputs": 32,
-        "numOutputs": 32,
-        "numPlaybacks": 32,
-        "remoteIP": "127.0.0.1",
-        "remotePort": 7001
+        "local_ip": "127.0.0.1",
+        "local_port": 12321,
+        "num_inputs": 32,
+        "num_outputs": 32,
+        "num_playbacks": 32,
+        "remote_ip": "127.0.0.1",
+        "remote_port": 7001
     },
-    "tts": {
-        "concurrent_init_": {
-            "active": false,
-            "num_load_retries": 2
-        },
-        "lazy_load": {
-            "active": true,
-            "keep_alive_seconds": 20
-        },
-        "num_threads": 4,
-        "models_path": "tts-voices"
-    },
-    "version": "0.11.4"
+    "version": "0.12.0"
 }
