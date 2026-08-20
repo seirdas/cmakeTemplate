@@ -683,9 +683,9 @@ void AppController::execute_command(const std::string& cmd) {
             std::cout << "Available commands:\n";
             std::cout << "  help                - Show this help message\n";
             std::cout << "  status              - Show app general status\n";
-            std::cout << "  sounds [args]       - Show sound-related commands\n";
-            std::cout << "  symetrix [args]     - Show symetrix-related commands\n";
-            std::cout << "  totalmix [args]     - Show totalmix-related commands\n";
+            std::cout << "  sounds [args]       - Execute sound-related commands\n";
+            std::cout << "  symetrix [args]     - Execute symetrix-related commands\n";
+            std::cout << "  totalmix [args]     - Execute totalmix-related commands\n";
             std::cout << "  exit                - Exit the application\n";
             std::cout << "\n";
             std::cout << "Use '[command] help' for more information about a command\n";
