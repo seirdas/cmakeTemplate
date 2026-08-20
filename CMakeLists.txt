@@ -281,6 +281,8 @@ if(MSVC)
     /w14928                 # Conversión de copia explícita problemática
     /wd4820                 # Desactiva: warning C4820: '...': relleno de bytes 'N' agregado después de miembro
     /wd4866                 # Desactiva Left-to-right evaluation order for operator[]
+    /wd4710                 # Desactivar Function not inlined
+    /wd4711                 # Desactivar Function selected for automatic inline expansion
     /EHa                    # Excepciones asíncronas C++ (requerido para /clr)
     /MP                     # Compilación multiproceso
     # /WX                     # Tratar warnings como errores
