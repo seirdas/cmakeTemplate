@@ -3,6 +3,7 @@
 #include <chrono>               // Controla tiempos de espera
 #include <filesystem>           // Controla directorios, rutas, etc.
 #include <iostream>             // Consola
+#include <stdexcept>            // std::invalid_argument / std::out_of_range (parseo de comandos CLI)
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
@@ -676,6 +677,8 @@ void AppController::execute_command(const std::string& cmd) {
             std::cout << "  help                                 - Show this help message\n";
             std::cout << "  status                               - Show online/offline mode\n";
             std::cout << "  sounds help                          - Show sound-related commands\n";
+            std::cout << "  symetrix help                        - Show symetrix-related commands\n";
+            std::cout << "  totalmix help                        - Show totalmix-related commands\n";
             std::cout << "  exit, quit                           - Exit the application\n";
         }},
 
@@ -685,6 +688,14 @@ void AppController::execute_command(const std::string& cmd) {
 
         { "sounds", [this](std::vector<std::string> const& t) {
             execute_sounds_command(t);
+        }},
+
+        { "symetrix", [this](std::vector<std::string> const& t) {
+            execute_symetrix_command(t);
+        }},
+
+        { "totalmix", [this](std::vector<std::string> const& t) {
+            execute_totalmix_command(t);
         }},
 
         { "exit", [this](std::vector<std::string> const&) {
@@ -712,7 +723,35 @@ void AppController::execute_sounds_command(std::vector<std::string> const& token
 
     if (sub == "help") {
         std::cout << "Sound commands:\n";
+        std::cout << "  sounds devices                              - List available playback/capture devices\n";
+        std::cout << "  sounds list                                 - List active audio/morse/tts modules\n";
         std::cout << "  sounds morse \"<text>\" [--player \"<name>\"]  (default player: ADF)\n";
+        return;
+    }
+
+    if (sub == "devices") {
+        std::cout << "Available playback devices:\n";
+        for (auto const& name : snd_->getAvailablePlaybacks())
+            std::cout << "  " << name << "\n";
+
+        std::cout << "Available capture devices:\n";
+        for (auto const& name : snd_->getAvailableCaptures())
+            std::cout << "  " << name << "\n";
+        return;
+    }
+
+    if (sub == "list") {
+        std::cout << "PlayerAudio modules:\n";
+        for (auto const& name : snd_->getPlayerAudioNames())
+            std::cout << "  " << name << "\n";
+
+        std::cout << "PlayerMorse modules:\n";
+        for (auto const& name : snd_->getPlayerMorseNames())
+            std::cout << "  " << name << "\n";
+
+        std::cout << "PlayerTTS modules:\n";
+        for (auto const& name : snd_->getPlayerTTSNames())
+            std::cout << "  " << name << "\n";
         return;
     }
 
@@ -747,4 +786,82 @@ void AppController::execute_sounds_command(std::vector<std::string> const& token
     }
 
     SYS_WARN("CLI", "Unknown sounds subcommand: " + sub);
+}
+
+
+void AppController::execute_symetrix_command(std::vector<std::string> const& tokens) {
+
+    // tokens[0] == "symetrix"; tokens[1] es el subcomando
+    std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
+
+    if (sub == "help") {
+        std::cout << "Symetrix commands:\n";
+        std::cout << "  symetrix status  - Show connection status\n";
+        return;
+    }
+
+    if (sub == "status") {
+        SYS_INFO("CLI", std::string("Symetrix connected: ") + (sym_->isConnected() ? "YES" : "NO"));
+        return;
+    }
+
+    SYS_WARN("CLI", "Unknown symetrix subcommand: " + sub);
+}
+
+
+void AppController::execute_totalmix_command(std::vector<std::string> const& tokens) {
+
+    // tokens[0] == "totalmix"; tokens[1] es el subcomando
+    std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
+
+    if (sub == "help") {
+        std::cout << "Totalmix commands:\n";
+        std::cout << "  totalmix status                 - Show module status\n";
+        std::cout << "  totalmix volume <out> <value>  - Set output volume (0-100)\n";
+        std::cout << "  totalmix mute <out>            - Mute an output\n";
+        std::cout << "  totalmix unmute <out>          - Unmute an output\n";
+        return;
+    }
+
+    if (sub == "status") {
+        SYS_INFO("CLI", std::string("Totalmix connected: ") + (tmx_->isInitialized() ? "YES" : "NO"));
+        return;
+    }
+
+    if (sub == "volume") {
+        // Argumentos posicionales obligatorios: tokens[2] = canal, tokens[3] = valor
+        if (tokens.size() < 4) {
+            SYS_WARN("CLI", "Usage: totalmix volume <out> <value>");
+            return;
+        }
+
+        try {
+            int   out   = std::stoi(tokens[2]);
+            float value = std::stof(tokens[3]);
+            if (!tmx_->SetOutputVolume(out, value))
+                SYS_WARN("CLI", "Failed to set Totalmix output volume.");
+        } catch (std::exception const&) {
+            SYS_WARN("CLI", "Invalid <out>/<value>, must be numeric.");
+        }
+        return;
+    }
+
+    if (sub == "mute" || sub == "unmute") {
+        // Argumento posicional obligatorio: tokens[2] = canal
+        if (tokens.size() < 3) {
+            SYS_WARN("CLI", "Usage: totalmix " + sub + " <out>");
+            return;
+        }
+
+        try {
+            int out = std::stoi(tokens[2]);
+            if (!tmx_->SetMuteOutput(out, sub == "mute"))
+                SYS_WARN("CLI", "Failed to set Totalmix mute state.");
+        } catch (std::exception const&) {
+            SYS_WARN("CLI", "Invalid <out>, must be numeric.");
+        }
+        return;
+    }
+
+    SYS_WARN("CLI", "Unknown totalmix subcommand: " + sub);
 }

@@ -295,6 +295,18 @@ private:
      */
     void execute_sounds_command(std::vector<std::string> const& tokens);
 
+    /**
+     * @brief Subcomandos del comando "symetrix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
+     */
+    void execute_symetrix_command(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos del comando "totalmix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
+     */
+    void execute_totalmix_command(std::vector<std::string> const& tokens);
+
 
 
 /************ Variables ********************************************************/
