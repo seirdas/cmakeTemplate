@@ -471,14 +471,20 @@ bool AppController::launch_console() {
 bool AppController::run_cli_loop() {
     
     SYS_INFO("AppController", "Running in CLI Mode. Type 'help' for commands or 'exit' to quit.");
-    
+
     std::string command;
-    
+    size_t      cursor = 0; // Posición del cursor dentro de "command" (no siempre al final)
+
+    // Historial de comandos (flechas arriba/abajo)
+    std::vector<std::string> history;
+    size_t                   historyIndex = 0; // == history.size() cuando no se está navegando
+    std::string              draft;            // Línea en curso, guardada al empezar a navegar el historial
+
     // Ocultar cursor en terminales ANSI para eliminar flicker visual
     //std::cerr << "\033[?25l";
-    
+
     SystemMgr::instance().setCliActive(true);
-    SystemMgr::instance().updateCliInput(command); // Pinta el primer prompt
+    SystemMgr::instance().updateCliInput(command, cursor); // Pinta el primer prompt
 
     #ifndef _WIN32
         // LINUX: Apagar el "Cooked Mode" y el "Echo" automático de la terminal
@@ -493,43 +499,106 @@ bool AppController::run_cli_loop() {
         char c;
 
         #ifdef _WIN32
-            c = _getch(); // WINDOWS: Lee tecla sin imprimirla en pantalla
+            // WINDOWS: Lee tecla sin imprimirla en pantalla. Las teclas especiales
+            // (flechas, F1-F12...) llegan como DOS pulsaciones: un prefijo 0 o 224
+            // seguido del código real (izq=75, der=77, arriba=72, abajo=80).
+            int ch = _getch();
+
+            // Comandos para las flechas y teclas especiales (no imprimibles)
+            if (ch == 0 || ch == 224) {
+                int code = _getch();
+                if (code == 75 && cursor > 0) {                      // Flecha izquierda
+                    cursor--;
+                    SystemMgr::instance().updateCliInput(command, cursor);
+                } else if (code == 77 && cursor < command.size()) {  // Flecha derecha
+                    cursor++;
+                    SystemMgr::instance().updateCliInput(command, cursor);
+                } else if (code == 72) {                             // Flecha arriba: comando anterior
+                    if (!history.empty() && historyIndex > 0) {
+                        if (historyIndex == history.size())
+                            draft = command;
+                        command = history[--historyIndex];
+                        cursor  = command.size();
+                        SystemMgr::instance().updateCliInput(command, cursor);
+                    }
+                } else if (code == 80) {                             // Flecha abajo: comando siguiente
+                    if (historyIndex < history.size()) {
+                        ++historyIndex;
+                        command = (historyIndex == history.size()) ? draft : history[historyIndex];
+                        cursor  = command.size();
+                        SystemMgr::instance().updateCliInput(command, cursor);
+                    }
+                }
+                continue;
+            }
+            c = static_cast<char>(ch);
         #else
-            c = getchar(); // LINUX: Como hemos apagado el echo, no se imprime
+            // LINUX: Como hemos apagado el echo, no se imprime. Las flechas llegan
+            // como secuencia de escape ESC [ A/B/C/D (izq=D, der=C, arriba=A, abajo=B).
+            int ch = getchar();
+            if (ch == 27) {
+                if (getchar() == '[') {
+                    int code = getchar();
+                    if (code == 'D' && cursor > 0) {                     // Flecha izquierda
+                        cursor--;
+                        SystemMgr::instance().updateCliInput(command, cursor);
+                    } else if (code == 'C' && cursor < command.size()) { // Flecha derecha
+                        cursor++;
+                        SystemMgr::instance().updateCliInput(command, cursor);
+                    } else if (code == 'A') {                            // Flecha arriba: comando anterior
+                        if (!history.empty() && historyIndex > 0) {
+                            if (historyIndex == history.size())
+                                draft = command;
+                            command = history[--historyIndex];
+                            cursor  = command.size();
+                            SystemMgr::instance().updateCliInput(command, cursor);
+                        }
+                    } else if (code == 'B') {                            // Flecha abajo: comando siguiente
+                        if (historyIndex < history.size()) {
+                            ++historyIndex;
+                            command = (historyIndex == history.size()) ? draft : history[historyIndex];
+                            cursor  = command.size();
+                            SystemMgr::instance().updateCliInput(command, cursor);
+                        }
+                    }
+                }
+                continue;
+            }
+            c = static_cast<char>(ch);
         #endif
 
         // Procesar pulsación
         if (c == '\n' || c == '\r') {
             // ENTER: Ejecutar comando
-            SystemMgr::instance().setCliActive(false); 
+            SystemMgr::instance().setCliActive(false);
             std::cout << "\n"; // Forzar salto real
-            
-            // Lógica de comandos
-            if (command == "exit" || command == "quit") {
-                close();
-                break;
-            } else if (command == "status") {
-                SYS_INFO("CLI", "Online mode: " + std::string(isOnlineMode() ? "YES" : "NO"));
-            } else if (!command.empty()) {
-                SYS_WARN("CLI", "Unknown command: " + command);
-            }
-            
+
+            execute_command(command);
+
+            // Añadir al historial (evitando duplicar el mismo comando consecutivo)
+            if (!command.empty() && (history.empty() || history.back() != command))
+                history.push_back(command);
+            historyIndex = history.size();
+            draft.clear();
+
             command.clear();
+            cursor = 0;
             SystemMgr::instance().setCliActive(true);
-            SystemMgr::instance().updateCliInput(command); // Repinta el prompt vacío
+            SystemMgr::instance().updateCliInput(command, cursor); // Repinta el prompt vacío
 
         } else if (c == '\b' || c == 127) {
-            // BACKSPACE (127 en la mayoría de UNIX)
-            if (!command.empty()) {
-                command.pop_back();
-                SystemMgr::instance().updateCliInput(command);
+            // BACKSPACE (127 en la mayoría de UNIX): borra el carácter antes del cursor
+            if (cursor > 0) {
+                command.erase(cursor - 1, 1);
+                cursor--;
+                SystemMgr::instance().updateCliInput(command, cursor);
             }
         } else if (c >= 32 && c <= 126) {
-            // CARÁCTER IMPRIMIBLE ESTÁNDAR
-            command += c;
-            SystemMgr::instance().updateCliInput(command);
+            // CARÁCTER IMPRIMIBLE ESTÁNDAR: se inserta en la posición del cursor
+            command.insert(command.begin() + cursor, c);
+            cursor++;
+            SystemMgr::instance().updateCliInput(command, cursor);
         }
-        // Nota: Ignoramos silenciosamente teclas raras como flechas por ahora
     }
 
     // Restaurar visibilidad del cursor al salir
@@ -541,4 +610,141 @@ bool AppController::run_cli_loop() {
     #endif
 
     return true;
+}
+
+
+namespace {
+
+    // Divide una línea de comandos en tokens, respetando comillas dobles
+    // ("MORSE 2" se convierte en un único token sin comillas: MORSE 2).
+    std::vector<std::string> tokenize_cli(std::string const& line) {
+        std::vector<std::string> tokens;
+        std::string current;
+        bool inQuotes = false;
+
+        for (char c : line) {
+            if (c == '"') {
+                inQuotes = !inQuotes;
+            } else if (c == ' ' && !inQuotes) {
+                if (!current.empty()) {
+                    tokens.push_back(current);
+                    current.clear();
+                }
+            } else {
+                current += c;
+            }
+        }
+        if (!current.empty())
+            tokens.push_back(current);
+
+        return tokens;
+    }
+
+    // Extrae pares --flag valor de una lista de tokens (estilo rclone), a partir de "from".
+    std::unordered_map<std::string, std::string> parse_flags(
+        std::vector<std::string> const& tokens, size_t from)
+    {
+        std::unordered_map<std::string, std::string> flags;
+        for (size_t i = from; i < tokens.size(); ++i) {
+            if (tokens[i].rfind("--", 0) == 0) {
+                std::string value = (i + 1 < tokens.size()) ? tokens[i + 1] : "";
+                flags[tokens[i]] = value;
+                ++i; // saltar el valor ya consumido
+            }
+        }
+        return flags;
+    }
+
+} // namespace
+
+
+void AppController::execute_command(const std::string& cmd) {
+
+    std::vector<std::string> tokens = tokenize_cli(cmd);
+    if (tokens.empty())
+        return;
+
+    std::string const& name = tokens[0];
+
+    // Tabla de dispatch: nombre de comando -> handler(tokens).
+    // Para añadir un comando nuevo basta con añadir una entrada aquí.
+    using CliHandler = std::function<void(std::vector<std::string> const&)>;
+    const std::unordered_map<std::string, CliHandler> handlers = {
+
+        { "help", [](std::vector<std::string> const&) {
+            std::cout << "Available commands:\n";
+            std::cout << "  help                                 - Show this help message\n";
+            std::cout << "  status                               - Show online/offline mode\n";
+            std::cout << "  sounds help                          - Show sound-related commands\n";
+            std::cout << "  exit, quit                           - Exit the application\n";
+        }},
+
+        { "status", [this](std::vector<std::string> const&) {
+            SYS_INFO("CLI", "Online mode: " + std::string(isOnlineMode() ? "YES" : "NO"));
+        }},
+
+        { "sounds", [this](std::vector<std::string> const& t) {
+            execute_sounds_command(t);
+        }},
+
+        { "exit", [this](std::vector<std::string> const&) {
+            SYS_INFO("AppController", "Exiting application...");
+            running_ = false;
+        }},
+        { "quit", [this](std::vector<std::string> const&) {
+            SYS_INFO("AppController", "Exiting application...");
+            running_ = false;
+        }},
+    };
+
+    auto it = handlers.find(name);
+    if (it != handlers.end())
+        it->second(tokens);
+    else
+        SYS_WARN("CLI", "Unknown command: " + name);
+}
+
+
+void AppController::execute_sounds_command(std::vector<std::string> const& tokens) {
+
+    // tokens[0] == "sounds"; tokens[1] es el subcomando
+    std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
+
+    if (sub == "help") {
+        std::cout << "Sound commands:\n";
+        std::cout << "  sounds morse \"<text>\" [--player \"<name>\"]  (default player: ADF)\n";
+        return;
+    }
+
+    if (sub == "morse") {
+        // Argumento posicional obligatorio: tokens[2] = texto a codificar
+        if (tokens.size() < 3) {
+            SYS_WARN("CLI", "Usage: sounds morse \"<text>\" [--player \"<name>\"]");
+            return;
+        }
+
+        std::string const& text = tokens[2];
+
+        auto flags = parse_flags(tokens, 3);
+        auto playerIt = flags.find("--player");
+
+        std::string playerName = "ADF";
+        if (playerIt != flags.end()) {
+            if (playerIt->second.empty())
+                SYS_WARN("CLI", "--player requires a value, using default 'ADF'.");
+            else
+                playerName = playerIt->second;
+        }
+
+        PlayerMorse* pm = snd_->getPlayerMorse(playerName);
+        if (!pm) {
+            SYS_WARN("CLI", "Morse module '" + playerName + "' not available.");
+            return;
+        }
+
+        pm->playMorse(text);
+        return;
+    }
+
+    SYS_WARN("CLI", "Unknown sounds subcommand: " + sub);
 }
