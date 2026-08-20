@@ -308,17 +308,17 @@
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // /* modificar mientras reproduce */
-        pm->setVolume("cat", 40);
+        pm->setVolume("audio/cat.mp3", 40);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         pm->setVolume("click", 30);
-        pm->setPitch("cat", 1.7f);
+        pm->setPitch("audio/cat.mp3", 1.7f);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         /* cortar música */
-        pm->stop("cat", true, 2000, 5000);  // (forzado)
+        pm->stop("audio/cat.mp3", true, 2000, 5000);  // (forzado)
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
-        pm->stop("ding");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
+        pm->stop("audio/ding.mp3");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
         // Opcional: limpiar el módulo (destruir sonidos)

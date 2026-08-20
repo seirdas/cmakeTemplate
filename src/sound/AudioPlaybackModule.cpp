@@ -225,25 +225,21 @@
         // Vincular el fin de la reproducción al endCallback
         ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
 
-        // Obtener el nombre del archivo para el mapa
-        std::filesystem::path path = std::filesystem::absolute(filepath);
-        std::string filename = path.stem().string();
-
         // Guardar parámetros en la instancia de sonido guardado
         inst->loopMode  = loop;
         inst->forceStop = forceStop;
-        inst->name      = filename;
+        inst->name      = filepath;
         inst->volume    = volume;
 
         // Guardar en el mapa y reproducir
         {
             // Guardar la instancia de sonido en la lista de sonidos reproduciéndose
             std::lock_guard<std::mutex> soundsLock(playing_sounds_mtx_);
-            pimpl_->playing_sounds[filename] = std::move(inst);
+            pimpl_->playing_sounds[filepath] = std::move(inst);
 
             // Comenzar a reproducir (tomo directamente el sonido de la lista de playing_sounds)
-            SYS_INFO("PlaybackModule","'" + filename + "': init playing...");
-            ma_sound_start(&pimpl_->playing_sounds[filename]->sound);
+            SYS_INFO("PlaybackModule","'" + filepath + "': init playing...");
+            ma_sound_start(&pimpl_->playing_sounds[filepath]->sound);
         }
     }
 
