@@ -84,13 +84,15 @@ bool AppController::init(int argc, char** argv) {
     if (config)
         loadConfig(config);
 
-    // Fallback a uso de terminal si no hay GUI
-    if (!enable_gui_)
-        launch_console();
-
-    SYS_INFO("AppController","Initializating application...");
-    if (!config)
-        SYS_WARN("AppController","Cannot load config. Using default values.");
+    // Comprobar si se solicitó modo terminal explícito desde comandos
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "-c" || arg == "--cli" || arg == "--console" || "/c") {
+            enable_gui_ = false;
+            SYS_INFO("AppController", "CLI-only mode forced via command-line argument.");
+            break;
+        }
+    }
 
 
     // Obtener el nombre del ejecutable e inicializar SystemMgr con ese nombre

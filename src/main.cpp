@@ -12,8 +12,8 @@ void printHelp(const std::string& app_name) {
     std::string help_msg = 
             "\nUsage: " + app_name + " [options]\n\n"
             "Options:\n"
-            "  -h, --help, /h        Display this help message and exit.\n"
-            "  -c, --cli, --console  Run the application in terminal/CLI mode only (no GUI).\n\n";
+            "  -h, --help, /h           Display this help message and exit.\n"
+            "  -c, --cli, --console, /c Run the application in CLI mode (no GUI).\n\n";
 
     #ifdef _WIN32
         bool is_attached = false;
