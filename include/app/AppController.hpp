@@ -159,6 +159,27 @@ public:
 
 private:
 
+// Módulos ------------------------------------------------------------------------------
+
+    /**
+     * @brief Inicializa un módulo genérico de la aplicación si se encuentra habilitado.
+     * 
+     * @details Comprueba si el indicador de activación está en true. En caso afirmativo,
+     *          obtiene su subnodo de configuración correspondiente desde el gestor JSON 
+     *          mediante el nombre especificado, invoca el método @c init() del módulo 
+     *          e imprime mensajes informativos o de advertencia en el sistema de logs.
+     * 
+     * @tparam T Tipo del puntero inteligente o gestor del módulo (ej. std::unique_ptr<NetMgr>).
+     * @param module Referencia al puntero del módulo que se desea inicializar.
+     * @param name Nombre identificativo del módulo (utilizado para los logs y la búsqueda en el JSON).
+     * @param enabled Bandera booleana que indica si el módulo debe ser inicializado o ignorado.
+     * 
+     * @note Se asume que el tipo @c T expone un operador de desreferencia (->) y un método 
+     *       @c init(json*) compatible.
+     */
+    template <typename T>
+    void init_module(T& module, std::string const& name, bool enabled);
+
 
 /************ Variables ********************************************************/
 
@@ -190,17 +211,24 @@ private:
     std::unique_ptr<FastDDS>    dds_;          ///< Gestor DDS (FastDDS)
     std::unique_ptr<CycloneDDS> cds_;          ///< Gestor DDS (CycloneDDS)
 
-// Variables de activación de módulos
-    bool    enable_net_;                        ///< Variable de activación de red (network)
-    bool    enable_cli_;                        ///< Variable de activación de terminal (GUI fallback)
-    bool    enable_gui_;                        ///< Variable de activación de GUI
-    bool    enable_snd_;                        ///< Variable de activación de sonido
-    bool    enable_tmx_;                        ///< Variable de activación de Totalmix
-    bool    enable_sym_;                        ///< Variable de activación de Symetrix
-    bool    enable_vip_;                        ///< Variable de activación de VoIP
-    bool    enable_com_;                        ///< Variable de activación de lógica de Comms
-    bool    enable_dds_;                        ///< Variable de activación de DDS (FastDDS)
-    bool    enable_cds_;                        ///< Variable de activación de DDS (CycloneDDS)
+// Bits de activación de módulos (Bitfield)
+    struct ModuleFlags {
+        bool net : 1;
+        bool cli : 1;
+        bool gui : 1;
+        bool snd : 1;
+        bool tmx : 1;
+        bool sym : 1;
+        bool vip : 1;
+        bool com : 1;
+        bool dds : 1;
+        bool cds : 1;
+
+        // Método para poner todos al valor deseado
+        void setAll(bool val) {
+            net = cli = gui = snd = tmx = sym = vip = com = dds = cds = val;
+        }
+    } enable_flags_;                            ///< Bits de activación de módulos (Bitfield)
 
 // Gestión de hilos
     std::thread             consumer_thread_;   ///< Hilo consumidor de paquetes de red

@@ -21,12 +21,6 @@
 #include "sound/PlayerTTS.hpp"
 
 
-// Funciones de consola (pendiente de meter en una clase aparte)
-namespace {
-
-} // namespace
-
-
 // General ------------------------------------------------------------------------------
 
 AppController::AppController() :
@@ -46,19 +40,10 @@ AppController::AppController() :
     vip_(std::make_unique<VoIPMgr>()),
     com_(std::make_unique<CommsCore>()),
     dds_(std::make_unique<FastDDS>()),
-    cds_(std::make_unique<CycloneDDS>()),
-    enable_net_(true),
-    enable_cli_(true),
-    enable_gui_(true),
-    enable_snd_(true),
-    enable_tmx_(true),
-    enable_sym_(true),
-    enable_vip_(true),
-    enable_com_(true),
-    enable_dds_(true),
-    enable_cds_(true)
+    cds_(std::make_unique<CycloneDDS>())
 {
-
+    // Activa todos los módulos por defecto
+    enable_flags_.setAll(1);
 }
 
 AppController::~AppController() {
@@ -77,8 +62,6 @@ bool AppController::init(int argc, char** argv) {
     // Leer valores del json para AppController
     JsonMgr& jsonMgr = JsonMgr::instance();
     json* config = jsonMgr.load(config_filename_); // si no hay, nullptr
-    // Almacenamiento temporal de nodos de json para cada módulo
-    json* config_node = nullptr;
 
     // Validar y asignar valores de variables miembro a partir de la config pasada (json)
     if (config)
@@ -87,9 +70,9 @@ bool AppController::init(int argc, char** argv) {
     // Comprobar si se solicitó modo terminal explícito desde comandos
     for (int token = 1; token < argc; ++token) {
         std::string arg = argv[token];
-        if (arg == "-c" || arg == "--cli" || arg == "--console" || "/c") {
-            enable_gui_ = false;
-            enable_cli_ = true;
+        if (arg == "-c" || arg == "--cli" || arg == "--console" || arg == "/c") {
+            enable_flags_.gui = false;
+            enable_flags_.cli = true;
             SYS_INFO("AppController", "CLI-only mode forced via command-line argument.");
             break;
         }
@@ -100,23 +83,9 @@ bool AppController::init(int argc, char** argv) {
     app_name_ = path.stem().string();
     SystemMgr::instance().init(app_name_);
 
-    // Inicializar GUI
-    if (enable_gui_) {
-        config_node = jsonMgr.getSubNode(config_filename_, "gui");
-        SYS_INFO("AppController", "GUI subsystem loading...");
-        if (gui_->init(config_node))
-            SYS_INFO("AppController", "GUI subsystem OK");
-        else SYS_WARN("AppController", "GUI subsystem FAIL. Fallback to terminal");
-    }
-
-    // Inicializar CLI (consola)
-    if (enable_cli_) {
-        config_node = jsonMgr.getSubNode(config_filename_, "cli");
-        SYS_INFO("AppController", "CLI subsystem loading...");
-        if (cli_->init(config_node) && cli_->isInitialized())
-            SYS_INFO("AppController", "CLI subsystem OK");
-        else SYS_WARN("AppController", "CLI subsystem FAIL");
-    }
+    // Inicializar módulos de interfaz
+    init_module(gui_, "GUI", enable_flags_.gui);
+    init_module(cli_, "CLI", enable_flags_.cli);
 
     // Si la gui no está, lanzar ya la terminal de cli (para que se vean los logs del init)
     if(!gui_->isInitialized() && cli_->isInitialized())
@@ -131,74 +100,14 @@ bool AppController::init(int argc, char** argv) {
     SYS_INFO("AppController","Welcome to " + std::string(app_name_) + ", version " + version_ + "!");
 
 
-    // Iniciar gestor de red
-    if (enable_net_) {
-        SYS_INFO("AppController","Network subsystem loading...");
-        config_node = jsonMgr.getSubNode(config_filename_,"network");
-        if(!net_->init(config_node))
-            SYS_ERROR("AppController","Network subsystem FAIL");
-        else SYS_INFO("AppController","Network subsystem OK");
-    }
-
-
-    // Iniciar gestor de sonidos (+TTS)
-    if (enable_snd_) {
-        SYS_INFO("AppController","Sound subsystem loading...");
-        config_node = jsonMgr.getSubNode(config_filename_,"sound");
-        if(!snd_->init(config_node))
-            SYS_ERROR("AppController","Sound subsystem FAIL");
-        else SYS_INFO("AppController","Sound subsystem OK");
-    }
-
-
-    // Iniciar conexión Totalmix
-    if (enable_tmx_) {
-        SYS_INFO("AppController","Totalmix manager loading...");
-        config_node = jsonMgr.getSubNode(config_filename_,"totalmix");
-        if(!tmx_->init(config_node))
-            SYS_WARN("AppController","Totalmix manager FAIL");
-        else SYS_INFO("AppController","Totalmix manager OK");
-    }
-
-
-    // Iniciar conexión Symetrix    
-    if (enable_sym_) {
-        SYS_INFO("AppController","Symetrix manager loading...");
-        config_node = jsonMgr.getSubNode(config_filename_,"symetrix");
-        if(!sym_->init(config_node))
-            SYS_WARN("AppController","Symetrix manager FAIL");
-        else SYS_INFO("AppController","Symetrix manager OK");
-    }
-
-    
-    // Inicialización lógica Comms
-    if (enable_com_) {
-        SYS_INFO("AppController","Comms logic module loading...");
-        config_node = jsonMgr.getSubNode(config_filename_,"comms");
-        if(!com_->init(config_node))
-            SYS_WARN("AppController","Comms logic module FAIL");
-        else SYS_INFO("AppController","Comms logic module OK");
-    }
-
-    
-    // Inicialización FastDDS
-    if (enable_dds_) {
-        SYS_INFO("AppController","FastDDS manager loading...");
-        config_node = jsonMgr.getSubNode(config_filename_,"fastdds");
-        if(!dds_->init(config_node))
-            SYS_WARN("AppController","FastDDS manager FAIL");
-        else SYS_INFO("AppController","FastDDS manager OK");
-    }
-
-    
-    // Inicialización CycloneDDS
-    if (enable_cds_) {
-        SYS_INFO("AppController","CycloneDDS manager loading...");
-        config_node = jsonMgr.getSubNode(config_filename_,"cyclonedds");
-        if(!cds_->init(config_node))
-            SYS_WARN("AppController","CycloneDDS manager FAIL");
-        else SYS_INFO("AppController","CycloneDDS manager OK");
-    }
+    // Iniciar módulos
+    init_module(net_, "Network",            enable_flags_.net);
+    init_module(snd_, "Sounds",             enable_flags_.snd);
+    init_module(tmx_, "Totalmix",           enable_flags_.tmx);
+    init_module(sym_, "Symetrix",           enable_flags_.sym);
+    init_module(com_, "CommsDispatcher",    enable_flags_.com);
+    init_module(dds_, "FastDDS",            enable_flags_.dds);
+    init_module(cds_, "CycloneDDS",         enable_flags_.cds);
 
 
     // Vincular módulos a través de patrón observador a GUI ( #TODO )
@@ -209,9 +118,11 @@ bool AppController::init(int argc, char** argv) {
     // Activar running para los hilos
     running_ = true;
 
-    // Hilo consumidor de paquetes online
-    SYS_INFO("AppController","Starting net consumer thread...");
-    consumer_thread_ = std::thread(&AppController::TWorker, this);
+    // Hilo consumidor de paquetes online (si net activo)
+    if (net_->isInitialized()) {
+        SYS_INFO("AppController","Starting net consumer thread...");
+        consumer_thread_ = std::thread(&AppController::TWorker, this);
+    }
 
     // Volcar datos que hayan escrito los módulos al config
     SYS_INFO("AppController","Updating json config files...");
@@ -235,15 +146,45 @@ void AppController::loadConfig(void* config) {
     JsonMgr& jsonMgr = JsonMgr::instance();
 
     jsonMgr.get_or_set(cfg, "version",                  version_);
-    jsonMgr.get_or_set(cfg, "app_enable_network",       enable_net_);
-    jsonMgr.get_or_set(cfg, "app_enable_gui",           enable_gui_);
-    jsonMgr.get_or_set(cfg, "app_enable_sounds",        enable_snd_);
-    jsonMgr.get_or_set(cfg, "app_enable_totalmix",      enable_tmx_);
-    jsonMgr.get_or_set(cfg, "app_enable_symetrix",      enable_sym_);
-    jsonMgr.get_or_set(cfg, "app_enable_voip",          enable_vip_);
-    jsonMgr.get_or_set(cfg, "app_enable_comms",         enable_com_);
-    jsonMgr.get_or_set(cfg, "app_enable_fastdds",       enable_dds_);
-    jsonMgr.get_or_set(cfg, "app_enable_cycloneds",     enable_cds_);
+    
+    // Para los bitfields se necesita un bool:
+    bool val = false;
+    
+    val = enable_flags_.net;
+    jsonMgr.get_or_set(cfg, "APP_enable_network", val);
+    enable_flags_.net = val;
+
+    val = enable_flags_.gui;
+    jsonMgr.get_or_set(cfg, "APP_enable_gui", val);
+    enable_flags_.gui = val;
+
+    val = enable_flags_.snd;
+    jsonMgr.get_or_set(cfg, "APP_enable_sounds", val);
+    enable_flags_.snd = val;
+
+    val = enable_flags_.tmx;
+    jsonMgr.get_or_set(cfg, "APP_enable_totalmix", val);
+    enable_flags_.tmx = val;
+
+    val = enable_flags_.sym;
+    jsonMgr.get_or_set(cfg, "APP_enable_symetrix", val);
+    enable_flags_.sym = val;
+
+    val = enable_flags_.vip;
+    jsonMgr.get_or_set(cfg, "APP_enable_voip", val);
+    enable_flags_.vip = val;
+
+    val = enable_flags_.com;
+    jsonMgr.get_or_set(cfg, "APP_enable_comms", val);
+    enable_flags_.com = val;
+
+    val = enable_flags_.dds;
+    jsonMgr.get_or_set(cfg, "APP_enable_fastdds", val);
+    enable_flags_.dds = val;
+
+    val = enable_flags_.cds;
+    jsonMgr.get_or_set(cfg, "APP_enable_cycloneds", val);
+    enable_flags_.cds = val;
 
 }
 
@@ -313,9 +254,9 @@ void AppController::close() {
 
 bool AppController::run() {
     SYS_INFO("AppController","Running app...");
-    if (enable_gui_ && gui_ && gui_->isInitialized())
+    if (enable_flags_.gui && gui_ && gui_->isInitialized())
         return gui_->Run();     // Bloquea en la ventana en modo GUI
-    else if (enable_cli_ && cli_ && cli_->isInitialized())
+    else if (enable_flags_.cli && cli_ && cli_->isInitialized())
         return cli_->Run();      // Bloquea en la consola
     else
         SYS_ERROR("AppController","Cannot run: no user interface enabled (GUI/CLI)");
@@ -421,4 +362,28 @@ void AppController::TWorker() {
 
     Symetrix* AppController::getSymetrixModule() {
         return sym_.get();
+    }
+
+
+// Módulos ------------------------------------------------------------------------------
+
+    template <typename T>
+    void AppController::init_module(T& module, std::string const& name, bool enabled) {
+        
+        // Comprobar si el módulo está activado
+        if (!enabled) {
+            SYS_INFO("AppController", name + " subsystem disabled");
+            return;
+        }
+
+        // Obtener la intancia de json y la configuación del módulo
+        JsonMgr& jsonMgr = JsonMgr::instance();
+        json* config_node = jsonMgr.getSubNode(config_filename_, name);
+
+        // Inicializar con su configuración
+        SYS_INFO("AppController", name + " loading...");
+        if (module->init(config_node))      // CUIDADO: aqui supone que todos los módulos tienen init(config)
+            SYS_INFO("AppController", name + " OK");
+        else
+            SYS_WARN("AppController", name + " FAIL");
     }

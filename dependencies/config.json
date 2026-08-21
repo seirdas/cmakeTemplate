@@ -1,14 +1,17 @@
 {
-    "app_enable_comms": true,
-    "app_enable_cycloneds": true,
-    "app_enable_fastdds": true,
-    "app_enable_gui": true,
-    "app_enable_network": true,
-    "app_enable_sounds": true,
-    "app_enable_symetrix": true,
-    "app_enable_totalmix": true,
-    "app_enable_voip": true,
-    "comms": {
+    "APP_enable_comms": true,
+    "APP_enable_cycloneds": true,
+    "APP_enable_fastdds": true,
+    "APP_enable_gui": true,
+    "APP_enable_network": true,
+    "APP_enable_sounds": true,
+    "APP_enable_symetrix": true,
+    "APP_enable_totalmix": true,
+    "APP_enable_voip": true,
+    "CLI": {
+        "app_name_window": "app"
+    },
+    "CommsDispatcher": {
         "positions": [
             {
                 "alias": "PILOT",
@@ -50,8 +53,9 @@
             }
         ]
     },
-    "cyclonedds": {},
-    "fastdds": {
+    "CycloneDDS": {
+    },
+    "FastDDS": {
         "DOMAIN_ID": 0,
         "enable": true,
         "pqos_name": "DDSMonitorParticipant",
@@ -66,7 +70,7 @@
             }
         ]
     },
-    "gui": {
+    "GUI": {
         "app_name_window": "Audio Control Center",
         "device_refresh_interval": 5.0,
         "font_size": 16.0,
@@ -78,7 +82,7 @@
         "window_size_x": 1280,
         "window_size_y": 720
     },
-    "network": {
+    "Network": {
         "num_threads": 4,
         "udpSockets": [
             {
@@ -91,7 +95,7 @@
             }
         ]
     },
-    "sound": {
+    "Sounds": {
         "Capture": [
             {
                 "device": "mic",
@@ -154,5 +158,5 @@
         "remote_ip": "127.0.0.1",
         "remote_port": 7001
     },
-    "version": "0.12.0"
+    "version": "0.12.2"
 }
