@@ -18,11 +18,13 @@
 
 // General ------------------------------------------------------------------------------
 
-ConsoleMgr::ConsoleMgr(IAppControl* ctrl) :
+ConsoleMgr::ConsoleMgr(IAppControl* ctrl, std::string const& exePath) :
     ctrl_(ctrl),
     initialized_(false),
     running_(false),
-    AppName_("app")
+    AppName_("app"),
+    exe_path_(exePath),
+    tried_to_launch_console_(false)
 {
 
 }
@@ -71,8 +73,6 @@ bool ConsoleMgr::close() {
 
     // Comprobar si el módulo ya estaba cerrado
     if (!initialized_) return true;
-
-    // #TODO
 
     initialized_ = false;
     return !initialized_;   // <- true
@@ -240,7 +240,12 @@ bool ConsoleMgr::Run() {
 
 // Opciones de consola ------------------------------------------------------------------
 
-bool ConsoleMgr::LaunchConsole() {
+bool ConsoleMgr::LaunchConsole(bool force) {
+
+    // Si ya lo ha intentado, no hacerlo de nuevo (evita errores duplicados)
+    if(tried_to_launch_console_ && !force)
+        return true;
+    tried_to_launch_console_ = true;
 
     SYS_INFO("AppController","Trying to launch console...");
 
@@ -291,15 +296,14 @@ bool ConsoleMgr::LaunchConsole() {
         }
 
         SYS_INFO("AppController", "No TTY detected. Launching external terminal window...");
-        std::string exe_path = argv_[0];
 
         // Lanzar terminal ejecutando binario dentro de ella
         std::string cmd = 
-            "qterminal -e \"" + exe_path + "\" & || "
-            "xfce4-terminal -e \"" + exe_path + "\" & || "
-            "konsole -e \"" + exe_path + "\" & || "
-            "alacritty -e \"" + exe_path + "\" & || "
-            "xterm -e \"" + exe_path + "\" &";
+            "qterminal -e \"" + exe_path_ + "\" & || "
+            "xfce4-terminal -e \"" + exe_path_ + "\" & || "
+            "konsole -e \"" + exe_path_ + "\" & || "
+            "alacritty -e \"" + exe_path_ + "\" & || "
+            "xterm -e \"" + exe_path_ + "\" &";
 
         int ret = std::system(cmd.c_str());
 
@@ -317,6 +321,8 @@ bool ConsoleMgr::LaunchConsole() {
 
     // Poner el nombre de ventana
     setConsoleTitle(AppName_);
+
+    return tried_to_launch_console_;
 }
 
 void ConsoleMgr::setConsoleTitle(std::string const& title) {

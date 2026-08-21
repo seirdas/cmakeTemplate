@@ -1,4 +1,5 @@
 {
+    "APP_enable_cli": true,
     "APP_enable_comms": true,
     "APP_enable_cycloneds": true,
     "APP_enable_fastdds": true,

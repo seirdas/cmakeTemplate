@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <atomic>
 
 
 // includes de consola según SO
@@ -33,7 +32,7 @@ public:
     /**
      * @brief Constructor
      */
-    ConsoleMgr(IAppControl* ctrl = nullptr);
+    ConsoleMgr(IAppControl* ctrl = nullptr, std::string const& exePath = "");
     
     /**
      * @brief Destructor
@@ -95,8 +94,9 @@ public:
     /**
      * @brief Lanza la consola. 
      * @details Diferencia sistema Windows y Linux.
+     * @param force Fuerza a lanzar de nuevo la consola aunque haya sido lanzada previamente
      */
-    bool LaunchConsole();
+    bool LaunchConsole(bool force = false);
 
     /**
      * @brief Establece el nombre de la ventana de terminal
@@ -167,5 +167,7 @@ private:
 
 // Parámetros de la consola
     std::string     AppName_;           ///< Nombre de la aplicación/ventana
+    std::string     exe_path_;          ///< Ruta de aplicación (para duplicar app en terminal con Linux)
+    bool            tried_to_launch_console_;  ///< Indica si ya se ha indtentado lanzar la consola
 
 };

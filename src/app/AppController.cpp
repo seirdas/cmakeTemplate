@@ -2,8 +2,6 @@
 #include <string>               // Strings de texto
 #include <chrono>               // Controla tiempos de espera
 #include <filesystem>           // Controla directorios, rutas, etc.
-#include <iostream>             // Consola
-#include <stdexcept>            // std::invalid_argument / std::out_of_range (parseo de comandos CLI)
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
@@ -17,22 +15,20 @@
 #include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
 #include "files/JsonMgr.hpp"    // Gestión de archivos json
 #include "system/SystemMgr.hpp" // Gestión de log del sistema
-#include "sound/PlayerMorse.hpp"
-#include "sound/PlayerTTS.hpp"
 
 
 // General ------------------------------------------------------------------------------
 
-AppController::AppController() :
+AppController::AppController(int argc, char** argv) :
     version_("0.0.0"),
     initialized_(false),
     running_(false),
     online_mode_(true),
-    argc_(0),
-    argv_(nullptr),
+    argc_(argc),
+    argv_(argv),
     config_filename_("config.json"),
     net_(std::make_unique<NetMgr>()),
-    cli_(std::make_unique<ConsoleMgr>(this)),
+    cli_(std::make_unique<ConsoleMgr>(this, argv_[0])),
     gui_(std::make_unique<GuiMgr>(this)),
     snd_(std::make_unique<SoundMgr>()),
     tmx_(std::make_unique<TotalMix>()),
@@ -53,11 +49,7 @@ AppController::~AppController() {
 
 // Inicialización y ejecución -----------------------------------------------------------
 
-bool AppController::init(int argc, char** argv) {
-
-    // Obtiene los parámetros de entrada
-    this->argc_ = argc;
-    this->argv_ = argv;
+bool AppController::init() {
     
     // Leer valores del json para AppController
     JsonMgr& jsonMgr = JsonMgr::instance();
@@ -68,8 +60,8 @@ bool AppController::init(int argc, char** argv) {
         loadConfig(config);
 
     // Comprobar si se solicitó modo terminal explícito desde comandos
-    for (int token = 1; token < argc; ++token) {
-        std::string arg = argv[token];
+    for (int token = 1; token < argc_; ++token) {
+        std::string arg = argv_[token];
         if (arg == "-c" || arg == "--cli" || arg == "--console" || arg == "/c") {
             enable_flags_.gui = false;
             enable_flags_.cli = true;
@@ -79,7 +71,7 @@ bool AppController::init(int argc, char** argv) {
     }
 
     // Obtener el nombre del ejecutable e inicializar SystemMgr con ese nombre
-    std::filesystem::path path = std::filesystem::absolute(argv[0]);
+    std::filesystem::path path = std::filesystem::absolute(argv_[0]);
     app_name_ = path.stem().string();
     SystemMgr::instance().init(app_name_);
 
@@ -153,6 +145,10 @@ void AppController::loadConfig(void* config) {
     val = enable_flags_.net;
     jsonMgr.get_or_set(cfg, "APP_enable_network", val);
     enable_flags_.net = val;
+
+    val = enable_flags_.cli;
+    jsonMgr.get_or_set(cfg, "APP_enable_cli", val);
+    enable_flags_.cli = val;
 
     val = enable_flags_.gui;
     jsonMgr.get_or_set(cfg, "APP_enable_gui", val);

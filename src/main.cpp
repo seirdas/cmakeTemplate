@@ -71,8 +71,8 @@ int main(int argc, char** argv) {
     SYS_INFO("main","Initializing AppController...");
 
     // Instancia controladora de la aplicación
-    AppController App;
-    if (App.init(argc, argv))
+    AppController App(argc, argv);
+    if (App.init())
         return App.run();
     else {
         SYS_ERROR("main", "The application could not be initialized.\nThe program cannot continue and will now close.");

@@ -41,13 +41,13 @@ public:
      * @param playbackName Nombre asignado a este módulo.
      * @return true si se ha iniciado correctamente, false en caso contrario.
      */
-    bool init(void* config = nullptr, std::string const& playbackName = "");
+    bool init(void* config = nullptr, std::string const& playbackName = "") override;
 
     /**
      * @brief Detiene el hilo consumidor de textos y cierra el módulo
      *  (motor de audio) de la clase padre.
      */
-    bool close();
+    bool close() override;
 
     // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
     PlayerTTS(PlayerTTS const&) = delete;

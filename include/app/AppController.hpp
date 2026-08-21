@@ -42,8 +42,10 @@ public:
 
     /**
      * @brief Constructor de AppController. 
+     * @param argc Número de parámetros de entrada del programa
+     * @param argv Array de nombres de parámetros de entrada
      */
-    AppController();
+    AppController(int argc, char** argv);
 
     /**
      * @brief Destructor de AppController.
@@ -63,10 +65,8 @@ public:
 
     /**
      * @brief Inicializa los miembros de la aplicación
-     * @param argc Número de parámetros de entrada del programa
-     * @param argv Array de nombres de parámetros de entrada
      */
-    bool init(int argc, char** argv);
+    bool init();
 
     /**
      * @brief Devuelve si la inicialización ha sido exitosa
