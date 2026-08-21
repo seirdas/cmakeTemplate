@@ -100,44 +100,35 @@ bool AppController::init(int argc, char** argv) {
     app_name_ = path.stem().string();
     SystemMgr::instance().init(app_name_);
 
-    // Fallback a uso de terminal si no hay GUI
-    if (!enable_gui_ && enable_cli_) {
-        
-        config_node = jsonMgr.getSubNode(config_filename_,"cli");
-        SYS_INFO("AppController","CLI subsystem loading...");
-        if (!cli_->init(config_node))
-            SYS_ERROR("AppController","CLI subsystem FAIL");
-        else SYS_INFO("AppController","CLI subsystem OK");
-
-        // Abrir la consola
-        if(cli_->isInitialized()) {
-            cli_->LaunchConsole();
-            cli_->setConsoleTitle(app_name_);
-        }
+    // Inicializar GUI
+    if (enable_gui_) {
+        config_node = jsonMgr.getSubNode(config_filename_, "gui");
+        SYS_INFO("AppController", "GUI subsystem loading...");
+        if (gui_->init(config_node))
+            SYS_INFO("AppController", "GUI subsystem OK");
+        else SYS_WARN("AppController", "GUI subsystem FAIL. Fallback to terminal");
     }
 
+    // Inicializar CLI (consola)
+    if (enable_cli_) {
+        config_node = jsonMgr.getSubNode(config_filename_, "cli");
+        SYS_INFO("AppController", "CLI subsystem loading...");
+        if (cli_->init(config_node) && cli_->isInitialized())
+            SYS_INFO("AppController", "CLI subsystem OK");
+        else SYS_WARN("AppController", "CLI subsystem FAIL");
+    }
+
+    // Si la gui no está, lanzar ya la terminal de cli (para que se vean los logs del init)
+    if(!gui_->isInitialized() && cli_->isInitialized())
+        cli_->LaunchConsole();
+
+    // Info
     SYS_INFO("AppController","Initializating application...");
     if (!config)
         SYS_WARN("AppController","Cannot load config. Using default values.");
 
     // Mostrar versión en log
     SYS_INFO("AppController","Welcome to " + std::string(app_name_) + ", version " + version_ + "!");
-
-
-    // Iniciar GUI, salir si no se carga bien
-    if (enable_gui_) {
-        config_node = jsonMgr.getSubNode(config_filename_,"gui");
-        SYS_INFO("AppController","GUI subsystem loading...");
-        if (!gui_->init(config_node))
-            SYS_ERROR("AppController","GUI subsystem FAIL");
-        else SYS_INFO("AppController","GUI subsystem OK");
-    }
-
-    // Comprobar si se ha iniciado GUI, si no, lanzar terminal
-    if (enable_gui_ && !gui_->isInitialized()) {
-        cli_->LaunchConsole();
-        SYS_INFO("AppController","Cannot initialize GUI . Fallback to terminal");
-    }
 
 
     // Iniciar gestor de red
@@ -324,7 +315,7 @@ bool AppController::run() {
     SYS_INFO("AppController","Running app...");
     if (enable_gui_ && gui_ && gui_->isInitialized())
         return gui_->Run();     // Bloquea en la ventana en modo GUI
-    else if (enable_cli_)
+    else if (enable_cli_ && cli_ && cli_->isInitialized())
         return cli_->Run();      // Bloquea en la consola
     else
         SYS_ERROR("AppController","Cannot run: no user interface enabled (GUI/CLI)");

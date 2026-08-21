@@ -19,9 +19,10 @@
 // General ------------------------------------------------------------------------------
 
 ConsoleMgr::ConsoleMgr(IAppControl* ctrl) :
+    ctrl_(ctrl),
     initialized_(false),
     running_(false),
-    ctrl_(ctrl)
+    AppName_("app")
 {
 
 }
@@ -41,6 +42,9 @@ bool ConsoleMgr::init(void* config) {
     else  // Puede llegar aquí cuando se hace reload()
         SYS_WARN("ConsoleMgr","Cannot load config. Using default values.");
 
+    // Validar ctrl
+    if(!ctrl_)
+        SYS_ERROR("ConsoleMgr","Cannot bind to app modules (ctrl=null)");
     
     initialized_ = true;
     return initialized_;    //<- true
@@ -59,7 +63,7 @@ void ConsoleMgr::loadConfig(void* config) {
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
-    // #TODO
+    jsonMgr.get_or_set(cfg, "app_name_window",	AppName_);
 
 }
 
@@ -78,7 +82,14 @@ bool ConsoleMgr::close() {
 // Ejecución ----------------------------------------------------------------------------
 
 bool ConsoleMgr::Run() {
+
+    // Inicializar consola
+    LaunchConsole();
+
+    // Cambiar el título de la consola
+    setConsoleTitle(AppName_);
     
+    // Info
     SYS_INFO("ConsoleMgr", "Running in CLI Mode. Type 'help' for commands or 'exit' to quit.");
     running_ = true;
 
@@ -263,7 +274,8 @@ bool ConsoleMgr::LaunchConsole() {
                 }
             }
             
-            SYS_INFO("AppController", "Windows console allocated successfully.");
+            std::cout << std::endl;
+            SYS_INFO("AppController", "Console allocated successfully");
             return true;
         }
 
@@ -302,6 +314,9 @@ bool ConsoleMgr::LaunchConsole() {
         return false;
 
     #endif
+
+    // Poner el nombre de ventana
+    setConsoleTitle(AppName_);
 }
 
 void ConsoleMgr::setConsoleTitle(std::string const& title) {

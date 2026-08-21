@@ -103,7 +103,7 @@ public:
      * @param title Nombre de ventana
      */
     void setConsoleTitle(std::string const& title);
-    
+
 
 private:
 
@@ -159,11 +159,13 @@ private:
 
 /************ Variables ********************************************************/
 
-// Inicialización
-    bool                initialized_;   ///< Bandera para indicar inicialización exitosa
-    std::atomic<bool>   running_;       ///< flag de aplicación corriendo (para hilos)
+// Inicialización y ejecución
+    void*           config_;            ///< Configuración del módulo (considerado json)
+    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
+    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
+    bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
 
-// Conexión con AppController (y módulos)
-    IAppControl*        ctrl_;          ///< Puntero al controlador de la aplicación para comunicación entre miembros
+// Parámetros de la consola
+    std::string     AppName_;           ///< Nombre de la aplicación/ventana
 
 };
