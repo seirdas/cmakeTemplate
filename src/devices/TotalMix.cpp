@@ -138,15 +138,39 @@ void TotalMix::loadConfig(void* config) {
     // Control de volumen -------------------------------------------------------------------
 
     bool TotalMix::SetOutputVolume(int out, float value, bool in_dB_units) {
+        // comprobar rango
+        if (!in_dB_units && value > 100) {
+            SYS_WARN("Totalmix","Only values from 0 to 100");
+            return false;
+        }
+        SYS_INFO("Totalmix","Sending output volume: OUT" + std::to_string(out) + " = " + std::to_string((short)value));
         return SendVolume(Bus::Output, 0, out,  (in_dB_units) ? (value) : PctTodB(value));
     }
 
-    bool TotalMix::SetInputVolume(int out, int in, float value, bool in_dB_units) {
-        return SendVolume(Bus::Input, in, out, (in_dB_units) ? (value) : PctTodB(value));
+    bool TotalMix::SetRouteInputVolume(int out, int in, float value, bool in_dB_units) {
+        // comprobar rango
+        if (!in_dB_units && value > 100) {
+            SYS_WARN("Totalmix","Only values from 0 to 100");
+            return false;
+        }
+        SYS_INFO("Totalmix","Sending route volume: IN" 
+            + std::to_string(in) + " -> OUT"
+            + std::to_string(out) + "=" + std::to_string(value)
+        );
+        return SendVolume(Bus::Input, in, out, (in_dB_units) ? (value) : PctTodB((short)value));
     }
 
-    bool TotalMix::SetPlaybackVolume(int out, int pb, float value, bool in_dB_units) {
-        return SendVolume(Bus::Playback, pb, out, (in_dB_units) ? (value) : PctTodB(value));
+    bool TotalMix::SetRoutePlaybackVolume(int out, int pb, float value, bool in_dB_units) {
+        // comprobar rango
+        if (!in_dB_units && value > 100) {
+            SYS_WARN("Totalmix","Only values from 0 to 100");
+            return false;
+        }
+        SYS_INFO("Totalmix","Sending route volume: PB" 
+            + std::to_string(pb) + " -> OUT"
+            + std::to_string(out) + "=" + std::to_string(value)
+        );
+        return SendVolume(Bus::Playback, pb, out, (in_dB_units) ? (value) : PctTodB((short)value));
     }
 
 
@@ -154,16 +178,19 @@ void TotalMix::loadConfig(void* config) {
 
     bool TotalMix::SetMuteOutput(int out, bool mute)
     {
+        SYS_INFO("Totalmix","Sending mute to output '" + std::to_string(out) + "'");
         return SendMute(Bus::Output, out, mute);
     }
 
     bool TotalMix::SetMuteInput(int in, bool mute)
     {
+        SYS_INFO("Totalmix","Sending mute to input '" + std::to_string(in) + "'");
         return SendMute(Bus::Input, in, mute);
     }
 
     bool TotalMix::SetMutePlayback(int pb, bool mute)
     {
+        SYS_INFO("Totalmix","Sending mute to playback '" + std::to_string(pb) + "'");
         return SendMute(Bus::Playback, pb, mute);
     }
 
@@ -187,9 +214,11 @@ void TotalMix::loadConfig(void* config) {
             return false;
         }
 
+        SYS_INFO("Totalmix","Sending snapshot '" + std::to_string(index) + "'");
         return SendPacket();
     }
 
+    // #TODO REVISAR QUÉ LLEGA: he visto que empieza a "notarse" desde el 40~50 aprox
     bool TotalMix::SetInputThreshold(int in, float threshold)
     {
         if (in < 1 || in > numInputs_) {
@@ -214,6 +243,7 @@ void TotalMix::loadConfig(void* config) {
             return false;
         }
 
+        SYS_INFO("Totalmix","Sending threshold '" + std::to_string((short)threshold) + "' to input '" + std::to_string(in) + "'");
         return SendPacket();
     }
 
@@ -237,10 +267,28 @@ void TotalMix::loadConfig(void* config) {
                          reinterpret_cast<sockaddr*>(&dest), sizeof(dest));
 
         if (sent == SOCKET_ERROR) {
-            SYS_WARN(MODULE, "Socket error on send packet.");
+            int errCode = WSAGetLastError();
+            SYS_WARN(MODULE, "Socket error on sendpacket. Error Code: " + std::to_string(errCode) +
+                            " | Target: " + remoteIP_ + ":" + std::to_string(remotePort_));
             return false;
-        }
-        else return true;
+        } else {
+            // Trazas de depuración con volcado hexadecimal del paquete
+            std::string hexDump;
+            char hexBuf[8];
+            int printBytes = (size < 32) ? size : 32; // Limitar el volcado a los primeros 32 bytes
+            for (int i = 0; i < printBytes; ++i) {
+                snprintf(hexBuf, sizeof(hexBuf), "%02X ", static_cast<unsigned char>(oscBuf_.data[i]));
+                hexDump += hexBuf;
+            }
+
+            // log verbose (mucha info) 
+            /*
+            SYS_INFO(MODULE, "SendPacket SUCCESS | Sent " + std::to_string(sent) + " / " + std::to_string(size) + 
+                            " bytes to " + remoteIP_ + ":" + std::to_string(remotePort_) +
+                            " | Header: [ " + hexDump + (size > 32 ? "... ]" : "]"));
+            */
+            return true;
+        }   
     }
 
     bool TotalMix::SendVolume(Bus bus, int out, int channel, float dB)
@@ -425,7 +473,7 @@ void TotalMix::loadConfig(void* config) {
 
     void TotalMix::OscPatchMsgSize()
     {
-        int size = static_cast<int>( oscBuf_.ptr - reinterpret_cast<char*>(oscBuf_.thisMsgSize - 4) );
+        int size = static_cast<int>( oscBuf_.ptr - reinterpret_cast<char*>(oscBuf_.thisMsgSize) ) - 4;
         *oscBuf_.thisMsgSize = htonl(size);
     }
 
@@ -491,7 +539,7 @@ void TotalMix::loadConfig(void* config) {
         if (oscBuf_.bundleDepth == 1) {
             oscBuf_.state = OSC_DONE;
         } else {
-            int size = (int)(oscBuf_.ptr - reinterpret_cast<char*>(oscBuf_.prevCounts[oscBuf_.bundleDepth] - 4) );
+            int size = static_cast<int>( oscBuf_.ptr - reinterpret_cast<char*>(oscBuf_.prevCounts[oscBuf_.bundleDepth]) ) - 4;
             *oscBuf_.prevCounts[oscBuf_.bundleDepth] = htonl(size);
             oscBuf_.state = OSC_NEED_COUNT;
         }
@@ -590,8 +638,8 @@ void TotalMix::loadConfig(void* config) {
     
 // Control de volumen -------------------------------------------------------
     bool TotalMix::SetOutputVolume(int, float, bool)         { return false; }
-    bool TotalMix::SetInputVolume(int, int, float, bool)     { return false; }
-    bool TotalMix::SetPlaybackVolume(int, int, float, bool)  { return false; }
+    bool TotalMix::SetRouteInputVolume(int, int, float, bool)     { return false; }
+    bool TotalMix::SetRoutePlaybackVolume(int, int, float, bool)  { return false; }
 
 // Control de Mute ----------------------------------------------------------
     bool TotalMix::SetMuteOutput(int, bool)                  { return false; }

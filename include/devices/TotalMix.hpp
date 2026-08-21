@@ -25,7 +25,7 @@
  *   TotalMix tm;
  *   tm.Init(7001, "127.0.0.1", 7002, "127.0.0.1", 18, 18, 18);
  *   tm.SetOutputVolume(1, -6.0f);       // Salida 1 a -6 dB
- *   tm.SetInputVolume(1, 1, -6.0f);     // Entrada 1 → Salida 1 a -6 dB
+ *   tm.SetRouteInputVolume(1, 1, -6.0f);     // Entrada 1 → Salida 1 a -6 dB
  *   tm.SetInputVolumePct(1, 1, 75.0f);  // Entrada 1 → Salida 1 al 75 %
  *   tm.SetMuteOutput(2, true);          // Mutear salida 2
  *   tm.SetSnapshot(1);                  // Cargar snapshot 1
@@ -125,7 +125,7 @@ public:
      * @param in_db_units Indicador para considerar el valor como porcentaje (false) o dB (true)
      * @return @c true si la inicialización fue exitosa.
      */
-    bool SetInputVolume(int out, int in, float value, bool in_dB_units = false);
+    bool SetRouteInputVolume(int out, int in, float value, bool in_dB_units = false);
 
     /**
      * @brief Ajusta el volumen de un canal de playback en el submix de una salida, en porcentaje.
@@ -136,7 +136,7 @@ public:
      * @param in_db_units Indicador para considerar el valor como porcentaje (false) o dB (true)
      * @return @c true si la inicialización fue exitosa.
      */
-    bool SetPlaybackVolume(int out, int pb, float pct, bool in_dB_units = false);
+    bool SetRoutePlaybackVolume(int out, int pb, float pct, bool in_dB_units = false);
 
 
 // Control de Mute ----------------------------------------------------------------------

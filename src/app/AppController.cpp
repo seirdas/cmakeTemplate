@@ -846,6 +846,7 @@ void AppController::execute_totalmix_command(std::vector<std::string> const& tok
         std::cout << "Available 'totalmix' commands:\n";
         std::cout << "  totalmix status                 - Show module status\n";
         std::cout << "  totalmix volume <out> <value>   - Set output volume (0-100)\n";
+        std::cout << "  totalmix threshold <in> <value> - Set threshold value (0-100)\n";
         std::cout << "  totalmix mute <out>             - Mute an output\n";
         std::cout << "  totalmix unmute <out>           - Unmute an output\n";
         std::cout << "\n";
@@ -853,7 +854,7 @@ void AppController::execute_totalmix_command(std::vector<std::string> const& tok
     }
 
     if (sub == "status") {
-        SYS_INFO("CLI", std::string("Totalmix connected: ") + (tmx_->isInitialized() ? "YES" : "NO"));
+        SYS_INFO("CLI", std::string("Totalmix module initialized: ") + (tmx_->isInitialized() ? "YES" : "NO"));
         return;
     }
 
@@ -871,6 +872,24 @@ void AppController::execute_totalmix_command(std::vector<std::string> const& tok
                 SYS_WARN("CLI", "Failed to set Totalmix output volume.");
         } catch (std::exception const&) {
             SYS_WARN("CLI", "Invalid <out>/<value>, must be numeric.");
+        }
+        return;
+    }
+
+    if (sub == "threshold") {
+        // Argumentos posicionales obligatorios: tokens[2] = canal, tokens[3] = valor
+        if (tokens.size() < 4) {
+            SYS_WARN("CLI", "Usage: totalmix volume <out> <value>");
+            return;
+        }
+
+        try {
+            int   in   = std::stoi(tokens[2]);
+            float value = std::stof(tokens[3]);
+            if (!tmx_->SetInputThreshold(in, value))
+                SYS_WARN("CLI", "Failed to set Totalmix output volume.");
+        } catch (std::exception const&) {
+            SYS_WARN("CLI", "Invalid <in>/<value>, must be numeric.");
         }
         return;
     }
