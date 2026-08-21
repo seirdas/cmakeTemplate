@@ -41,11 +41,6 @@ bool ConsoleMgr::init(void* config) {
     else  // Puede llegar aquí cuando se hace reload()
         SYS_WARN("ConsoleMgr","Cannot load config. Using default values.");
 
-
-    // #TODO
-
-    
-    SYS_WARN("ConsoleMgr","Logic not yet fully implemented");
     
     initialized_ = true;
     return initialized_;    //<- true
@@ -231,14 +226,6 @@ bool ConsoleMgr::Run() {
     return true;
 }
 
-void ConsoleMgr::setConsoleTitle(std::string const& title) {
-    #ifdef _WIN32
-        SetConsoleTitleA(title.c_str());
-    #else
-        std::cout << "\033]0;" << title << "\007" << std::flush;
-    #endif
-}
-
 
 // Opciones de consola ------------------------------------------------------------------
 
@@ -348,7 +335,7 @@ void ConsoleMgr::execute_command(std::string const& cmd) {
             std::cout << "Available commands:\n";
             std::cout << "  help                - Show this help message\n";
             std::cout << "  status              - Show app general status\n";
-            std::cout << "  sounds [args]       - Execute sound-related commands\n";
+            std::cout << "  sounds [args]       - Execute sound-related commands (also works with 'sound')\n";
             std::cout << "  symetrix [args]     - Execute symetrix-related commands\n";
             std::cout << "  totalmix [args]     - Execute totalmix-related commands\n";
             std::cout << "  exit                - Exit the application\n";
@@ -376,6 +363,10 @@ void ConsoleMgr::execute_command(std::string const& cmd) {
         }},
 
         { "sounds", [this](std::vector<std::string> const& t) {
+            execute_sounds_command(t);
+        }},
+
+        { "sound", [this](std::vector<std::string> const& t) {
             execute_sounds_command(t);
         }},
 
@@ -407,7 +398,7 @@ void ConsoleMgr::execute_sounds_command(std::vector<std::string> const& tokens) 
     std::string const sub = (tokens.size() > 1) ? tokens[1] : "help";
 
     if (sub == "help") {
-        std::cout << "Available 'sound' commands:\n";
+        std::cout << "Available 'sounds' commands:\n";
         std::cout << "  sounds devices          - List available playback/capture devices\n";
         std::cout << "  sounds players          - List active audio/morse/tts modules\n";
         std::cout << "  sounds morse \"<text>\" [--player \"<name>\"]\n";

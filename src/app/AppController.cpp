@@ -38,8 +38,8 @@ AppController::AppController() :
     argv_(nullptr),
     config_filename_("config.json"),
     net_(std::make_unique<NetMgr>()),
-    gui_(std::make_unique<GuiMgr>(this)),
     cli_(std::make_unique<ConsoleMgr>(this)),
+    gui_(std::make_unique<GuiMgr>(this)),
     snd_(std::make_unique<SoundMgr>()),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
@@ -89,7 +89,7 @@ bool AppController::init(int argc, char** argv) {
         std::string arg = argv[token];
         if (arg == "-c" || arg == "--cli" || arg == "--console" || "/c") {
             enable_gui_ = false;
-            enable_cli_ = false;
+            enable_cli_ = true;
             SYS_INFO("AppController", "CLI-only mode forced via command-line argument.");
             break;
         }
@@ -103,11 +103,11 @@ bool AppController::init(int argc, char** argv) {
     // Fallback a uso de terminal si no hay GUI
     if (!enable_gui_ && enable_cli_) {
         
-        config_node = jsonMgr.getSubNode(config_filename_,"gui");
-        SYS_INFO("AppController","GUI subsystem loading...");
+        config_node = jsonMgr.getSubNode(config_filename_,"cli");
+        SYS_INFO("AppController","CLI subsystem loading...");
         if (!cli_->init(config_node))
-            SYS_ERROR("AppController","GUI subsystem FAIL");
-        else SYS_INFO("AppController","GUI subsystem OK");
+            SYS_ERROR("AppController","CLI subsystem FAIL");
+        else SYS_INFO("AppController","CLI subsystem OK");
 
         // Abrir la consola
         if(cli_->isInitialized()) {
