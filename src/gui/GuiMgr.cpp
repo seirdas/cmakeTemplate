@@ -36,6 +36,8 @@
 	#endif
 
 	#include "files/JsonMgr.hpp"
+	#include "sound/SoundMgr.hpp"
+	#include "sound/TTSCore.hpp"
 	
 
 	// Sistema
@@ -236,7 +238,7 @@
 
     }
 
-	bool GuiMgr::run() {
+	bool GuiMgr::Run() {
 
 		running_ = true;
 
@@ -330,7 +332,7 @@
     	device_refresh_timer += io_->DeltaTime;
 		if (device_refresh_timer >= deviceRefreshInterval_)
 		{
-			ctrl_->refreshAudioDevices();
+			ctrl_->getSoundsModule()->updateDevices();
 			device_refresh_timer = 0.0f;
 		}
 
@@ -716,10 +718,7 @@
 
 						if (Button("Generate Wav", ImVec2(-FLT_MIN, 40))) { 
 							// Usamos el buffer manual que el usuario ha escrito
-							ctrl_->TTSgenerate(current_model, manual_buffer, current_model);
-						}
-						if (Button("Play (default playback)", ImVec2(-FLT_MIN, 40))) { 
-							ctrl_->TTSPlay(current_model, manual_buffer, current_model);
+							ctrl_->getSoundsModule()->getTTSCore()->generateWav(current_model, manual_buffer, current_model);
 						}
 						if (is_online) EndDisabled(); // Cerramos el bloque de deshabilitado
 
@@ -732,12 +731,14 @@
 				
 				if (BeginTabItem("audio")) {
 
+					SoundMgr* snd = ctrl_->getSoundsModule();
+
 					// Pide al controlador la lista de micrófonos disponibles en este momento
-					std::vector<std::string> entradas = ctrl_->getAvailableInputDevices();
+					std::vector<std::string> entradas = snd->getAvailableCaptures();
 
 					// Lista con los nombres de los dispositivos que el usuario ha activado
 					static std::vector<std::string> dispositivos_activos;
-					dispositivos_activos = ctrl_->getManagedCaptures();
+					dispositivos_activos = snd->getCaptureModuleNames();
 
 					// Flag para abrir/cerrar la ventana flotante del selector
 					static bool show_device_selector = false;
@@ -748,6 +749,9 @@
 						TextDisabled("  (ninguno)");   // Si no hay ninguno, muestra texto gris
 					} else {
 
+						// #TODO (rehacer)
+
+						/*
 						short i = 0;
 						for (std::string const& captureName : dispositivos_activos) {
 							PushID(i);
@@ -806,11 +810,10 @@
 									ImPlot::EndPlot();
 								}
 							}
-
-
 							i++;
 							PopID();
 						}
+						*/
 					}
 
 					// Botón para abrir el selector de dispositivos disponibles
@@ -818,9 +821,6 @@
 						show_device_selector = true;
 
 					SameLine();
-					// Botón para refrescar la lista de dispositivos del sistema
-					if (Button("Actualizar"))
-						ctrl_->refreshAudioDevices();
 
 					// --- Ventana flotante: selector de dispositivos disponibles ---
 					if (show_device_selector) {
@@ -831,7 +831,11 @@
 							} else {
 								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 									if (Selectable(entradas[n].c_str())) {
-										ctrl_->addInputDevice("", entradas[n]);         // Inicializa el dispositivo en SoundMgr
+										// #TODO
+
+										/*
+											ctrl_->addInputDevice("", entradas[n]);         // Inicializa el dispositivo en SoundMgr
+										*/
 										show_device_selector = false;               // Cierra el popup
 									}
 								}

@@ -1,9 +1,14 @@
 #pragma once
 
 #include <string>               // Maneja cadenas de texto
-#include <vector>
 
-struct TTSCoreData;
+
+// Foward declaration
+class NetMgr;
+class SoundMgr;
+class TotalMix;
+class Symetrix;
+
 
 /**
  * @brief Interfaz de intercomunicación entre los miembros de la aplicación.
@@ -79,125 +84,30 @@ public:
     virtual bool isOnlineMode() const noexcept = 0;
 
 
-// Sockets ------------------------------------------------------------------------------
+// Módulos --------------------------------------------------------------------------
 
     /**
-     * @brief Agrega un nuevo receptor de datos de red.
-     * @return true si el receptor se agregó correctamente, false en caso de error.
+     * @brief Devuelve la instancia de gestor de red
+     * @return Puntero a gestor de red
      */
-    virtual bool addReceiver() const noexcept = 0;
+    virtual NetMgr* getNetModule() = 0;
 
     /**
-     * @brief Elimina un receptor de datos de red.
-     * @return true si el receptor se eliminó correctamente, false en caso de error.
+     * @brief Devuelve la instancia de gestor de sonidos
+     * @return Puntero a gestor de sonidos
      */
-    virtual bool removeReceiver() const noexcept = 0;
-
-
-// Audio --------------------------------------------------------------------------------
-
-    virtual void refreshAudioDevices() noexcept = 0;
+    virtual SoundMgr* getSoundsModule() = 0;
 
     /**
-     * @brief Devuelve la lista con los dispositivos de entrada disponibles.
+     * @brief Devuelve la instancia de gestor de Totalmix
+     * @return Puntero a gestor de totalmix
      */
-    virtual std::vector<std::string> getAvailableInputDevices() noexcept = 0;
-    
-    /**
-     * @brief Devuelve una lista con los nombres de todos las capturas agregadas
-     */
-    virtual std::vector<std::string> getManagedCaptures() noexcept = 0;
-    
-    /**
-     * @brief Devuelve la lista con los dispositivos de reproducción disponibles.
-     */
-    virtual std::vector<std::string> getAvailablePlaybackDevices() noexcept = 0;
+    virtual TotalMix* getTotalmixModule() = 0;
 
     /**
-     * @brief Añade un dispositivo de captura por nombre.
+     * @brief Devuelve la instancia de gestor de Symetrix
+     * @return Puntero a gestor de symetrix
      */
-    virtual bool addInputDevice(std::string const& captureName, std::string const& deviceName) noexcept = 0;
-
-    /**
-     * @brief Elimina un dispositivo de captura por índice.
-     */
-    virtual bool removeInputDevice(std::string const& captureName) noexcept = 0;
-
-    /**
-     * @brief Manda que se empiece a grabar
-     */
-    virtual bool StartRecording(std::string const& captureName) noexcept = 0;
-
-    /**
-     * @brief Manda que pare de grabar
-     */
-    virtual bool StopRecording(std::string const& captureName) noexcept = 0;
-    
-    /**
-     * @brief Comprobar si el dispositivo sigue activo y funcionando
-     */
-     virtual bool isInputDeviceValid(std::string const& captureName) noexcept = 0;
-
-     /**
-      * @brief devuelve el valor del RMS
-      */
-     virtual float getInputRMSLevel(std::string const& captureName) noexcept = 0;
-
-     /**
-      * @brief devuelve el valor del pico
-      */
-     virtual float getInputPeakLevel(std::string const& captureName) noexcept = 0;
-
-     /**
-      * @brief Tamaño del buffer del dispositivo de captura
-      */
-     virtual size_t getInputBufferSize(std::string const& captureName) noexcept = 0; 
-    
-     /**
-      * @brief Tamaño del buffer del dispositivo de grabación
-      */
-     virtual size_t getInputRecBufferSize(std::string const& captureName) noexcept = 0; 
-
-     
-// TTS --------------------------------------------------------------------------------
-
-    /**
-     * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
-     * @param modelName Nombre del modelo que genera el audio
-     * @param text El texto a convertir en audio.
-     * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión wav).
-     * @return true si la generación fue exitosa, false en caso de error.
-     */
-    virtual bool TTSgenerate(
-        std::string const& modelName, 
-        std::string const& text, 
-        std::string const& wavname) 
-        noexcept = 0;
-
-    /**
-     * @brief Reproduce un audio por un playback genereado mediante un texto, usando TTS
-     * @details No genera ningún archivo de audio intermedio; se genera y se reproduce
-     * @param modelName Nombre del modelo que genera el audio
-     * @param text El texto a convertir en audio.
-     * @param playbackName El nombre del playback
-     * @return true si la generación fue exitosa, false en caso de error.
-     */
-    virtual bool TTSPlay(
-        std::string const& modelName, 
-        std::string const& text, 
-        std::string const& playbackName)
-        noexcept = 0;
-
-
-
-// VoIP ---------------------------------------------------------------------------------
-
-    virtual bool addVoiprec(
-    std::string const&  voiprecName,
-    bool                isPlaybackSource,
-    std::string const&  audioSourceName,
-    const std::string   socketName, 
-    std::string const&  ipDest,
-    unsigned short      port) noexcept = 0;
+    virtual Symetrix* getSymetrixModule() = 0;
 
 };

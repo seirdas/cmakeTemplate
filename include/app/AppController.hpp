@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <thread>               // Hilos
@@ -12,6 +11,7 @@
 // Declaración implícita
 class NetMgr;
 class GuiMgr;
+class ConsoleMgr;
 class SoundMgr;
 class TTSMgr;
 class TotalMix;
@@ -130,177 +130,34 @@ public:
     bool isOnlineMode() const noexcept override;
 
 
-    // Sockets --------------------------------------------------------------------------
+    // Módulos --------------------------------------------------------------------------
 
     /**
-     * @brief Agrega un nuevo receptor de datos de red.
-     * @return true si el receptor se agregó correctamente, false en caso de error.
+     * @brief Devuelve la instancia de gestor de red
+     * @return Puntero a gestor de red
      */
-    bool addReceiver() const noexcept override;
+    NetMgr* getNetModule() override;
 
     /**
-     * @brief Elimina un receptor de datos de red.
-     * @return true si el receptor se eliminó correctamente, false en caso de error.
+     * @brief Devuelve la instancia de gestor de sonidos
+     * @return Puntero a gestor de sonidos
      */
-    bool removeReceiver() const noexcept override;
-
-
-    // Audio ----------------------------------------------------------------------------
+    SoundMgr* getSoundsModule() override;
 
     /**
-     * @brief refresca la lista de dispositivos de entrada
+     * @brief Devuelve la instancia de gestor de Totalmix
+     * @return Puntero a gestor de totalmix
      */
-    void refreshAudioDevices() noexcept override;
+    TotalMix* getTotalmixModule() override;
 
     /**
-     * @brief Devuelve la lista con los dispositivos de entrada disponibles.
+     * @brief Devuelve la instancia de gestor de Symetrix
+     * @return Puntero a gestor de symetrix
      */
-    std::vector<std::string> getAvailableInputDevices() noexcept override;
+    Symetrix* getSymetrixModule() override;
 
-    /**
-     * @brief Devuelve una lista con los nombres de todos las capturas agregadas
-     */
-    std::vector<std::string> getManagedCaptures() noexcept override;
-    
-    /**
-     * @brief Devuelve la lista con los dispositivos de reproducción disponibles.
-     */
-    std::vector<std::string> getAvailablePlaybackDevices() noexcept override;
-
-    /**
-     * @brief Añade un dispositivo de captura por nombre.
-     */
-    bool addInputDevice(std::string const& captureName, std::string const& deviceName) noexcept override;
-
-    /**
-     * @brief Elimina un dispositivo de captura por índice.
-     */
-    bool removeInputDevice(std::string const& captureName) noexcept override;
-    
-    /**
-     * @brief Manda que se empiece a grabar
-     */
-    bool StartRecording(std::string const& captureName) noexcept override;
-
-    /**
-     * @brief Manda que pare de grabar
-     */
-    bool StopRecording(std::string const& captureName) noexcept override;
-
-    /**
-     * @brief Obtiene el tamaño del buffer de captura
-     * @param index indice de dispositivo de captura
-     * @return el tamaño del buffer de captura
-     */
-    size_t getInputBufferSize(std::string const& captureName) noexcept override;
-
-    /**
-     * @brief Obtiene el tamaño del buffer de grabación
-     * @param index indice de dispositivo de captura
-     * @return el tamaño del buffer de grabación
-     */
-    size_t getInputRecBufferSize(std::string const& captureName) noexcept override;
-
-    /**
-     * @brief Comprobar si el dispositivo sigue activo y funcionando
-     */
-    bool isInputDeviceValid(std::string const& captureName) noexcept override;
-
-    /**
-     * @brief devuelve el nivel del pico de audio
-     */
-    float getInputPeakLevel(std::string const& captureName) noexcept override;
-
-    /**
-     * @brief devuelve el nivel del RMS de audio
-     */
-    float getInputRMSLevel(std::string const& captureName) noexcept override;
-
-
-    // TTS ----------------------------------------------------------------------------------
-
-    /**
-     * @brief Genera un audio a partir de un texto usando el modelo de voz especificado.
-     * @param modelName Nombre del modelo que genera el audio
-     * @param text El texto a convertir en audio.
-     * @param wavname El nombre del archivo WAV de salida (incluyendo la extensión wav).
-     * @return true si la generación fue exitosa, false en caso de error.
-     */
-    bool TTSgenerate(
-        std::string const& modelName, 
-        std::string const& text, 
-        std::string const& wavname)
-        noexcept override;
-
-    /**
-     * @brief Reproduce un audio por un playback genereado mediante un texto, usando TTS
-     * @details No genera ningún archivo de audio intermedio; se genera y se reproduce
-     * @param modelName Nombre del modelo que genera el audio
-     * @param text El texto a convertir en audio.
-     * @param playbackName El nombre del playback
-     * @return true si la generación fue exitosa, false en caso de error.
-     */
-    bool TTSPlay(
-        std::string const& modelName, 
-        std::string const& text, 
-        std::string const& playbackName)
-        noexcept override;
-
-
-    // VoIP ---------------------------------------------------------------------------------
-
-    bool addVoiprec(
-    std::string const&  voiprecName,
-    bool                isPlaybackSource,
-    std::string const&  audioSourceName,
-    const std::string   socketName, 
-    std::string const&  ipDest,
-    unsigned short      port) noexcept override;
-    
-    // Añadir aquí métodos de IAppControl...
 
 private:
-
-    // Consola ------------------------------------------------------------------------------
-
-    /**
-     * @brief Lanza la consola. 
-     * @details Diferencia sistema Windows y Linux.
-     */
-    bool launch_console();
-
-    /**
-     * @brief Buble bloqueante para permitir entrada
-     * de comandos en la terminal
-     */
-    bool run_cli_loop();
-
-    /**
-     * @brief Interpreta y ejecuta un comando de texto recibido por la CLI.
-     * @details Tokeniza la línea (respetando comillas) y usa una tabla de dispatch
-     *  (nombre de comando -> handler)
-     * @param cmd Línea de comando completa introducida por el usuario.
-     */
-    void execute_command(const std::string& cmd);
-
-    /**
-     * @brief Subcomandos del comando "sounds"
-     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
-     */
-    void execute_sounds_command(std::vector<std::string> const& tokens);
-
-    /**
-     * @brief Subcomandos del comando "symetrix"
-     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
-     */
-    void execute_symetrix_command(std::vector<std::string> const& tokens);
-
-    /**
-     * @brief Subcomandos del comando "totalmix"
-     * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
-     */
-    void execute_totalmix_command(std::vector<std::string> const& tokens);
-
 
 
 /************ Variables ********************************************************/
@@ -322,18 +179,20 @@ private:
     std::string             config_filename_;   ///< Nombre de archivo de configuración
 
 // Módulos
-    std::unique_ptr<NetMgr>      net_;          ///< Gestor de sockets de red
-    std::unique_ptr<GuiMgr>      gui_;          ///< Gestor de ventanas para la interfaz gráfica
-    std::unique_ptr<SoundMgr>    snd_;          ///< Gestor de audio
-    std::unique_ptr<TotalMix>    tmx_;          ///< Gestor módulo Totalmix
-    std::unique_ptr<Symetrix>    sym_;          ///< Gestor módulo Symetrix
-    std::unique_ptr<VoIPMgr>     vip_;          ///< Gestor módulos Voiprec / Voipplay
-    std::unique_ptr<CommsCore>   com_;          ///< Gestor lógica comunicaciones
-    std::unique_ptr<FastDDS>     dds_;          ///< Gestor DDS (FastDDS)
-    std::unique_ptr<CycloneDDS>  cds_;          ///< Gestor DDS (CycloneDDS)
+    std::unique_ptr<NetMgr>     net_;          ///< Gestor de sockets de red
+    std::unique_ptr<ConsoleMgr> cli_;          ///< Gestor de ventanas para interfaz de consola
+    std::unique_ptr<GuiMgr>     gui_;          ///< Gestor de ventanas para la interfaz gráfica
+    std::unique_ptr<SoundMgr>   snd_;          ///< Gestor de audio
+    std::unique_ptr<TotalMix>   tmx_;          ///< Gestor módulo Totalmix
+    std::unique_ptr<Symetrix>   sym_;          ///< Gestor módulo Symetrix
+    std::unique_ptr<VoIPMgr>    vip_;          ///< Gestor módulos Voiprec / Voipplay
+    std::unique_ptr<CommsCore>  com_;          ///< Gestor lógica comunicaciones
+    std::unique_ptr<FastDDS>    dds_;          ///< Gestor DDS (FastDDS)
+    std::unique_ptr<CycloneDDS> cds_;          ///< Gestor DDS (CycloneDDS)
 
 // Variables de activación de módulos
     bool    enable_net_;                        ///< Variable de activación de red (network)
+    bool    enable_cli_;                        ///< Variable de activación de terminal (GUI fallback)
     bool    enable_gui_;                        ///< Variable de activación de GUI
     bool    enable_snd_;                        ///< Variable de activación de sonido
     bool    enable_tmx_;                        ///< Variable de activación de Totalmix
