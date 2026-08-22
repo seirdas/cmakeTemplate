@@ -1,6 +1,7 @@
 #include "cli/ConsoleMgr.hpp"
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
+#include "system/ANSI.hpp"
 
 // Módulos
 #include "app/IAppControl.hpp"
@@ -10,6 +11,7 @@
 #include "sound/PlayerTTS.hpp"
 #include "devices/TotalMix.hpp"
 #include "devices/Symetrix.hpp"
+#include "net/NetMgr.hpp"
 
 // Otros
 #include <iostream>
@@ -268,7 +270,6 @@ bool ConsoleMgr::LaunchConsole(bool force) {
             std::ios::sync_with_stdio();
             std::cin.clear();
             std::cout.clear();
-            std::cerr.clear();
 
             // Opcional: Activar procesamiento de colores ANSI en la consola de Windows 10/11
             HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -336,7 +337,12 @@ void ConsoleMgr::setConsoleTitle(std::string const& title) {
 
 // Comandos -----------------------------------------------------------------------------
 
-void ConsoleMgr::execute_command(std::string const& cmd) {
+void ConsoleMgr::execute_command(std::string const& command) {
+
+    // tratar como minúsculas siempre
+    std::string cmd = command;
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Obtener las palabras por separado
     std::vector<std::string> tokens = tokenize_cli(cmd);
@@ -345,49 +351,74 @@ void ConsoleMgr::execute_command(std::string const& cmd) {
     if (tokens.empty())
         return;
 
-    std::string const& name = tokens[0];
+    std::string& name = tokens[0];
+
+    // reemplazar aliases
+    if (name == "sound" || name == "snd") name = "sounds";
+    if (name == "tmx")  name = "totalmix";
+    if (name == "sym")  name = "symetrix";
+    if (name == "h")    name = "help";
+    if (name == "cls")  name = "clear";
 
     // Switch con strings -> Tabla de dispatch: nombre de comando -> handler(tokens).
     // Para añadir un comando nuevo basta con añadir una entrada aquí.
     using CliHandler = std::function<void(std::vector<std::string> const&)>;
-    const std::unordered_map<std::string, CliHandler> handlers = {
+    static const std::unordered_map<std::string, CliHandler> handlers = {
 
-        { "help", [](std::vector<std::string> const&) {
-            std::cout << "Available commands:\n";
-            std::cout << "  help                - Show this help message\n";
-            std::cout << "  status              - Show app general status\n";
-            std::cout << "  sounds [args]       - Execute sound-related commands (also 'sound')\n";
-            std::cout << "  symetrix [args]     - Execute symetrix-related commands\n";
-            std::cout << "  totalmix [args]     - Execute totalmix-related commands\n";
-            std::cout << "  exit                - Exit the application\n";
-            std::cout << "\n";
-            std::cout << "Use '[command] help' for more information about a command\n";
-            std::cout << "\n";
+        { "help", [this](std::vector<std::string> const&) {
+            print("Available commands:\n"
+                  "  help                   - Show this help message\n"
+                  "  status                 - Show app general status\n"
+                  "  {clear|cls}            - Clear the terminal screen\n"
+                  "  {sounds|snd} [args]    - Execute sound-related commands\n"
+                  "  {symetrix|sym} [args]  - Execute symetrix-related commands\n"
+                  "  {totalmix|tmx} [args]  - Execute totalmix-related commands\n"
+                  "  exit                   - Exit the application\n"
+                  "\n"
+                  "Use '[command] help' for more information about a command"
+            );
+        }},
+
+        { "clear", [this](std::vector<std::string> const& tokens) {
+            if (tokens.size() == 2 && tokens[1] == "help") {
+                print("Clears the terminal screen\n");
+                return;
+            }
+            // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)
+            print("\033[2J\033[H");
         }},
 
         { "status", [this](std::vector<std::string> const& tokens) {
-            
-            std::string const second_token = (tokens.size() > 1) ? tokens[1] : "help";
+            if (tokens.size() == 1) {
+                // Lambda que valida nullptr e inicialización
+                auto getModStatus = [](auto* mod) -> std::string {
+                    if (!mod) return "NULL";
+                    return mod->isInitialized() ? "INITIALIZED" : "FAIL";
+                };
 
-            if(tokens.size() == 1)
-                SYS_INFO("CLI", "Online mode: " + std::string(ctrl_->isOnlineMode() ? "YES" : "NO"));
-            else if(tokens.size() == 2) {
-                if (tokens[1] == "help") {
-                    std::cout << "  Shows app general status.\n";
-                    return;
-                }
-                else
-                    SYS_WARN("CLI", "Unknown subcommand: " + second_token);
+                print(
+                    "--- Module status:\n"
+                    "    Network module:     " + getModStatus(ctrl_->getNetModule()) + "\n"
+                    "    Sounds module:      " + getModStatus(ctrl_->getSoundsModule()) + "\n"
+                    "    Totalmix module:    " + getModStatus(ctrl_->getTotalmixModule()) + "\n"
+                    "    Symetrix module:    " + getModStatus(ctrl_->getSymetrixModule()) + "\n"
+                    "--- App status:\n"
+                    "    Online mode:        " + std::string(ctrl_->isOnlineMode() ? "YES" : "NO")
+                );
+                return;
             }
-            else
-                SYS_WARN("CLI", "Unknown subcommand: " + second_token);
+
+            if (tokens.size() == 2 && tokens[1] == "help") {
+                print("Shows app general status\n");
+                return;
+            }
+
+            // Protección
+            const auto subcommand = (tokens.size() > 1) ? tokens[1] : "<missing>";
+            print("Unknown subcommand: " + subcommand);
         }},
 
         { "sounds", [this](std::vector<std::string> const& t) {
-            execute_sounds_command(t);
-        }},
-
-        { "sound", [this](std::vector<std::string> const& t) {
             execute_sounds_command(t);
         }},
 
@@ -410,135 +441,176 @@ void ConsoleMgr::execute_command(std::string const& cmd) {
     if (it != handlers.end())
         it->second(tokens);
     else
-        SYS_WARN("CLI", "Unknown command: " + name);
+        print_error("Unknown command: " + name); 
 }
 
 void ConsoleMgr::execute_sounds_command(std::vector<std::string> const& tokens) {
 
     if (tokens.size() <= 1 || tokens[1] == "help") {
-        std::cout << "Available 'sounds' commands:\n";
-        std::cout << "  sounds help                     - Show this help message\n";
-        std::cout << "  sounds devices/device/dev       - List available playback/capture devices\n";
-        std::cout << "  sounds players/player [args]    - Execute commands to player modules\n";
-        std::cout << "\n";
-        std::cout << "Use 'sounds [command] help' for more information about a command\n";
-        std::cout << "\n";
+        print("Available 'sounds' commands:\n"
+              "  help                            - Show this help message\n"
+              "  {devices|device|dev|d} [type]   - List available devices (type: pb|cap)\n"
+              "  {players|player|p} [args]       - Execute commands to player modules\n"
+              "\n"
+              "Aliases for 'sounds': sound, sounds, snd\n"
+              "Use 'sounds [command] help' for more information about a command");
         return;
     }
 
-    // Obtener el módulo de sonidos
-    SoundMgr* snd = ctrl_->getSoundsModule();
-
-    if (tokens[1] == "devices" || tokens[1] == "device" || tokens[1] == "dev") {
-        std::cout << "--- Available playback devices ---\n";
-        for (auto const& name : snd->getAvailablePlaybacks())
-            std::cout << "  * " << name << "\n";
-
-        std::cout << "\n";
-
-        std::cout << "--- Available capture devices ---\n";
-        for (auto const& name : snd->getAvailableCaptures())
-            std::cout << "  * " << name << "\n";
-
-        std::cout << "\n";
-
+    // Guard de seguridad contra puntero nulo
+    SoundMgr* snd = ctrl_ ? ctrl_->getSoundsModule() : nullptr;
+    if (!snd) {
+        print_error("Sounds module is not available (null)");
         return;
     }
 
-    if (tokens[1] == "players" || tokens[1] == "player") {
+    // Subcomando: devices / device / dev
+    if (tokens[1] == "devices" || tokens[1] == "device" || tokens[1] == "dev" || tokens[1]=="d") {
 
-        if (tokens.size() <= 2 || tokens[2] == "help") {
-            std::cout << "Available 'sounds players' commands:\n";
-            std::cout << "  sounds players list         - List all available player modules\n";
-            std::cout << "  sounds players morse [args] - Execute commands to morse players\n";
-            std::cout << "  sounds players help         - Show this help message\n";
-            std::cout << "\n";
+        // Rellenar el tercer argumento para evitar excepción
+        std::string const sub = (tokens.size() > 2) ? tokens[2] : "";
+
+        // Manejo del subcomando help
+        if (sub == "help") {
+            print("Usage: sounds players list [audio|morse|tts]\n"
+                    "  List all registered player modules or filter by type.\n\n"
+                    "Options:\n"
+                    "  (none) - List audio, morse, and tts players\n"
+                    "  audio  - List only audio players\n"
+                    "  morse  - List only morse players\n"
+                    "  tts    - List only text-to-speech players");
+            return;
+        }
+
+        // Comprobar el tercer argumento
+        const bool isPb  = (sub == "pb"  || sub == "playbacks" || sub == "playback");
+        const bool isCap = (sub == "cap" || sub == "captures"  || sub == "capture");
+
+        // Si hay un tercer argumento pero no es una opción válida, salta el error de comando desconocido
+        if (!sub.empty() && !isPb && !isCap) {
+            print_error("Unknown sounds subcommand: " + sub);
+            return;
+        }
+
+        std::string output;
+
+        if (sub.empty() || isPb) {
+            output += "--- Available playback devices\n";
+            for (auto const& name : snd->getAvailablePlaybacks())
+                output += "  * " + name + "\n";
+        }
+
+        if (sub.empty() || isCap) {
+            output += "--- Available capture devices\n";
+            for (auto const& name : snd->getAvailableCaptures())
+                output += "  * " + name + "\n";
+        }
+
+        print(output);
+        return;
+    }
+
+    // Subcomando: players / player
+    if (tokens[1] == "players" || tokens[1] == "player" || tokens[1] == "p") {
+
+        if (tokens.size() <= 2 || tokens[2] == "help" || tokens[2] == "h") {
+            print("Available 'sounds players' commands:\n"
+                  "  list                - List all available player modules\n"
+                  "  {morse|m} [args]    - Execute commands to morse players\n"
+                  "  help                - Show this help message");
             return;
         }
 
         if (tokens[2] == "list") {
-            std::cout << "--- Available audio player modules ---\n";
-            for (auto const& name : snd->getPlayerAudioNames())
-                std::cout << "  * " << name << "\n";
+            std::string const sub = (tokens.size() > 3) ? tokens[3] : "";
 
-            std::cout << "\n";
+            const bool isAudio = (sub == "audio");
+            const bool isMorse = (sub == "morse");
+            const bool isTTS   = (sub == "tts");
 
-            std::cout << "--- Available morse player modules ---\n";
-            for (auto const& name : snd->getPlayerMorseNames())
-                std::cout << "  * " << name << "\n";
+            // Si hay un cuarto token y no coincide con ninguna opción válida
+            if (!sub.empty() && !isAudio && !isMorse && !isTTS) {
+                print_error("Unknown player type: " + sub);
+                return;
+            }
 
-            std::cout << "\n";
+            std::string output;
 
-            std::cout << "--- Available tts player modules ---\n";
-            for (auto const& name : snd->getPlayerTTSNames())
-                std::cout << "  * " << name << "\n";
+            if (sub.empty() || isAudio) {
+                output += "--- Available audio player modules ---\n";
+                for (auto const& name : snd->getPlayerAudioNames())
+                    output += "  * " + name + "\n";
+            }
 
-            std::cout << "\n";
+            if (sub.empty() || isMorse) {
+                output += "--- Available morse player modules ---\n";
+                for (auto const& name : snd->getPlayerMorseNames())
+                    output += "  * " + name + "\n";
+            }
 
+            if (sub.empty() || isTTS) {
+                output += "--- Available tts player modules ---\n";
+                for (auto const& name : snd->getPlayerTTSNames())
+                    output += "  * " + name + "\n";
+            }
+
+            print(output);
             return;
         }
 
-        if (tokens[2] == "morse") {
+        if (tokens[2] == "morse" || tokens[2] == "m") {
 
-            if (tokens.size() <= 3 || tokens[3] == "help") {
-                std::cout << "Available 'sounds players morse' commands:\n\n";
-    
-                // Consulta
-                std::cout << "  sounds players morse list\n";
-                std::cout << "      - List all available morse player modules\n\n";
-                
-                // Creación
-                std::cout << "  sounds players morse add <player> --params\n";
-                std::cout << "      - Add a new morse player (not implemented)\n\n";
-                
-                // Uso
-                std::cout << "  sounds players morse use <player> play <text>\n";
-                std::cout << "      - Play morse code with a specified player\n\n";
-                
-                // Eliminación
-                std::cout << "  sounds players morse remove <player>\n";
-                std::cout << "      - Remove a morse player (not implemented)\n\n";
-                
-                // Ayuda
-                std::cout << "  sounds players morse help\n";
-                std::cout << "      - Show this help message\n\n";
+            if (tokens.size() <= 3 || tokens[3] == "help" || tokens[3] == "h") {
+                print("Available 'sounds players morse' commands:\n\n"
+                    "  {help|h}\n"
+                    "      - Show this help message\n\n"
+                    "  {add|a} <name> [params...]\n"
+                    "      - Add a new morse player\n\n"
+                    "  {info|i} <name>\n"
+                    "      - Show detailed information about a morse player\n\n"
+                    "  {use|u} <name> play <text>\n"
+                    "      - Play morse code using the specified player\n\n"
+                    "  {remove|delete|r|d} <name>\n"
+                    "      - Remove the specified morse player"
+                );
                 return;
             }
 
-            if (tokens[3] == "list") {
-                std::cout << "--- Available morse player modules ---\n";
-                for (auto const& name : snd->getPlayerMorseNames())
-                    std::cout << "  * " << name << "\n";
-                std::cout << "\n";
+            // Comprobar tamaño
+            if (tokens.size() <= 4) {
+                print_error("Enter the name of the player morse");
+                return;
+            }
+            // Rellenar el tercer argumento para evitar excepción
+            std::string const& playerName = (tokens.size() > 4) ? tokens[4] : "";
+            
+            if (tokens[3] == "add" || tokens[3] =="a") {
+                if(snd->addPlayerMorse(nullptr, playerName))
+                    print("Morse Player " + playerName + " added");
+                else print_error("Cannot add morse player");
                 return;
             }
 
-            if (tokens[3] == "use") {
+            if (tokens[3] == "remove" || tokens[3] == "remove" || tokens[3] == "r" || tokens[3] == "d") {
+                if(snd->removePlayerMorse(playerName))
+                    print("Morse Player " + playerName + " removed");
+                else print_error("Cannot remove morse player");
 
-                if (tokens.size() <= 4) {
-                    SYS_WARN("ConsoleMgr","Enter the name of the player morse to use");
-                    return;
-                }
+                return;
+            }
 
-                // Intentar obtener el PlayerMorse indicado
-                std::string playerName = tokens[4];
+            if (tokens[3] == "use" || tokens[3] == "u") {
+
                 PlayerMorse* pm = snd->getPlayerMorse(playerName);
                 if (!pm) {
-                    SYS_WARN("CLI", "Morse module '" + playerName + "' not available.");
-                    // return;
-                }
-
-                if (tokens.size() <= 5 || tokens[5] == "info") {
-                    SYS_INFO("CLI", "Morse module '" + playerName + "' info:");
-                    std::cout << "Not implemented\n";
-                    // #TODO soltar info del player, añadir info() en AudioPlaybackModule o Players
+                    print_error("Morse module '" + playerName + "' not available.");
                     return;
                 }
 
                 if (tokens[5] == "play") {
 
                     if (tokens.size() <= 6) {
-                        SYS_WARN("ConsoleMgr","Enter the morse text to play");
+                        print_error("Enter the morse text to play");
                         return;
                     }
 
@@ -549,79 +621,63 @@ void ConsoleMgr::execute_sounds_command(std::vector<std::string> const& tokens) 
 
                     return;
                 }
-
-                else {
-                    SYS_WARN("CLI", "Unknown sounds subcommand: " + tokens[5]);
+                if (tokens[5] == "info" || tokens[5] == "i") {
+                    print("Show info not implemented");
                     return;
                 }
+                else {
+                    print_error("Unknown sounds subcommand: " + tokens[5]);
+                    return;
+                }
+
+                return;
             }
 
             else {
-                SYS_WARN("CLI", "Unknown sounds subcommand: " + tokens[3]);
+                print_error("Unknown sounds subcommand: " + tokens[3]);
                 return;
             }
         }
 
         else {
-            SYS_WARN("CLI", "Unknown sounds subcommand: " + tokens[2]);
+            print_error("Unknown sounds subcommand: " + tokens[2]);
             return;
         }
     }
 
-    SYS_WARN("CLI", "Unknown sounds subcommand: " + tokens[1]);
-}
-
-void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens) {
-
-    // tokens[0] == "symetrix"; tokens[1] es el subcomando
-    std::string const second_token = (tokens.size() > 1) ? tokens[1] : "help";
-
-    if (second_token == "help") {
-        std::cout << "Available 'symetrix' commands:\n";
-        std::cout << "  symetrix status  - Show connection status\n";
-        std::cout << "\n";
-        return;
-    }
-
-    // Obtener el módulo de symetrix
-    Symetrix* sym = ctrl_->getSymetrixModule();
-
-    if (second_token == "status") {
-        SYS_INFO("CLI", std::string("Symetrix connected: ") + (sym->isConnected() ? "YES" : "NO"));
-        return;
-    }
-
-    SYS_WARN("CLI", "Unknown symetrix subcommand: " + second_token);
+    print_error("Unknown sounds subcommand: " + tokens[1]);
 }
 
 void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens) {
 
-    // tokens[0] == "totalmix"; tokens[1] es el subcomando
-    std::string const second_token = (tokens.size() > 1) ? tokens[1] : "help";
-
-    if (second_token == "help") {
-        std::cout << "Available 'totalmix' commands:\n";
-        std::cout << "  totalmix status                 - Show module status\n";
-        std::cout << "  totalmix volume <out> <value>   - Set output volume (0-100)\n";
-        std::cout << "  totalmix threshold <in> <value> - Set threshold value (0-100)\n";
-        std::cout << "  totalmix mute <out>             - Mute an output\n";
-        std::cout << "  totalmix unmute <out>           - Unmute an output\n";
-        std::cout << "\n";
+    if (tokens.size() <= 1 || tokens[1] == "help") {
+        print("Available 'totalmix' commands:\n"
+              "  totalmix status                 - Show module status\n"
+              "  totalmix volume <out> <value>   - Set output volume (0-100)\n"
+              "  totalmix threshold <in> <value> - Set threshold value (0-100)\n"
+              "  totalmix mute <out>             - Mute an output\n"
+              "  totalmix unmute <out>           - Unmute an output");
         return;
     }
 
-    // Obtener el módulo de Totalmix
-    TotalMix* tmx = ctrl_->getTotalmixModule();
+    // Obtener el módulo de Totalmix y validar nullptr
+    TotalMix* tmx = ctrl_ ? ctrl_->getTotalmixModule() : nullptr;
 
-    if (second_token == "status") {
-        SYS_INFO("CLI", std::string("Totalmix module initialized: ") + (tmx->isInitialized() ? "YES" : "NO"));
+    if (tokens[1] == "status") {
+        const std::string str = (tmx && tmx->isInitialized()) ? "INITIALIZED" : "FAIL";
+        print("--- Totalmix module status: " + str);
         return;
     }
 
-    if (second_token == "volume") {
-        // Argumentos posicionales obligatorios: tokens[2] = canal, tokens[3] = valor
+    // Si el módulo no está disponible o inicializado para el resto de subcomandos
+    if (!tmx || !tmx->isInitialized()) {
+        print_error("Totalmix module not initialized or unavailable");
+        return;
+    }
+
+    if (tokens[1] == "volume") {
         if (tokens.size() < 4) {
-            SYS_WARN("CLI", "Usage: totalmix volume <out> <value>");
+            print_error("Usage: totalmix volume <out> <value>");
             return;
         }
 
@@ -631,15 +687,14 @@ void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens
             if (!tmx->SetOutputVolume(out, value))
                 SYS_WARN("CLI", "Failed to set Totalmix output volume.");
         } catch (std::exception const&) {
-            SYS_WARN("CLI", "Invalid <out>/<value>, must be numeric.");
+            print_error("Invalid <out>/<value>, must be numeric.");
         }
         return;
     }
 
-    if (second_token == "threshold") {
-        // Argumentos posicionales obligatorios: tokens[2] = canal, tokens[3] = valor
+    if (tokens[1] == "threshold") {
         if (tokens.size() < 4) {
-            SYS_WARN("CLI", "Usage: totalmix volume <out> <value>");
+            print_error("Usage: totalmix threshold <in> <value>");
             return;
         }
 
@@ -647,31 +702,53 @@ void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens
             int   in   = std::stoi(tokens[2]);
             float value = std::stof(tokens[3]);
             if (!tmx->SetInputThreshold(in, value))
-                SYS_WARN("CLI", "Failed to set Totalmix output volume.");
+                SYS_WARN("CLI", "Failed to set Totalmix input threshold");
         } catch (std::exception const&) {
+            print_error("Invalid <in>/<value>, must be numeric.");
             SYS_WARN("CLI", "Invalid <in>/<value>, must be numeric.");
         }
         return;
     }
 
-    if (second_token == "mute" || second_token == "unmute") {
-        // Argumento posicional obligatorio: tokens[2] = canal
+    if (tokens[1] == "mute" || tokens[1] == "unmute") {
         if (tokens.size() < 3) {
-            SYS_WARN("CLI", "Usage: totalmix " + second_token + " <out>");
+            print_error("Usage: totalmix " + tokens[1] + " <out>");
             return;
         }
 
         try {
             int out = std::stoi(tokens[2]);
-            if (!tmx->SetMuteOutput(out, second_token == "mute"))
+            if (!tmx->SetMuteOutput(out, tokens[1] == "mute"))
                 SYS_WARN("CLI", "Failed to set Totalmix mute state.");
         } catch (std::exception const&) {
-            SYS_WARN("CLI", "Invalid <out>, must be numeric.");
+            print_error("Invalid <out>, must be numeric.");
         }
         return;
     }
 
-    SYS_WARN("CLI", "Unknown totalmix subcommand: " + second_token);
+    print_error("Unknown totalmix subcommand: " + tokens[1]);
+}
+
+void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens) {
+
+    std::string const second_token = (tokens.size() > 1) ? tokens[1] : "help";
+
+    if (second_token == "help") {
+        print("Available 'symetrix' commands:\n"
+              "  status  - Show connection status");
+        return;
+    }
+
+    // Obtener el módulo de symetrix con guard de nulidad
+    Symetrix* sym = ctrl_ ? ctrl_->getSymetrixModule() : nullptr;
+
+    if (second_token == "status") {
+        const std::string connStr = (sym && sym->isConnected()) ? "YES" : "NO";
+        print("Symetrix connected: " + connStr);
+        return;
+    }
+
+    print_error("Unknown symetrix subcommand: " + second_token);
 }
 
 
@@ -703,6 +780,7 @@ std::vector<std::string> ConsoleMgr::tokenize_cli(std::string const& line) {
 std::unordered_map<std::string, std::string> ConsoleMgr::parse_flags(
     std::vector<std::string> const& tokens, size_t size)
 {
+    // Mapa a devolver
     std::unordered_map<std::string, std::string> flags;
 
     // Recorrer el vector de palabras
@@ -719,4 +797,15 @@ std::unordered_map<std::string, std::string> ConsoleMgr::parse_flags(
             ++token;
         }
     return flags;
+}
+
+
+// Imprimir texto -----------------------------------------------------------------------
+
+void ConsoleMgr::print(std::string const& txt) {
+    std::cout << ANSI_BOLD << txt << ANSI_RESET << "\n" << std::endl;
+}
+
+void ConsoleMgr::print_error(std::string const& txt) {
+    std::cerr << ANSI_BOLD << ANSI_RED << txt << ANSI_RESET << "\n" << std::endl;
 }

@@ -639,8 +639,10 @@
                 jsonMgr.get(cfg, "device", usedDeviceName);
             
             // Si se queda vacío, fallback a default si habilitado
-            if (usedDeviceName.empty() && fallbackToDefault_)
+            if (usedDeviceName.empty() && fallbackToDefault_) {
+                SYS_INFO("SoundMgr","Device name not specified: fallback to default");
                 usedDeviceName = isCapture ? getDefaultCaptureDevice() : getDefaultPlaybackDevice();
+            }
             
             // Si se queda vacío, salir
             if (usedDeviceName.empty()) {

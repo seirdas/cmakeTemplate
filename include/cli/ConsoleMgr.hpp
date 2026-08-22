@@ -115,7 +115,7 @@ private:
      *  (nombre de comando -> handler)
      * @param cmd Línea de comando completa introducida por el usuario.
      */
-    void execute_command(std::string const& cmd);
+    void execute_command(std::string const& command);
 
     /**
      * @brief Subcomandos del comando "sounds"
@@ -124,17 +124,17 @@ private:
     void execute_sounds_command(std::vector<std::string> const& tokens);
 
     /**
-     * @brief Subcomandos del comando "symetrix"
-     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
-     */
-    void execute_symetrix_command(std::vector<std::string> const& tokens);
-
-    /**
      * @brief Subcomandos del comando "totalmix"
      * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
      */
     void execute_totalmix_command(std::vector<std::string> const& tokens);
     
+    /**
+     * @brief Subcomandos del comando "symetrix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
+     */
+    void execute_symetrix_command(std::vector<std::string> const& tokens);
+
 
 // Tokens (comandos) --------------------------------------------------------------------
 
@@ -155,6 +155,21 @@ private:
      */
     std::unordered_map<std::string, std::string> parse_flags(
         std::vector<std::string> const& tokens, size_t size);
+
+
+// Imprimir texto -----------------------------------------------------------------------
+
+    /**
+     * @brief Función auxiliar para imprimir texto por consola
+     * @param txt Texto a imprimir
+     */
+    void print(std::string const& txt);
+
+    /**
+     * @brief Función auxiliar para imprimir texto de error por pantalla
+     * @param txt Texto a imprimir
+     */
+    void print_error(std::string const& txt);
 
 
 /************ Variables ********************************************************/
