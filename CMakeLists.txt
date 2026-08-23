@@ -162,7 +162,8 @@ endmacro()
 
 # Preparar el archivo de licencias
 # Ruta del archivo final de licencias unificado
-set(THIRD_PARTY_LICENSES_FILE "${CMAKE_BINARY_DIR}/LICENSES.md")
+set(LICENSES_FILENAME "LICENSES.md")
+set(THIRD_PARTY_LICENSES_FILE "${CMAKE_BINARY_DIR}/${LICENSES_FILENAME}")
 
 # Inicializa/Limpia el archivo con una cabecera
 file(WRITE ${THIRD_PARTY_LICENSES_FILE} 
@@ -530,7 +531,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "---- Copying Third-Party Licenses file to output folder..."
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       "${THIRD_PARTY_LICENSES_FILE}"
-      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/THIRD_PARTY_LICENSES.txt"
+      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${LICENSES_FILENAME}"
 )
 
 # =======================================================================================
