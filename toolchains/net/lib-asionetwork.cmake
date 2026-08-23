@@ -66,3 +66,22 @@ target_compile_options(asio_lib PRIVATE
       -Wno-unused-parameter
     >
 )
+i
+
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+  set(LIB_LICENSE_PATH "${asio_network_SOURCE_DIR}/LICENSE_1_0.txt")
+  
+  if(EXISTS "${LIB_LICENSE_PATH}")
+    file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+    
+    file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+        "------------------------------------------------------------------------\n"
+        " Library: Asio Network (Version: ${LIB_VERSION})\n"
+        "------------------------------------------------------------------------\n\n"
+        "${LIB_LICENSE_TEXT}\n\n"
+    )
+  else()
+    message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+  endif()
+endif()

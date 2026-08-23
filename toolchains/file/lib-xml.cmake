@@ -9,7 +9,7 @@ message(STATUS "[tinyxml2] Fetching tinyxml2 library...")
 set(XML_VERSION 11.0.0)
 
 # Versión para devolver al CMakeLists principal
-set(LIB_VERSION ${JSON_VERSION})
+set(LIB_VERSION ${XML_VERSION})
 
 # Desactivar cosas innecesarias de librería
 set(BUILD_TESTING OFF CACHE BOOL "Disable tests" FORCE)
@@ -60,4 +60,22 @@ else()
         -Wno-unused-but-set-variable
         -Wno-shadow
     )
+endif()
+
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${tinyxml2_SOURCE_DIR}/LICENSE.txt")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+        file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+        
+        file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+            "------------------------------------------------------------------------\n"
+            " Library: tinyxml2 (Version: ${LIB_VERSION})\n"
+            "------------------------------------------------------------------------\n\n"
+            "${LIB_LICENSE_TEXT}\n\n"
+        )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
 endif()

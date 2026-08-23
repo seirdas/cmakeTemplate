@@ -64,3 +64,22 @@ if(MSVC)
 else()
     target_compile_options(miniaudio_lib PRIVATE -w)
 endif()
+
+
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${miniaudio_SOURCE_DIR}/LICENSE")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+      file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+      
+      file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+          "------------------------------------------------------------------------\n"
+          " Library: Miniaudio (Version: ${LIB_VERSION})\n"
+          "------------------------------------------------------------------------\n\n"
+          "${LIB_LICENSE_TEXT}\n\n"
+      )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
+endif()

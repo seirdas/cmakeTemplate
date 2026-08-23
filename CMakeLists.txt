@@ -160,6 +160,18 @@ macro(import_dependency DEF_NAME ENABLE LINK_LIB)
     endif()
 endmacro()
 
+# Preparar el archivo de licencias
+# Ruta del archivo final de licencias unificado
+set(THIRD_PARTY_LICENSES_FILE "${CMAKE_BINARY_DIR}/LICENSES.md")
+
+# Inicializa/Limpia el archivo con una cabecera
+file(WRITE ${THIRD_PARTY_LICENSES_FILE} 
+  "========================================================================\n"
+  "THIRD-PARTY SOFTWARE NOTICES AND LICENSES\n"
+  "========================================================================\n\n"
+)
+
+
 # Librerías externas
 import_dependency( SHERPA           ON     sherpa_lib         tts/lib-sherpaonnx tts/tts-assets) # Tiene 2 toolchains
 import_dependency( MINIAUDIO        ON     miniaudio_lib      audio/lib-miniaudio)
@@ -495,18 +507,31 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )
 
+# -----------------
 # Configurar carpetas de salida del ejecutable y librerías
+# -----------------
 set_target_properties(${PROJECT_NAME} PROPERTIES 
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-${ARCH_NAME}-$<CONFIG>" # Carpeta de salida del ejecutable
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-${ARCH_NAME}-$<CONFIG>" # Carpeta de salida de librerías estáticas
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/executable/$<IF:$<PLATFORM_ID:Windows>,Win,Linux>-${ARCH_NAME}-$<CONFIG>" # Carpeta de salida de librerías dinámicas
 )
 
+# -----------------
 # Generar Doxygen
+# -----------------
 if (DOXYGEN)
     generate_doxygen()
 endif()
 
+# -----------------
+# Copiar archivo unificado de licencias al directorio del ejecutable
+# -----------------
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "---- Copying Third-Party Licenses file to output folder..."
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${THIRD_PARTY_LICENSES_FILE}"
+      "$<TARGET_FILE_DIR:${PROJECT_NAME}>/THIRD_PARTY_LICENSES.txt"
+)
 
 # =======================================================================================
 # Descomentar esto para pararse y debugear este archivo.

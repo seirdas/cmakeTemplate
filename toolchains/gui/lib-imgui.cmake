@@ -27,7 +27,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 # ------------------------------
 # GLFW (Ventanas)
 # ------------------------------
-message(STATUS "[ImGui] Fetching GLFW library...")
+message(STATUS "[imgui_lib] Fetching GLFW library...")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)    # No construir ejemplos
 set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)    # No construir tests
 set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)    # No construir documentación
@@ -38,7 +38,7 @@ endif()
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/glfw_src/.git")
-  message(STATUS "[ImGui] Source of 'GLFW' found locally at: '${EXTERNAL_LIB_PATH}/glfw_src'")
+  message(STATUS "[imgui_lib] Source of 'GLFW' found locally at: '${EXTERNAL_LIB_PATH}/glfw_src'")
   set(FETCHCONTENT_SOURCE_DIR_GLFW
       "${EXTERNAL_LIB_PATH}/glfw_src"
       CACHE PATH "" FORCE)
@@ -61,15 +61,33 @@ FetchContent_MakeAvailable(glfw)
 set(OpenGL_GL_PREFERENCE "GLVND")
 find_package(OpenGL REQUIRED)   # Necesita librería de OpenGL (GLFW la usa para renderizar)
 
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${glfw_SOURCE_DIR}/LICENSE.md")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+        file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+        
+        file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+            "------------------------------------------------------------------------\n"
+            " Library: glfw (Version: ${GLFW_VERSION})\n"
+            "------------------------------------------------------------------------\n\n"
+            "${LIB_LICENSE_TEXT}\n\n"
+        )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
+endif()
+
 
 # ------------------------------
 # IMGUI (Interfaz)
 # ------------------------------
-message(STATUS "[ImGui] Fetching ImGui library...")
+message(STATUS "[imgui_lib] Fetching ImGui library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_src/.git")
-  message(STATUS "[ImGui] Source of 'ImGui' found locally at: '${EXTERNAL_LIB_PATH}/imgui_src'")
+  message(STATUS "[imgui_lib] Source of 'ImGui' found locally at: '${EXTERNAL_LIB_PATH}/imgui_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI
       "${EXTERNAL_LIB_PATH}/imgui_src"
       CACHE PATH "" FORCE)
@@ -92,15 +110,33 @@ file(GLOB IMGUI_SOURCES
   "${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp" 
 )
 
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${imgui_SOURCE_DIR}/LICENSE.txt")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+        file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+        
+        file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+            "------------------------------------------------------------------------\n"
+            " Library: Dear ImGui (Version: ${IMGUI_VERSION})\n"
+            "------------------------------------------------------------------------\n\n"
+            "${LIB_LICENSE_TEXT}\n\n"
+        )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
+endif()
+
 
 # ------------------------------
 # IMPLOT (Dibujar gráficas)
 # ------------------------------
-message(STATUS "[ImGui] Fetching Implot library...")
+message(STATUS "[imgui_lib] Fetching Implot library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/implot_src/.git")
-  message(STATUS "[ImGui] Source of 'ImPlot' found locally at: '${EXTERNAL_LIB_PATH}/implot_src'")
+  message(STATUS "[imgui_lib] Source of 'ImPlot' found locally at: '${EXTERNAL_LIB_PATH}/implot_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMPLOT
       "${EXTERNAL_LIB_PATH}/implot_src"
       CACHE PATH "" FORCE)
@@ -122,15 +158,33 @@ file(GLOB IMPLOT_SOURCES
   "${IMPLOT_DIR}/*.cpp"
 )
 
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${implot_SOURCE_DIR}/LICENSE")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+        file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+        
+        file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+            "------------------------------------------------------------------------\n"
+            " Library: implot (Version: ${IMPLOT_VERSION})\n"
+            "------------------------------------------------------------------------\n\n"
+            "${LIB_LICENSE_TEXT}\n\n"
+        )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
+endif()
+
 
 # ------------------------------
 # IMGUI-KNOBS (Controles circulares)
 # ------------------------------
-message(STATUS "[ImGui] Fetching ImGui-Knobs library...")
+message(STATUS "[imgui_lib] Fetching ImGui-Knobs library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imgui_knobs_src/README.md")
-  message(STATUS "[ImGui] Source of 'imgui_knobs' found locally at: '${EXTERNAL_LIB_PATH}/imgui_knobs_src'")
+  message(STATUS "[imgui_lib] Source of 'imgui_knobs' found locally at: '${EXTERNAL_LIB_PATH}/imgui_knobs_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMGUI_KNOBS
       "${EXTERNAL_LIB_PATH}/imgui_knobs_src"
       CACHE PATH "" FORCE)
@@ -154,15 +208,33 @@ file(GLOB IMGUI_KNOBS_SOURCES
   "${IMGUI_KNOBS_DIR}/imgui-knobs.cpp"
 )
 
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${imgui_knobs_SOURCE_DIR}/LICENSE")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+        file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+        
+        file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+            "------------------------------------------------------------------------\n"
+            " Library: ImGui-Knobs (Version: ${IMGUI_KNOBS_VERSION})\n"
+            "------------------------------------------------------------------------\n\n"
+            "${LIB_LICENSE_TEXT}\n\n"
+        )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
+endif()
+
 
 # ------------------------------
 # IMSPINNER (Indicadores de carga)
 # ------------------------------
-message(STATUS "[ImGui] Fetching ImSpinner library...")
+message(STATUS "[imgui_lib] Fetching ImSpinner library...")
 
 # Usa la librería ya descargada en external/ si existe
 if (EXISTS "${EXTERNAL_LIB_PATH}/imspinner_src/.git")
-  message(STATUS "[ImGui] Source of 'imspinner' found locally at: '${EXTERNAL_LIB_PATH}/imspinner_src'")
+  message(STATUS "[imgui_lib] Source of 'imspinner' found locally at: '${EXTERNAL_LIB_PATH}/imspinner_src'")
   set(FETCHCONTENT_SOURCE_DIR_IMSPINNER
       "${EXTERNAL_LIB_PATH}/imspinner_src"
       CACHE PATH "" FORCE)
@@ -181,6 +253,24 @@ FetchContent_MakeAvailable(imspinner)
 
 # Obtener rutas para añadirlo a la librería imgui
 FetchContent_GetProperties(imspinner SOURCE_DIR IMSPINNER_DIR)
+
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${imspinner_SOURCE_DIR}/LICENSE.txt")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+      file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+      
+      file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+          "------------------------------------------------------------------------\n"
+          " Library: ImSpinner (Version: ${IMSPINNER_VERSION})\n"
+          "------------------------------------------------------------------------\n\n"
+          "${LIB_LICENSE_TEXT}\n\n"
+      )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
+endif()
 
 
 # ------------------------------

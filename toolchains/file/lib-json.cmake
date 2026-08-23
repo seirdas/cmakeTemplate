@@ -38,3 +38,22 @@ target_include_directories(nlohmann_json SYSTEM INTERFACE "${JSON_INSTALL_DIR}/s
 if(MSVC)
     target_compile_options(nlohmann_json INTERFACE /wd5045)
 endif()
+
+
+# Gestión de licencia
+if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
+    set(LIB_LICENSE_PATH "${JSON_INSTALL_DIR}/LICENSE.MIT")
+    
+    if(EXISTS "${LIB_LICENSE_PATH}")
+        file(READ "${LIB_LICENSE_PATH}" LIB_LICENSE_TEXT)
+        
+        file(APPEND "${THIRD_PARTY_LICENSES_FILE}"
+            "------------------------------------------------------------------------\n"
+            " Library: nlohmann/json (Version: ${LIB_VERSION})\n"
+            "------------------------------------------------------------------------\n\n"
+            "${LIB_LICENSE_TEXT}\n\n"
+        )
+    else()
+      message(WARNING "License file not found in: ${LIB_LICENSE_PATH}")
+    endif()
+endif()
