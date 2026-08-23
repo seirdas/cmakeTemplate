@@ -10,11 +10,14 @@
 //		https://traineq.org/imgui_bundle_explorer/
 // ---------------------------------------------------------------------------------
 
+
 #include "gui/GuiMgr.hpp"			// Clase de gestión de UI
+#include "sound/AudioCaptureModule.hpp"
 #include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
 #include "datatypes/TTSDataTypes.hpp"
+
 
 #if defined IMGUILIB || defined IMGUILIB_VERSION
 
@@ -105,6 +108,7 @@
 	void GuiMgr::setController(IAppControl* controller){
 		ctrl_ = controller;
 	}
+
 
 	// Ejecución ----------------------------------------------------------------------------
 
@@ -280,6 +284,7 @@
 		return window_ && !glfwWindowShouldClose(window_);
 	}
 	
+
 	// Captura de teclas --------------------------------------------------------------------
 
 	void GuiMgr::captureKeys() {
@@ -751,17 +756,24 @@
 
 						// #TODO (rehacer)
 
-						/*
+						AudioCaptureModule* acm = nullptr;
+
 						short i = 0;
 						for (std::string const& captureName : dispositivos_activos) {
 							PushID(i);
 
+							// Obtener el dispositivo de captura
+							acm = snd->getCapture(captureName);
+
+							if (!acm)
+								continue;
+
 							// Si el dispositivo se ha desconectado, mostrar aviso en rojo
-							if (!ctrl_->isInputDeviceValid(captureName)) {
+							if (!acm->isValid()) {
 								TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
 								SameLine();
 								if (SmallButton("x")) 
-									ctrl_->removeInputDevice(captureName);
+									snd->removeCaptureDevice(captureName);
 								
 								
 							} else {
@@ -769,27 +781,24 @@
 								Text("%s", captureName.c_str());
 								SameLine();
 								if (SmallButton("Grabar"))
-									ctrl_->StartRecording(captureName);
+									acm->StartRec(acm->getModuleName() + "_REC");
 								SameLine();
 								if (SmallButton("Parar"))
-									ctrl_->StopRecording(captureName);
+									acm->StopRec();
 								SameLine();
 								if (SmallButton("x"))
-									ctrl_->removeInputDevice(captureName);
+									snd->removeCaptureDevice(captureName);
 								
 	
 								SameLine();
 	
-								std::string cadena = std::to_string(ctrl_->getInputBufferSize(captureName));
-								Text(cadena.c_str());
-
-								std::string cadena_rec = std::to_string(ctrl_->getInputRecBufferSize(captureName));
-								Text(cadena_rec.c_str());
+								Text(std::to_string(acm->getBufferSize()).c_str());
+								Text(std::to_string(acm->getRecBufferSize()).c_str());
 
 								SameLine();
 
 								// Medidor VU - barra vertical RMS
-								float LevelVal = ctrl_->getInputPeakLevel(captureName);
+								float LevelVal = acm->getPeakLevel();
 
 								ImVec4 barColor;
 								if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
@@ -813,7 +822,7 @@
 							i++;
 							PopID();
 						}
-						*/
+						
 					}
 
 					// Botón para abrir el selector de dispositivos disponibles
@@ -831,11 +840,7 @@
 							} else {
 								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 									if (Selectable(entradas[n].c_str())) {
-										// #TODO
-
-										/*
-											ctrl_->addInputDevice("", entradas[n]);         // Inicializa el dispositivo en SoundMgr
-										*/
+										snd->addCaptureDevice(nullptr, entradas[n]);
 										show_device_selector = false;               // Cierra el popup
 									}
 								}
@@ -1063,6 +1068,7 @@
 		
 		pimpl_->datosTTS = data;
     }
+
 
 #else
 // ============================================================
