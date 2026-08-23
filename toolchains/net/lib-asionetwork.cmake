@@ -66,7 +66,6 @@ target_compile_options(asio_lib PRIVATE
       -Wno-unused-parameter
     >
 )
-i
 
 # Gestión de licencia
 if(EXISTS "${THIRD_PARTY_LICENSES_FILE}")
