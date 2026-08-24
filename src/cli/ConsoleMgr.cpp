@@ -196,7 +196,7 @@ bool ConsoleMgr::Run() {
             SystemMgr::instance().setCliActive(false);
             std::cout << "\n"; // Forzar salto real
 
-            execute_command(command);
+            execute_cmd(command);
 
             // Añadir al historial (evitando duplicar el mismo comando consecutivo)
             if (!command.empty() && (history.empty() || history.back() != command))
@@ -337,19 +337,15 @@ void ConsoleMgr::setConsoleTitle(std::string const& title) {
 
 // Comandos -----------------------------------------------------------------------------
 
-void ConsoleMgr::execute_command(std::string const& command) {
+void ConsoleMgr::execute_cmd(std::string const& command) {
 
     // tratar como minúsculas siempre
     std::string cmd = command;
-    std::transform(cmd.begin(), cmd.end(), cmd.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    for (char &c : cmd)
+        c = std::tolower(static_cast<unsigned char>(c));
 
     // Obtener las palabras por separado
     std::vector<std::string> tokens = tokenize_cli(cmd);
-
-    // Mismos tokens pero sin forzar minúsculas, para comandos que necesiten
-    // preservar la capitalización original de algún argumento (p.ej. TTS)
-    std::vector<std::string> tokensRaw = tokenize_cli(command);
 
     // Comprobar que hay palabras
     if (tokens.empty())
@@ -422,8 +418,8 @@ void ConsoleMgr::execute_command(std::string const& command) {
             print("Unknown subcommand: " + subcommand);
         }},
 
-        { "sounds", [this, &tokensRaw](std::vector<std::string> const& t) {
-            execute_sounds_command(t, tokensRaw);
+        { "sounds", [this](std::vector<std::string> const& t) {
+            execute_cmd_snd(t);
         }},
 
         { "symetrix", [this](std::vector<std::string> const& t) {
@@ -448,382 +444,249 @@ void ConsoleMgr::execute_command(std::string const& command) {
         print_error("Unknown command: " + name); 
 }
 
-void ConsoleMgr::execute_sounds_command(
-    std::vector<std::string> const& tokens,
-    std::vector<std::string> const& tokensRaw)
-{
+void ConsoleMgr::execute_cmd_snd(std::vector<std::string> const& tokens) {
+    const std::string subCmd = get_token(tokens, 1);
 
-    if (tokens.size() <= 1 || tokens[1] == "help") {
+    if (subCmd.empty() || subCmd == "help" || subCmd == "h") {
         print("Available 'sounds' commands:\n"
-              "  help                            - Show this help message\n"
-              "  {devices|device|dev|d} [type]   - List available devices (type: pb|cap)\n"
-              "  {players|player|p} [args]       - Execute commands to player modules\n"
-              "\n"
-              "Aliases for 'sounds': sound, sounds, snd\n"
-              "Use 'sounds [command] help' for more information about a command");
+              "  help                           - Show this help message\n"
+              "  {devices|device|dev|d} [type]  - List available devices (type: pb|cap)\n"
+              "  {players|player|p} [args]      - Execute commands to player modules\n\n"
+              "Aliases: sound, sounds, snd");
         return;
     }
 
-    // Guard de seguridad contra puntero nulo
     SoundMgr* snd = ctrl_ ? ctrl_->getSoundsModule() : nullptr;
     if (!snd) {
         print_error("Sounds module is not available (null)");
         return;
     }
 
-    // Subcomando: devices / device / dev
-    if (tokens[1] == "devices" || tokens[1] == "device" || tokens[1] == "dev" || tokens[1]=="d") {
+    if (subCmd == "devices" || subCmd == "device" || subCmd == "dev" || subCmd == "d")
+        execute_cmd_snd_devices(tokens);
+    else if (subCmd == "players" || subCmd == "player" || subCmd == "p")
+        execute_cmd_snd_players(tokens);
+    else
+        print_error("Unknown sounds subcommand: " + subCmd);
+}
 
-        // Rellenar el tercer argumento para evitar excepción
-        std::string const sub = (tokens.size() > 2) ? tokens[2] : "";
+void ConsoleMgr::execute_cmd_snd_devices(std::vector<std::string> const& tokens) {
+    const std::string subCmd = get_token(tokens, 2);
 
-        // Manejo del subcomando help
-        if (sub == "help") {
-            print("Usage: sounds players list [audio|morse|tts]\n"
-                    "  List all registered player modules or filter by type.\n\n"
-                    "Options:\n"
-                    "  (none) - List audio, morse, and tts players\n"
-                    "  audio  - List only audio players\n"
-                    "  morse  - List only morse players\n"
-                    "  tts    - List only text-to-speech players");
-            return;
-        }
+    SoundMgr* snd = ctrl_ ? ctrl_->getSoundsModule() : nullptr;
+    if (!snd) {
+        print_error("Sounds module is not available (null)");
+        return;
+    }
 
-        // Comprobar el tercer argumento
-        const bool isPb  = (sub == "pb"  || sub == "playbacks" || sub == "playback");
-        const bool isCap = (sub == "cap" || sub == "captures"  || sub == "capture");
+    if (subCmd == "help") {
+        print("Usage: sounds devices [pb|cap]\n"
+              "  pb  - List playback devices\n"
+              "  cap - List capture devices\n");
+        return;
+    }
 
-        // Si hay un tercer argumento pero no es una opción válida, salta el error de comando desconocido
-        if (!sub.empty() && !isPb && !isCap) {
-            print_error("Unknown sounds subcommand: " + sub);
+    const bool isPb  = (subCmd == "pb"  || subCmd == "playbacks" || subCmd == "playback");
+    const bool isCap = (subCmd == "cap" || subCmd == "captures"  || subCmd == "capture");
+
+    if (!subCmd.empty() && !isPb && !isCap) {
+        print_error("Unknown devices option: " + subCmd);
+        return;
+    }
+
+    std::string output;
+    if (subCmd.empty() || isPb) {
+        output += "--- Available playback devices ---\n";
+        for (auto const& name : snd->getAvailablePlaybacks()) output += "  * " + name + "\n";
+        if (subCmd.empty()) output += "\n";
+    }
+    if (subCmd.empty() || isCap) {
+        output += "--- Available capture devices ---\n";
+        for (auto const& name : snd->getAvailableCaptures()) output += "  * " + name + "\n";
+    }
+
+    print(output);
+}
+
+void ConsoleMgr::execute_cmd_snd_players(std::vector<std::string> const& tokens) {
+    const std::string category = get_token(tokens, 2);
+
+    SoundMgr* snd = ctrl_->getSoundsModule();
+    if(!snd) {
+        print_error("Sounds module not found (nullptr)");
+        return;
+    }
+
+    if (category.empty() || category == "help" || category == "h") {
+        print("Available 'sounds players' commands:\n"
+              "  list                - List all player modules\n"
+              "  {audio|a} [args]    - Commands for audio players\n"
+              "  {morse|m} [args]    - Commands for morse players\n"
+              "  {tts|t} [args]      - Commands for tts players");
+        return;
+    }
+
+    if (category == "list") {
+        const std::string filter = get_token(tokens, 3);
+        const bool isAudio = (filter == "audio");
+        const bool isMorse = (filter == "morse");
+        const bool isTTS   = (filter == "tts");
+
+        if (!filter.empty() && !isAudio && !isMorse && !isTTS) {
+            print_error("Unknown player filter: " + filter);
             return;
         }
 
         std::string output;
+        auto appendList = [&](const char* title, const auto& list) {
+            output += std::string("--- ") + title + " ---\n";
+            for (auto const& name : list) output += "  * " + name + "\n";
+            output += "\n";
+        };
 
-        if (sub.empty() || isPb) {
-            output += "--- Available playback devices\n";
-            for (auto const& name : snd->getAvailablePlaybacks())
-                output += "  * " + name + "\n";
-        }
-
-        if (sub.empty() || isCap) {
-            output += "--- Available capture devices\n";
-            for (auto const& name : snd->getAvailableCaptures())
-                output += "  * " + name + "\n";
-        }
+        if (filter.empty() || isAudio) appendList("Audio modules", snd->getPlayerAudioNames());
+        if (filter.empty() || isMorse) appendList("Morse modules", snd->getPlayerMorseNames());
+        if (filter.empty() || isTTS)   appendList("TTS modules",   snd->getPlayerTTSNames());
 
         print(output);
         return;
     }
 
-    // Subcomando: players / player
-    if (tokens[1] == "players" || tokens[1] == "player" || tokens[1] == "p") {
+    if (category == "morse" || category == "m") execute_cmd_snd_morse(tokens);
+    else if (category == "audio" || category == "a") execute_cmd_snd_audio(tokens);
+    else if (category == "tts" || category == "t") execute_cmd_snd_tts(tokens);
+    else print_error("Unknown players category: " + category);
+}
 
-        if (tokens.size() <= 2 || tokens[2] == "help" || tokens[2] == "h") {
-            print("Available 'sounds players' commands:\n"
-                  "  list                - List all available player modules\n"
-                  "  {audio|a} [args]    - Execute commands to audio players\n"
-                  "  {morse|m} [args]    - Execute commands to morse players\n"
-                  "  {tts|t} [args]      - Execute commands to tts players\n"
-                  "  help                - Show this help message");
-            return;
-        }
+void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
+    const std::string action = get_token(tokens, 3);
 
-        if (tokens[2] == "list") {
-            std::string const sub = (tokens.size() > 3) ? tokens[3] : "";
+    SoundMgr* snd = ctrl_->getSoundsModule();
 
-            const bool isAudio = (sub == "audio");
-            const bool isMorse = (sub == "morse");
-            const bool isTTS   = (sub == "tts");
-
-            // Si hay un cuarto token y no coincide con ninguna opción válida
-            if (!sub.empty() && !isAudio && !isMorse && !isTTS) {
-                print_error("Unknown player type: " + sub);
-                return;
-            }
-
-            std::string output;
-
-            if (sub.empty() || isAudio) {
-                output += "--- Available audio player modules ---\n";
-                for (auto const& name : snd->getPlayerAudioNames())
-                    output += "  * " + name + "\n";
-            }
-
-            if (sub.empty() || isMorse) {
-                output += "--- Available morse player modules ---\n";
-                for (auto const& name : snd->getPlayerMorseNames())
-                    output += "  * " + name + "\n";
-            }
-
-            if (sub.empty() || isTTS) {
-                output += "--- Available tts player modules ---\n";
-                for (auto const& name : snd->getPlayerTTSNames())
-                    output += "  * " + name + "\n";
-            }
-
-            print(output);
-            return;
-        }
-
-        if (tokens[2] == "morse" || tokens[2] == "m") {
-
-            if (tokens.size() <= 3 || tokens[3] == "help" || tokens[3] == "h") {
-                print("Available 'sounds players morse' commands:\n\n"
-                    "  {help|h}\n"
-                    "      - Show this help message\n\n"
-                    "  {add|a} <name> [params...]\n"
-                    "      - Add a new morse player\n\n"
-                    "  {info|i} <name>\n"
-                    "      - Show detailed information about a morse player\n\n"
-                    "  {use|u} <name> play <text>\n"
-                    "      - Play morse code using the specified player\n\n"
-                    "  {remove|delete|r|d} <name>\n"
-                    "      - Remove the specified morse player"
-                );
-                return;
-            }
-
-            // Comprobar tamaño
-            if (tokens.size() <= 4) {
-                print_error("Enter the name of the player morse");
-                return;
-            }
-            // Rellenar el tercer argumento para evitar excepción
-            std::string const& playerName = (tokens.size() > 4) ? tokens[4] : "";
-            
-            if (tokens[3] == "add" || tokens[3] =="a") {
-                if(snd->addPlayerMorse(nullptr, playerName))
-                    print("Morse Player " + playerName + " added");
-                else print_error("Cannot add morse player");
-                return;
-            }
-
-            if (tokens[3] == "remove" || tokens[3] == "remove" || tokens[3] == "r" || tokens[3] == "d") {
-                if(snd->removePlayerMorse(playerName))
-                    print("Morse Player " + playerName + " removed");
-                else print_error("Cannot remove morse player");
-
-                return;
-            }
-
-            if (tokens[3] == "use" || tokens[3] == "u") {
-
-                PlayerMorse* pm = snd->getPlayerMorse(playerName);
-                if (!pm) {
-                    print_error("Morse module '" + playerName + "' not available.");
-                    return;
-                }
-
-                if (tokens[5] == "play") {
-
-                    if (tokens.size() <= 6) {
-                        print_error("Enter the morse text to play");
-                        return;
-                    }
-
-                    // Reproducir morse
-                    std::string const& text = tokens[6];
-                    if(pm)
-                        pm->playMorse(text);
-
-                    return;
-                }
-                if (tokens[5] == "info" || tokens[5] == "i") {
-                    print("Show info not implemented");
-                    return;
-                }
-                else {
-                    print_error("Unknown sounds subcommand: " + tokens[5]);
-                    return;
-                }
-
-                return;
-            }
-
-            else {
-                print_error("Unknown sounds subcommand: " + tokens[3]);
-                return;
-            }
-        }
-
-        else if (tokens[2] == "audio" || tokens[2] == "a") {
-
-            if (tokens.size() <= 3 || tokens[3] == "help" || tokens[3] == "h") {
-                print("Available 'sounds players audio' commands:\n\n"
-                    "  {help|h}\n"
-                    "      - Show this help message\n\n"
-                    "  {add|a} <name> [device]\n"
-                    "      - Add a new audio player\n\n"
-                    "  {use|u} <name> play <filepath> [volume]\n"
-                    "      - Play an audio file using the specified player\n\n"
-                    "  {remove|delete|r|d} <name>\n"
-                    "      - Remove the specified audio player"
-                );
-                return;
-            }
-
-            // Comprobar tamaño
-            if (tokens.size() <= 4) {
-                print_error("Enter the name of the audio player");
-                return;
-            }
-            std::string const& playerName = tokens[4];
-
-            if (tokens[3] == "add" || tokens[3] == "a") {
-                std::string const deviceName = (tokens.size() > 5) ? tokens[5] : "";
-                if (snd->addPlayerAudio(nullptr, playerName, deviceName))
-                    print("Audio Player " + playerName + " added");
-                else print_error("Cannot add audio player");
-                return;
-            }
-
-            if (tokens[3] == "remove" || tokens[3] == "delete" || tokens[3] == "r" || tokens[3] == "d") {
-                if (snd->removePlayerAudio(playerName))
-                    print("Audio Player " + playerName + " removed");
-                else print_error("Cannot remove audio player");
-                return;
-            }
-
-            if (tokens[3] == "use" || tokens[3] == "u") {
-
-                PlayerAudio* pa = snd->getPlayerAudio(playerName);
-                if (!pa) {
-                    print_error("Audio module '" + playerName + "' not available.");
-                    return;
-                }
-
-                if (tokens.size() <= 5) {
-                    print_error("Enter a subcommand for 'use' (play)");
-                    return;
-                }
-
-                if (tokens[5] == "play") {
-
-                    if (tokens.size() <= 6) {
-                        print_error("Enter the filepath of the audio to play");
-                        return;
-                    }
-
-                    // Reproducir audio
-                    std::string const& filepath = tokens[6];
-                    unsigned short     volume   = 100;
-
-                    if (tokens.size() > 7) {
-                        try {
-                            volume = static_cast<unsigned short>(std::stoi(tokens[7]));
-                        } catch (std::exception const&) {
-                            print_error("Invalid <volume>, must be numeric.");
-                            return;
-                        }
-                    }
-
-                    pa->playAudio(filepath, volume);
-                    return;
-                }
-                else {
-                    print_error("Unknown sounds subcommand: " + tokens[5]);
-                    return;
-                }
-            }
-
-            else {
-                print_error("Unknown sounds subcommand: " + tokens[3]);
-                return;
-            }
-        }
-
-        else if (tokens[2] == "tts" || tokens[2] == "t") {
-
-            if (tokens.size() <= 3 || tokens[3] == "help" || tokens[3] == "h") {
-                print("Available 'sounds players tts' commands:\n\n"
-                    "  {help|h}\n"
-                    "      - Show this help message\n\n"
-                    "  {add|a} <name> [device]\n"
-                    "      - Add a new tts player\n\n"
-                    "  {use|u} <name> play <model> <audioName> <text>\n"
-                    "      - Play a text-to-speech phrase using the specified player\n"
-                    "        (use quotes around <text> if it has more than one word)\n\n"
-                    "  {remove|delete|r|d} <name>\n"
-                    "      - Remove the specified tts player"
-                );
-                return;
-            }
-
-            // Comprobar tamaño
-            if (tokens.size() <= 4) {
-                print_error("Enter the name of the tts player");
-                return;
-            }
-            std::string const& playerName = tokens[4];
-
-            if (tokens[3] == "add" || tokens[3] == "a") {
-                std::string const deviceName = (tokens.size() > 5) ? tokens[5] : "";
-                if (snd->addPlayerTTS(nullptr, playerName, deviceName))
-                    print("TTS Player " + playerName + " added");
-                else print_error("Cannot add tts player");
-                return;
-            }
-
-            if (tokens[3] == "remove" || tokens[3] == "delete" || tokens[3] == "r" || tokens[3] == "d") {
-                if (snd->removePlayerTTS(playerName))
-                    print("TTS Player " + playerName + " removed");
-                else print_error("Cannot remove tts player");
-                return;
-            }
-
-            if (tokens[3] == "use" || tokens[3] == "u") {
-
-                PlayerTTS* pt = snd->getPlayerTTS(playerName);
-                if (!pt) {
-                    print_error("TTS module '" + playerName + "' not available.");
-                    return;
-                }
-
-                if (tokens.size() <= 5) {
-                    print_error("Enter a subcommand for 'use' (play)");
-                    return;
-                }
-
-                if (tokens[5] == "play") {
-
-                    if (tokens.size() <= 8) {
-                        print_error("Usage: sounds players tts use <name> play <model> <audioName> <text>");
-                        return;
-                    }
-
-                    // Reproducir tts (se usan los tokens SIN forzar minúsculas: el nombre
-                    // de modelo y el texto son sensibles a mayúsculas/minúsculas)
-                    std::string const& model     = tokensRaw[6];
-                    std::string const& audioName = tokensRaw[7];
-                    std::string const& text      = tokensRaw[8];
-
-                    if (!pt->playTTS(model, text, audioName))
-                        print_error("Cannot play tts");
-
-                    return;
-                }
-                else {
-                    print_error("Unknown sounds subcommand: " + tokens[5]);
-                    return;
-                }
-            }
-
-            else {
-                print_error("Unknown sounds subcommand: " + tokens[3]);
-                return;
-            }
-        }
-
-        else {
-            print_error("Unknown sounds subcommand: " + tokens[2]);
-            return;
-        }
+    if (action.empty() || action == "help" || action == "h") {
+        print("Usage: sounds players morse {add|remove|use} <name> [args]");
+        return;
     }
 
-    print_error("Unknown sounds subcommand: " + tokens[1]);
+    const std::string name = get_token(tokens, 4);
+    if (name.empty()) {
+        print_error("Player name is required.");
+        return;
+    }
+
+    if (action == "add" || action == "a") {
+        if (snd->addPlayerMorse(nullptr, name)) print("Morse player '" + name + "' added.");
+        else print_error("Cannot add morse player '" + name + "'");
+    } 
+    else if (action == "remove" || action == "delete" || action == "r" || action == "d") {
+        if (snd->removePlayerMorse(name)) print("Morse player '" + name + "' removed.");
+        else print_error("Cannot remove morse player '" + name + "'");
+    } 
+    else if (action == "use" || action == "u") {
+        PlayerMorse* pm = snd->getPlayerMorse(name);
+        if (!pm) { print_error("Morse player '" + name + "' not found."); return; }
+
+        const std::string subAction = get_token(tokens, 5);
+        if (subAction == "play") {
+            const std::string text = get_token(tokens, 6);
+            if (text.empty()) { print_error("Enter the text to play."); return; }
+            pm->playMorse(text);
+        } else if (subAction == "info" || subAction == "i") {
+            print("Info not implemented.");
+        } else {
+            print_error("Unknown use subcommand: " + subAction);
+        }
+    } 
+    else {
+        print_error("Unknown action: " + action);
+    }
 }
+
+void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
+    const std::string action = get_token(tokens, 3);
+    if (action.empty() || action == "help" || action == "h") {
+        print("Usage: sounds players audio {add|remove|use} <name> [args]");
+        return;
+    }
+
+    SoundMgr* snd = ctrl_->getSoundsModule();
+
+    const std::string name = get_token(tokens, 4);
+    if (name.empty()) { print_error("Player name required."); return; }
+
+    if (action == "add" || action == "a") {
+        std::string device = get_token(tokens, 5);
+        if (snd->addPlayerAudio(nullptr, name, device)) print("Audio player '" + name + "' added.");
+        else print_error("Cannot add audio player.");
+    } 
+    else if (action == "remove" || action == "delete" || action == "r" || action == "d") {
+        if (snd->removePlayerAudio(name)) print("Audio player '" + name + "' removed.");
+        else print_error("Cannot remove audio player.");
+    } 
+    else if (action == "use" || action == "u") {
+        PlayerAudio* pa = snd->getPlayerAudio(name);
+        if (!pa) { print_error("Audio player '" + name + "' not found."); return; }
+
+        if (get_token(tokens, 5) == "play") {
+            std::string filepath = get_token(tokens, 6);
+            if (filepath.empty()) { print_error("Filepath required."); return; }
+            
+            unsigned short vol = 100;
+            std::string volStr = get_token(tokens, 7);
+            if (!volStr.empty()) {
+                try { vol = static_cast<unsigned short>(std::stoi(volStr)); }
+                catch (...) { print_error("Invalid volume."); return; }
+            }
+            pa->playAudio(filepath, vol);
+        } else {
+            print_error("Unknown use subcommand.");
+        }
+    }
+}
+
+void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
+    const std::string action = get_token(tokens, 3);
+    if (action.empty() || action == "help" || action == "h") {
+        print("Usage: sounds players tts {add|remove|use} <name> [args]");
+        return;
+    }
+
+    SoundMgr* snd = ctrl_->getSoundsModule();
+
+    const std::string name = get_token(tokens, 4);
+    if (name.empty()) { print_error("Player name required."); return; }
+
+    if (action == "add" || action == "a") {
+        std::string device = get_token(tokens, 5);
+        if (snd->addPlayerTTS(nullptr, name, device)) print("TTS player '" + name + "' added.");
+        else print_error("Cannot add TTS player.");
+    } 
+    else if (action == "remove" || action == "delete" || action == "r" || action == "d") {
+        if (snd->removePlayerTTS(name)) print("TTS player '" + name + "' removed.");
+        else print_error("Cannot remove TTS player.");
+    } 
+    else if (action == "use" || action == "u") {
+        PlayerTTS* pt = snd->getPlayerTTS(name);
+        if (!pt) { print_error("TTS player '" + name + "' not found."); return; }
+
+        if (get_token(tokens, 5) == "play") {
+            std::string model = get_token(tokens, 6);
+            std::string audioName = get_token(tokens, 7);
+            std::string text = get_token(tokens, 8);
+
+            if (model.empty() || audioName.empty() || text.empty()) {
+                print_error("Usage: sounds players tts use <name> play <model> <audioName> <text>");
+                return;
+            }
+            if (!pt->playTTS(model, text, audioName)) print_error("Cannot play TTS.");
+        } else {
+            print_error("Unknown use subcommand.");
+        }
+    }
+}
+
+
+// Subcomandos Totalmix -----------------------------------------------------------------
 
 void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens) {
 
@@ -906,6 +769,9 @@ void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens
     print_error("Unknown totalmix subcommand: " + tokens[1]);
 }
 
+
+// Subcomandos Symetrix -----------------------------------------------------------------
+
 void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens) {
 
     std::string const second_token = (tokens.size() > 1) ? tokens[1] : "help";
@@ -952,6 +818,10 @@ std::vector<std::string> ConsoleMgr::tokenize_cli(std::string const& line) {
         tokens.push_back(current);
 
     return tokens;
+}
+
+std::string ConsoleMgr::get_token(std::vector<std::string> const& tokens, size_t idx) {
+    return (idx < tokens.size()) ? tokens[idx] : "";
 }
 
 std::unordered_map<std::string, std::string> ConsoleMgr::parse_flags(
