@@ -114,7 +114,7 @@
 
 	bool GuiMgr::init(void* config) {
 
-		SYS_INFO("GuiMgr", "Initializating UI...");
+		SYS_INFO("GuiMgr", "Initializing UI...");
 
 		// Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config) {

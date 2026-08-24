@@ -4,8 +4,10 @@
 #include <thread>               // num_threads_
 #include <unordered_map>
 #include <vector>
+#include <mutex>
 #include <condition_variable>
 #include <filesystem>
+#include <atomic>
 
 
 struct AudioData {
@@ -183,7 +185,7 @@ public:
      * @param modelName Nombre del modelo (nombre de la carpeta).
      * @return Cadena de texto en proceso de síntesis, o un string vacío si no está activo.
      */
-    std::string getProccesingText(std::string const& modelName) const;
+    std::string getProccessingText(std::string const& modelName) const;
 
     /**
      * @brief Obtiene el nombre identificativo del modelo a partir de su ruta absoluta.

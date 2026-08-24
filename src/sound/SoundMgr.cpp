@@ -60,7 +60,7 @@
 
         // No hacer nada si ya se ha iniciado
         if (initialized_) return true;
-        SYS_INFO("SoundMgr", "Initializating sound context...");
+        SYS_INFO("SoundMgr", "Initializing sound context...");
 
         // Inicializar sistema de audio
         ma_result res = ma_context_init(NULL, 0, NULL, &pimpl_->snd_context_);

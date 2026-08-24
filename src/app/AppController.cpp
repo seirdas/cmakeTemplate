@@ -84,7 +84,7 @@ bool AppController::init() {
         cli_->LaunchConsole();
 
     // Info
-    SYS_INFO("AppController","Initializating application...");
+    SYS_INFO("AppController","Initializing application...");
     if (!config)
         SYS_WARN("AppController","Cannot load config. Using default values.");
 
