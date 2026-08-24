@@ -119,9 +119,13 @@ private:
 
     /**
      * @brief Subcomandos del comando "sounds"
-     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
+     * @param tokens Tokens de la línea completa (en minúsculas), tokens[0] == "sounds".
+     * @param tokensRaw Mismos tokens que @p tokens pero sin forzar minúsculas, para
+     *  argumentos que deban preservar su capitalización original (p.ej. modelo/texto TTS).
      */
-    void execute_sounds_command(std::vector<std::string> const& tokens);
+    void execute_sounds_command(
+        std::vector<std::string> const& tokens,
+        std::vector<std::string> const& tokensRaw);
 
     /**
      * @brief Subcomandos del comando "totalmix"

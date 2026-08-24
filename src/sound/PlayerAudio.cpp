@@ -64,6 +64,9 @@
         // Obtener PIMPL de esta clase hija
         PlayerAudioImpl* pimpl_hija = static_cast<PlayerAudioImpl*>(pimpl_.get());
 
+       
+        running_ = false;
+
         // Despertar y unir hilo del Reaper de caché
         if (cachereaper_thread_.joinable()) {
             SYS_INFO("PlaybackModule","'" + name_ + "': Closing sounds reaper thread...");
