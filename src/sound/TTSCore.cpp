@@ -310,16 +310,34 @@
         return models;
     }
 
-    std::string TTSCore::getModelPath(std::string model) const {
+    std::string TTSCore::getModelPath(std::string modelName) const {
 
         // Comprobar que existe el directorio de modelos de voz
         if (!fs::is_directory(models_path_))
             return {};
 
+        // Poner en minúsculas siempre (para comparar igual que las claves internas)
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
         // Busca y devuelve la ruta del modelo (carpeta) si existe en ese directorio
-        for (const auto& entry : fs::directory_iterator(models_path_))
-            if (entry.is_directory() && entry.path().filename().string().find(model) != std::string::npos)
+        for (const auto& entry : fs::directory_iterator(models_path_)) {
+            // Ignorar si no es un directorio
+            if (!entry.is_directory()) 
+                continue;
+            
+            // Tomar el nombre
+            std::string entry_lc = entry.path().filename().string();
+            
+            // Pasar a minúsculas
+            for (char &c : entry_lc)
+                c = std::tolower(static_cast<unsigned char>(c));
+            
+            // Buscar si coincide con el parámetro
+            if (entry_lc.find(modelName_lc) != std::string::npos)
                 return fs::absolute(entry.path()).string();
+        }
 
         /* else */
         return {};
@@ -344,8 +362,14 @@
     };
 
     bool TTSCore::isModelLoaded(std::string const& modelName) const {
+
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
         std::unique_lock<std::mutex> lock(models_mutex_);
-        auto it = loaded_models_.find(modelName);
+        auto it = loaded_models_.find(modelName_lc);
         if (it == loaded_models_.end()) 
             return false;
         else return true;
@@ -356,6 +380,11 @@
 
     AudioData TTSCore::generate(std::string const& modelName, std::string const& text) {
         if (!running_) return {};
+
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
 
         // Comprobar que el texto contiene algo para generar
         if (text == "") {
@@ -373,7 +402,7 @@
         // Comprobar que el modelo "seleccionado" por param existe
         {
             std::unique_lock<std::mutex> lock(models_mutex_);
-            auto it = loaded_models_.find(modelName);
+            auto it = loaded_models_.find(modelName_lc);
             if (it == loaded_models_.end()) {
                 SYS_WARN("TTSCore", "generate: Model not found or loaded: " + modelName);
                 return {};
@@ -381,7 +410,7 @@
             
             // (lazy_load) Si el modelo no está cargado, cargarlo ahora
             if (lazy_load_ && it->second == nullptr) {
-                std::filesystem::path modpath = getModelPath(modelName);
+                std::filesystem::path modpath = getModelPath(modelName_lc);
                 if (!modpath.empty()) {
 
                     // Se va a bloquear 'loaded_models' otra vez en la función load_vits_model
@@ -402,7 +431,7 @@
         // Guardar el texto en proceso por el modelo
         {
             std::lock_guard<std::mutex> lock(processing_mtx_);
-            processing_texts_[modelName] = text;
+            processing_texts_[modelName_lc] = text;
         }
 
         // Generar configuración
@@ -414,7 +443,7 @@
 
         // Prueba a generar el audio con el modelo cargado
         const SherpaOnnxGeneratedAudio* audio = SherpaOnnxOfflineTtsGenerateWithConfig(
-            loaded_models_[modelName],
+            loaded_models_[modelName_lc],
             text.c_str(), 
             &config, 
             nullptr,        // Se podría implementar un callback que vaya mostrando el progreso (hay que diferenciar cada modelo)
@@ -424,7 +453,7 @@
         // Limpiar el texto que está generando el modelo
         {
             std::lock_guard<std::mutex> lock(processing_mtx_);
-            processing_texts_.erase(modelName);
+            processing_texts_.erase(modelName_lc);
         }
 
         // Termina la generación
@@ -458,11 +487,13 @@
     };
 
     bool TTSCore::generateWav(std::string const& modelName, std::string const& text, std::string wavname) {
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
         
-        // #revisado por adri: generate() ahora devuelve AudioData (samples + sample_rate real
-        // del modelo), en vez de un vector suelto con una frecuencia inventada. Así el mismo
-        // dato le llega también a PlayerTTS a través del callback inyectado onTextToAudio_cb_.
-        AudioData audio = generate(modelName, text);
+        // Devuelve AudioData (samples + sample_rate)
+        AudioData audio = generate(modelName_lc, text);
 
         // Comprobar si se ha generado audio
         if (audio.empty()) {
@@ -485,12 +516,21 @@
     }
 
     int TTSCore::getSampleRate(std::string const& modelName) const {
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(models_mutex_);
-        auto it = loaded_models_.find(modelName);
+        auto it = loaded_models_.find(modelName_lc);
         if (it == loaded_models_.end()) {
             SYS_WARN("TTSCore","Cannot get sample rate: Model '" + modelName + "' not found.");
+            return 0;
+        }
+
+        if (!it->second) {
+            SYS_WARN("TTSCore","Cannot get sample rate: Model not loaded (lazy load)");
             return 0;
         }
         
@@ -498,27 +538,39 @@
     }
 
     int TTSCore::getNumSpeakers(std::string const& modelName) const {
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(models_mutex_);
-        auto it = loaded_models_.find(modelName);
+        auto it = loaded_models_.find(modelName_lc);
         if (it == loaded_models_.end()) {
             SYS_WARN("TTSCore","Cannot get num speakers: Model '" + modelName + "' not found.");
+            return 0;
+        }
+
+        // Comprobar si no es nulo (posible en lazy load)
+        if (!it->second) {
+            SYS_WARN("TTSCore","Cannot get num speakers: model '" + modelName + "' not loaded yet (lazy load)");
             return 0;
         }
 
         return SherpaOnnxOfflineTtsNumSpeakers(it->second);
     }
 
-    std::string TTSCore::getProccesingText(std::string const& modelName) const {
+    std::string TTSCore::getProccessingText(std::string const& modelName) const {
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(processing_mtx_);
-        auto it = processing_texts_.find(modelName);
-        if (it == processing_texts_.end()) {
-            SYS_WARN("TTSCore","Cannot get proccesing text: Model '" + modelName + "' not found.");
-            return "";
-        }
+        auto it = processing_texts_.find(modelName_lc);
+        if (it == processing_texts_.end())
+            return "";  // No está procesando nada
 
         return it->second;
     }
@@ -534,6 +586,10 @@
                 st_modelname = p.stem().string();   // Nombre del modelo
         }
 
+        // Poner en minúsculas siempre
+        for (char &c : st_modelname)
+            c = std::tolower(static_cast<unsigned char>(c));
+
         // Devuelve vacío si no ha encontrado el modelo
         return st_modelname;
     }
@@ -541,20 +597,40 @@
     
     // Idiomas-------------------------------------------------------------------------------
 
-    bool TTSCore::isEnglish(std::string const& modelName) const { 
-        return modelName.find("en_") != std::string::npos;
+    bool TTSCore::isEnglish(std::string const& modelName) const {
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
+        return modelName_lc.find("en_") != std::string::npos;
     }
 
     bool TTSCore::isBritainEnglish(std::string const& modelName) const {
-        return modelName.find("en_GB") != std::string::npos; 
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
+        return modelName_lc.find("en_gb") != std::string::npos; 
     }
 
     bool TTSCore::isAmericanEnglish(std::string const& modelName) const {
-        return modelName.find("en_US") != std::string::npos; 
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
+        return modelName_lc.find("en_us") != std::string::npos; 
     }
 
     bool TTSCore::isSpanish(std::string const& modelName) const {
-        return modelName.find("es_") != std::string::npos; 
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
+        return modelName_lc.find("es_") != std::string::npos; 
     }
 
     std::vector<std::string> TTSCore::getLoadedModelsEnglish() const {
@@ -707,7 +783,7 @@
         #endif  // Fallback a CPU en caso contrario
 
         // Inicializa el modelo con la configuración (tarda un poco)
-        SYS_INFO("TTSCore","Initializating voice model '" + st_modelname + "'");
+        SYS_INFO("TTSCore","Initializing voice model '" + st_modelname + "'");
         active_tasks_++;
         const SherpaOnnxOfflineTts* tts_model = SherpaOnnxCreateOfflineTts(&config);
         active_tasks_--;
@@ -719,16 +795,21 @@
             return false;
         }
 
+        // Poner en minúsculas siempre
+        std::string modelName_lc = st_modelname;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
         // Agregarlo a la lista de modelos disponibles del TTSCore
         {
             std::lock_guard<std::mutex> lock(models_mutex_);
-            loaded_models_[st_modelname] = tts_model;
+            loaded_models_[modelName_lc] = tts_model;
         }
 
         // Activar el tiempo de vida del modelo
         if (lazy_load_) {
             std::lock_guard<std::mutex> klock(keepalive_mtx_);
-            last_used_[st_modelname] = std::chrono::steady_clock::now();
+            last_used_[modelName_lc] = std::chrono::steady_clock::now();
         }
 
         // Mensaje de info con idioma
@@ -773,9 +854,14 @@
 
     bool TTSCore::unload_model(std::string const& modelName) {
 
+        // Poner en minúsculas siempre
+        std::string modelName_lc = modelName;
+        for (char &c : modelName_lc)
+            c = std::tolower(static_cast<unsigned char>(c));
+
         // Busca el modelo y lo borra
         std::lock_guard<std::mutex> lock(models_mutex_);
-        auto it = loaded_models_.find(modelName);
+        auto it = loaded_models_.find(modelName_lc);
 
         // Comprobar si el modelo existe
         if (it == loaded_models_.end()) {
