@@ -137,6 +137,9 @@ private:
      */
     void execute_cmd_online(std::vector<std::string> const& tokens);
 
+
+// Subcomandos Network ------------------------------------------------------------------
+
     /**
      * @brief Subcomando raíz "sounds": deriva a devices/players según el subcomando.
      * @param tokens Tokens de la línea completa (en minúsculas), tokens[0] == "sounds".
@@ -188,17 +191,8 @@ private:
         std::vector<std::string> const&  tokens,
         size_t                           subIdx);
 
-    /**
-     * @brief Subcomandos del comando "totalmix"
-     * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
-     */
-    void execute_totalmix_command(std::vector<std::string> const& tokens);
 
-    /**
-     * @brief Subcomandos del comando "symetrix"
-     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
-     */
-    void execute_symetrix_command(std::vector<std::string> const& tokens);
+// Subcomandos Network ------------------------------------------------------------------
 
     /**
      * @brief Subcomandos del comando "network"
@@ -253,6 +247,25 @@ private:
      * @param tokens Tokens de la línea completa, tokens[0] == "network".
      */
     void execute_cmd_net_queue(std::vector<std::string> const& tokens);
+
+
+// Subcomandos Totalmix -----------------------------------------------------------------
+
+    /**
+     * @brief Subcomandos del comando "totalmix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
+     */
+    void execute_totalmix_command(std::vector<std::string> const& tokens);
+
+
+// Subcomandos Symetrix -----------------------------------------------------------------
+
+    /**
+     * @brief Subcomandos del comando "symetrix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
+     */
+    void execute_symetrix_command(std::vector<std::string> const& tokens);
+
 
 // Tokens (comandos) --------------------------------------------------------------------
 

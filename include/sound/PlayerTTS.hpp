@@ -71,7 +71,14 @@ public:
      * @param audioName Nombre con el que se identifica este sonido una vez generado.
      * @return true si el texto se ha encolado correctamente, false en caso contrario.
      */
-    bool playTTS(std::string const& modelName, std::string const& text, std::string const& audioName);
+    bool playTTS(
+        std::string const&  text, 
+        std::string const&  modelName, 
+        std::string const&  audioName   = "",
+        unsigned short      volume      = 100,
+        bool                loop        = false,
+        bool                forceStop   = true
+    );
 
 
 // Inyección de función texto a audio ---------------------------------------------------
@@ -131,9 +138,12 @@ private:
 
     /** @brief Elemento de la cola de textos */
     struct queueElement {
-        std::string text;       ///< Texto a reproducir
-        std::string modelName;  ///< Nombre del modelo de voz TTS a usar
-        std::string audioName;  ///< Nombre con el que se identifica este sonido una vez generado
+        std::string     text;       ///< Texto a reproducir
+        std::string     modelName;  ///< Nombre del modelo de voz TTS a usar
+        std::string     audioName;  ///< Nombre con el que se identifica este sonido una vez generado
+        unsigned short  volume;     ///< Volume de reproducción
+        bool            loop;       ///< Loop activado/desactivado
+        bool            forceStop;  ///< Si activado, corta inmediatamente el audio si se le ordena
     };
     std::queue<queueElement>    cola_textos_;       ///< Cola de textos pendientes de reproducir
     std::mutex                  cola_textos_mtx_;   ///< Mutex para cola de textos

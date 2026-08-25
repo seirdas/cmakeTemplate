@@ -35,8 +35,8 @@
         if (!initialized_)
             return false;
 
+        // Establecer el nombre id de este audio (el mismo texto de morse si no tiene)
         std::string usedName = audioName.empty() ? texto : audioName;
-
 
         // Generar el audio a partir del texto
         std::vector<float> audio = generate_morse_audio(texto);

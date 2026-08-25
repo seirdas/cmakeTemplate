@@ -11,11 +11,16 @@
 
 
 struct AudioData {
-    std::vector<float> samples;
-    int32_t sample_rate = 0;
+    std::vector<float>  samples;
+    unsigned int        sample_rate = 0;
 
-    // Método utilitario para saber si está vacío
-    inline bool empty() const { return samples.empty(); }
+    /**
+     * @brief Método utilitario para saber si está vacío
+     * @return @c true si está vacío, @c false en caso contrario
+     */
+    bool empty() const { 
+        return samples.empty(); 
+    }
 };
 
 

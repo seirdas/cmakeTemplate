@@ -253,23 +253,25 @@ bool ConsoleMgr::Run() {
 bool ConsoleMgr::LaunchConsole(bool force) {
 
     // Si ya lo ha intentado, no hacerlo de nuevo (evita errores duplicados)
-    if(tried_to_launch_console_ && !force)
+    if (tried_to_launch_console_ && !force)
         return true;
     tried_to_launch_console_ = true;
 
-    SYS_INFO("ConsoleMgr","Trying to launch console...");
+    SYS_INFO("ConsoleMgr", "Trying to launch console...");
+
+    bool success = false;
 
     #ifdef _WIN32
 
         // Comprobar si ya hay una terminal
         if (GetConsoleWindow() != NULL) {
-            SYS_INFO("ConsoleMgr","Console already opened");
+            SYS_INFO("ConsoleMgr", "Console already opened");
             return false;
         }
 
         // Abrir terminal en Windows
         if (!AllocConsole()) {
-            SYS_WARN("ConsoleMgr","Failed to alloc console");
+            SYS_WARN("ConsoleMgr", "Failed to alloc console");
             return false;
         }
 
@@ -279,7 +281,7 @@ bool ConsoleMgr::LaunchConsole(bool force) {
         freopen_s(&dummy, "CONIN$", "r", stdin);
         freopen_s(&dummy, "CONOUT$", "w", stderr);
         
-        // Forzar la reasignación de los búferes de std::cout, std::cerr y std::cin (bugfix para release)
+        // Forzar la reasignación de los búferes de std::cout, std::cerr y std::cin
         static std::ofstream outConsole("CONOUT$");
         static std::ofstream errConsole("CONOUT$");
         static std::ifstream inConsole("CONIN$");
@@ -294,7 +296,7 @@ bool ConsoleMgr::LaunchConsole(bool force) {
         std::cout.clear();
         std::cerr.clear();
 
-        // Opcional: Activar procesamiento de colores ANSI en la consola de Windows 10/11
+        // Activar procesamiento de colores ANSI
         HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
         if (hOut != INVALID_HANDLE_VALUE) {
             DWORD dwMode = 0;
@@ -305,14 +307,13 @@ bool ConsoleMgr::LaunchConsole(bool force) {
         
         std::cout << std::endl;
         SYS_INFO("ConsoleMgr", "Console allocated successfully");
-        return true;
+        success = true;
 
     #else
-        /* (WIP) */
 
-        // Si la aplicación no tiene una TTY estándar asignada (lanzada por GUI/Doble clic)
+        // Si la aplicación no tiene una TTY estándar asignada
         if (isatty(STDIN_FILENO)) {
-            SYS_INFO("ConsoleMgr","Console already opened.");
+            SYS_INFO("ConsoleMgr", "Console already opened.");
             return false;
         }
 
@@ -329,8 +330,6 @@ bool ConsoleMgr::LaunchConsole(bool force) {
         int ret = std::system(cmd.c_str());
 
         if (ret == 0) {
-            // Al lanzar una instancia vinculada en la nueva ventana,
-            // cerramos el proceso padre actual "ciego" que no tenía TTY.
             SYS_INFO("ConsoleMgr", "Delegated execution to new terminal window. Exiting background process.");
             std::exit(0); 
         }
@@ -340,10 +339,12 @@ bool ConsoleMgr::LaunchConsole(bool force) {
 
     #endif
 
-    // Poner el nombre de ventana
-    setConsoleTitle(AppName_);
+    if (success) {
+        // Poner el nombre de ventana (ahora sí se ejecuta en Windows)
+        setConsoleTitle(AppName_);
+    }
 
-    return tried_to_launch_console_;
+    return success;
 }
 
 void ConsoleMgr::setConsoleTitle(std::string const& title) {
@@ -516,6 +517,9 @@ void ConsoleMgr::execute_cmd_online(std::vector<std::string> const& tokens) {
         print_error("Unknown online subcommand: " + subCmd);
     }
 }
+
+
+// Subcomandos Network ------------------------------------------------------------------
 
 void ConsoleMgr::execute_cmd_snd(std::vector<std::string> const& tokens) {
     const std::string subCmd = get_token(tokens, 1);
@@ -825,8 +829,13 @@ void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
         else print_error("Cannot remove TTS player.");
     } 
     else if (action == "use" || action == "u") {
+
+        // Obtener y comprobar el player
         PlayerTTS* pt = snd->getPlayerTTS(name);
-        if (!pt) { print_error("TTS player '" + name + "' not found."); return; }
+        if (!pt) { 
+            print_error("TTS player '" + name + "' not found."); 
+            return; 
+        }
 
         if (get_token(tokens, 5) == "play") {
             std::string model = get_token(tokens, 6);
@@ -837,7 +846,10 @@ void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
                 print_error("Usage: sounds players tts use <name> play <model> <audioName> <text>");
                 return;
             }
-            if (!pt->playTTS(model, text, audioName)) print_error("Cannot play TTS.");
+            
+            if (!pt->playTTS(text, model, audioName)) 
+                print_error("Cannot play TTS.");
+
         } else if (!execute_playback_command(pt, tokens, 5)) {
             print_error("Unknown use subcommand: " + get_token(tokens, 5));
         }
@@ -941,6 +953,9 @@ bool ConsoleMgr::execute_playback_command(
 
     return false;
 }
+
+
+// Subcomandos Network ------------------------------------------------------------------
 
 void ConsoleMgr::execute_cmd_net(std::vector<std::string> const& tokens){
     const std::string subCmd = get_token(tokens, 1);
