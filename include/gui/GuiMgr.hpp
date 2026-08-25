@@ -21,9 +21,9 @@ class IAppControl;
   * @brief Gestor de ventana y loop principal usando GLFW, OpenGL e ImGui.
   *  Comunica con el resto de la aplicación mediante la interfaz IAppControl suministrada.
   * @note El destructor virtual garantiza la limpieza correcta en clases derivadas.
-  * @note Los métodos privados initCuadro() y endCuadro() encapsulan el inicio y fin de
+  * @note Los métodos privados init_frame() y end_frame() encapsulan el inicio y fin de
   *  cada frame de ImGui.
-  * @note BuclePrincipal() puede ser sobreescrito para modificar los elementos de la UI.
+  * @note bucle_principal() puede ser sobreescrito para modificar los elementos de la UI.
   * @note Proporciona varias funciones de estilo para configurar la apariencia de ImGui.
   * @see IAppControl
   */
@@ -110,7 +110,7 @@ private:
     /**
      * @brief Llama a funciones con combinaciones de teclas.
      */
-    void captureKeys();
+    void capture_keys();
 
 
 // Bucle principal ----------------------------------------------------------------------
@@ -118,18 +118,18 @@ private:
     /**
     * @brief Inicia un nuevo frame de ImGui.
     */
-    void initCuadro();
+    void init_frame();
 
     /**
     * @brief Renderiza el contenido de ImGui en la ventana.
     */
-    void endCuadro();
+    void end_frame();
 
     /**
      * @brief Bucle principal de la ventana. Se encarga de iniciar un nuevo frame, renderizar el contenido de ImGui, y actualizar la ventana.
      *        Se llama repetidamente mientras la ventana esté abierta.
      */
-    virtual void BuclePrincipal();
+    virtual void bucle_principal();
 
 
 // Elementos de interfaz ----------------------------------------------------------------
@@ -137,12 +137,12 @@ private:
     /**
      * @brief Crea la barra de menú principal.
      */
-    void crearMainMenuBar();
+    void mainmenu_bar();
 
     /**
      * @brief Crea la ventana principal
      */
-    void ventanaPrincipal();
+    void main_window();
 
     /**
      * @brief Gestión de la columna derecha
@@ -155,13 +155,13 @@ private:
     /**
      * @brief Utiliza una imagen y la precarga en el sistema para usos posteriores.
      */
-    uintptr_t getImage(std::string path);
+    uintptr_t get_image(std::string path);
 
     /**
      * @brief Libera los recursos de las imágenes cargadas de forma dinámica.
      * @note No hace falta actualizar esta función al añadir nuevas imágenes
      */
-    void unloadImages();
+    void unload_images();
     
     /**
      * @brief Carga una textura de imagen desde un archivo de imagen.
@@ -169,13 +169,13 @@ private:
      * @note Precachea textura por defecto desde defaultTexture_ si falla. 
      * @param filename Ruta del archivo de imagen que se va a cargar.
      */
-    void addTextureFromFile(std::string filename);
+    void add_texture_from_file(std::string filename);
 
     /**
      * @brief Genera la textura del clásico mosaico rosa/blanco para texturas fallidas
      * @details Lo guarda en la variable defaultTexture_
      */
-    void generateDefaultTexture();
+    void generate_default_texture();
     
 
 // Aspecto ------------------------------------------------------------------------------
@@ -184,20 +184,20 @@ private:
      * @brief Activa/desactiva el modo de pantalla completa
      * @param enable true para pantalla completa, false para modo ventana
      */
-    bool setFullscreenMode(bool enable);
+    bool set_fullscreen(bool enable);
 
     /**
      * @brief Actualiza el tamaño de los elementos de la ui incluyendo fuentes.
      * @param delta diferencia de tamaño (+1, +2, -1, -2...) 
      */
-    void updateDensity(int delta);
+    void update_density(int delta);
 
     /**
      * @brief Cambia la barra de título entre modo claro/oscuro
      * @param useDarkMode true modo oscuro, false modo claro.
      * @note Solo para Windows
      */
-    void titleBarDarkMode(bool useDarkMode);
+    void titlebar_dark_mode(bool useDarkMode);
 
 
 // Overrides de interfaces observador ---------------------------------------------------
@@ -215,7 +215,7 @@ private:
     /**
      * @brief Aplica el tema definido en la variable theme_selected_
      */
-    void ApplyTheme();
+    void apply_theme();
 
     /**
      * @brief Guarda el tema en la configuración pasado como parámetro (considerado json)

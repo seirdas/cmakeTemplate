@@ -11,7 +11,7 @@
 
 	// Temas --------------------------------------------------------------------------------
     
-    void GuiMgr::ApplyTheme() {
+    void GuiMgr::apply_theme() {
         if (theme_selected_ == "AdobeInspired")
             Style_AdobeInspired();
         else if (theme_selected_ == "AyuDark")
@@ -71,7 +71,7 @@
     void GuiMgr::Style_AdobeInspired() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha = 1.0f;
         style_->DisabledAlpha = 0.6f;
@@ -163,7 +163,7 @@
     void GuiMgr::Style_AyuDark() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                  = 1.0000f;
         style_->DisabledAlpha          = 0.6000f;
@@ -256,7 +256,7 @@
     void GuiMgr::Style_Confy() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                       = 1.0000f;
         style_->DisabledAlpha               = 0.1000f;
@@ -348,7 +348,7 @@
     void GuiMgr::Style_DarkCyan() {
         
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
         
         style_->Alpha                    = 1.0000f;
         style_->DisabledAlpha            = 1.0000f;
@@ -470,7 +470,7 @@
         style_->SelectableTextAlign         = ImVec2(0.0000f, 0.0000f);
         
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
         SYS_INFO("GuiMgr", "'DefaultDark' theme applied.");
     }
 
@@ -507,14 +507,14 @@
         style_->SelectableTextAlign         = ImVec2(0.0000f, 0.0000f);
         
         StyleColorsLight();
-        titleBarDarkMode(false);
+        titlebar_dark_mode(false);
         SYS_INFO("GuiMgr", "'DefaultLight' theme applied.");
     }
     
     void GuiMgr::Style_Everforest() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
         
         style_->Alpha                  = 1.0f;
         style_->DisabledAlpha          = 0.6f;
@@ -606,7 +606,7 @@
     void GuiMgr::Style_FutureDark() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                       = 1.0000f;
         style_->DisabledAlpha               = 1.0000f;
@@ -698,7 +698,7 @@
     void GuiMgr::Style_Gold() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                  = 1.0f;
         style_->DisabledAlpha          = 0.6f;
@@ -791,7 +791,7 @@
     void GuiMgr::Style_HazyDark() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                  = 1.0000f;
         style_->DisabledAlpha          = 0.6000f;
@@ -883,7 +883,7 @@
     void GuiMgr::Style_KazamsCherry () {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                  = 1.0000f;
         style_->DisabledAlpha          = 0.6000f;
@@ -976,7 +976,7 @@
     void GuiMgr::Style_LightOrange() {
 
         StyleColorsLight();
-        titleBarDarkMode(false);
+        titlebar_dark_mode(false);
 
         style_->Alpha                    = 1.0000f;
         style_->DisabledAlpha            = 1.0000f;
@@ -1068,7 +1068,7 @@
     void GuiMgr::Style_QuickMinimalLook() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                  = 1.0000f;
         style_->DisabledAlpha          = 0.3000f;
@@ -1160,7 +1160,7 @@
     void GuiMgr::Style_Modern() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
         
         style_->Alpha                  = 1.0000f;
         style_->DisabledAlpha          = 0.3000f;
@@ -1252,7 +1252,7 @@
     void GuiMgr::Style_Microfrost() {
 
         StyleColorsLight();
-        titleBarDarkMode(false);
+        titlebar_dark_mode(false);
 
         style_->Alpha                       = 1.0f;
         style_->DisabledAlpha               = 0.6f;
@@ -1344,7 +1344,7 @@
     void GuiMgr::Style_Moonlight() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                       = 1.0000f;
         style_->DisabledAlpha               = 1.0000f;
@@ -1436,7 +1436,7 @@
     void GuiMgr::Style_SonicRiders() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                  = 1.0000f;
         style_->DisabledAlpha          = 0.6000f;
@@ -1529,7 +1529,7 @@
     void GuiMgr::Style_VisualStudio() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                           = 1.0000f;
         style_->DisabledAlpha                   = 0.6000f;
@@ -1625,7 +1625,7 @@
 // ============================================================
 
 // Temas --------------------------------------------------------------------------------
-    void GuiMgr::ApplyTheme()               { return; }
+    void GuiMgr::apply_theme()               { return; }
     void GuiMgr::saveConfig()               { return; }
     void GuiMgr::Style_AdobeInspired()      { return; }
     void GuiMgr::Style_AyuDark()            { return; }
