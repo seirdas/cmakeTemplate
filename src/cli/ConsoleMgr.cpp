@@ -357,6 +357,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
     if (name == "sound" || name == "snd") name = "sounds";
     if (name == "tmx")  name = "totalmix";
     if (name == "sym")  name = "symetrix";
+    if (name == "net")  name = "network";
     if (name == "h")    name = "help";
     if (name == "cls")  name = "clear";
 
@@ -373,6 +374,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
                   "  {sounds|snd} [args]    - Execute sound-related commands\n"
                   "  {symetrix|sym} [args]  - Execute symetrix-related commands\n"
                   "  {totalmix|tmx} [args]  - Execute totalmix-related commands\n"
+                  "  {network|net} [args]   - Execute network-related commands (add, devices, remove)\n"
                   "  exit                   - Exit the application\n"
                   "\n"
                   "Use '[command] help' for more information about a command"
@@ -428,6 +430,10 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
 
         { "totalmix", [this](std::vector<std::string> const& t) {
             execute_totalmix_command(t);
+        }},
+
+        { "network", [this](std::vector<std::string> const& t) {
+            execute_cmd_net(t);
         }},
 
         { "exit", [this](std::vector<std::string> const&) {
@@ -683,6 +689,108 @@ void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
             print_error("Unknown use subcommand.");
         }
     }
+}
+
+void ConsoleMgr::execute_cmd_net(std::vector<std::string> const& tokens){
+    const std::string subCmd = get_token(tokens, 1);
+
+    if (subCmd.empty() || subCmd == "help" || subCmd == "h") {
+        print("Available 'network' commands:\n"
+              "  help                              - Show this help message\n"
+              "  {devices|device|dev|d}            - List active UDP sockets\n"
+              "  add <name> <port> [ip] [pkgsize]  - Add a new UDP socket\n"
+              "  {remove|delete|rm} <name>         - Remove an existing UDP socket\n\n"
+              "Aliases: net, network");
+        return;
+    }
+
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    if (subCmd == "devices" || subCmd == "device" || subCmd == "dev" || subCmd == "d")
+        execute_cmd_net_devices(tokens);
+    else if (subCmd == "add" || subCmd == "a")
+        execute_cmd_net_add(tokens);
+    else if (subCmd == "remove" || subCmd == "delete" || subCmd == "rm")
+        execute_cmd_net_remove(tokens);
+    else
+        print_error("Unknown network subcommand: " + subCmd);
+}
+
+void ConsoleMgr::execute_cmd_net_add(std::vector<std::string> const& tokens) {
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    const std::string name    = get_token(tokens, 2);
+    const std::string portStr = get_token(tokens, 3);
+    if (name.empty() || portStr.empty()) {
+        print_error("Usage: network add <name> <port> [ip] [pkgsize]");
+        return;
+    }
+
+    unsigned short port;
+    try { port = static_cast<unsigned short>(std::stoi(portStr)); }
+    catch (...) { print_error("Invalid port, must be numeric."); return; }
+
+    const std::string ip = get_token(tokens, 4);
+
+    unsigned int pkgSize = 0;
+    const std::string pkgSizeStr = get_token(tokens, 5);
+    if (!pkgSizeStr.empty()) {
+        try { pkgSize = static_cast<unsigned int>(std::stoul(pkgSizeStr)); }
+        catch (...) { print_error("Invalid packet size, must be numeric."); return; }
+    }
+
+    if (net->addUdpSocket(name, port, ip, pkgSize))
+        print("UDP socket '" + name + "' added on port " + portStr + ".");
+    else
+        print_error("Cannot add UDP socket '" + name + "'.");
+}
+
+void ConsoleMgr::execute_cmd_net_remove(std::vector<std::string> const& tokens) {
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    const std::string name = get_token(tokens, 2);
+    if (name.empty()) {
+        print_error("Usage: network remove <name>");
+        return;
+    }
+
+    if (net->removeUdpSocket(name))
+        print("UDP socket '" + name + "' removed.");
+    else
+        print_error("Cannot remove UDP socket '" + name + "'.");
+}
+
+void ConsoleMgr::execute_cmd_net_devices(std::vector<std::string> const& tokens){
+    const std::string subCmd = get_token(tokens, 2);
+
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    if (subCmd == "help") {
+        print("Usage: network devices\n"
+              "  Lists the active UDP sockets registered in the network module.\n");
+        return;
+    }
+
+    // NetMgr no expone un getter que devuelva los sockets como vector<string>;
+    // printUdpSockets() vuelca la lista al log de la aplicación (SYS_INFO).
+    net->printUdpSockets();
+    print("Socket list printed to the application log.");
 }
 
 

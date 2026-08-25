@@ -113,19 +113,45 @@ private:
      * @brief Interpreta y ejecuta un comando de texto recibido por la CLI.
      * @details Tokeniza la línea (respetando comillas) y usa una tabla de dispatch
      *  (nombre de comando -> handler)
-     * @param cmd Línea de comando completa introducida por el usuario.
+     * @param command Línea de comando completa introducida por el usuario.
      */
-    void execute_command(std::string const& command);
+    void execute_cmd(std::string const& command);
 
     /**
      * @brief Subcomandos del comando "sounds"
      * @param tokens Tokens de la línea completa (en minúsculas), tokens[0] == "sounds".
-     * @param tokensRaw Mismos tokens que @p tokens pero sin forzar minúsculas, para
-     *  argumentos que deban preservar su capitalización original (p.ej. modelo/texto TTS).
      */
-    void execute_sounds_command(
-        std::vector<std::string> const& tokens,
-        std::vector<std::string> const& tokensRaw);
+    void execute_cmd_snd(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "sounds devices"
+     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
+     */
+    void execute_cmd_snd_devices(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "sounds players"
+     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
+     */
+    void execute_cmd_snd_players(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "sounds players morse"
+     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
+     */
+    void execute_cmd_snd_morse(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "sounds players audio"
+     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
+     */
+    void execute_cmd_snd_audio(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "sounds players tts"
+     * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
+     */
+    void execute_cmd_snd_tts(std::vector<std::string> const& tokens);
 
     /**
      * @brief Subcomandos del comando "totalmix"
@@ -139,6 +165,29 @@ private:
      */
     void execute_symetrix_command(std::vector<std::string> const& tokens);
 
+    /**
+     * @brief Subcomandos del comando "network"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "network devices"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_devices(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "network add"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_add(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "network remove"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_remove(std::vector<std::string> const& tokens);
 
 // Tokens (comandos) --------------------------------------------------------------------
 
@@ -150,6 +199,14 @@ private:
      * @return Vector con las palabras divididas
      */
     std::vector<std::string> tokenize_cli(std::string const& line);
+
+    /**
+     * @brief Devuelve el token en la posición @p idx, o cadena vacía si está fuera de rango
+     * @param tokens Vector de palabras divididas
+     * @param idx Índice del token a obtener
+     * @return Token en la posición @p idx, o "" si no existe
+     */
+    std::string get_token(std::vector<std::string> const& tokens, size_t idx);
 
     /**
      * @brief Extrae pares --flag valor de una lista de tokens
