@@ -376,6 +376,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
                   "  {symetrix|sym} [args]  - Execute symetrix-related commands\n"
                   "  {totalmix|tmx} [args]  - Execute totalmix-related commands\n"
                   "  {network|net} [args]   - Execute network-related commands (add, devices, remove)\n"
+                  "  online {on|off|toggle} - Switch online/offline mode (see 'status' to check it)\n"
                   "  exit                   - Exit the application\n"
                   "\n"
                   "Use '[command] help' for more information about a command"
@@ -437,6 +438,10 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
             execute_cmd_net(t);
         }},
 
+        { "online", [this](std::vector<std::string> const& t) {
+            execute_cmd_online(t);
+        }},
+
         { "exit", [this](std::vector<std::string> const&) {
             SYS_INFO("AppController", "Exiting application...");
             running_ = false;
@@ -448,7 +453,39 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
     if (it != handlers.end())
         it->second(tokens);
     else
-        print_error("Unknown command: " + name); 
+        print_error("Unknown command: " + name);
+}
+
+void ConsoleMgr::execute_cmd_online(std::vector<std::string> const& tokens) {
+    const std::string subCmd = get_token(tokens, 1);
+
+    if (subCmd.empty() || subCmd == "help") {
+        print("Available 'online' commands:\n"
+              "  online on       - Switch to online mode\n"
+              "  online off      - Switch to offline mode\n"
+              "  online toggle   - Switch to the opposite mode\n\n"
+              "Use 'status' to check the current online/offline mode.");
+        return;
+    }
+
+    if (!ctrl_) {
+        print_error("App controller is not available (null)");
+        return;
+    }
+
+    if (subCmd == "on") {
+        ctrl_->setOnlineMode(true);
+        print("Switched to ONLINE mode.");
+    } else if (subCmd == "off") {
+        ctrl_->setOnlineMode(false);
+        print("Switched to OFFLINE mode.");
+    } else if (subCmd == "toggle") {
+        const bool newMode = !ctrl_->isOnlineMode();
+        ctrl_->setOnlineMode(newMode);
+        print(std::string("Switched to ") + (newMode ? "ONLINE" : "OFFLINE") + " mode.");
+    } else {
+        print_error("Unknown online subcommand: " + subCmd);
+    }
 }
 
 void ConsoleMgr::execute_cmd_snd(std::vector<std::string> const& tokens) {
@@ -458,7 +495,9 @@ void ConsoleMgr::execute_cmd_snd(std::vector<std::string> const& tokens) {
         print("Available 'sounds' commands:\n"
               "  help                           - Show this help message\n"
               "  {devices|device|dev|d} [type]  - List available devices (type: pb|cap)\n"
-              "  {players|player|p} [args]      - Execute commands to player modules\n\n"
+              "  {players|player|p} [args]      - Execute commands to player modules\n"
+              "      -> then {audio|a} / {morse|m} / {tts|t} to manage each player type\n"
+              "      -> e.g. 'sounds players morse help' for morse-specific commands\n\n"
               "Aliases: sound, sounds, snd");
         return;
     }
@@ -573,25 +612,34 @@ void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
     if (action.empty() || action == "help" || action == "h") {
         print("Available 'sounds players morse' commands:\n\n"
               "  {add|a} <name>\n"
-              "      - Add a new morse player\n\n"
+              "      - Add a new morse player\n"
+              "      Ex: sounds players morse add speaker\n\n"
               "  {remove|delete|r|d} <name>\n"
-              "      - Remove the specified morse player\n\n"
+              "      - Remove the specified morse player\n"
+              "      Ex: sounds players morse remove speaker\n\n"
               "  {use|u} <name> play <text>\n"
-              "      - Play morse code using the specified player (audioName == text)\n\n"
+              "      - Play morse code using the specified player (audioName == text)\n"
+              "      Ex: sounds players morse use speaker play sos\n\n"
               "  {use|u} <name> stop <text> [force] [fadeOutMs] [pitchOutMs]\n"
               "      - Stop the given morse sound. Soft by default: if it's not looping\n"
               "        and 'force' isn't set, it just lets it finish naturally.\n"
-              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n"
+              "      Ex: sounds players morse use speaker stop sos true 500\n\n"
               "  {use|u} <name> volume <text> <0-100>\n"
-              "      - Set the volume of that specific playing sound\n\n"
+              "      - Set the volume of that specific playing sound\n"
+              "      Ex: sounds players morse use speaker volume sos 50\n\n"
               "  {use|u} <name> modulevolume <0-100>\n"
-              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n"
+              "      Ex: sounds players morse use speaker modulevolume 80\n\n"
               "  {use|u} <name> pitch <text> <value>\n"
-              "      - Set the pitch of that specific playing sound\n\n"
+              "      - Set the pitch of that specific playing sound\n"
+              "      Ex: sounds players morse use speaker pitch sos 1.2\n\n"
               "  {use|u} <name> channel <0|1|2>\n"
-              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n"
+              "      Ex: sounds players morse use speaker channel 1\n\n"
               "  {use|u} <name> isplaying [text]\n"
-              "      - Check if a specific sound (or anything) is playing on this player"
+              "      - Check if a specific sound (or anything) is playing on this player\n"
+              "      Ex: sounds players morse use speaker isplaying sos"
         );
         return;
     }
@@ -635,25 +683,34 @@ void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
     if (action.empty() || action == "help" || action == "h") {
         print("Available 'sounds players audio' commands:\n\n"
               "  {add|a} <name> [device]\n"
-              "      - Add a new audio player, optionally bound to a playback device\n\n"
+              "      - Add a new audio player, optionally bound to a playback device\n"
+              "      Ex: sounds players audio add speaker\n\n"
               "  {remove|delete|r|d} <name>\n"
-              "      - Remove the specified audio player\n\n"
+              "      - Remove the specified audio player\n"
+              "      Ex: sounds players audio remove speaker\n\n"
               "  {use|u} <name> play <filepath> [volume]\n"
-              "      - Play an audio file (audioName == filepath)\n\n"
+              "      - Play an audio file (audioName == filepath)\n"
+              "      Ex: sounds players audio use speaker play song.wav 80\n\n"
               "  {use|u} <name> stop <filepath> [force] [fadeOutMs] [pitchOutMs]\n"
               "      - Stop the given sound. Soft by default: if it's not looping\n"
               "        and 'force' isn't set, it just lets it finish naturally.\n"
-              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n"
+              "      Ex: sounds players audio use speaker stop song.wav true 500\n\n"
               "  {use|u} <name> volume <filepath> <0-100>\n"
-              "      - Set the volume of that specific playing sound\n\n"
+              "      - Set the volume of that specific playing sound\n"
+              "      Ex: sounds players audio use speaker volume song.wav 50\n\n"
               "  {use|u} <name> modulevolume <0-100>\n"
-              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n"
+              "      Ex: sounds players audio use speaker modulevolume 80\n\n"
               "  {use|u} <name> pitch <filepath> <value>\n"
-              "      - Set the pitch of that specific playing sound\n\n"
+              "      - Set the pitch of that specific playing sound\n"
+              "      Ex: sounds players audio use speaker pitch song.wav 1.2\n\n"
               "  {use|u} <name> channel <0|1|2>\n"
-              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n"
+              "      Ex: sounds players audio use speaker channel 1\n\n"
               "  {use|u} <name> isplaying [filepath]\n"
-              "      - Check if a specific sound (or anything) is playing on this player\n\n"
+              "      - Check if a specific sound (or anything) is playing on this player\n"
+              "      Ex: sounds players audio use speaker isplaying song.wav\n\n"
               "Note: a player can have several sounds playing at once (it's a mixer),\n"
               "  so stop/volume/pitch/isplaying need the exact filepath used in 'play'."
         );
@@ -870,6 +927,8 @@ void ConsoleMgr::execute_cmd_net(std::vector<std::string> const& tokens){
               "  {lastpacket|lp} <name>            - Time since the last packet on a socket\n"
               "  {send|s} <name> <ip> <port> <text> - Send text data through a socket\n"
               "  {queue|q}                         - Number of packets pending in the receive queue\n\n"
+              "Note: the network module starts/stops automatically with online/offline mode\n"
+              "  (see 'status'); it's not controlled manually from here.\n\n"
               "Aliases: net, network");
         return;
     }

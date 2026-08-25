@@ -119,6 +119,12 @@ private:
     void execute_cmd(std::string const& command);
 
     /**
+     * @brief Subcomandos del comando "online": consulta/cambia el modo online/offline de la app.
+     * @param tokens Tokens de la línea completa, tokens[0] == "online".
+     */
+    void execute_cmd_online(std::vector<std::string> const& tokens);
+
+    /**
      * @brief Subcomando raíz "sounds": deriva a devices/players según el subcomando.
      * @param tokens Tokens de la línea completa (en minúsculas), tokens[0] == "sounds".
      */
