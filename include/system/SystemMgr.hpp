@@ -103,8 +103,15 @@ public:
      * @param input Texto completo actual del comando
      * @param cursorPos Posición del cursor dentro de @p input. Por defecto
      *  (std::string::npos) se coloca al final del texto.
+     * @param showAppName Indica si debe mostrar el nombre de la app o no
+     * @param color Código ANSI de color para el prefijo
      */
-    void updateCliInput(const std::string& input, size_t cursorPos = std::string::npos);
+    void updateCliInput(
+        const std::string& input, 
+        size_t cursorPos = std::string::npos,
+        bool                showAppName = true,
+        std::string         color = ""
+    );
 
     /**
      * @brief Redibuja el prefijo de escritura a la fuerza
@@ -146,7 +153,7 @@ private:
     /**
      * @brief Dibuja el prompt asumiendo que console_mtx ya fue adquirido
      */
-    void redrawPrompt_unlocked();
+    void redraw_prompt_unlocked();
 
 
 /************ Variables ****************************************************************/
@@ -167,5 +174,9 @@ private:
     bool                is_cli_active_;     ///< La terminal está activa para escritura de comandos
     std::string         current_cli_input_; ///< Entrada del comando temporal para no mezclar con logs
     size_t              current_cli_cursor_; ///< Posición del cursor dentro de current_cli_input_
+
+// Consola con entrada activa
+    bool cli_show_app_name_;                ///< Mostrar nombre en el prefijo de CLI         
+    std::string cli_prefix_color_;          ///< Color ANSI para el prefijo de CLI
 
 };

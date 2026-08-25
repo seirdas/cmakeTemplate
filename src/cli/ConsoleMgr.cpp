@@ -26,7 +26,9 @@ ConsoleMgr::ConsoleMgr() :
     initialized_(false),
     running_(false),
     AppName_("app"),
-    tried_to_launch_console_(false)
+    tried_to_launch_console_(false),
+    show_app_name_(true),
+    prefix_color_(ANSI_BRIGHT_BLUE)
 {
 
 }
@@ -68,6 +70,32 @@ void ConsoleMgr::loadConfig(void* config) {
     JsonMgr& jsonMgr = JsonMgr::instance();
 
     jsonMgr.get_or_set(cfg, "app_name_window",	AppName_);
+    jsonMgr.get_or_set(cfg, "show_app_name",	show_app_name_);
+
+    // Color
+    std::string color = "light blue";
+    jsonMgr.get_or_set(cfg, "prefix_color",	color);
+    
+    // Colores estándar
+    if (color == "black") prefix_color_              = ANSI_BLACK;
+    else if (color == "red") prefix_color_           = ANSI_RED;
+    else if (color == "green") prefix_color_         = ANSI_GREEN;
+    else if (color == "yellow") prefix_color_        = ANSI_YELLOW;
+    else if (color == "blue") prefix_color_          = ANSI_BLUE;
+    else if (color == "magenta") prefix_color_       = ANSI_MAGENTA;
+    else if (color == "cyan") prefix_color_          = ANSI_CYAN;
+    else if (color == "white") prefix_color_         = ANSI_WHITE;
+    
+    // Colores brillantes (Bright/Light)
+    else if (color == "bright red" || color == "light red")       prefix_color_ = ANSI_BRIGHT_RED;
+    else if (color == "bright green" || color == "light green")   prefix_color_ = ANSI_BRIGHT_GREEN;
+    else if (color == "bright yellow" || color == "light yellow") prefix_color_ = ANSI_BRIGHT_YELLOW;
+    else if (color == "bright blue" || color == "light blue")     prefix_color_ = ANSI_BRIGHT_BLUE;
+    else if (color == "bright magenta" || color == "light magenta") prefix_color_ = ANSI_BRIGHT_MAGENTA;
+    else if (color == "bright cyan" || color == "light cyan")     prefix_color_ = ANSI_BRIGHT_CYAN;
+
+    // Color por defecto
+    else prefix_color_ = ANSI_BRIGHT_BLUE;
 
 }
 
@@ -88,6 +116,7 @@ bool ConsoleMgr::setController(IAppControl* controller) {
 void ConsoleMgr::setAppName(std::string const& appName) {
     AppName_ = appName;
 }
+
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -115,7 +144,7 @@ bool ConsoleMgr::Run() {
     //std::cerr << "\033[?25l";
 
     SystemMgr::instance().setCliActive(true);
-    SystemMgr::instance().updateCliInput(command, cursor); // Pinta el primer prompt
+    SystemMgr::instance().updateCliInput(command, cursor, show_app_name_, prefix_color_); // Pinta el primer prompt
 
     #ifndef _WIN32
         // LINUX: Apagar el "Cooked Mode" y el "Echo" automático de la terminal
@@ -406,7 +435,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
 
         { "clear", [this](std::vector<std::string> const& tokens) {
             if (tokens.size() == 2 && tokens[1] == "help") {
-                print("Clears the terminal screen\n");
+                print("Clears the terminal screen.\n");
                 return;
             }
             // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)
@@ -415,7 +444,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
 
         { "version", [this](std::vector<std::string> const& tokens) {
             if (tokens.size() == 2 && tokens[1] == "help") {
-                print("Clears the terminal screen\n");
+                print("Show app version.\n");
                 return;
             }
             // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)

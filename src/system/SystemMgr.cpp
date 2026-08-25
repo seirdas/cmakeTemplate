@@ -22,19 +22,19 @@ SystemMgr& SystemMgr::instance() {
 
 // Datos de aplicación ------------------------------------------------------------------
 
-    /**
-     * @brief Establece el nombre de la aplicación (para el log)
-     * @param name Nombre de aplicación
-     */
-    void SystemMgr::setAppName(const std::string& name) {
-        app_name_ = name;
-    }
+/**
+ * @brief Establece el nombre de la aplicación (para el log)
+ * @param name Nombre de aplicación
+ */
+void SystemMgr::setAppName(const std::string& name) {
+    app_name_ = name;
+}
 
-    /**
-     * @brief Devuelve el nombre de la aplicación
-     * @return Nombre de aplicación
-     */
-    std::string const& SystemMgr::getAppName() const {
+/**
+ * @brief Devuelve el nombre de la aplicación
+ * @return Nombre de aplicación
+ */
+std::string const& SystemMgr::getAppName() const {
         return app_name_;
     }
 
@@ -56,7 +56,12 @@ bool SystemMgr::init(const std::string& appName) {
 
     // indica nueva ejecución en log de errores
     errlog_.write("-- init --");
+
+    // Parámetros de consola por defecto (cli activo)
+    cli_show_app_name_ = true;
+    cli_prefix_color_ = ANSI_BRIGHT_BLUE;
     
+    // Marcar y salir
     initialized_ = true;
     return initialized_; // <- true
 }
@@ -89,7 +94,7 @@ void SystemMgr::info(std::string const& module, std::string const& msg) {
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)
-        redrawPrompt_unlocked();
+        redraw_prompt_unlocked();
 
 }
 
@@ -115,7 +120,7 @@ void SystemMgr::warning(std::string const& module, std::string const& msg) {
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)
-        redrawPrompt_unlocked();
+        redraw_prompt_unlocked();
 }
 
 void SystemMgr::error(std::string const& module, std::string const& msg) {
@@ -140,7 +145,7 @@ void SystemMgr::error(std::string const& module, std::string const& msg) {
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)
-        redrawPrompt_unlocked();
+        redraw_prompt_unlocked();
 
     // Liberar el mutex para el popup
     lock.unlock();
@@ -171,7 +176,7 @@ void SystemMgr::solved(std::string const& module, std::string const& msg) {
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)
-        redrawPrompt_unlocked();
+        redraw_prompt_unlocked();
 }
 
 
@@ -182,18 +187,32 @@ void SystemMgr::setCliActive(bool active) {
     is_cli_active_ = active;
 }
 
-void SystemMgr::updateCliInput(const std::string& input, size_t cursorPos) {
+void SystemMgr::updateCliInput(
+    const std::string&  input, 
+    size_t              cursorPos,
+    bool                showAppName,
+    std::string         color
+) {
     std::lock_guard<std::mutex> lock(console_mtx);
+    
     current_cli_input_  = input;
     current_cli_cursor_ = (cursorPos == std::string::npos) ? input.size() : cursorPos;
+    
+    // Guardar el estado visual si se especificó un color
+    if (!color.empty()) {
+        cli_prefix_color_ = color;
+    }
+    cli_show_app_name_ = showAppName;
+
     if (is_cli_active_)
-        redrawPrompt_unlocked();
+        redraw_prompt_unlocked();
 }
 
 void SystemMgr::redrawPrompt() {
     std::lock_guard<std::mutex> lock(console_mtx);
-    redrawPrompt_unlocked();
+    redraw_prompt_unlocked();
 }
+
 
 // General ------------------------------------------------------------------------------
 
@@ -240,10 +259,13 @@ void SystemMgr::show_popup(std::string const& msg, std::string const& title, boo
 
 // Redraw privado -----------------------------------------------------------------------
 
-void SystemMgr::redrawPrompt_unlocked() {
+void SystemMgr::redraw_prompt_unlocked() {
+
+    std::string prefix = (cli_show_app_name_) ? app_name_ : ">";
+
     // \r                   -> Mueve el cursor al inicio de la línea
     // ANSI_CLEAR_TO_EOL    -> Borra únicamente desde el cursor hasta el final
-    std::cerr << "\r" << ANSI_BRIGHT_CYAN << app_name_ << "> " << ANSI_RESET
+    std::cerr << "\r" << cli_prefix_color_ << prefix << "> " << ANSI_RESET
               << current_cli_input_ << ANSI_RESET << ANSI_CLEAR_TO_EOL;
 
     // Si el cursor lógico no está al final del texto, hay que retroceder el

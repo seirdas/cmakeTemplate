@@ -321,8 +321,9 @@ private:
     bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
 
 // Parámetros de la consola
-    std::string     AppName_;           ///< Nombre de la aplicación/ventana
-    std::string     exe_path_;          ///< Ruta de aplicación (para duplicar app en terminal con Linux)
-    bool            tried_to_launch_console_;  ///< Indica si ya se ha indtentado lanzar la consola
-
+    std::string     AppName_;                   ///< Nombre de la aplicación/ventana
+    std::string     exe_path_;                  ///< Ruta de aplicación (para duplicar app en terminal con Linux)
+    bool            tried_to_launch_console_;   ///< Indica si ya se ha indtentado lanzar la consola
+    bool            show_app_name_;             ///< Muestra el nombre de la aplicación en la consola o no
+    std::string     prefix_color_;              ///< Color del prefijo de entrada ( el '>>' )
 };
