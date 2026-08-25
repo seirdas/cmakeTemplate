@@ -517,7 +517,7 @@
 
             // Si no hay datos no hacer nada
             if (packet.data_rcv.empty()) {
-                SYS_WARN("TWorker","Empty data received");
+                SYS_WARN("NetMgr","Empty data received");
                 continue;
             }
 

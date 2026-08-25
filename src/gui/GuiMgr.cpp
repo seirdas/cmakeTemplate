@@ -142,7 +142,7 @@
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
 		// Creación de ventana
-		window_ = glfwCreateWindow(windowSizeX_, windowSizeY_, AppName_.c_str(), NULL, NULL);
+		window_ = glfwCreateWindow((int)windowSizeX_, (int)windowSizeY_, AppName_.c_str(), NULL, NULL);
 		if(!window_) {
 			glfwTerminate();
 			SYS_ERROR("GuiMgr","glfwCreateWindow error.");
@@ -946,19 +946,30 @@
 		// 4 bytes por píxel (RGBA)
 		std::vector<unsigned char> data(width * height * 4);
 
-		for (int y = 0; y < height; ++y) {
-			for (int x = 0; x < width; ++x) {
-				int index = (y * width + x) * 4;
+		// Usa size_t para dimensiones y tamaños para evitar conversiones implícitas
+		const size_t uWidth = static_cast<size_t>(width);
+		const size_t uHeight = static_cast<size_t>(height);
+		const size_t uCheckSize = static_cast<size_t>(checkSize);
+
+		for (size_t y = 0; y < uHeight; ++y) {
+			for (size_t x = 0; x < uWidth; ++x) {
+				size_t index = (y * uWidth + x) * 4U;
 				
-				// Lógica del mosaico: (x / tamaño) + (y / tamaño) es par o impar
-				bool isPink = ((x / checkSize) + (y / checkSize)) % 2 == 0;
+				// Lógica del mosaico
+				bool isPink = ((x / uCheckSize) + (y / uCheckSize)) % 2U == 0;
 
 				if (isPink) {
-					// Rosa (Magenta: R=255, G=0, B=255)
-					data[index + 0] = 255; data[index + 1] = 0; data[index + 2] = 255; data[index + 3] = 255;
+					// Rosa (Magenta)
+					data[index + 0U] = static_cast<unsigned char>(255);
+					data[index + 1U] = static_cast<unsigned char>(0);
+					data[index + 2U] = static_cast<unsigned char>(255);
+					data[index + 3U] = static_cast<unsigned char>(255);
 				} else {
-					// Negro (R=0, G=0, B=0) o Blanco (R=255, G=255, B=255)
-					data[index + 0] = 0;   data[index + 1] = 0; data[index + 2] = 0;   data[index + 3] = 255;
+					// Negro
+					data[index + 0U] = static_cast<unsigned char>(0);
+					data[index + 1U] = static_cast<unsigned char>(0);
+					data[index + 2U] = static_cast<unsigned char>(0);
+					data[index + 3U] = static_cast<unsigned char>(255);
 				}
 			}
 		}
@@ -1002,7 +1013,7 @@
 			glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 		} else {
 			// Volver a modo ventana usando las dimensiones guardadas
-			glfwSetWindowMonitor(window_, NULL, windowPosX_, windowPosY_, windowSizeX_, windowSizeY_, 0);
+			glfwSetWindowMonitor(window_, NULL, (int)windowPosX_, (int)windowPosY_, (int)windowSizeX_, (int)windowSizeY_, 0);
 		}
 
 		fullscreen_ = enabled;

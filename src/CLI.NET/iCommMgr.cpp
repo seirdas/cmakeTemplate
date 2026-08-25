@@ -62,7 +62,7 @@ bool iCommMgr::init() {
 
         // Buscarlo en minúsculas (case insensitive)
 		for (char &c : name)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Búsqueda de ID
 		if (name.find("atis") != std::string::npos)
