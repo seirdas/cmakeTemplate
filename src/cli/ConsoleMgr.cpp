@@ -9,6 +9,7 @@
 #include "sound/PlayerAudio.hpp"
 #include "sound/PlayerMorse.hpp"
 #include "sound/PlayerTTS.hpp"
+#include "sound/AudioPlaybackModule.hpp"
 #include "devices/TotalMix.hpp"
 #include "devices/Symetrix.hpp"
 #include "net/NetMgr.hpp"
@@ -570,7 +571,28 @@ void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
     SoundMgr* snd = ctrl_->getSoundsModule();
 
     if (action.empty() || action == "help" || action == "h") {
-        print("Usage: sounds players morse {add|remove|use} <name> [args]");
+        print("Available 'sounds players morse' commands:\n\n"
+              "  {add|a} <name>\n"
+              "      - Add a new morse player\n\n"
+              "  {remove|delete|r|d} <name>\n"
+              "      - Remove the specified morse player\n\n"
+              "  {use|u} <name> play <text>\n"
+              "      - Play morse code using the specified player (audioName == text)\n\n"
+              "  {use|u} <name> stop <text> [force] [fadeOutMs] [pitchOutMs]\n"
+              "      - Stop the given morse sound. Soft by default: if it's not looping\n"
+              "        and 'force' isn't set, it just lets it finish naturally.\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "  {use|u} <name> volume <text> <0-100>\n"
+              "      - Set the volume of that specific playing sound\n\n"
+              "  {use|u} <name> modulevolume <0-100>\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "  {use|u} <name> pitch <text> <value>\n"
+              "      - Set the pitch of that specific playing sound\n\n"
+              "  {use|u} <name> channel <0|1|2>\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "  {use|u} <name> isplaying [text]\n"
+              "      - Check if a specific sound (or anything) is playing on this player"
+        );
         return;
     }
 
@@ -587,7 +609,7 @@ void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
     else if (action == "remove" || action == "delete" || action == "r" || action == "d") {
         if (snd->removePlayerMorse(name)) print("Morse player '" + name + "' removed.");
         else print_error("Cannot remove morse player '" + name + "'");
-    } 
+    }
     else if (action == "use" || action == "u") {
         PlayerMorse* pm = snd->getPlayerMorse(name);
         if (!pm) { print_error("Morse player '" + name + "' not found."); return; }
@@ -599,10 +621,10 @@ void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
             pm->playMorse(text);
         } else if (subAction == "info" || subAction == "i") {
             print("Info not implemented.");
-        } else {
+        } else if (!execute_playback_command(pm, tokens, 5)) {
             print_error("Unknown use subcommand: " + subAction);
         }
-    } 
+    }
     else {
         print_error("Unknown action: " + action);
     }
@@ -611,7 +633,30 @@ void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
 void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
     const std::string action = get_token(tokens, 3);
     if (action.empty() || action == "help" || action == "h") {
-        print("Usage: sounds players audio {add|remove|use} <name> [args]");
+        print("Available 'sounds players audio' commands:\n\n"
+              "  {add|a} <name> [device]\n"
+              "      - Add a new audio player, optionally bound to a playback device\n\n"
+              "  {remove|delete|r|d} <name>\n"
+              "      - Remove the specified audio player\n\n"
+              "  {use|u} <name> play <filepath> [volume]\n"
+              "      - Play an audio file (audioName == filepath)\n\n"
+              "  {use|u} <name> stop <filepath> [force] [fadeOutMs] [pitchOutMs]\n"
+              "      - Stop the given sound. Soft by default: if it's not looping\n"
+              "        and 'force' isn't set, it just lets it finish naturally.\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "  {use|u} <name> volume <filepath> <0-100>\n"
+              "      - Set the volume of that specific playing sound\n\n"
+              "  {use|u} <name> modulevolume <0-100>\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "  {use|u} <name> pitch <filepath> <value>\n"
+              "      - Set the pitch of that specific playing sound\n\n"
+              "  {use|u} <name> channel <0|1|2>\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "  {use|u} <name> isplaying [filepath]\n"
+              "      - Check if a specific sound (or anything) is playing on this player\n\n"
+              "Note: a player can have several sounds playing at once (it's a mixer),\n"
+              "  so stop/volume/pitch/isplaying need the exact filepath used in 'play'."
+        );
         return;
     }
 
@@ -644,8 +689,8 @@ void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
                 catch (...) { print_error("Invalid volume."); return; }
             }
             pa->playAudio(filepath, vol);
-        } else {
-            print_error("Unknown use subcommand.");
+        } else if (!execute_playback_command(pa, tokens, 5)) {
+            print_error("Unknown use subcommand: " + get_token(tokens, 5));
         }
     }
 }
@@ -653,7 +698,29 @@ void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
 void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
     const std::string action = get_token(tokens, 3);
     if (action.empty() || action == "help" || action == "h") {
-        print("Usage: sounds players tts {add|remove|use} <name> [args]");
+        print("Available 'sounds players tts' commands:\n\n"
+              "  {add|a} <name> [device]\n"
+              "      - Add a new tts player, optionally bound to a playback device\n\n"
+              "  {remove|delete|r|d} <name>\n"
+              "      - Remove the specified tts player\n\n"
+              "  {use|u} <name> play <model> <audioName> <text>\n"
+              "      - Play a text-to-speech phrase (audioName is a name YOU choose,\n"
+              "        used afterwards with stop/volume/isplaying)\n\n"
+              "  {use|u} <name> stop <audioName> [force] [fadeOutMs] [pitchOutMs]\n"
+              "      - Stop the given phrase. Soft by default: if 'force' isn't set,\n"
+              "        it just lets it finish naturally.\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "  {use|u} <name> volume <audioName> <0-100>\n"
+              "      - Set the volume of that specific playing phrase\n\n"
+              "  {use|u} <name> modulevolume <0-100>\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "  {use|u} <name> pitch <audioName> <value>\n"
+              "      - Set the pitch of that specific playing phrase\n\n"
+              "  {use|u} <name> channel <0|1|2>\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "  {use|u} <name> isplaying [audioName]\n"
+              "      - Check if a specific phrase (or anything) is playing on this player"
+        );
         return;
     }
 
@@ -685,10 +752,108 @@ void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
                 return;
             }
             if (!pt->playTTS(model, text, audioName)) print_error("Cannot play TTS.");
-        } else {
-            print_error("Unknown use subcommand.");
+        } else if (!execute_playback_command(pt, tokens, 5)) {
+            print_error("Unknown use subcommand: " + get_token(tokens, 5));
         }
     }
+}
+
+bool ConsoleMgr::execute_playback_command(
+    AudioPlaybackModule*             mod,
+    std::vector<std::string> const&  tokens,
+    size_t                           subIdx)
+{
+    const std::string sub = get_token(tokens, subIdx);
+
+    if (sub == "stop") {
+        const std::string audioName = get_token(tokens, subIdx + 1);
+        if (audioName.empty()) {
+            print_error("Usage: ... stop <audioName> [force] [fadeOutMs] [pitchOutMs]");
+            return true;
+        }
+        const std::string forceStr = get_token(tokens, subIdx + 2);
+        const bool force = (forceStr == "true" || forceStr == "1");
+
+        unsigned int fadeOutMs  = 0;
+        unsigned int pitchOutMs = 0;
+        try {
+            const std::string fadeStr = get_token(tokens, subIdx + 3);
+            if (!fadeStr.empty()) fadeOutMs = static_cast<unsigned int>(std::stoul(fadeStr));
+            const std::string pitchStr = get_token(tokens, subIdx + 4);
+            if (!pitchStr.empty()) pitchOutMs = static_cast<unsigned int>(std::stoul(pitchStr));
+        } catch (std::exception const&) {
+            print_error("Invalid <fadeOutMs>/<pitchOutMs>, must be numeric.");
+            return true;
+        }
+        mod->stop(audioName, force, fadeOutMs, pitchOutMs);
+        return true;
+    }
+
+    if (sub == "volume") {
+        const std::string audioName = get_token(tokens, subIdx + 1);
+        const std::string volStr    = get_token(tokens, subIdx + 2);
+        if (audioName.empty() || volStr.empty()) {
+            print_error("Usage: ... volume <audioName> <0-100>");
+            return true;
+        }
+        try {
+            mod->setVolume(audioName, static_cast<unsigned short>(std::stoi(volStr)));
+        } catch (std::exception const&) {
+            print_error("Invalid <volume>, must be numeric.");
+        }
+        return true;
+    }
+
+    if (sub == "modulevolume") {
+        const std::string volStr = get_token(tokens, subIdx + 1);
+        if (volStr.empty()) {
+            print_error("Usage: ... modulevolume <0-100>");
+            return true;
+        }
+        try {
+            mod->setModuleVolume(static_cast<unsigned short>(std::stoi(volStr)));
+        } catch (std::exception const&) {
+            print_error("Invalid <volume>, must be numeric.");
+        }
+        return true;
+    }
+
+    if (sub == "pitch") {
+        const std::string audioName = get_token(tokens, subIdx + 1);
+        const std::string pitchStr  = get_token(tokens, subIdx + 2);
+        if (audioName.empty() || pitchStr.empty()) {
+            print_error("Usage: ... pitch <audioName> <value>");
+            return true;
+        }
+        try {
+            mod->setPitch(audioName, std::stof(pitchStr));
+        } catch (std::exception const&) {
+            print_error("Invalid <pitch>, must be numeric.");
+        }
+        return true;
+    }
+
+    if (sub == "channel") {
+        const std::string chStr = get_token(tokens, subIdx + 1);
+        if (chStr.empty()) {
+            print_error("Usage: ... channel <0|1|2>");
+            return true;
+        }
+        try {
+            mod->setSelectedChannel(static_cast<unsigned short>(std::stoi(chStr)));
+        } catch (std::exception const&) {
+            print_error("Invalid <channel>, must be numeric.");
+        }
+        return true;
+    }
+
+    if (sub == "isplaying") {
+        const std::string audioName = get_token(tokens, subIdx + 1);
+        print(std::string("Playing: ") + (mod->isPlaying(audioName) ? "YES" : "NO"));
+        return true;
+    }
+
+    return false;
 }
 
 void ConsoleMgr::execute_cmd_net(std::vector<std::string> const& tokens){
@@ -882,24 +1047,138 @@ void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens
 
 void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens) {
 
-    std::string const second_token = (tokens.size() > 1) ? tokens[1] : "help";
+    const std::string action = get_token(tokens, 1);
 
-    if (second_token == "help") {
+    if (action.empty() || action == "help") {
         print("Available 'symetrix' commands:\n"
-              "  status  - Show connection status");
+              "  status                                - Show connection status\n"
+              "  preset <1-1000>                        - Load a Composer preset\n"
+              "  set <id> <value> <min> <max> [db]      - Set a component value (curve, or [db] for direct dB)\n"
+              "  button <id> <on|off>                   - Set a binary component (button/mute)\n"
+              "  supermatrix <in> <out> <volume> [db]    - Set a supermatrix crosspoint volume\n"
+              "  tolerance <pct> [id]                    - Update send tolerance (global, or per id)");
         return;
     }
 
     // Obtener el módulo de symetrix con guard de nulidad
     Symetrix* sym = ctrl_ ? ctrl_->getSymetrixModule() : nullptr;
 
-    if (second_token == "status") {
+    if (action == "status") {
         const std::string connStr = (sym && sym->isConnected()) ? "YES" : "NO";
         print("Symetrix connected: " + connStr);
         return;
     }
 
-    print_error("Unknown symetrix subcommand: " + second_token);
+    if (!sym || !sym->isInitialized()) {
+        print_error("Symetrix module not initialized or unavailable");
+        return;
+    }
+
+    if (action == "preset") {
+        const std::string presetStr = get_token(tokens, 2);
+        if (presetStr.empty()) { print_error("Usage: symetrix preset <1-1000>"); return; }
+
+        try {
+            if (!sym->LoadPreset(static_cast<unsigned int>(std::stoul(presetStr))))
+                print_error("Cannot load preset " + presetStr);
+        } catch (std::exception const&) {
+            print_error("Invalid <preset>, must be numeric.");
+        }
+        return;
+    }
+
+    if (action == "set") {
+        const std::string idStr  = get_token(tokens, 2);
+        const std::string valStr = get_token(tokens, 3);
+        const std::string minStr = get_token(tokens, 4);
+        const std::string maxStr = get_token(tokens, 5);
+        const bool         useDb = (get_token(tokens, 6) == "db");
+
+        if (idStr.empty() || valStr.empty() || minStr.empty() || maxStr.empty()) {
+            print_error("Usage: symetrix set <id> <value> <min> <max> [db]");
+            return;
+        }
+
+        try {
+            const unsigned short id    = static_cast<unsigned short>(std::stoi(idStr));
+            const float          value = std::stof(valStr);
+            const float          minV  = std::stof(minStr);
+            const float          maxV  = std::stof(maxStr);
+
+            const bool ok = useDb
+                ? sym->setValue_dB(id, value, minV, maxV)
+                : sym->setValue(id, value, minV, maxV);
+
+            if (!ok) SYS_WARN("CLI", "Failed to set Symetrix value.");
+        } catch (std::exception const&) {
+            print_error("Invalid numeric argument.");
+        }
+        return;
+    }
+
+    if (action == "button") {
+        const std::string idStr    = get_token(tokens, 2);
+        const std::string stateStr = get_token(tokens, 3);
+
+        if (idStr.empty() || stateStr.empty()) {
+            print_error("Usage: symetrix button <id> <on|off>");
+            return;
+        }
+
+        try {
+            const unsigned short id = static_cast<unsigned short>(std::stoi(idStr));
+            const bool on = (stateStr == "on" || stateStr == "true" || stateStr == "1");
+            if (!sym->setButton(id, on))
+                SYS_WARN("CLI", "Failed to set Symetrix button.");
+        } catch (std::exception const&) {
+            print_error("Invalid <id>, must be numeric.");
+        }
+        return;
+    }
+
+    if (action == "supermatrix") {
+        const std::string inStr  = get_token(tokens, 2);
+        const std::string outStr = get_token(tokens, 3);
+        const std::string volStr = get_token(tokens, 4);
+        const bool         useDb = (get_token(tokens, 5) == "db");
+
+        if (inStr.empty() || outStr.empty() || volStr.empty()) {
+            print_error("Usage: symetrix supermatrix <in> <out> <volume> [db]");
+            return;
+        }
+
+        try {
+            const unsigned int in     = static_cast<unsigned int>(std::stoul(inStr));
+            const unsigned int out    = static_cast<unsigned int>(std::stoul(outStr));
+            const float        volume = std::stof(volStr);
+            if (!sym->setSupermatrixValue(in, out, volume, useDb))
+                SYS_WARN("CLI", "Failed to set Symetrix supermatrix value.");
+        } catch (std::exception const&) {
+            print_error("Invalid numeric argument.");
+        }
+        return;
+    }
+
+    if (action == "tolerance") {
+        const std::string pctStr = get_token(tokens, 2);
+        const std::string idStr  = get_token(tokens, 3);
+
+        if (pctStr.empty()) {
+            print_error("Usage: symetrix tolerance <pct> [id]");
+            return;
+        }
+
+        try {
+            const unsigned char  pct = static_cast<unsigned char>(std::stoi(pctStr));
+            const unsigned short id  = idStr.empty() ? 0 : static_cast<unsigned short>(std::stoi(idStr));
+            sym->updateTolerancePct_CSQ(pct, id);
+        } catch (std::exception const&) {
+            print_error("Invalid numeric argument.");
+        }
+        return;
+    }
+
+    print_error("Unknown symetrix subcommand: " + action);
 }
 
 

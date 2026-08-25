@@ -17,6 +17,7 @@
 
 // Foward declaration
 class IAppControl;
+class AudioPlaybackModule;
 
 
 /** 
@@ -118,19 +119,19 @@ private:
     void execute_cmd(std::string const& command);
 
     /**
-     * @brief Subcomandos del comando "sounds"
+     * @brief Subcomando raíz "sounds": deriva a devices/players según el subcomando.
      * @param tokens Tokens de la línea completa (en minúsculas), tokens[0] == "sounds".
      */
     void execute_cmd_snd(std::vector<std::string> const& tokens);
 
     /**
-     * @brief Subcomandos de "sounds devices"
+     * @brief Subcomando "sounds devices"
      * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
      */
     void execute_cmd_snd_devices(std::vector<std::string> const& tokens);
 
     /**
-     * @brief Subcomandos de "sounds players"
+     * @brief Subcomando "sounds players": deriva a audio/morse/tts según la categoría.
      * @param tokens Tokens de la línea completa, tokens[0] == "sounds".
      */
     void execute_cmd_snd_players(std::vector<std::string> const& tokens);
@@ -154,11 +155,26 @@ private:
     void execute_cmd_snd_tts(std::vector<std::string> const& tokens);
 
     /**
+     * @brief Subcomandos comunes de reproducción, compartidos por los distintos
+     *  tipos de reproductor (audio, morse, tts): stop, volume, modulevolume,
+     *  pitch, channel, isplaying.
+     * @param mod Puntero al módulo de reproducción (base común) sobre el que actuar.
+     * @param tokens Tokens de la línea completa.
+     * @param subIdx Índice dentro de @p tokens donde está el subcomando (stop/volume/...).
+     * @return @c true si el subcomando se reconoció y gestionó, @c false si no
+     *  coincide con ninguno (el caller decide qué hacer, p.ej. imprimir error).
+     */
+    bool execute_playback_command(
+        AudioPlaybackModule*             mod,
+        std::vector<std::string> const&  tokens,
+        size_t                           subIdx);
+
+    /**
      * @brief Subcomandos del comando "totalmix"
      * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
      */
     void execute_totalmix_command(std::vector<std::string> const& tokens);
-    
+
     /**
      * @brief Subcomandos del comando "symetrix"
      * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
@@ -201,10 +217,11 @@ private:
     std::vector<std::string> tokenize_cli(std::string const& line);
 
     /**
-     * @brief Devuelve el token en la posición @p idx, o cadena vacía si está fuera de rango
+     * @brief Devuelve el token en la posición @p idx, o cadena vacía si no existe.
+     * @details Evita comprobar el tamaño de @p tokens manualmente antes de cada acceso.
      * @param tokens Vector de palabras divididas
      * @param idx Índice del token a obtener
-     * @return Token en la posición @p idx, o "" si no existe
+     * @return El token, o "" si @p idx está fuera de rango
      */
     std::string get_token(std::vector<std::string> const& tokens, size_t idx);
 
