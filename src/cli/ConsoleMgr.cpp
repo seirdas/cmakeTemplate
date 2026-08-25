@@ -21,12 +21,11 @@
 
 // General ------------------------------------------------------------------------------
 
-ConsoleMgr::ConsoleMgr(IAppControl* ctrl, std::string const& exePath) :
-    ctrl_(ctrl),
+ConsoleMgr::ConsoleMgr() :
+    ctrl_(nullptr),
     initialized_(false),
     running_(false),
     AppName_("app"),
-    exe_path_(exePath),
     tried_to_launch_console_(false)
 {
 
@@ -81,6 +80,14 @@ bool ConsoleMgr::close() {
     return !initialized_;   // <- true
 }
 
+bool ConsoleMgr::setController(IAppControl* controller) {
+    ctrl_ = controller;
+    return static_cast<bool>(ctrl_);
+}
+
+void ConsoleMgr::setAppName(std::string const& appName) {
+    AppName_ = appName;
+}
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -355,7 +362,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
     // tratar como minúsculas siempre
     std::string cmd = command;
     for (char &c : cmd)
-        c = std::tolower(static_cast<unsigned char>(c));
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
     // Obtener las palabras por separado
     std::vector<std::string> tokens = tokenize_cli(cmd);
@@ -1380,7 +1387,7 @@ void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens
 
         try {
             const unsigned char  pct = static_cast<unsigned char>(std::stoi(pctStr));
-            const unsigned short id  = idStr.empty() ? 0 : static_cast<unsigned short>(std::stoi(idStr));
+            const unsigned short id  = idStr.empty() ? static_cast<unsigned short>(0) : static_cast<unsigned short>(std::stoi(idStr));
             sym->updateTolerancePct_CSQ(pct, id);
         } catch (std::exception const&) {
             print_error("Invalid numeric argument.");

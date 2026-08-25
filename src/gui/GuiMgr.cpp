@@ -68,10 +68,10 @@
 
 	// General ------------------------------------------------------------------------------
 
-	GuiMgr::GuiMgr(IAppControl* controller) : 
+	GuiMgr::GuiMgr() : 
         pimpl_(std::make_unique<Impl>()),
 		config_(nullptr),
-		ctrl_(controller),
+		ctrl_(nullptr),
 		running_(false),
 		initialized_(false),
 		window_(nullptr),
@@ -89,24 +89,19 @@
 		fontSize_(16),
 		deviceRefreshInterval_(5)
 	{
-		
-		// Avisa si se ha inicializado sin interfaz de comunicación para saber de otros módulos
-		if (!ctrl_)
-			SYS_WARN("GuiMgr","Cannot handle any controller.");
-
 		// Avisa si no tiene soporte STB para imágenes
 		#ifndef STB
 			SYS_WARN("GuiMgr","STB Image library has not been implemented.");
 		#endif
-
 	}
 
 	GuiMgr::~GuiMgr() {
 		close();
 	}
 
-	void GuiMgr::setController(IAppControl* controller){
+	bool GuiMgr::setController(IAppControl* controller){
 		ctrl_ = controller;
+		return static_cast<bool>(ctrl_);
 	}
 
 

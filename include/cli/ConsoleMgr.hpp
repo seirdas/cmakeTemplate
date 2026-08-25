@@ -33,7 +33,7 @@ public:
     /**
      * @brief Constructor
      */
-    ConsoleMgr(IAppControl* ctrl = nullptr, std::string const& exePath = "");
+    ConsoleMgr();
     
     /**
      * @brief Destructor
@@ -79,6 +79,19 @@ public:
      * @return @c true Si ha cerrado correctamente, @c false en caso de error
      */
     bool close();
+
+    /**
+     * @brief Establece el controlador de la aplicación (ctrl)
+     * @param ctrl Controlador de la aplicación
+     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
+     */
+    bool setController(IAppControl* controller);
+
+    /**
+     * @brief Establece internamente el nombre de la aplicación
+     * @details Esto se usa para funciones de terminal en Linux
+     */
+    void setAppName(std::string const& appName);
 
 
 // Ejecución ----------------------------------------------------------------------------

@@ -36,10 +36,9 @@ public:
 // General ------------------------------------------------------------------------------
 
     /**
-     * @brief Constructor por defecto.
-     * @param ctrl_ Controlador para pedir datos a AppController
+     * @brief Constructor.
      */
-    GuiMgr(IAppControl* ctrl_ = nullptr);
+    GuiMgr();
     
     /**
      * @brief Destructor. Llama a cerrar() para liberar recursos.
@@ -55,9 +54,11 @@ public:
     GuiMgr& operator=(GuiMgr&&) = delete;
     
     /**
-     * @brief Establece el controlador que usa para manejar otras clases.
+     * @brief Establece el controlador de la aplicación (ctrl)
+     * @param ctrl Controlador de la aplicación
+     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
      */
-    void setController(IAppControl* controller);
+    bool setController(IAppControl* controller);
     
 
 // Ejecución ----------------------------------------------------------------------------

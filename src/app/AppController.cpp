@@ -28,8 +28,8 @@ AppController::AppController(int argc, char** argv) :
     argv_(argv),
     config_filename_("config.json"),
     net_(std::make_unique<NetMgr>()),
-    cli_(std::make_unique<ConsoleMgr>(this, argv_[0])),
-    gui_(std::make_unique<GuiMgr>(this)),
+    cli_(std::make_unique<ConsoleMgr>()),
+    gui_(std::make_unique<GuiMgr>()),
     snd_(std::make_unique<SoundMgr>()),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
@@ -38,6 +38,11 @@ AppController::AppController(int argc, char** argv) :
     dds_(std::make_unique<FastDDS>()),
     cds_(std::make_unique<CycloneDDS>())
 {
+    // Establecer controladores de las interfaces de usuario
+    gui_->setController(this);
+    cli_->setController(this);
+    cli_->setAppName(argv_[0]);
+
     // Activa todos los módulos por defecto
     enable_flags_.setAll(1);
 }
