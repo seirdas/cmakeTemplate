@@ -864,7 +864,12 @@ void ConsoleMgr::execute_cmd_net(std::vector<std::string> const& tokens){
               "  help                              - Show this help message\n"
               "  {devices|device|dev|d}            - List active UDP sockets\n"
               "  add <name> <port> [ip] [pkgsize]  - Add a new UDP socket\n"
-              "  {remove|delete|rm} <name>         - Remove an existing UDP socket\n\n"
+              "  {remove|delete|rm} <name>         - Remove an existing UDP socket\n"
+              "  {status|st}                       - Show whether the network is running\n"
+              "  {exists|e} <name>                 - Check if a socket exists\n"
+              "  {lastpacket|lp} <name>            - Time since the last packet on a socket\n"
+              "  {send|s} <name> <ip> <port> <text> - Send text data through a socket\n"
+              "  {queue|q}                         - Number of packets pending in the receive queue\n\n"
               "Aliases: net, network");
         return;
     }
@@ -881,6 +886,16 @@ void ConsoleMgr::execute_cmd_net(std::vector<std::string> const& tokens){
         execute_cmd_net_add(tokens);
     else if (subCmd == "remove" || subCmd == "delete" || subCmd == "rm")
         execute_cmd_net_remove(tokens);
+    else if (subCmd == "status" || subCmd == "st")
+        execute_cmd_net_status(tokens);
+    else if (subCmd == "exists" || subCmd == "e")
+        execute_cmd_net_exists(tokens);
+    else if (subCmd == "lastpacket" || subCmd == "lp")
+        execute_cmd_net_lastpacket(tokens);
+    else if (subCmd == "send" || subCmd == "s")
+        execute_cmd_net_send(tokens);
+    else if (subCmd == "queue" || subCmd == "q")
+        execute_cmd_net_queue(tokens);
     else
         print_error("Unknown network subcommand: " + subCmd);
 }
@@ -956,6 +971,120 @@ void ConsoleMgr::execute_cmd_net_devices(std::vector<std::string> const& tokens)
     // printUdpSockets() vuelca la lista al log de la aplicación (SYS_INFO).
     net->printUdpSockets();
     print("Socket list printed to the application log.");
+}
+
+void ConsoleMgr::execute_cmd_net_status(std::vector<std::string> const& tokens) {
+    const std::string subCmd = get_token(tokens, 2);
+
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    if (subCmd == "help") {
+        print("Usage: network status\n"
+              "  Shows whether the network module is currently running.\n");
+        return;
+    }
+
+    print(std::string("Network running: ") + (net->isRunning() ? "YES" : "NO"));
+}
+
+void ConsoleMgr::execute_cmd_net_exists(std::vector<std::string> const& tokens) {
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    const std::string name = get_token(tokens, 2);
+    if (name.empty() || name == "help") {
+        print("Usage: network exists <name>\n"
+              "  Checks whether a UDP socket with that name exists.\n");
+        return;
+    }
+
+    print("Socket '" + name + "' exists: " + (net->socketExists(name) ? "YES" : "NO"));
+}
+
+void ConsoleMgr::execute_cmd_net_lastpacket(std::vector<std::string> const& tokens) {
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    const std::string name = get_token(tokens, 2);
+    if (name.empty() || name == "help") {
+        print("Usage: network lastpacket <name>\n"
+              "  Shows how long ago (ms) the last packet was received on that socket.\n");
+        return;
+    }
+
+    if (!net->socketExists(name)) {
+        print_error("Socket '" + name + "' not found.");
+        return;
+    }
+
+    print("Last packet on '" + name + "': " + std::to_string(net->getLastPacketMs(name)) + " ms ago");
+}
+
+void ConsoleMgr::execute_cmd_net_send(std::vector<std::string> const& tokens) {
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    const std::string name = get_token(tokens, 2);
+    if (name.empty() || name == "help") {
+        print("Usage: network send <name> <ip> <port> <text>\n"
+              "  Sends <text> as raw bytes through the UDP socket <name> to <ip>:<port>.\n");
+        return;
+    }
+
+    const std::string ip      = get_token(tokens, 3);
+    const std::string portStr = get_token(tokens, 4);
+    const std::string text    = get_token(tokens, 5);
+
+    if (ip.empty() || portStr.empty() || text.empty()) {
+        print_error("Usage: network send <name> <ip> <port> <text>");
+        return;
+    }
+
+    unsigned short port;
+    try { port = static_cast<unsigned short>(std::stoi(portStr)); }
+    catch (...) { print_error("Invalid port, must be numeric."); return; }
+
+    if (!net->socketExists(name)) {
+        print_error("Socket '" + name + "' not found.");
+        return;
+    }
+
+    const std::vector<char> data(text.begin(), text.end());
+    if (net->sendData(name, data, ip, port))
+        print("Sent " + std::to_string(data.size()) + " bytes to " + ip + ":" + portStr + ".");
+    else
+        print_error("Cannot send data through socket '" + name + "'.");
+}
+
+void ConsoleMgr::execute_cmd_net_queue(std::vector<std::string> const& tokens) {
+    const std::string subCmd = get_token(tokens, 2);
+
+    NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+    if (!net) {
+        print_error("Network module is not available (null)");
+        return;
+    }
+
+    if (subCmd == "help") {
+        print("Usage: network queue\n"
+              "  Shows how many UDP packets are pending in the centralized receive queue.\n");
+        return;
+    }
+
+    print("Packets pending in queue: " + std::to_string(net->numUdpRcvElements()));
 }
 
 

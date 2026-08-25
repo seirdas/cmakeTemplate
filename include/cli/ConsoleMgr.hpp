@@ -205,6 +205,36 @@ private:
      */
     void execute_cmd_net_remove(std::vector<std::string> const& tokens);
 
+    /**
+     * @brief Subcomandos de "network status"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_status(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "network exists"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_exists(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "network lastpacket"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_lastpacket(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "network send"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_send(std::vector<std::string> const& tokens);
+
+    /**
+     * @brief Subcomandos de "network queue"
+     * @param tokens Tokens de la línea completa, tokens[0] == "network".
+     */
+    void execute_cmd_net_queue(std::vector<std::string> const& tokens);
+
 // Tokens (comandos) --------------------------------------------------------------------
 
     /**
