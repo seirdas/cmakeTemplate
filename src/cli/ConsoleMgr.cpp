@@ -144,7 +144,8 @@ bool ConsoleMgr::Run() {
     //std::cerr << "\033[?25l";
 
     SystemMgr::instance().setCliActive(true);
-    SystemMgr::instance().updateCliInput(command, cursor, show_app_name_, prefix_color_); // Pinta el primer prompt
+    SystemMgr::instance().showAppName(show_app_name_);
+    SystemMgr::instance().updateCliInput(command, cursor, prefix_color_); // Pinta el primer prompt
 
     #ifndef _WIN32
         // LINUX: Apagar el "Cooked Mode" y el "Echo" automático de la terminal

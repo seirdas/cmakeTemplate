@@ -182,15 +182,19 @@ void SystemMgr::solved(std::string const& module, std::string const& msg) {
 
 // Escritura en consola -----------------------------------------------------------------
 
-void SystemMgr::setCliActive(bool active) {
+void SystemMgr::setCliActive(bool val) {
     std::lock_guard<std::mutex> lock(console_mtx);
-    is_cli_active_ = active;
+    is_cli_active_ = val;
+}
+
+void SystemMgr::showAppName(bool val) {
+    std::lock_guard<std::mutex> lock(console_mtx);
+    cli_show_app_name_ = val;
 }
 
 void SystemMgr::updateCliInput(
     const std::string&  input, 
     size_t              cursorPos,
-    bool                showAppName,
     std::string         color
 ) {
     std::lock_guard<std::mutex> lock(console_mtx);
@@ -202,7 +206,6 @@ void SystemMgr::updateCliInput(
     if (!color.empty()) {
         cli_prefix_color_ = color;
     }
-    cli_show_app_name_ = showAppName;
 
     if (is_cli_active_)
         redraw_prompt_unlocked();

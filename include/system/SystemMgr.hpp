@@ -95,8 +95,15 @@ public:
 
     /**
      * @brief Activa o desactiva la captura visual del CLI
+     * @param val @c true activa, @c false desactiva
      */
     void setCliActive(bool active);
+
+    /**
+     * @brief Muestra el nombre con CLI activo
+     * @param val @c true muestra, @c false no muestra
+     */
+    void showAppName(bool val);
 
     /**
      * @brief Actualiza el texto que el usuario lleva escrito y redibuja la línea
@@ -109,7 +116,6 @@ public:
     void updateCliInput(
         const std::string& input, 
         size_t cursorPos = std::string::npos,
-        bool                showAppName = true,
         std::string         color = ""
     );
 
