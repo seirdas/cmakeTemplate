@@ -101,8 +101,9 @@ public:
 
     /**
      * @brief Detiene los sockets y cierra todos los recursos de la clase
+     * @return @c true Si se ha cerrado correctamente, @c false en caso contrario
      */
-    void close();
+    bool close();
 
     /**
      * @brief Devuelve si la red está activa (los sockets están activos)
@@ -184,7 +185,7 @@ public:
 // Envío --------------------------------------------------------------------------------
 
     /**
-     * @brief Manda datos por un socket
+     * @brief Manda datos por un socket creado por nombre
      * @param socketname Nombre del socket por el que se van a mandar los datos
      * @param data vector de bytes de datos a mandar
      * @param dest_ip IP destino
@@ -198,7 +199,7 @@ public:
     );
 
     /**
-     * @brief Manda datos por un socket por puerto
+     * @brief Manda datos por un socket creado por puerto
      * @param local_port Puerto del socket por el que se van a mandar los datos
      * @param data vector de bytes de datos a mandar
      * @param dest_ip IP destino
@@ -214,33 +215,6 @@ public:
 // Recepción ----------------------------------------------------------------------------
 
     /**
-     * @brief Extrae el siguiente paquete UDP recibido de la cola de recepción.
-     * 
-     * @param[out] name DEVUELVE Nombre del socket de origen del dato.
-     * @param[out] port DEVUELVE Puerto de origen del dato.
-     * @return std::vector<char> Los datos del paquete recibido, o un vector vacío si la red se ha detenido.
-     */
-    std::vector<char> getNextUdpPacket(std::string* name = nullptr, unsigned short* port = nullptr);
-
-    /**
-     * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
-     * @note La cola de datos del socket UDP sólo se llena cuando no se ha especificado ningún callback
-     * @warning Solo usar cuando no se ha especificado un callback al socket UDP
-     * @warning BLOQUEANTE
-     * @returns Datos recibidos del socket en formato std::vector<char>
-     */
-    std::vector<char> getDataFromSocket(std::string const& socketname);
-
-    /**
-     * @brief Obtiene datos de la cola de datos del socket, identificado por nombre
-     * @note La cola de datos del socket UDP sólo se llena cuando no se ha especificado ningún callback
-     * @warning Solo usar cuando no se ha especificado un callback al socket UDP.
-     * @warning BLOQUEANTE
-     * @returns Datos recibidos del socket en formato std::vector<char>
-     */
-    std::vector<char> getDataFromSocket(unsigned short local_port);
-
-    /**
      * @brief Número de paquetes de datos recibidos desde los sockets UDP en cola centralizada
      * @return Número de paquetes
      */
@@ -249,6 +223,15 @@ public:
     
 private:
 
+// Dispatcher ----------------------------------------------------------------------------
+
+    /**
+     * @brief Hilo gestor de paquetes online
+     * @note Solo se ejecuta cuando la aplicación está en online, de lo contrario se queda parado.
+     */
+    void t_dispatcher();
+
+    
 // Datos de los sockets guardados -------------------------------------------------------
 
     /**
@@ -267,21 +250,6 @@ private:
      */
     int get_socket_index(std::string const& name) const;
 
-    /**
-     * @brief Extrae de forma segura y bloqueante el primer paquete de la cola centralizada que cumpla un criterio.
-     * 
-     * Bloquea el hilo del llamante mediante una variable de condición hasta que un paquete en la cola 
-     * satisfaga el predicado (lambda) especificado o hasta que la recepción del sistema se detenga 
-     * (sockets_running_ == false).
-     * 
-     * @tparam Lambda Tipo del predicado invocable.
-     * @param pred Función o expresión lambda con firma bool(const NetPacket&) que define la condición de búsqueda.
-     * @return std::vector<char> Carga útil (payload) del paquete encontrado, o un vector vacío si se detuvo
-     *         el sistema sin coincidencias.
-     */
-    template <typename Lambda>
-    std::vector<char> extract_packet_if(Lambda pred);
-
 
 // Operaciones privadas con sockets -----------------------------------------------------
 
@@ -298,27 +266,27 @@ private:
 /************ Variables ****************************************************************/
 
 // Pointer to implementation (PIMPL) para quitar includes del header
-    struct Impl;                                    ///< Declaración de estructura PIMPL para no depender de la librería en el header
-    std::unique_ptr<Impl>       pimpl_;             ///< Miembros dependientes de la librería externa
+    struct Impl;                                            ///< Declaración de estructura PIMPL para no depender de la librería en el header
+    std::unique_ptr<Impl>       pimpl_;                     ///< Miembros dependientes de la librería externa
 
 // Inicialización
-    bool                        initialized_;       ///< Bandera para indicar inicialización exitosa
+    bool                        initialized_;               ///< Bandera para indicar inicialización exitosa
+    std::atomic<bool>           running_;                   ///< flag de aplicación corriendo (para hilos)
 
 // Contexto de operaciones asíncronas
-    std::atomic<bool>           io_running_;        ///< Flag para saber si la red (io_context) está en funcionamiento
-    
+    std::atomic<bool>           io_running_;                ///< Flag para saber si la red (io_context) está en funcionamiento
+    std::vector<std::thread>    threads_;                   ///< Hilos procesando operaciones asíncronas.
+    std::size_t                 num_threads_;               ///< Numero máximo de hilos gestionando operaciones asíncronas.
+
 // Sockets
-    mutable std::mutex          udp_sockets_mtx_;   ///< Mutex para gestion del vector de sockets
-    std::atomic<bool>           sockets_running_;   ///< Flag para saber si la red (io_context) está en funcionamiento
+    mutable std::mutex          udp_sockets_mtx_;           ///< Mutex para gestion del vector de sockets
+    std::atomic<bool>           sockets_running_;           ///< Flag para saber si la red (io_context) está en funcionamiento
 
 // Cola global de datos de socket
-    /* std::queue<NetPacket>    udp_rcv_data_; */   ///< Implementado en Impl de cpp, donde se incluye UdpSocket con NetPacket
-    mutable std::mutex          udp_rcv_data_mtx_;  ///< Mutex para cola de datos de sockets
-    std::condition_variable     udp_rcv_data_cv_;   ///< Condition variable para cola de datos de sockets
-    const std::size_t           MAX_QUEUE_ELEMENTS_ = 100;    ///< Número máximo de elementos en la cola
-
-// Hilos de trabajo
-    std::vector<std::thread>    threads_;           ///< Hilos procesando operaciones asíncronas.
-    std::size_t                 num_threads_;      ///< Numero máximo de hilos gestionando operaciones asíncronas.
+    /* std::queue<NetPacket>    udp_rcv_data_; */           // en PIMPL
+    mutable std::mutex          udp_rcv_data_mtx_;          ///< Mutex para cola de datos de sockets
+    std::condition_variable     dispatcher_cv_;             ///< Condition variable para cola de datos de sockets
+    const std::size_t           MAX_QUEUE_ELEMENTS_ = 100;  ///< Número máximo de elementos en la cola
+    std::thread                 dispatcher_thread_;         ///< Hilo consumidor de paquetes de red
 
 };

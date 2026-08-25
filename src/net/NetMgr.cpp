@@ -36,6 +36,7 @@
     NetMgr::NetMgr(std::size_t const& thread_count) :
         pimpl_(std::make_unique<Impl>()),
         initialized_(false),
+        running_(false),
         io_running_(false),
         sockets_running_(false),
         num_threads_(thread_count == 0 ? 1 : thread_count)
@@ -51,10 +52,13 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool NetMgr::init(void* config) {
+        // Si ya está inicializado no hacer nada
+        if (initialized_)
+            return true;
+
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
-        // No hago else para que no se queje si vuelve de OFFLINE->ONLINE
 
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {
@@ -85,12 +89,19 @@
                 asio::post(getAsioStrand(sock), [sock]{ 
                     sock->start(); 
                 });
-            
         }
 
+        // Activar running para los hilos
+        running_ = true;
+
+        // Hilo consumidor de paquetes online (si net activo)
+        SYS_INFO("NetMgr","Starting dispatcher thread...");
+        dispatcher_thread_ = std::thread(&NetMgr::t_dispatcher, this);
+
         SYS_INFO("NetMgr","Sockets running");
-        sockets_running_ = true;
-        initialized_ = true;
+        sockets_running_    = true;
+        running_            = true;            // Para hilo consumidor
+        initialized_        = true;
         return true;
     }
 
@@ -147,7 +158,21 @@
     }
 
     bool NetMgr::start() {
-        return init();
+
+        // Iniciar (de nuevo si aplica) los sockets
+        {
+            // Proteger acceso a vector de sockets
+            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
+
+            // Iniciar sockets
+            for (auto& sock : pimpl_->udp_sockets_)
+                asio::post(getAsioStrand(sock), [sock]{ 
+                    sock->start(); 
+                });
+        }
+
+        sockets_running_    = true;
+        return true;
     }
 
     void NetMgr::stop() {
@@ -169,13 +194,16 @@
         }
 
         sockets_running_ = false;
-        udp_rcv_data_cv_.notify_all();   // desbloquea getNextPacket()
+        dispatcher_cv_.notify_all();   // desbloquea getNextPacket()
         SYS_INFO("NetMgr","All sockets stopped");
     }
 
-    void NetMgr::close() {
+    bool NetMgr::close() {
         // Parar los sockets
         stop();
+
+        // Parar flag para hilos
+        running_ = false;
 
         // Soltar el work_guard para que io_context pueda drenar y terminar.
         pimpl_->work_guard_.reset();
@@ -186,6 +214,16 @@
             if (t.joinable()) t.join(); // Esperar a los hilos de io_context
         io_running_ = false;
         threads_.clear();
+    
+        // Cerrar hilos pendientes de aplicación
+        dispatcher_cv_.notify_all();
+        if (dispatcher_thread_.joinable()) {
+            SYS_INFO("AppController","Waiting for consumer thread...");
+            dispatcher_thread_.join();
+        }
+
+        initialized_ = false;
+        return true;
     }
 
     bool NetMgr::isRunning() const {
@@ -234,19 +272,19 @@
         std::shared_ptr<UdpSocket> socket = std::make_shared<UdpSocket>(name, &pimpl_->io_context_);
 
         // [INYECCIÓN DEL CALLBACK]
-        socket->setCallback_onReceive([this](NetPacket pkt) {
+        socket->setCallback_onReceive([this](NetPacket packet) {
 
             // Proteger la cola de datos del socket
             std::lock_guard<std::mutex> lock(udp_rcv_data_mtx_);
 
             // Agregar dato recibido a la cola general de NetMgr (si cabe)
             if (pimpl_->udp_rcv_data_.size() < MAX_QUEUE_ELEMENTS_)
-                pimpl_->udp_rcv_data_.push_back(std::move(pkt));
+                pimpl_->udp_rcv_data_.push_back(std::move(packet));
             else
-                SYS_WARN("NetMgr", "Central queue full, dropping packet from " + pkt.socket_name + ":" + std::to_string(pkt.port));
+                SYS_WARN("NetMgr", "Central queue full, dropping packet from " + packet.socket_name + ":" + std::to_string(packet.port));
 
             // Notificar 
-            udp_rcv_data_cv_.notify_all();
+            dispatcher_cv_.notify_all();
         });
 
         // Intentar inicializar
@@ -431,112 +469,65 @@
 
     // Recepción ----------------------------------------------------------------------------
 
-    std::vector<char> NetMgr::getNextUdpPacket(std::string* name, unsigned short* port) {
-        std::unique_lock<std::mutex> lock(udp_rcv_data_mtx_);
-        udp_rcv_data_cv_.wait(
-            lock, [this] {
-                return !pimpl_->udp_rcv_data_.empty() || !sockets_running_;
-            }
-        );
-
-        if (pimpl_->udp_rcv_data_.empty())
-            return {};   // red detenida, TWorker debe salir
-
-        NetPacket pkt = std::move(pimpl_->udp_rcv_data_.front());
-        pimpl_->udp_rcv_data_.pop_front();
-
-        // Pasar los datos a los parámetros pasados como referencia por si se necesitan usar
-        if (name) *name = pkt.socket_name;
-        if (port) *port = pkt.port;
-
-        // Devolver los datos
-        return pkt.data_rcv;
-    }
-
-    std::vector<char> NetMgr::getDataFromSocket(std::string const& socketname) {
-        // Puntero al socket objetivo
-        std::shared_ptr<UdpSocket> target;
-
-        if (socketname.empty()) {
-            SYS_WARN("NetMgr","getDataFromSocket: No name provided.");
-            return {};
-        }
-
-        // Si hay un socket con ese nombre, pide los datos
-        {
-            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
-            for (const auto& sock : pimpl_->udp_sockets_)
-                if (sock->name() == socketname) { target = sock; break; }
-        }
-
-        // Llegará aquí si no encuentra socket
-        if (!target) {
-            SYS_WARN("NetMgr","Socket not exists with name " + socketname);
-            return {};
-        }
-
-        // Si no tiene función inyectada es que sus datos se almacenan en su cola interna
-        if (!target->hasCallback_onReceive())
-            return target->getFirstPacket();  // <-- BLOQUEANTE
-
-        // Si tiene función inyectada, los datos estarán el la cola general de NetMgr
-        else {
-            // Buscamos en la cola centralizada usando el nombre (BLOQUEANTE)
-            std::vector<char> data = extract_packet_if([&socketname](const NetPacket& pkt) {
-                return pkt.socket_name == socketname;
-            });
-
-            if (data.empty()) 
-                SYS_WARN("NetMgr", "getDataFromSocket: No packet found for socket " + socketname);
-            
-            return data;
-        }
-
-    }
-
-    std::vector<char> NetMgr::getDataFromSocket(unsigned short local_port) {
-        // Puntero al socket objetivo
-        std::shared_ptr<UdpSocket> target;
-
-        if (local_port == 0) {
-            SYS_WARN("NetMgr","getDataFromSocket: Invalid port:" + std::to_string(local_port));
-            return {};
-        }
-
-        // Si hay un socket con ese puerto, pide los datos
-        {
-            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
-            for (const auto& sock : pimpl_->udp_sockets_)
-                if (sock->port() == local_port) { target = sock; break; }
-        }
-
-        // Llegará aquí si no encuentra socket
-        if (!target) {
-            
-            SYS_WARN("NetMgr","Socket not exists with port " + std::to_string(local_port));
-            return {};
-        }
-
-        // Si no tiene función inyectada es que sus datos se almacenan en su cola interna
-        if(!target->hasCallback_onReceive())
-            return target->getFirstPacket();  // <-- BLOQUEANTE
-
-        // Si tiene función inyectada, los datos estarán el la cola general de NetMgr
-        else {
-            // Buscamos en la cola centralizada usando el puerto (BLOQUEANTE)
-            std::vector<char> data = extract_packet_if([local_port](const NetPacket& pkt) {
-                return pkt.port == local_port;
-            });
-
-            if (data.empty()) 
-                SYS_WARN("NetMgr", "getDataFromPort: No packet found for port " + std::to_string(local_port));
-
-            return data;
-        }
-    }
-
     size_t NetMgr::numUdpRcvElements() {
         return pimpl_->udp_rcv_data_.size();
+    }
+
+
+    // Dispatcher ----------------------------------------------------------------------------
+
+    void NetMgr::t_dispatcher() {
+
+        while (running_) {
+            NetPacket packet;               // Estructura de datos recibidos
+            std::vector<char> data = {};    // Datos recibidos (de la estructura)
+            
+            // Esperar y obtener datos de la cola
+            {
+                // Forzar la espera hasta que sea notificado de un paquete nuevo
+                std::unique_lock<std::mutex> lock(udp_rcv_data_mtx_);
+                dispatcher_cv_.wait(lock, [this] {
+                    return !running_ || !pimpl_->udp_rcv_data_.empty();
+                });
+
+                // Salir si el programa se está cerrando
+                if (!running_) 
+                    break;
+
+                // Obtener los datos de la cola
+                packet = std::move(pimpl_->udp_rcv_data_.front());
+                pimpl_->udp_rcv_data_.pop_front();
+                data = packet.data_rcv;
+            }
+
+            // Si la cola está vacía no hacer nada
+            if (pimpl_->udp_rcv_data_.empty())
+                continue;
+
+            // Mostrar info del paquete recibido
+            data = packet.data_rcv;
+            std::string pktSize = std::to_string(packet.data_rcv.size());
+            SYS_INFO("NetMgr",
+                "UDP Packet from " +  packet.socket_name + ":" + std::to_string(packet.port) +
+                " (size: " + pktSize + ")" 
+            );
+
+            // Salir si el programa se está cerrando (después de getpacket)
+            if (!running_) break;
+
+            // Si no hay datos no hacer nada
+            if (packet.data_rcv.empty()) {
+                SYS_WARN("TWorker","Empty data received");
+                continue;
+            }
+
+            // Procesar el paquete (simulado)
+            SYS_INFO("NetMgr", "Procesando paquete de datos...");
+            SYS_INFO("NetMgr","Size of data " + std::to_string(data.size()));
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+
+        SYS_INFO("NetMgr", "Consumer thread stopped.");
     }
 
 
@@ -552,30 +543,6 @@
         for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
             if (pimpl_->udp_sockets_[i]->name() == name) return i;
         /*else*/ return -1;
-    }
-
-    template <typename Lambda>
-    std::vector<char> NetMgr::extract_packet_if(Lambda pred) {
-        std::unique_lock<std::mutex> lock(udp_rcv_data_mtx_);
-
-        // Esperar hasta tener un paquete válido o hasta que los sockets se paren
-        udp_rcv_data_cv_.wait(lock, [this, &pred] {
-            if (!sockets_running_) return true; 
-            return std::any_of(pimpl_->udp_rcv_data_.begin(), pimpl_->udp_rcv_data_.end(), pred);
-        });
-
-        // Buscar si existe el elemento en la cola
-        auto it = std::find_if(pimpl_->udp_rcv_data_.begin(), pimpl_->udp_rcv_data_.end(), pred);
-        
-        // Si lo encuentra, lo extrae
-        if (it != pimpl_->udp_rcv_data_.end()) {
-            std::vector<char> data = std::move(it->data_rcv);
-            pimpl_->udp_rcv_data_.erase(it);
-            return data;
-        }
-
-        // Si no lo encuentra (porque despertó por detención de red), devuelve vacío
-        return {};
     }
 
 

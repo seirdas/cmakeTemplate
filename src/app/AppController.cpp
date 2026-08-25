@@ -84,7 +84,7 @@ bool AppController::init() {
         cli_->LaunchConsole();
 
     // Info
-    SYS_INFO("AppController","Initializing application...");
+    SYS_INFO("AppController","Initializating application...");
     if (!config)
         SYS_WARN("AppController","Cannot load config. Using default values.");
 
@@ -107,14 +107,7 @@ bool AppController::init() {
     //     tts_->addObserver(gui_.get());
     
 
-    // Activar running para los hilos
-    running_ = true;
 
-    // Hilo consumidor de paquetes online (si net activo)
-    if (net_->isInitialized()) {
-        SYS_INFO("AppController","Starting net consumer thread...");
-        consumer_thread_ = std::thread(&AppController::TWorker, this);
-    }
 
     // Volcar datos que hayan escrito los módulos al config
     SYS_INFO("AppController","Updating json config files...");
@@ -237,13 +230,6 @@ void AppController::close() {
         SYS_INFO("AppController","Closing CycloneDDS manager...");
         cds_->close();
     }
-    
-    // Cerrar hilos pendientes de aplicación
-    online_cv_.notify_all();
-    if (consumer_thread_.joinable()) {
-        SYS_INFO("AppController","Waiting for consumer thread...");
-        consumer_thread_.join();
-    }
 
     SYS_INFO("AppController","AppController closed successfully");
 }
@@ -262,51 +248,6 @@ bool AppController::run() {
 }
 
 
-// Hilos --------------------------------------------------------------------------------
-
-void AppController::TWorker() {
-    std::vector<char> data;
-
-    while (running_) {
-
-        // Forzar la espera hasta que sea notificado de un paquete nuevo
-        std::unique_lock<std::mutex> lock(online_mtx_);
-        online_cv_.wait(lock, [this] {
-            return !running_ || online_mode_;
-        });
-
-        // Salir si el programa se está cerrando
-        if (!running_) break;
-
-        // Libera el lock de aquí en adelante
-        lock.unlock();
-
-        // Pide datos al socket para procesar
-        data = net_->getNextUdpPacket();         // <- BLOQUEANTE
-
-        // Salir si el programa se está cerrando (después de getpacket)
-        if (!running_) break;
-
-        // Si se ha puesto en modo offline, continuar (para bloquear en espera)
-        if (!online_mode_) 
-            continue;
-
-        // Si no hay datos no hacer nada
-        if (data.empty()) {
-            SYS_WARN("TWorker","Empty data received");
-            continue;
-        }
-
-        // Procesar el paquete (simulado)
-        SYS_INFO("TWorker", "Procesando paquete de datos...");
-        SYS_INFO("TWorker","Size of data " + std::to_string(data.size()));
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-
-    SYS_INFO("TWorker", "Consumer thread stopped.");
-}
-
-
 // IAppControl methods ------------------------------------------------------------------
 
     // Aplicación -----------------------------------------------------------------------
@@ -316,25 +257,18 @@ void AppController::TWorker() {
     }
 
     void AppController::setOnlineMode(bool nuevo_online_mode) noexcept { 
-
-        std::unique_lock<std::mutex> lock(online_mtx_);
         
         if(online_mode_==nuevo_online_mode) 
             return;
         
         online_mode_=nuevo_online_mode;
-        lock.unlock();
 
         SYS_INFO("IAppControl", std::string(online_mode_ ? "ONLINE" : "OFFLINE") + " mode set.");
 
-        if(online_mode_) {
+        if(online_mode_)
             net_->start();
-            online_cv_.notify_all();
-        }
-        else {
+        else
             net_->stop();
-            online_cv_.notify_all();
-        }
     };
 
     bool AppController::isOnlineMode() const noexcept {

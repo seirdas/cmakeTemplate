@@ -97,15 +97,6 @@ public:
     bool run();
 
 
-// Hilos --------------------------------------------------------------------------------
-
-    /**
-     * @brief Hilo gestor de paquetes online
-     * @note Solo se ejecuta cuando la aplicación está en online, de lo contrario se queda parado.
-     */
-    void TWorker();
-
-
 // IAppControl methods ------------------------------------------------------------------
 
     // Aplicación -----------------------------------------------------------------------
@@ -229,10 +220,5 @@ private:
             net = cli = gui = snd = tmx = sym = vip = com = dds = cds = val;
         }
     } enable_flags_;                            ///< Bits de activación de módulos (Bitfield)
-
-// Gestión de hilos
-    std::thread             consumer_thread_;   ///< Hilo consumidor de paquetes de red
-    std::mutex              online_mtx_;        ///< Mutex para dejar en espera al hilo
-    std::condition_variable online_cv_;         ///< Reacciona al cambio de estado para el hilo consumidor
 
 };
