@@ -105,15 +105,14 @@ bool AppController::init() {
     // Vincular módulos a través de patrón observador a GUI ( #TODO )
     // if (gui_->isInitialized() && tts_->isInitialized())
     //     tts_->addObserver(gui_.get());
-    
-
 
 
     // Volcar datos que hayan escrito los módulos al config
     SYS_INFO("AppController","Updating json config files...");
     jsonMgr.update();
 
-
+    
+    // Informar y salir
     SYS_INFO("AppController","App initialized");
     return true;
 }

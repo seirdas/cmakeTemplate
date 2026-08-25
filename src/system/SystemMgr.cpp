@@ -84,10 +84,8 @@ void SystemMgr::info(std::string const& module, std::string const& msg) {
     if (is_cli_active_)
         std::cerr << "\r\033[2K";
 
-    // Escribir el mensaje
-    std::cerr << prefix 
-              << std::left << std::setw(split_width_) << module_brackets 
-              << msg << std::endl;
+    // Escribir el mensaje en consola (si aplica)
+    std::cerr << ss.str() << std::endl;
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)
@@ -113,9 +111,7 @@ void SystemMgr::warning(std::string const& module, std::string const& msg) {
         std::cerr << "\r\033[2K";
 
     // Escribir el mensaje
-    std::cerr << ANSI_YELLOW << prefix 
-              << std::left << std::setw(split_width_) << module_brackets 
-              << msg << ANSI_RESET << std::endl;
+    std::cerr << ANSI_YELLOW << ss.str() << ANSI_RESET << std::endl;
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)
@@ -140,9 +136,7 @@ void SystemMgr::error(std::string const& module, std::string const& msg) {
         std::cerr << "\r\033[2K";
 
     // Escribir el mensaje
-    std::cerr << ANSI_RED << prefix 
-              << std::left << std::setw(split_width_) << module_brackets 
-              << msg << ANSI_RESET << std::endl;
+    std::cerr << ANSI_RED << ss.str() << ANSI_RESET << std::endl;
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)
@@ -173,9 +167,7 @@ void SystemMgr::solved(std::string const& module, std::string const& msg) {
         std::cerr << "\r\033[2K";
 
     // Escribir el mensaje
-    std::cerr << ANSI_GREEN << prefix 
-              << std::left << std::setw(split_width_) << module_brackets 
-              << msg << ANSI_RESET << std::endl;
+    std::cout << ANSI_GREEN << ss.str() << ANSI_RESET << std::endl;
 
     // Poner otra vez el prefijo de comandos
     if (is_cli_active_)

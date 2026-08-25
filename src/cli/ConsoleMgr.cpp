@@ -250,54 +250,66 @@ bool ConsoleMgr::LaunchConsole(bool force) {
         return true;
     tried_to_launch_console_ = true;
 
-    SYS_INFO("AppController","Trying to launch console...");
+    SYS_INFO("ConsoleMgr","Trying to launch console...");
 
     #ifdef _WIN32
 
         // Comprobar si ya hay una terminal
         if (GetConsoleWindow() != NULL) {
-            SYS_INFO("AppController","Console already opened.");
+            SYS_INFO("ConsoleMgr","Console already opened");
             return false;
         }
 
         // Abrir terminal en Windows
-        if (AllocConsole()) {
-            FILE* dummy = nullptr;
-            freopen_s(&dummy, "CONOUT$", "w", stdout);
-            freopen_s(&dummy, "CONIN$", "r", stdin);
-            freopen_s(&dummy, "CONOUT$", "w", stderr);
-            
-            // Desincronizar C y C++ stream buffers e inicializar estados
-            std::ios::sync_with_stdio();
-            std::cin.clear();
-            std::cout.clear();
-
-            // Opcional: Activar procesamiento de colores ANSI en la consola de Windows 10/11
-            HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (hOut != INVALID_HANDLE_VALUE) {
-                DWORD dwMode = 0;
-                if (GetConsoleMode(hOut, &dwMode)) {
-                    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-                }
-            }
-            
-            std::cout << std::endl;
-            SYS_INFO("AppController", "Console allocated successfully");
-            return true;
+        if (!AllocConsole()) {
+            SYS_WARN("ConsoleMgr","Failed to alloc console");
+            return false;
         }
 
-        return false;
+        // Probar escritura
+        FILE* dummy = nullptr;
+        freopen_s(&dummy, "CONOUT$", "w", stdout);
+        freopen_s(&dummy, "CONIN$", "r", stdin);
+        freopen_s(&dummy, "CONOUT$", "w", stderr);
+        
+        // Forzar la reasignación de los búferes de std::cout, std::cerr y std::cin (bugfix para release)
+        static std::ofstream outConsole("CONOUT$");
+        static std::ofstream errConsole("CONOUT$");
+        static std::ifstream inConsole("CONIN$");
+
+        std::cout.rdbuf(outConsole.rdbuf());
+        std::cerr.rdbuf(errConsole.rdbuf());
+        std::cin.rdbuf(inConsole.rdbuf());
+        
+        // Desincronizar C y C++ stream buffers e inicializar estados
+        std::ios::sync_with_stdio();
+        std::cin.clear();
+        std::cout.clear();
+        std::cerr.clear();
+
+        // Opcional: Activar procesamiento de colores ANSI en la consola de Windows 10/11
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut != INVALID_HANDLE_VALUE) {
+            DWORD dwMode = 0;
+            if (GetConsoleMode(hOut, &dwMode)) {
+                SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            }
+        }
+        
+        std::cout << std::endl;
+        SYS_INFO("ConsoleMgr", "Console allocated successfully");
+        return true;
 
     #else
         /* (WIP) */
 
         // Si la aplicación no tiene una TTY estándar asignada (lanzada por GUI/Doble clic)
         if (isatty(STDIN_FILENO)) {
-            SYS_INFO("AppController","Console already opened.");
+            SYS_INFO("ConsoleMgr","Console already opened.");
             return false;
         }
 
-        SYS_INFO("AppController", "No TTY detected. Launching external terminal window...");
+        SYS_INFO("ConsoleMgr", "No TTY detected. Launching external terminal window...");
 
         // Lanzar terminal ejecutando binario dentro de ella
         std::string cmd = 
@@ -312,11 +324,11 @@ bool ConsoleMgr::LaunchConsole(bool force) {
         if (ret == 0) {
             // Al lanzar una instancia vinculada en la nueva ventana,
             // cerramos el proceso padre actual "ciego" que no tenía TTY.
-            SYS_INFO("AppController", "Delegated execution to new terminal window. Exiting background process.");
+            SYS_INFO("ConsoleMgr", "Delegated execution to new terminal window. Exiting background process.");
             std::exit(0); 
         }
 
-        SYS_ERROR("AppController", "Failed to launch external terminal.");
+        SYS_ERROR("ConsoleMgr", "Failed to launch external terminal.");
         return false;
 
     #endif
@@ -369,15 +381,16 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
 
         { "help", [this](std::vector<std::string> const&) {
             print("Available commands:\n"
-                  "  help                   - Show this help message\n"
-                  "  status                 - Show app general status\n"
-                  "  {clear|cls}            - Clear the terminal screen\n"
-                  "  {sounds|snd} [args]    - Execute sound-related commands\n"
-                  "  {symetrix|sym} [args]  - Execute symetrix-related commands\n"
-                  "  {totalmix|tmx} [args]  - Execute totalmix-related commands\n"
-                  "  {network|net} [args]   - Execute network-related commands (add, devices, remove)\n"
-                  "  online {on|off|toggle} - Switch online/offline mode (see 'status' to check it)\n"
-                  "  exit                   - Exit the application\n"
+                  "  help, h                -- Show this help message\n"
+                  "  status                 -- Show app general status\n"
+                  "  version                -- Show app version\n"
+                  "  clear, cls             -- Clear the terminal screen\n"
+                  "  sounds, snd <args>     -- Execute sound-related commands\n"
+                  "  symetrix, sym <args>   -- Execute symetrix-related commands\n"
+                  "  totalmix, tmx <args>   -- Execute totalmix-related commands\n"
+                  "  network, net <args>    -- Execute network-related commands (add, devices, remove)\n"
+                  "  online <args>          -- Switch online/offline mode\n"
+                  "  exit                   -- Exit the application\n"
                   "\n"
                   "Use '[command] help' for more information about a command"
             );
@@ -390,6 +403,15 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
             }
             // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)
             print("\033[2J\033[H");
+        }},
+
+        { "version", [this](std::vector<std::string> const& tokens) {
+            if (tokens.size() == 2 && tokens[1] == "help") {
+                print("Clears the terminal screen\n");
+                return;
+            }
+            // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)
+            print(AppName_ + " version: " + ctrl_->getVersion());
         }},
 
         { "status", [this](std::vector<std::string> const& tokens) {
@@ -443,7 +465,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
         }},
 
         { "exit", [this](std::vector<std::string> const&) {
-            SYS_INFO("AppController", "Exiting application...");
+            SYS_INFO("ConsoleMgr", "Exiting application...");
             running_ = false;
         }},
 
