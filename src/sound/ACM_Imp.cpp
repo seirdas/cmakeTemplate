@@ -68,8 +68,8 @@
             
 
             /* Valor RMS (0-100)*/
-            double sampleVal = 0.0f;
-            double sum = 0.0f;
+            double sampleVal = 0;
+            double sum = 0;
             for (unsigned int i = 0; i < targetSize; ++i) {
                 sampleVal = static_cast<double>(self->captureBuffer_[i]);
                 sum += sampleVal * sampleVal;

@@ -188,52 +188,16 @@ void AppController::close() {
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
 
-    /* Cerrar módulos (opcional, recomendado) */
-    
-    if (cli_->isInitialized()) {
-        SYS_INFO("AppController","Closing GUI subsystem...");
-        gui_->close();
-    }
-
-    if (gui_->isInitialized()) {
-        SYS_INFO("AppController","Closing GUI subsystem...");
-        gui_->close();
-    }
-
-    if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
-        SYS_INFO("AppController","Closing Network subsystem...");
-        net_->close();
-    }
-
-    if (snd_->isInitialized()) {
-        SYS_INFO("AppController","Closing Sound subsystem...");
-        snd_->close();
-    }
-    
-    if (tmx_->isInitialized()) {
-        SYS_INFO("AppController","Closing Totalmix subsystem...");
-        tmx_->close();
-    }
-
-    if (sym_->isInitialized()) {
-        SYS_INFO("AppController","Closing Symetrix manager...");
-        sym_->close();
-    }
-
-    if (com_->isInitialized()) {
-        SYS_INFO("AppController","Closing Comms logic module...");
-        com_->close();
-    }
-
-    if (dds_->isInitialized()) {
-        SYS_INFO("AppController","Closing FastDDS manager...");
-        dds_->close();
-    }
-
-    if (cds_->isInitialized()) {
-        SYS_INFO("AppController","Closing CycloneDDS manager...");
-        cds_->close();
-    }
+    // Cerrar módulos (opcional, recomendado)
+    close_module(cli_, "CLI");
+    close_module(gui_, "GUI");
+    close_module(net_, "Network");
+    close_module(snd_, "Sound");
+    close_module(tmx_, "TotalMix");
+    close_module(sym_, "Symetrix");
+    close_module(com_, "Comms");
+    close_module(dds_, "FastDDS");
+    close_module(cds_, "CycloneDDS");
 
     SYS_INFO("AppController","AppController closed successfully");
 }
@@ -262,13 +226,15 @@ bool AppController::run() {
 
     void AppController::setOnlineMode(bool nuevo_online_mode) noexcept { 
         
+        // Comprobar si el modo ha cambiado
         if(online_mode_==nuevo_online_mode) 
             return;
         
+        // Establecer modo
         online_mode_=nuevo_online_mode;
-
         SYS_INFO("IAppControl", std::string(online_mode_ ? "ONLINE" : "OFFLINE") + " mode set.");
 
+        // Activar/desactivar la red
         if(online_mode_)
             net_->start();
         else
@@ -301,23 +267,31 @@ bool AppController::run() {
 
 // Módulos ------------------------------------------------------------------------------
 
-    template <typename T>
-    void AppController::init_module(T& module, std::string const& name, bool enabled) {
-        
-        // Comprobar si el módulo está activado
-        if (!enabled) {
-            SYS_INFO("AppController", name + " subsystem disabled");
-            return;
-        }
-
-        // Obtener la intancia de json y la configuación del módulo
-        JsonMgr& jsonMgr = JsonMgr::instance();
-        json* config_node = jsonMgr.getSubNode(config_filename_, name);
-
-        // Inicializar con su configuración
-        SYS_INFO("AppController", name + " loading...");
-        if (module->init(config_node))      // CUIDADO: aqui supone que todos los módulos tienen init(config)
-            SYS_INFO("AppController", name + " OK");
-        else
-            SYS_WARN("AppController", name + " FAIL");
+template <typename T>
+void AppController::init_module(T& module, std::string const& name, bool enabled) {
+    
+    // Comprobar si el módulo está activado
+    if (!enabled) {
+        SYS_INFO("AppController", name + " subsystem disabled");
+        return;
     }
+
+    // Obtener la intancia de json y la configuación del módulo
+    JsonMgr& jsonMgr = JsonMgr::instance();
+    json* config_node = jsonMgr.getSubNode(config_filename_, name);
+
+    // Inicializar con su configuración
+    SYS_INFO("AppController", name + " loading...");
+    if (module->init(config_node))      // CUIDADO: aqui supone que todos los módulos tienen init(config)
+        SYS_INFO("AppController", name + " OK");
+    else
+        SYS_WARN("AppController", name + " FAIL");
+}
+
+template <typename T>
+void AppController::close_module(T& module, std::string const& name) {
+    if (module->isInitialized()) {
+        SYS_INFO("AppController","Closing " + name + " subsystem...");
+        module->close();
+    }
+}

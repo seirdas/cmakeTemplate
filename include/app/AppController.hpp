@@ -172,6 +172,17 @@ private:
     void init_module(T& module, std::string const& name, bool enabled);
 
 
+    /**
+     * @brief Cierra un módulo
+     * @tparam T Tipo del puntero inteligente o gestor del módulo (ej. std::unique_ptr<NetMgr>).
+     * @param module Referencia al puntero del módulo que se desea inicializar.
+     * @param name Nombre identificativo del módulo (utilizado para los logs).
+     */
+    template <typename T>
+    void close_module(T& module, std::string const& name);
+
+
+
 /************ Variables ********************************************************/
 
 // Datos de aplicación

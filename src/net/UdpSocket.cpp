@@ -44,11 +44,12 @@
     // General ------------------------------------------------------------------------------
 
     UdpSocket::UdpSocket(std::string const& name, void* io) :
+        pimpl_(std::make_unique<Impl>(io)),
+        initialized_(false), 
+        running_    (false),
         name_(name), 
         rcv_packet_size_(0),
         has_rcv_packet_(false),
-        initialized_(false), 
-        running_    (false),
         ignore_dupe_(true)
     {
         if(!io)

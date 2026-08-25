@@ -42,7 +42,7 @@ public:
      * @brief Constructor de TTSCore. Recibe el número de hilos a usar para la generación de audios.
      * @param num_threads_ Número de hilos a usar para la generación de audios.
      */
-    TTSCore(int const& thread_count = std::thread::hardware_concurrency());
+    TTSCore(unsigned int const& thread_count = std::thread::hardware_concurrency());
 
     /**
      * @brief Destructor de TTSCore.

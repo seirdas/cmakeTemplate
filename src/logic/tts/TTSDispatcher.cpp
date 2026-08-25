@@ -3,6 +3,7 @@
 #include "system/SystemMgr.hpp"
 #include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommMgr
 
+#include <thread>
 
 
 // Implementación de puente para clase administrada (iComm)

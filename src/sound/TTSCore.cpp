@@ -22,7 +22,7 @@
 
     // General ------------------------------------------------------------------------------
 
-    TTSCore::TTSCore(int const& thread_count) :
+    TTSCore::TTSCore(unsigned int const& thread_count) :
         initialized_(false),
         running_(false),
         active_tasks_(0),

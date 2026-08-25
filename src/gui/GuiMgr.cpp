@@ -142,7 +142,13 @@
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
 		// Creación de ventana
-		window_ = glfwCreateWindow((int)windowSizeX_, (int)windowSizeY_, AppName_.c_str(), NULL, NULL);
+		window_ = glfwCreateWindow(
+			static_cast<int>(windowSizeX_), 
+			static_cast<int>(windowSizeY_), 
+			AppName_.c_str(), 
+			NULL, 
+			NULL
+		);
 		if(!window_) {
 			glfwTerminate();
 			SYS_ERROR("GuiMgr","glfwCreateWindow error.");
@@ -1028,14 +1034,14 @@
 			SYS_WARN("GuiMgr","Font size bigger than max allowed.");
 			return;
 		}
-		if (new_size < (int)MIN_FONT_SIZE_) {
+		if (new_size < static_cast<int>(MIN_FONT_SIZE_)) {
 			SYS_WARN("GuiMgr","Font size smaller than min allowed.");
 			return;
 		}
 
 		// Guardar factor de escala relativo al tamaño anterior
 		float prev = style_->FontSizeBase;
-		float next = (float)new_size;
+		float next = static_cast<float>(new_size);
 		float scale = (prev > 0.0f) ? (next / prev) : 1.0f;
 
 		// Aplicar nuevo tamaño de fuente
