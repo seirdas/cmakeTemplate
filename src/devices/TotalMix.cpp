@@ -143,7 +143,8 @@ void TotalMix::loadConfig(void* config) {
             SYS_WARN("Totalmix","Only values from 0 to 100");
             return false;
         }
-        SYS_INFO("Totalmix","Sending output volume: OUT" + std::to_string(out) + " = " + std::to_string((short)value));
+        SYS_INFO("Totalmix","Sending output volume: OUT" 
+            + std::to_string(out) + " = " + std::to_string(static_cast<short>(value)));
         return SendVolume(Bus::Output, 0, out,  (in_dB_units) ? (value) : PctTodB(value));
     }
 
@@ -157,7 +158,9 @@ void TotalMix::loadConfig(void* config) {
             + std::to_string(in) + " -> OUT"
             + std::to_string(out) + "=" + std::to_string(value)
         );
-        return SendVolume(Bus::Input, in, out, (in_dB_units) ? (value) : PctTodB((short)value));
+        return SendVolume(Bus::Input, in, out, (in_dB_units) 
+            ? (value) 
+            : PctTodB(static_cast<short>(value)));
     }
 
     bool TotalMix::SetRoutePlaybackVolume(int out, int pb, float value, bool in_dB_units) {
@@ -170,7 +173,9 @@ void TotalMix::loadConfig(void* config) {
             + std::to_string(pb) + " -> OUT"
             + std::to_string(out) + "=" + std::to_string(value)
         );
-        return SendVolume(Bus::Playback, pb, out, (in_dB_units) ? (value) : PctTodB((short)value));
+        return SendVolume(Bus::Playback, pb, out, (in_dB_units) 
+            ? (value) 
+            : PctTodB(static_cast<short>(value)));
     }
 
 
@@ -243,7 +248,7 @@ void TotalMix::loadConfig(void* config) {
             return false;
         }
 
-        SYS_INFO("Totalmix","Sending threshold '" + std::to_string((short)threshold) + "' to input '" + std::to_string(in) + "'");
+        SYS_INFO("Totalmix","Sending threshold '" + std::to_string(static_cast<short>(threshold)) + "' to input '" + std::to_string(in) + "'");
         return SendPacket();
     }
 

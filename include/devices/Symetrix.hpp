@@ -414,8 +414,6 @@ private:
 
 // Conexión de socket
     bool                connected_;                     ///< Estado actual de la comunicación (true = conectado y respondiendo pings).
-    TimePoint           m_lastPingTime_;                ///< Registro temporal del último comando de control o ping enviado al hardware.
-    bool                m_waitingPingResponse_;         ///< Bandera que indica si estamos esperando que el socket reciba el ACK del ping pendiente.
     unsigned long       connection_ping_timeout_ms_;    ///< Tiempo de espera para recibir el ping de conexión con Symetrix
     unsigned short      ComposerPort_;                  ///< Puerto de conexión para el socket UDP
     std::string         SymetrixIP_;                    ///< IP de Symetrix

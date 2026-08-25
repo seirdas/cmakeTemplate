@@ -62,9 +62,6 @@ JsonMgr& JsonMgr::instance() {
 
     bool JsonMgr::update() {
 
-        // Marca si todos los json se han volcado correctamente
-        bool allSuccess = true;
-
         std::unique_lock<std::mutex> lock(mtx_);
         for (auto const& [filename, cacheContent] : cache_) {
 
@@ -81,7 +78,6 @@ JsonMgr& JsonMgr::instance() {
             std::ofstream file(filename, std::ios::out);
             if (!file.is_open()) {
                 SYS_WARN("JsonMgr", "Failed to save configuration to " + filename);
-                allSuccess = false;
                 return false;
             }
 
