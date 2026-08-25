@@ -565,7 +565,28 @@ void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
     SoundMgr* snd = ctrl_->getSoundsModule();
 
     if (action.empty() || action == "help" || action == "h") {
-        print("Usage: sounds players morse {add|remove|use} <name> [args]");
+        print("Available 'sounds players morse' commands:\n\n"
+              "  {add|a} <name>\n"
+              "      - Add a new morse player\n\n"
+              "  {remove|delete|r|d} <name>\n"
+              "      - Remove the specified morse player\n\n"
+              "  {use|u} <name> play <text>\n"
+              "      - Play morse code using the specified player (audioName == text)\n\n"
+              "  {use|u} <name> stop <text> [force] [fadeOutMs] [pitchOutMs]\n"
+              "      - Stop the given morse sound. Soft by default: if it's not looping\n"
+              "        and 'force' isn't set, it just lets it finish naturally.\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "  {use|u} <name> volume <text> <0-100>\n"
+              "      - Set the volume of that specific playing sound\n\n"
+              "  {use|u} <name> modulevolume <0-100>\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "  {use|u} <name> pitch <text> <value>\n"
+              "      - Set the pitch of that specific playing sound\n\n"
+              "  {use|u} <name> channel <0|1|2>\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "  {use|u} <name> isplaying [text]\n"
+              "      - Check if a specific sound (or anything) is playing on this player"
+        );
         return;
     }
 
@@ -606,7 +627,30 @@ void ConsoleMgr::execute_cmd_snd_morse(std::vector<std::string> const& tokens) {
 void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
     const std::string action = get_token(tokens, 3);
     if (action.empty() || action == "help" || action == "h") {
-        print("Usage: sounds players audio {add|remove|use} <name> [args]");
+        print("Available 'sounds players audio' commands:\n\n"
+              "  {add|a} <name> [device]\n"
+              "      - Add a new audio player, optionally bound to a playback device\n\n"
+              "  {remove|delete|r|d} <name>\n"
+              "      - Remove the specified audio player\n\n"
+              "  {use|u} <name> play <filepath> [volume]\n"
+              "      - Play an audio file (audioName == filepath)\n\n"
+              "  {use|u} <name> stop <filepath> [force] [fadeOutMs] [pitchOutMs]\n"
+              "      - Stop the given sound. Soft by default: if it's not looping\n"
+              "        and 'force' isn't set, it just lets it finish naturally.\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "  {use|u} <name> volume <filepath> <0-100>\n"
+              "      - Set the volume of that specific playing sound\n\n"
+              "  {use|u} <name> modulevolume <0-100>\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "  {use|u} <name> pitch <filepath> <value>\n"
+              "      - Set the pitch of that specific playing sound\n\n"
+              "  {use|u} <name> channel <0|1|2>\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "  {use|u} <name> isplaying [filepath]\n"
+              "      - Check if a specific sound (or anything) is playing on this player\n\n"
+              "Note: a player can have several sounds playing at once (it's a mixer),\n"
+              "  so stop/volume/pitch/isplaying need the exact filepath used in 'play'."
+        );
         return;
     }
 
@@ -648,7 +692,29 @@ void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
 void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
     const std::string action = get_token(tokens, 3);
     if (action.empty() || action == "help" || action == "h") {
-        print("Usage: sounds players tts {add|remove|use} <name> [args]");
+        print("Available 'sounds players tts' commands:\n\n"
+              "  {add|a} <name> [device]\n"
+              "      - Add a new tts player, optionally bound to a playback device\n\n"
+              "  {remove|delete|r|d} <name>\n"
+              "      - Remove the specified tts player\n\n"
+              "  {use|u} <name> play <model> <audioName> <text>\n"
+              "      - Play a text-to-speech phrase (audioName is a name YOU choose,\n"
+              "        used afterwards with stop/volume/isplaying)\n\n"
+              "  {use|u} <name> stop <audioName> [force] [fadeOutMs] [pitchOutMs]\n"
+              "      - Stop the given phrase. Soft by default: if 'force' isn't set,\n"
+              "        it just lets it finish naturally.\n"
+              "        force=true/1 cuts it immediately; fadeOutMs/pitchOutMs fade it out\n\n"
+              "  {use|u} <name> volume <audioName> <0-100>\n"
+              "      - Set the volume of that specific playing phrase\n\n"
+              "  {use|u} <name> modulevolume <0-100>\n"
+              "      - Set the player's global volume (affects all sounds playing on it)\n\n"
+              "  {use|u} <name> pitch <audioName> <value>\n"
+              "      - Set the pitch of that specific playing phrase\n\n"
+              "  {use|u} <name> channel <0|1|2>\n"
+              "      - Select output channel: 0 = both, 1 = left, 2 = right\n\n"
+              "  {use|u} <name> isplaying [audioName]\n"
+              "      - Check if a specific phrase (or anything) is playing on this player"
+        );
         return;
     }
 
