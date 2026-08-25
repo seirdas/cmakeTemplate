@@ -526,12 +526,15 @@ void ConsoleMgr::execute_cmd_snd(std::vector<std::string> const& tokens) {
 
     if (subCmd.empty() || subCmd == "help" || subCmd == "h") {
         print("Available 'sounds' commands:\n"
-              "  help                           - Show this help message\n"
-              "  {devices|device|dev|d} [type]  - List available devices (type: pb|cap)\n"
-              "  {players|player|p} [args]      - Execute commands to player modules\n"
-              "      -> then {audio|a} / {morse|m} / {tts|t} to manage each player type\n"
-              "      -> e.g. 'sounds players morse help' for morse-specific commands\n\n"
-              "Aliases: sound, sounds, snd");
+            "  help                               - Show this help message\n"
+            "  devices, device, dev, d [type]     - List available devices (type: pb|cap)\n"
+            "  {players|player|p} [args]          - Execute commands to player modules\n"
+            "      -> then {audio|a} / {morse|m} / {tts|t} to manage each player type\n"
+            "      -> e.g. 'sounds players morse help' for morse-specific commands\n\n"
+            "Aliases: sound, sounds, snd"
+            "\n"
+            "Use 'sounds [command] help' for more information about a command"
+        );
         return;
     }
 
@@ -1197,11 +1200,13 @@ void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens
 
     if (tokens.size() <= 1 || tokens[1] == "help") {
         print("Available 'totalmix' commands:\n"
-              "  totalmix status                 - Show module status\n"
-              "  totalmix volume <out> <value>   - Set output volume (0-100)\n"
-              "  totalmix threshold <in> <value> - Set threshold value (0-100)\n"
-              "  totalmix mute <out>             - Mute an output\n"
-              "  totalmix unmute <out>           - Unmute an output");
+              "  help                   - Show this help message\n"
+              "  status                 - Show module status\n"
+              "  volume <out> <value>   - Set output volume (0-100)\n"
+              "  threshold <in> <value> - Set threshold value (0-100)\n"
+              "  mute <out>             - Mute an output\n"
+              "  unmute <out>           - Unmute an output\n\n"
+              "Aliases: totalmix, tmx");
         return;
     }
 
@@ -1283,12 +1288,12 @@ void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens
 
     if (action.empty() || action == "help") {
         print("Available 'symetrix' commands:\n"
-              "  status                                - Show connection status\n"
+              "  status                                 - Show connection status\n"
               "  preset <1-1000>                        - Load a Composer preset\n"
               "  set <id> <value> <min> <max> [db]      - Set a component value (curve, or [db] for direct dB)\n"
               "  button <id> <on|off>                   - Set a binary component (button/mute)\n"
-              "  supermatrix <in> <out> <volume> [db]    - Set a supermatrix crosspoint volume\n"
-              "  tolerance <pct> [id]                    - Update send tolerance (global, or per id)");
+              "  supermatrix <in> <out> <volume> [db]   - Set a supermatrix crosspoint volume\n"
+              "  tolerance <pct> [id]                   - Update send tolerance (global, or per id)");
         return;
     }
 
