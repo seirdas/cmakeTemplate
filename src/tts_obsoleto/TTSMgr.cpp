@@ -2,7 +2,6 @@
 
 
 
-
 /* !!!!!!!!!!! ATENCION !!!!!!!!!!!!
 * ESTOY SUSTITUYENDO ESTA CLASE POR TTSDISPATCHER
 * NO TENER EN CUENTA NADA DE LO QUE HAY AQUÍ 
@@ -10,15 +9,9 @@
 
 
 
-
-
-
-
-#include "tts/TTSMgr.hpp"
-#include "sound/PlayerTTS.hpp"
+#include "tts_obsoleto/TTSMgr.hpp"
 #include "files/JsonMgr.hpp"
 #include "sound/SoundMgr.hpp"
-#include "CLI.NET/iCommBridge.hpp"  // Puente a clase administrada (CLI.NET) iCommMgr
 #include "system/SystemMgr.hpp"
 
 #include <mutex>
@@ -123,19 +116,6 @@ void TTSMgr::close() {
     }
 
     SYS_INFO("TTSMgr","TTSMgr closed successfully");
-}
-
-void TTSMgr::Ejecutar(const TTSPacket& packet) {
-
-    // Añadir paquete a la queue
-    /* TBD */
-
-    {
-        std::lock_guard<std::mutex> lock(queue_mtx_);
-        queue_.push(packet);
-    }
-    // Avisar al worker de que hay paquete
-    queue_cv_.notify_one();
 }
 
 

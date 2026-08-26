@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 // Interfaces de observador
-#include "tts/ITTSObserver.hpp"
+#include "tts_obsoleto/ITTSObserver.hpp"
 
 
 // Forward declaration
