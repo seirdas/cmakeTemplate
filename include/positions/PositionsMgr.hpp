@@ -1,0 +1,89 @@
+#pragma once
+
+#include <memory>
+#include <unordered_map>
+#include <vector>
+#include <string>
+
+
+// Forward declaration
+class Position;         ///< Declaración implícita
+
+
+/** 
+ * @class PositionsMgr
+ * @brief Clase de gestión de datos recibidos 
+ *  externamente de comunicaciones
+ */
+class PositionsMgr {
+
+public:
+
+// General ------------------------------------------------------------------------------
+
+    /**
+     * @brief Constructor estándar
+     */
+    PositionsMgr();
+
+    /**
+     * @brief Destructor estándar
+     */
+    ~PositionsMgr();
+
+
+// Inicialización -----------------------------------------------------------------------
+
+    /**
+     * @brief Inicializa a las personas
+     * @param config Datos de configuración (diseñado para recibir un puntero a json)
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
+     */
+    bool init(void* config);
+
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa
+     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     */
+    bool isInitialized() const;
+
+    /**
+    * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
+    * Esta función verifica la existencia y el tipo de los campos requeridos en el JSON.
+    * Si un campo no existe o es inválido, la función escribe el valor actual por defecto
+    * del código en el objeto JSON, asegurando que el archivo de configuración siempre 
+    * esté completo y sincronizado.
+    * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
+    */
+    void loadConfig(void* config);
+
+    /**
+     * @brief Cierra la lógica de comunicaciones
+     * @return @c true Si se cierra correctamente, @c false en caso contrario
+     */
+    bool close();
+
+
+// Ejecución ----------------------------------------------------------------------------
+
+    bool addPosition();
+
+    bool removePosition();
+
+    std::vector<std::string> getPositions();
+
+
+private:
+
+/************ Variables ********************************************************/
+
+// Aliases
+    using PositionList = std::unordered_map<std::string, std::unique_ptr<Position>>;
+
+    // Inicialización y ejecución
+    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
+
+// Gestión de personas
+    PositionList    positions_;          ///< Lista de personas gestionadas
+
+};

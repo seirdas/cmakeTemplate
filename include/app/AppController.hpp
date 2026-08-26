@@ -1,25 +1,21 @@
 #pragma once
 
-#include <thread>               // Hilos
-#include <memory>               // unique_ptr
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
-
 #include "IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
+#include <memory>               // unique_ptr
+#include <atomic>
 
 // Declaración implícita
 class NetMgr;
 class GuiMgr;
 class ConsoleMgr;
 class SoundMgr;
-class TTSMgr;
 class TotalMix;
 class Symetrix;
 class VoIPMgr;
-class CommsCore;
 class FastDDS;
 class CycloneDDS;
+class iCommBridge;
+
 
 /**
   *  @class AppController
@@ -94,7 +90,7 @@ public:
      * @note BLOQUEANTE hasta que se cierre la GUI o en su defecto la terminal
      * @return @c true si todo se ejecutó correctamente, @c false en caso de error.
      */
-    bool run();
+    bool Run();
 
 
 // IAppControl methods ------------------------------------------------------------------
@@ -110,13 +106,13 @@ public:
 
     /**
      * @brief Establece el modo online/offline
-     * @param newMode true = online, false = offline
+     * @param newMode @c true = online, @c false = offline
      */
     void setOnlineMode(bool newMode) noexcept override;
 
     /**
      * @brief Obtiene el estado Online/Offline
-     * @returns true = online, false = offline
+     * @returns @c true = online, @c false = offline
      */
     bool isOnlineMode() const noexcept override;
 
@@ -202,16 +198,18 @@ private:
     std::string             config_filename_;   ///< Nombre de archivo de configuración
 
 // Módulos
-    std::unique_ptr<NetMgr>     net_;          ///< Gestor de sockets de red
-    std::unique_ptr<ConsoleMgr> cli_;          ///< Gestor de ventanas para interfaz de consola
-    std::unique_ptr<GuiMgr>     gui_;          ///< Gestor de ventanas para la interfaz gráfica
-    std::unique_ptr<SoundMgr>   snd_;          ///< Gestor de audio
-    std::unique_ptr<TotalMix>   tmx_;          ///< Gestor módulo Totalmix
-    std::unique_ptr<Symetrix>   sym_;          ///< Gestor módulo Symetrix
-    std::unique_ptr<VoIPMgr>    vip_;          ///< Gestor módulos Voiprec / Voipplay
-    std::unique_ptr<CommsCore>  com_;          ///< Gestor lógica comunicaciones
-    std::unique_ptr<FastDDS>    dds_;          ///< Gestor DDS (FastDDS)
-    std::unique_ptr<CycloneDDS> cds_;          ///< Gestor DDS (CycloneDDS)
+    std::unique_ptr<NetMgr>         net_;          ///< Gestor de sockets de red
+    std::unique_ptr<ConsoleMgr>     cli_;          ///< Gestor de ventanas para interfaz de consola
+    std::unique_ptr<GuiMgr>         gui_;          ///< Gestor de ventanas para la interfaz gráfica
+    std::unique_ptr<SoundMgr>       snd_;          ///< Gestor de audio
+    std::unique_ptr<TotalMix>       tmx_;          ///< Gestor módulo Totalmix
+    std::unique_ptr<Symetrix>       sym_;          ///< Gestor módulo Symetrix
+    std::unique_ptr<VoIPMgr>        vip_;          ///< Gestor módulos Voiprec / Voipplay
+    std::unique_ptr<FastDDS>        dds_;          ///< Gestor DDS (FastDDS)
+    std::unique_ptr<CycloneDDS>     cds_;          ///< Gestor DDS (CycloneDDS)
+    
+    // #TODO
+    //std::unique_ptr<iCommBridge>    ico_;          ///< Gestor iComm (TTS)
 
 // Bits de activación de módulos (Bitfield)
     struct ModuleFlags {
@@ -225,6 +223,7 @@ private:
         bool com : 1;
         bool dds : 1;
         bool cds : 1;
+        bool ico : 1;
 
         // Método para poner todos al valor deseado
         void setAll(bool val) {

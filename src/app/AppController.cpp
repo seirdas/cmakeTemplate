@@ -1,6 +1,5 @@
 #include "app/AppController.hpp"
 #include <string>               // Strings de texto
-#include <chrono>               // Controla tiempos de espera
 #include <filesystem>           // Controla directorios, rutas, etc.
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
@@ -9,7 +8,6 @@
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
-#include "logic/comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
 #include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
 #include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
 #include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
@@ -34,7 +32,6 @@ AppController::AppController(int argc, char** argv) :
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     vip_(std::make_unique<VoIPMgr>()),
-    com_(std::make_unique<CommsCore>()),
     dds_(std::make_unique<FastDDS>()),
     cds_(std::make_unique<CycloneDDS>())
 {
@@ -102,9 +99,11 @@ bool AppController::init() {
     init_module(snd_, "Sounds",             enable_flags_.snd);
     init_module(tmx_, "Totalmix",           enable_flags_.tmx);
     init_module(sym_, "Symetrix",           enable_flags_.sym);
-    init_module(com_, "CommsDispatcher",    enable_flags_.com);
     init_module(dds_, "FastDDS",            enable_flags_.dds);
     init_module(cds_, "CycloneDDS",         enable_flags_.cds);
+
+    // #TODO
+    // init_module(ico_, "iComm",              enable_flags_.ico);
 
 
     // Vincular módulos a través de patrón observador a GUI ( #TODO )
@@ -179,6 +178,10 @@ void AppController::loadConfig(void* config) {
     jsonMgr.get_or_set(cfg, "APP_enable_cycloneds", val);
     enable_flags_.cds = val;
 
+    val = enable_flags_.ico;
+    jsonMgr.get_or_set(cfg, "APP_enable_icomm", val);
+    enable_flags_.ico = val;
+
 }
 
 void AppController::close() {
@@ -195,14 +198,16 @@ void AppController::close() {
     close_module(snd_, "Sound");
     close_module(tmx_, "TotalMix");
     close_module(sym_, "Symetrix");
-    close_module(com_, "Comms");
     close_module(dds_, "FastDDS");
     close_module(cds_, "CycloneDDS");
+
+    // #TODO
+    //close_module(ico_, "iComm");
 
     SYS_INFO("AppController","AppController closed successfully");
 }
 
-bool AppController::run() {
+bool AppController::Run() {
     SYS_INFO("AppController","Running app...");
     if (enable_flags_.gui && gui_ && gui_->isInitialized())
         return gui_->Run();     // Bloquea en la ventana en modo GUI

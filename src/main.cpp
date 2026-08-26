@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     // Instancia controladora de la aplicación
     AppController App(argc, argv);
     if (App.init())
-        return App.run();
+        return App.Run();
     else {
         SYS_ERROR("main", "The application could not be initialized.\nThe program cannot continue and will now close.");
         return -1;
