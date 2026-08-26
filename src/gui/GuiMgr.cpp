@@ -41,6 +41,10 @@
 	#include "files/JsonMgr.hpp"
 	#include "sound/SoundMgr.hpp"
 	#include "sound/TTSCore.hpp"
+	#include "sound/AudioPlaybackModule.hpp"
+	#include "sound/PlayerAudio.hpp"
+	#include "sound/PlayerMorse.hpp"
+	#include "sound/PlayerTTS.hpp"
 	
 
 	// Sistema
@@ -440,6 +444,7 @@
 
 			Text("Tema:"); SameLine();
 			static const char* theme_items[] = {
+				"Dashboard",
 				"Adobe Inspired",
 				"Ayu Dark",
 				"Confy",
@@ -475,25 +480,26 @@
 						// ----> ACCIÓN A EJECUTAR ----
 						// Por ejemplo:
 						switch(n){
-							case 0: Style_AdobeInspired(); 		break;
-							case 1: Style_AyuDark(); 			break;
-							case 2: Style_Confy(); 				break;
-							case 3: Style_DarkCyan(); 			break;
-							case 4: Style_DefaultDark(); 		break;
-							case 5: Style_DefaultLight();		break;
-							case 6: Style_Everforest(); 		break;
-							case 7: Style_FutureDark(); 		break;
-							case 8: Style_Gold(); 				break;
-							case 9: Style_HazyDark(); 			break;
-							case 10: Style_KazamsCherry(); 		break;
-							case 11: Style_LightOrange(); 		break;
-							case 12: Style_QuickMinimalLook(); 	break;
-							case 13: Style_Modern(); 			break;
-							case 14: Style_Microfrost(); 		break;
-							case 15: Style_Moonlight(); 		break;
-							case 16: Style_SonicRiders(); 		break;
-							case 17: Style_VisualStudio(); 		break;
-						
+							case 0: Style_Dashboard(); 			break;
+							case 1: Style_AdobeInspired(); 		break;
+							case 2: Style_AyuDark(); 			break;
+							case 3: Style_Confy(); 				break;
+							case 4: Style_DarkCyan(); 			break;
+							case 5: Style_DefaultDark(); 		break;
+							case 6: Style_DefaultLight();		break;
+							case 7: Style_Everforest(); 		break;
+							case 8: Style_FutureDark(); 		break;
+							case 9: Style_Gold(); 				break;
+							case 10: Style_HazyDark(); 			break;
+							case 11: Style_KazamsCherry(); 		break;
+							case 12: Style_LightOrange(); 		break;
+							case 13: Style_QuickMinimalLook(); 	break;
+							case 14: Style_Modern(); 			break;
+							case 15: Style_Microfrost(); 		break;
+							case 16: Style_Moonlight(); 		break;
+							case 17: Style_SonicRiders(); 		break;
+							case 18: Style_VisualStudio(); 		break;
+
 						}
 					}
 
@@ -514,12 +520,289 @@
 	
 	}
 	
+	void GuiMgr::playerCard(
+		std::string const&           idPrefix,
+		std::string const&           name,
+		AudioPlaybackModule*         mod,
+		std::function<void()> const& onPlay,
+		std::function<void()> const& onStop,
+		std::function<void()> const& onRemove)
+	{
+		// idPrefix distingue el tipo (audio/morse/tts): dos players con el mismo
+		// nombre pero de distinto tipo no deben compartir ID de ImGui.
+		const std::string cardId = idPrefix + "##" + name;
+		PushID(cardId.c_str());
+
+		const bool playing = mod && mod->isPlaying();
+		BeginChild(
+			"##card",
+			ImVec2(0, 170),
+			ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
+		);
+
+		// Cabecera: nombre grande + estado
+		SetWindowFontScale(1.5f);
+		Text("%s", name.c_str());
+		SetWindowFontScale(1.0f);
+		SameLine();
+		SetWindowFontScale(1.2f);
+		TextColored(
+			playing ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f),
+			playing ? "● Playing" : "○ Idle"
+		);
+		SetWindowFontScale(1.0f);
+
+		Dummy(ImVec2(0, 10));
+
+		// Botones grandes: Play / Stop
+		const ImVec2 bigBtn(130, 50);
+		PushStyleColor(ImGuiCol_Button,        ImVec4(0.18f,0.55f,0.30f,1.0f));
+		PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.22f,0.68f,0.36f,1.0f));
+		PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.14f,0.45f,0.24f,1.0f));
+		if (Button("Play", bigBtn) && onPlay) onPlay();
+		PopStyleColor(3);
+		SameLine();
+		if (Button("Stop", bigBtn) && onStop) onStop();
+
+		// Slider de volumen del módulo (a la derecha de Play/Stop): más cómodo
+		// de manejar con ratón que un knob, y muestra el valor exacto siempre.
+		if (mod) {
+			int vol = mod->getModuleVolume();
+			SameLine();
+			Dummy(ImVec2(20, 0));
+			SameLine();
+			const float sliderWidth = GetContentRegionAvail().x - bigBtn.x - 20.0f;
+			PushItemWidth(sliderWidth > 80.0f ? sliderWidth : 80.0f);
+			if (SliderInt("Volume", &vol, 0, 100, "%d%%"))
+				mod->setModuleVolume(static_cast<unsigned short>(vol));
+			PopItemWidth();
+		}
+
+		// Botón eliminar en rojo, separado a la derecha del todo
+		SameLine(GetContentRegionAvail().x - bigBtn.x + GetCursorPosX());
+		PushStyleColor(ImGuiCol_Button,        ImVec4(0.65f,0.15f,0.15f,1.0f));
+		PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.80f,0.20f,0.20f,1.0f));
+		PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.50f,0.10f,0.10f,1.0f));
+		const bool removeClicked = Button("Remove", bigBtn);
+		PopStyleColor(3);
+
+		EndChild();
+		PopID();
+
+		Dummy(ImVec2(0, 6));
+
+		// IMPORTANTE: se llama DESPUÉS de EndChild/PopID, cuando ya no se
+		// vuelve a tocar 'mod' en este frame (removePlayerX() lo destruye).
+		if (removeClicked && onRemove) onRemove();
+	}
+
+	void GuiMgr::panelSounds() {
+		SoundMgr* snd = ctrl_ ? ctrl_->getSoundsModule() : nullptr;
+		if (!snd) {
+			Text("Sounds module not available.");
+			return;
+		}
+
+		// Fuente más grande para toda la pestaña
+		SetWindowFontScale(1.2f);
+
+		// ================================================================ Dispositivos
+		SeparatorText("Devices");
+		Dummy(ImVec2(0, 4));
+
+		if (Button("Refresh devices", ImVec2(190, 40)))
+			snd->updateDevices();
+		SameLine();
+		Dummy(ImVec2(10, 0));
+		SameLine();
+		Text("Default playback device: %s", snd->getDefaultPlaybackDevice().c_str());
+
+		Dummy(ImVec2(0, 6));
+		{
+			auto pb  = snd->getAvailablePlaybacks();
+			auto cap = snd->getAvailableCaptures();
+
+			if (BeginTable("snd_devices_tbl", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg, ImVec2(0, 130))) {
+				TableSetupColumn("Playback devices");
+				TableSetupColumn("Capture devices");
+				TableHeadersRow();
+
+				const size_t rows = (pb.size() > cap.size()) ? pb.size() : cap.size();
+				for (size_t i = 0; i < rows; ++i) {
+					TableNextRow();
+					TableSetColumnIndex(0);
+					if (i < pb.size())  Text("%s", pb[i].c_str());
+					TableSetColumnIndex(1);
+					if (i < cap.size()) Text("%s", cap[i].c_str());
+				}
+				EndTable();
+			}
+		}
+
+		Dummy(ImVec2(0, 24));
+
+		// ================================================================ Audio players
+		SeparatorText("Audio players");
+		Dummy(ImVec2(0, 4));
+
+		Text("New player name:");
+		SameLine();
+		static char audioNewName[64] = "";
+		PushItemWidth(260);
+		InputTextWithHint("##audioNewName", "e.g. front-speaker", audioNewName, sizeof(audioNewName));
+		PopItemWidth();
+		SameLine();
+		if (Button("+ Add player##audioAdd", ImVec2(180, 36)) && audioNewName[0] != '\0') {
+			snd->addPlayerAudio(nullptr, audioNewName, "");
+			audioNewName[0] = '\0';
+		}
+
+		Dummy(ImVec2(0, 6));
+
+		Text("File to play:");
+		SameLine();
+		static char audioFilepath[256] = "";
+		PushItemWidth(340);
+		InputTextWithHint("##audioFilepath", "path/to/sound.wav", audioFilepath, sizeof(audioFilepath));
+		PopItemWidth();
+		SameLine();
+		Dummy(ImVec2(10, 0));
+		SameLine();
+		Text("Volume:");
+		SameLine();
+		static int audioPlayVolume = 100;
+		PushItemWidth(180);
+		SliderInt("##audioPlayVolume", &audioPlayVolume, 0, 100, "%d%%");
+		PopItemWidth();
+
+		Dummy(ImVec2(0, 14));
+
+		for (auto const& name : snd->getPlayerAudioNames()) {
+			PlayerAudio* pa = snd->getPlayerAudio(name);
+			const std::string filepath = audioFilepath;
+			const int         volume   = audioPlayVolume;
+
+			playerCard("audio", name, pa,
+				[pa, filepath, volume]() { if (pa && !filepath.empty()) pa->playAudio(filepath, static_cast<unsigned short>(volume)); },
+				[pa, filepath]()         { if (pa && !filepath.empty()) pa->stop(filepath, false, 0, 0); },
+				[snd, name]()            { snd->removePlayerAudio(name); }
+			);
+		}
+
+		Dummy(ImVec2(0, 24));
+
+		// ================================================================ Morse players
+		SeparatorText("Morse players");
+		Dummy(ImVec2(0, 4));
+
+		Text("New player name:");
+		SameLine();
+		static char morseNewName[64] = "";
+		PushItemWidth(260);
+		InputTextWithHint("##morseNewName", "e.g. beacon", morseNewName, sizeof(morseNewName));
+		PopItemWidth();
+		SameLine();
+		if (Button("+ Add player##morseAdd", ImVec2(180, 36)) && morseNewName[0] != '\0') {
+			snd->addPlayerMorse(nullptr, morseNewName);
+			morseNewName[0] = '\0';
+		}
+
+		Dummy(ImVec2(0, 6));
+
+		Text("Text to play:");
+		SameLine();
+		static char morseText[256] = "";
+		PushItemWidth(340);
+		InputTextWithHint("##morseText", "SOS", morseText, sizeof(morseText));
+		PopItemWidth();
+
+		Dummy(ImVec2(0, 14));
+
+		for (auto const& name : snd->getPlayerMorseNames()) {
+			PlayerMorse* pm = snd->getPlayerMorse(name);
+			const std::string text = morseText;
+
+			playerCard("morse", name, pm,
+				[pm, text]() { if (pm && !text.empty()) pm->playMorse(text); },
+				[pm, text]() { if (pm && !text.empty()) pm->stop(text, false, 0, 0); },
+				[snd, name]() { snd->removePlayerMorse(name); }
+			);
+		}
+
+		Dummy(ImVec2(0, 24));
+
+		// ================================================================ TTS players
+		SeparatorText("TTS players");
+		Dummy(ImVec2(0, 4));
+
+		Text("New player name:");
+		SameLine();
+		static char ttsNewName[64] = "";
+		PushItemWidth(260);
+		InputTextWithHint("##ttsNewName", "e.g. announcer", ttsNewName, sizeof(ttsNewName));
+		PopItemWidth();
+		SameLine();
+		if (Button("+ Add player##ttsAdd", ImVec2(180, 36)) && ttsNewName[0] != '\0') {
+			snd->addPlayerTTS(nullptr, ttsNewName, "");
+			ttsNewName[0] = '\0';
+		}
+
+		Dummy(ImVec2(0, 6));
+
+		Text("Model:");
+		SameLine();
+		static char ttsModel[64] = "";
+		PushItemWidth(180);
+		InputTextWithHint("##ttsModel", "model", ttsModel, sizeof(ttsModel));
+		PopItemWidth();
+		SameLine();
+		Dummy(ImVec2(10, 0));
+		SameLine();
+		Text("Audio name:");
+		SameLine();
+		static char ttsAudioName[64] = "";
+		PushItemWidth(180);
+		InputTextWithHint("##ttsAudioName", "id", ttsAudioName, sizeof(ttsAudioName));
+		PopItemWidth();
+
+		Dummy(ImVec2(0, 6));
+
+		Text("Text to say:");
+		SameLine();
+		static char ttsText[256] = "";
+		PushItemWidth(340);
+		InputTextWithHint("##ttsText", "hello world", ttsText, sizeof(ttsText));
+		PopItemWidth();
+
+		Dummy(ImVec2(0, 14));
+
+		for (auto const& name : snd->getPlayerTTSNames()) {
+			PlayerTTS* pt = snd->getPlayerTTS(name);
+			const std::string model     = ttsModel;
+			const std::string audioName = ttsAudioName;
+			const std::string text      = ttsText;
+
+			playerCard("tts", name, pt,
+				[pt, model, audioName, text]() { if (pt && !model.empty() && !audioName.empty() && !text.empty()) pt->playTTS(model, text, audioName); },
+				[pt, audioName]()               { if (pt && !audioName.empty()) pt->stop(audioName, false, 0, 0); },
+				[snd, name]()                    { snd->removePlayerTTS(name); }
+			);
+		}
+
+		SetWindowFontScale(1.0f);
+	}
+
 	void GuiMgr::columnaDerecha() {
 		//  COLUMNA DERECHA (Layout principal)
 		BeginGroup(); 
 		{
 			static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
 			if (BeginTabBar("MyTabBar", tab_bar_flags)) {
+
+				if (BeginTabItem("Sounds")) {
+					panelSounds();
+					EndTabItem();
+				}
 
 				if (BeginTabItem("Playground")) {
 
