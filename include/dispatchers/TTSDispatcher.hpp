@@ -1,9 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
 
 
 // Foward declaration
@@ -24,7 +21,7 @@ public:
     /**
      * @brief Constructor
      */
-    TTSDispatcher(IAppControl* ctrl = nullptr);
+    TTSDispatcher();
     
     /**
      * @brief Destructor
@@ -71,6 +68,13 @@ public:
      */
     bool close();
 
+    /**
+     * @brief Establece el controlador de la aplicación (ctrl)
+     * @param ctrl Controlador de la aplicación
+     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
+     */
+    bool setController(IAppControl* controller);
+
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -85,13 +89,6 @@ public:
 
 private:
 
-// Hilos --------------------------------------------------------------------------------
-
-    /**
-     * @brief Hilo consumidor de paquetes TTS
-     */
-    void t_data_consumer();
-
 
 /************ Variables ********************************************************/
 
@@ -100,14 +97,7 @@ private:
     std::unique_ptr<Impl> pimpl_;
 
 // Inicialización
-    std::atomic<bool>   running_;       ///< flag de aplicación corriendo (para hilos)
     bool                initialized_;   ///< Bandera para indicar inicialización exitosa
-
-// Cola de datos (WIP)
-    std::thread                 dataConsumer_thread_;   ///< Hilo consumidor de datos TTS (queue)
-    std::queue<int>             queue_;                 ///< Cola de comandos
-    std::mutex                  queue_mtx_;             ///< Mutex de cola de comandos
-    std::condition_variable     queue_cv_;              ///< Conditional variable para mutex de cola
 
 // Conexión con AppController (y módulos)
     IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros

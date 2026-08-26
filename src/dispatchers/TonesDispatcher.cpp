@@ -1,48 +1,48 @@
-#include "logic/tones/TonesCore.hpp"
+#include "dispatchers/TonesDispatcher.hpp"
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
 
 
 // General ------------------------------------------------------------------------------
 
-TonesCore::TonesCore(IAppControl* ctrl) :
+TonesDispatcher::TonesDispatcher() :
     initialized_(false),
-    ctrl_(ctrl),
+    ctrl_(nullptr),
     last_packet_hash_(0)
 {
 
 }
 
-TonesCore::~TonesCore() {
+TonesDispatcher::~TonesDispatcher() {
     close();
 }
 
 
 // Inicialización -----------------------------------------------------------------------
 
-bool TonesCore::init(void* config) {
+bool TonesDispatcher::init(void* config) {
 
     // Validar y asignar valores de variables miembro a partir de la config pasada (json)
     if (config)
         loadConfig(config);
     else  // Puede llegar aquí cuando se hace reload()
-        SYS_WARN("TonesCore","Cannot load config. Using default values.");
+        SYS_WARN("TonesDispatcher","Cannot load config. Using default values.");
 
 
     // #TODO
 
     
-    SYS_WARN("TonesCore","Comms logic not yet fully implemented");
+    SYS_WARN("TonesDispatcher","Comms logic not yet fully implemented");
     
     initialized_ = true;
     return initialized_;    //<- true
 }
 
-bool TonesCore::isInitialized() const {
+bool TonesDispatcher::isInitialized() const {
     return initialized_;
 }
 
-void TonesCore::loadConfig(void* config) {
+void TonesDispatcher::loadConfig(void* config) {
 
     if (!config) 
         return;
@@ -55,7 +55,7 @@ void TonesCore::loadConfig(void* config) {
 
 }
 
-bool TonesCore::close() {
+bool TonesDispatcher::close() {
 
     // Comprobar si el módulo ya estaba cerrado
     if (!initialized_) return true;

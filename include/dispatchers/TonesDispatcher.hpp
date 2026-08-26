@@ -6,10 +6,11 @@ class IAppControl;
 
 
 /** 
- * @class TonesCore
- * @brief Clase de lógica de reproducción de tonos
+ * @class TonesDispatcher
+ * @brief Clase de gestión de datos recibidos 
+ *  externamente de reproducción de tonos
  */
-class TonesCore {
+class TonesDispatcher {
 
 public:
 
@@ -18,12 +19,12 @@ public:
     /**
      * @brief Constructor
      */
-    TonesCore(IAppControl* ctrl = nullptr);
+    TonesDispatcher();
     
     /**
      * @brief Destructor
      */
-    ~TonesCore();
+    ~TonesDispatcher();
 
 
 // Inicialización -----------------------------------------------------------------------
@@ -56,6 +57,13 @@ public:
      * @return @c true Si ha cerrado correctamente, @c false en caso de error
      */
     bool close();
+
+    /**
+     * @brief Establece el controlador de la aplicación (ctrl)
+     * @param ctrl Controlador de la aplicación
+     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
+     */
+    bool setController(IAppControl* controller);
 
 
 private:

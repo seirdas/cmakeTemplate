@@ -11,11 +11,16 @@
 
 
 struct AudioData {
-    std::vector<float> samples;
-    int32_t sample_rate = 0;
+    std::vector<float>  samples;
+    unsigned int        sample_rate = 0;
 
-    // Método utilitario para saber si está vacío
-    inline bool empty() const { return samples.empty(); }
+    /**
+     * @brief Método utilitario para saber si está vacío
+     * @return @c true si está vacío, @c false en caso contrario
+     */
+    bool empty() const { 
+        return samples.empty(); 
+    }
 };
 
 
@@ -37,7 +42,7 @@ public:
      * @brief Constructor de TTSCore. Recibe el número de hilos a usar para la generación de audios.
      * @param num_threads_ Número de hilos a usar para la generación de audios.
      */
-    TTSCore(int const& thread_count = std::thread::hardware_concurrency());
+    TTSCore(unsigned int const& thread_count = std::thread::hardware_concurrency());
 
     /**
      * @brief Destructor de TTSCore.

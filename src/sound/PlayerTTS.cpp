@@ -60,23 +60,26 @@
 
 // Ejecución ----------------------------------------------------------------------------
 
-    bool PlayerTTS::playTTS(std::string const& modelName, std::string const& text, std::string const& audioName) {
+    bool PlayerTTS::playTTS(
+        std::string const&  text, 
+        std::string const&  modelName, 
+        std::string const&  audioName,
+        unsigned short      volume,
+        bool                loop,
+        bool                forceStop)
+    {
 
         // Comprobaciones previas
-        if (modelName.empty()) {
-            SYS_WARN("PlayerTTS","Cannot play: ModelName empty.");
-            return false;
-        }
         if (text.empty()) {
-            SYS_WARN("PlayerTTS","Cannot play: Text empty.");
+            SYS_WARN("PlayerTTS","Cannot play: Text empty");
             return false;
         }
-        if (audioName.empty()) {
-            SYS_WARN("PlayerTTS","Cannot play: AudioName empty.");
+        if (modelName.empty()) {
+            SYS_WARN("PlayerTTS","Cannot play: ModelName empty");
             return false;
         }
         if (!onTextToAudio_cb_) {
-            SYS_WARN("PlayerTTS","Cannot generate audio: Callback functions don't exist.");
+            SYS_WARN("PlayerTTS","Cannot generate audio: TTS callback function don't defined");
             return false;
         }
 
@@ -84,9 +87,12 @@
 
         // Encolamos los datos para que el hilo los procese
         queueElement element;
-        element.modelName = modelName;
-        element.text = text;
-        element.audioName = audioName;
+        element.modelName   = modelName;
+        element.text        = text;
+        element.audioName   = (audioName.empty()) ? text : audioName;
+        element.volume      = volume;
+        element.loop        = loop;
+        element.forceStop   = forceStop;
         cola_textos_.push(element);
 
         // Despertamos al hilo de procesamiento si estaba dormido
@@ -201,21 +207,18 @@
         }
 
         // Establecer parámetros de la reproducción
-        ma_sound_set_volume(&inst->sound, static_cast<float>(globalVol_) / 100.0f);
-        ma_sound_set_looping(&inst->sound, MA_FALSE);
+        float ma_volume = (static_cast<float>(element.volume) / 100.0f) * static_cast<float>(globalVol_) / 100.0f;
+        ma_sound_set_volume(&inst->sound, ma_volume);  // (va de 0.0 a 1.0)
+        ma_sound_set_looping(&inst->sound, (element.loop) ? MA_TRUE : MA_FALSE);
 
         // Vincular el fin de la reproducción al endCallback
         ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
 
-        // Guardar parámetros en la instancia de sonido. Aunque un TTS no admite loop ni
-        // volumen por llamada (playTTS no recibe esos parámetros), estos campos los siguen
-        // leyendo funciones heredadas de AudioPlaybackModule sobre este mismo SoundInstance:
-        // - loopMode/forceStop: los usa stop() para decidir cómo cortar el sonido.
-        // - volume: lo usa setModuleVolume() para recalcular el volumen al cambiar el global.
-        inst->loopMode  = false;              // Un TTS nunca repite
-        inst->forceStop = true;               // stop(nombre, true) corta la frase de inmediato
+        // Guardar parámetros en la instancia de sonido
+        inst->loopMode  = element.loop;
+        inst->forceStop = element.forceStop;
         inst->name      = element.audioName;
-        inst->volume    = 100;                // Volumen base (playTTS no admite volumen por llamada)
+        inst->volume    = element.volume;
 
         // Guardar en el mapa y reproducir
         {

@@ -72,10 +72,10 @@
 
 	// General ------------------------------------------------------------------------------
 
-	GuiMgr::GuiMgr(IAppControl* controller) : 
+	GuiMgr::GuiMgr() : 
         pimpl_(std::make_unique<Impl>()),
 		config_(nullptr),
-		ctrl_(controller),
+		ctrl_(nullptr),
 		running_(false),
 		initialized_(false),
 		window_(nullptr),
@@ -93,24 +93,19 @@
 		fontSize_(16),
 		deviceRefreshInterval_(5)
 	{
-		
-		// Avisa si se ha inicializado sin interfaz de comunicación para saber de otros módulos
-		if (!ctrl_)
-			SYS_WARN("GuiMgr","Cannot handle any controller.");
-
 		// Avisa si no tiene soporte STB para imágenes
 		#ifndef STB
 			SYS_WARN("GuiMgr","STB Image library has not been implemented.");
 		#endif
-
 	}
 
 	GuiMgr::~GuiMgr() {
 		close();
 	}
 
-	void GuiMgr::setController(IAppControl* controller){
+	bool GuiMgr::setController(IAppControl* controller){
 		ctrl_ = controller;
+		return static_cast<bool>(ctrl_);
 	}
 
 
@@ -151,7 +146,13 @@
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);               // Redimensionable
 
 		// Creación de ventana
-		window_ = glfwCreateWindow(windowSizeX_, windowSizeY_, AppName_.c_str(), NULL, NULL);
+		window_ = glfwCreateWindow(
+			static_cast<int>(windowSizeX_), 
+			static_cast<int>(windowSizeY_), 
+			AppName_.c_str(), 
+			NULL, 
+			NULL
+		);
 		if(!window_) {
 			glfwTerminate();
 			SYS_ERROR("GuiMgr","glfwCreateWindow error.");
@@ -186,7 +187,7 @@
 		);
 
 		// Configuración de estilo por defecto, según config
-		ApplyTheme();
+		apply_theme();
 
 		// Propiedades de ventana de windows
 		#ifdef _WIN32
@@ -251,7 +252,7 @@
 		running_ = true;
 
 		while (isRunning())
-			BuclePrincipal();		// <-- Se queda aqui hasta cerrar
+			bucle_principal();		// <-- Se queda aqui hasta cerrar
 		
 		return close();
 	}
@@ -275,7 +276,7 @@
 		glfwTerminate();
 
 		// Liberar recursos de imágenes cargadas
-		unloadImages();
+		unload_images();
 
 		SYS_INFO("GuiMgr", "UI closed.");
 		running_ = false;
@@ -291,7 +292,7 @@
 
 	// Captura de teclas --------------------------------------------------------------------
 
-	void GuiMgr::captureKeys() {
+	void GuiMgr::capture_keys() {
 
 		// Modo debug de detección de teclas
 		if (captureKeys_)
@@ -301,22 +302,22 @@
 
 		// Aumentar el tamaño de la fuente Ctrl+"+"
 		if (io_->KeyCtrl && (IsKeyPressed((ImGuiKey)605) || IsKeyPressed((ImGuiKey)626)) )
-			updateDensity(1);
+			update_density(1);
 		
 		// Reducir el tamaño de la fuente Ctrl+"-"
 		if (io_->KeyCtrl && (IsKeyPressed(ImGuiKey_Minus) || IsKeyPressed((ImGuiKey)625)) )
-			updateDensity(-1);
+			update_density(-1);
 
 		// Alternar modo pantalla completa F11 / Alt+Enter
 		if ( IsKeyPressed((ImGuiKey)582) || (io_->KeyAlt && IsKeyPressed((ImGuiKey)525))  )
-			setFullscreenMode(!fullscreen_);
+			set_fullscreen(!fullscreen_);
 
 	}
 
 
 	// Bucle principal -----------------------------------------------------------------------
 
-	void GuiMgr::initCuadro() {
+	void GuiMgr::init_frame() {
 		glfwPollEvents();
 		
 		ImGui_ImplOpenGL3_NewFrame();
@@ -324,7 +325,7 @@
 		NewFrame();
 	}
 
-	void GuiMgr::endCuadro() {
+	void GuiMgr::end_frame() {
 		// Renderiza
 		Render();
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -332,9 +333,9 @@
 		glfwSwapBuffers(window_);
 	}
 
-	void GuiMgr::BuclePrincipal() {
-		initCuadro();
-		captureKeys();
+	void GuiMgr::bucle_principal() {
+		init_frame();
+		capture_keys();
 
 		//Meto un timer para que refresque todo el rato los devices
 		static float device_refresh_timer = 0.0f;
@@ -351,7 +352,7 @@
 		// vvvvvvvvv Contenido de la ventana vvvvvvvvv
 
 		// BARRA DE MENÚ SUPERIOR
-		crearMainMenuBar();
+		mainmenu_bar();
 
 		// Forzar bordes cuadrados y eliminar paddings innecesarios para el frame principal
 		PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -372,20 +373,20 @@
 
 		// Ventana que cubre todo el frame
 		Begin("Ventana que cubre todo el frame", nullptr, window_flags);
-			ventanaPrincipal();
+			main_window();
 		End();
 		PopStyleVar(4);
 
 		
 		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-		endCuadro();
+		end_frame();
 	}
 
 
 	// Elementos de interfaz ----------------------------------------------------------------
 
-	void GuiMgr::crearMainMenuBar() {
+	void GuiMgr::mainmenu_bar() {
 		if (BeginMainMenuBar()) {
 			if (BeginMenu("File")) {
 				if (MenuItem("New", "Ctrl+N")) { /* Acción */ }
@@ -411,7 +412,7 @@
 		MainMenuBar_Height_ = GetFrameHeight();
 	}
 
-	void GuiMgr::ventanaPrincipal() {
+	void GuiMgr::main_window() {
 		// Variables estáticas (solo se crean una vez) para guardar datos
 		static float heightRightTop = 0.5f; 
 		static float totalHeight = GetContentRegionAvail().y;
@@ -826,11 +827,11 @@
 						Text("Test imagen precargada");
 						TableNextRow();
 						TableNextColumn();
-						Image(getImage("imageres/cat.png"), ImVec2(200,100));
+						Image(get_image("imageres/cat.png"), ImVec2(200,100));
 						TableNextColumn();
-						Image(getImage("imageres/nonexist?"), ImVec2(200,100));
+						Image(get_image("imageres/nonexist?"), ImVec2(200,100));
 						TableNextColumn();
-						Image(getImage("imageres/cat.png"), ImVec2(100,200));
+						Image(get_image("imageres/cat.png"), ImVec2(100,200));
 
 						EndTable();
 					}
@@ -1146,15 +1147,15 @@
 
 	// Carga de imágenes --------------------------------------------------------------------
 
-	uintptr_t GuiMgr::getImage(std::string path) {
+	uintptr_t GuiMgr::get_image(std::string path) {
 		// Si la imagen no está precacheada, se añade
 		if (images_.find(path) == images_.end())
-			addTextureFromFile(path);
+			add_texture_from_file(path);
 
 		return images_[path].tex;
 	}
 
-	void GuiMgr::unloadImages() {
+	void GuiMgr::unload_images() {
 
 		// No hace falta borrar si no hay nada
 		if (images_.empty())
@@ -1179,7 +1180,7 @@
 		images_.clear();	// Por si se vuelve a usar
 	}
 
-	void GuiMgr::addTextureFromFile(std::string filename) {
+	void GuiMgr::add_texture_from_file(std::string filename) {
 
 		SYS_INFO("GuiMgr","Saving '" + filename + "' image texture to cache...");
 
@@ -1187,7 +1188,7 @@
 		img_data.tex 	  = 0;	// Textura por defecto
 
 		// Generar textura rosa/blanca por defecto si no se ha generado aún
-		if (defaultTexture_ == 0) generateDefaultTexture();
+		if (defaultTexture_ == 0) generate_default_texture();
 
 		#if defined STB || defined STB_VERSION
 
@@ -1224,7 +1225,7 @@
 		return;
 	};
 
-	void GuiMgr::generateDefaultTexture() {
+	void GuiMgr::generate_default_texture() {
 		SYS_INFO("GuiMgr", "Generating default texture image...");
 
 		const int width = 64;
@@ -1234,19 +1235,30 @@
 		// 4 bytes por píxel (RGBA)
 		std::vector<unsigned char> data(width * height * 4);
 
-		for (int y = 0; y < height; ++y) {
-			for (int x = 0; x < width; ++x) {
-				int index = (y * width + x) * 4;
+		// Usa size_t para dimensiones y tamaños para evitar conversiones implícitas
+		const size_t uWidth = static_cast<size_t>(width);
+		const size_t uHeight = static_cast<size_t>(height);
+		const size_t uCheckSize = static_cast<size_t>(checkSize);
+
+		for (size_t y = 0; y < uHeight; ++y) {
+			for (size_t x = 0; x < uWidth; ++x) {
+				size_t index = (y * uWidth + x) * 4U;
 				
-				// Lógica del mosaico: (x / tamaño) + (y / tamaño) es par o impar
-				bool isPink = ((x / checkSize) + (y / checkSize)) % 2 == 0;
+				// Lógica del mosaico
+				bool isPink = ((x / uCheckSize) + (y / uCheckSize)) % 2U == 0;
 
 				if (isPink) {
-					// Rosa (Magenta: R=255, G=0, B=255)
-					data[index + 0] = 255; data[index + 1] = 0; data[index + 2] = 255; data[index + 3] = 255;
+					// Rosa (Magenta)
+					data[index + 0U] = static_cast<unsigned char>(255);
+					data[index + 1U] = static_cast<unsigned char>(0);
+					data[index + 2U] = static_cast<unsigned char>(255);
+					data[index + 3U] = static_cast<unsigned char>(255);
 				} else {
-					// Negro (R=0, G=0, B=0) o Blanco (R=255, G=255, B=255)
-					data[index + 0] = 0;   data[index + 1] = 0; data[index + 2] = 0;   data[index + 3] = 255;
+					// Negro
+					data[index + 0U] = static_cast<unsigned char>(0);
+					data[index + 1U] = static_cast<unsigned char>(0);
+					data[index + 2U] = static_cast<unsigned char>(0);
+					data[index + 3U] = static_cast<unsigned char>(255);
 				}
 			}
 		}
@@ -1268,7 +1280,7 @@
 
 	// Aspecto ------------------------------------------------------------------------------
 
-	bool GuiMgr::setFullscreenMode(bool enabled) {
+	bool GuiMgr::set_fullscreen(bool enabled) {
 		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 		if (monitor == nullptr) {
 			SYS_WARN("GuiMgr", "Primary monitor not detected. Cannot set fullscreen mode");
@@ -1290,14 +1302,14 @@
 			glfwSetWindowMonitor(window_, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 		} else {
 			// Volver a modo ventana usando las dimensiones guardadas
-			glfwSetWindowMonitor(window_, NULL, windowPosX_, windowPosY_, windowSizeX_, windowSizeY_, 0);
+			glfwSetWindowMonitor(window_, NULL, (int)windowPosX_, (int)windowPosY_, (int)windowSizeX_, (int)windowSizeY_, 0);
 		}
 
 		fullscreen_ = enabled;
 		return true;
 	}
 
-	void GuiMgr::updateDensity(int delta) {
+	void GuiMgr::update_density(int delta) {
 
 		int new_size = (int)style_->FontSizeBase + delta;
 
@@ -1305,14 +1317,14 @@
 			SYS_WARN("GuiMgr","Font size bigger than max allowed.");
 			return;
 		}
-		if (new_size < (int)MIN_FONT_SIZE_) {
+		if (new_size < static_cast<int>(MIN_FONT_SIZE_)) {
 			SYS_WARN("GuiMgr","Font size smaller than min allowed.");
 			return;
 		}
 
 		// Guardar factor de escala relativo al tamaño anterior
 		float prev = style_->FontSizeBase;
-		float next = (float)new_size;
+		float next = static_cast<float>(new_size);
 		float scale = (prev > 0.0f) ? (next / prev) : 1.0f;
 
 		// Aplicar nuevo tamaño de fuente
@@ -1330,7 +1342,7 @@
 		SYS_INFO("GuiMgr", "Density adjusted to font size: " + std::to_string(style_->FontSizeBase));
 	};
 
-	void GuiMgr::titleBarDarkMode(bool useDarkMode) {
+	void GuiMgr::titlebar_dark_mode(bool useDarkMode) {
 		#ifdef _WIN32
 			std::string st_darkmode=(useDarkMode ? "Dark" : "Light");
 			BOOL useDarkMode_ = useDarkMode ? TRUE : FALSE;
@@ -1372,23 +1384,23 @@
     bool GuiMgr::close()			{ return false; }
 
 	// Bucle principal ----------------------------------------------------------------------
-    void GuiMgr::initCuadro()		{ return; }
-    void GuiMgr::endCuadro()		{ return; }
-    void GuiMgr::captureKeys()		{ return; }
-    void GuiMgr::BuclePrincipal()	{ return; }
+    void GuiMgr::init_frame()		{ return; }
+    void GuiMgr::end_frame()		{ return; }
+    void GuiMgr::capture_keys()		{ return; }
+    void GuiMgr::bucle_principal()	{ return; }
 
 	// Elementos de interfaz ----------------------------------------------------------------
-    void GuiMgr::crearMainMenuBar()		{ return; }
-    void GuiMgr::ventanaPrincipal()		{ return; }
+    void GuiMgr::mainmenu_bar()		{ return; }
+    void GuiMgr::main_window()		{ return; }
 
 	// Carga de imágenes --------------------------------------------------------------------
-    uintptr_t GuiMgr::getImage(std::string)					{ return 0; }
-    void GuiMgr::unloadImages()								{ return; }
-    void GuiMgr::addTextureFromFile(std::string)			{ return; }
-    void GuiMgr::generateDefaultTexture()					{ return; }
+    uintptr_t GuiMgr::get_image(std::string)					{ return 0; }
+    void GuiMgr::unload_images()								{ return; }
+    void GuiMgr::add_texture_from_file(std::string)			{ return; }
+    void GuiMgr::generate_default_texture()					{ return; }
     
 	// Aspecto y temas ----------------------------------------------------------------------
-    void updateDensity(int)						{ return; }
-    void titleBarDarkMode(bool)					{ return; }
+    void update_density(int)						{ return; }
+    void titlebar_dark_mode(bool)					{ return; }
 
 #endif

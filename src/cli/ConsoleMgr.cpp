@@ -21,13 +21,14 @@
 
 // General ------------------------------------------------------------------------------
 
-ConsoleMgr::ConsoleMgr(IAppControl* ctrl, std::string const& exePath) :
-    ctrl_(ctrl),
+ConsoleMgr::ConsoleMgr() :
+    ctrl_(nullptr),
     initialized_(false),
     running_(false),
     AppName_("app"),
-    exe_path_(exePath),
-    tried_to_launch_console_(false)
+    tried_to_launch_console_(false),
+    show_app_name_(true),
+    prefix_color_(ANSI_BRIGHT_BLUE)
 {
 
 }
@@ -69,6 +70,32 @@ void ConsoleMgr::loadConfig(void* config) {
     JsonMgr& jsonMgr = JsonMgr::instance();
 
     jsonMgr.get_or_set(cfg, "app_name_window",	AppName_);
+    jsonMgr.get_or_set(cfg, "show_app_name",	show_app_name_);
+
+    // Color
+    std::string color = "light blue";
+    jsonMgr.get_or_set(cfg, "prefix_color",	color);
+    
+    // Colores estándar
+    if (color == "black") prefix_color_              = ANSI_BLACK;
+    else if (color == "red") prefix_color_           = ANSI_RED;
+    else if (color == "green") prefix_color_         = ANSI_GREEN;
+    else if (color == "yellow") prefix_color_        = ANSI_YELLOW;
+    else if (color == "blue") prefix_color_          = ANSI_BLUE;
+    else if (color == "magenta") prefix_color_       = ANSI_MAGENTA;
+    else if (color == "cyan") prefix_color_          = ANSI_CYAN;
+    else if (color == "white") prefix_color_         = ANSI_WHITE;
+    
+    // Colores brillantes (Bright/Light)
+    else if (color == "bright red" || color == "light red")       prefix_color_ = ANSI_BRIGHT_RED;
+    else if (color == "bright green" || color == "light green")   prefix_color_ = ANSI_BRIGHT_GREEN;
+    else if (color == "bright yellow" || color == "light yellow") prefix_color_ = ANSI_BRIGHT_YELLOW;
+    else if (color == "bright blue" || color == "light blue")     prefix_color_ = ANSI_BRIGHT_BLUE;
+    else if (color == "bright magenta" || color == "light magenta") prefix_color_ = ANSI_BRIGHT_MAGENTA;
+    else if (color == "bright cyan" || color == "light cyan")     prefix_color_ = ANSI_BRIGHT_CYAN;
+
+    // Color por defecto
+    else prefix_color_ = ANSI_BRIGHT_BLUE;
 
 }
 
@@ -79,6 +106,15 @@ bool ConsoleMgr::close() {
 
     initialized_ = false;
     return !initialized_;   // <- true
+}
+
+bool ConsoleMgr::setController(IAppControl* controller) {
+    ctrl_ = controller;
+    return static_cast<bool>(ctrl_);
+}
+
+void ConsoleMgr::setAppName(std::string const& appName) {
+    AppName_ = appName;
 }
 
 
@@ -108,7 +144,8 @@ bool ConsoleMgr::Run() {
     //std::cerr << "\033[?25l";
 
     SystemMgr::instance().setCliActive(true);
-    SystemMgr::instance().updateCliInput(command, cursor); // Pinta el primer prompt
+    SystemMgr::instance().showAppName(show_app_name_);
+    SystemMgr::instance().updateCliInput(command, cursor, prefix_color_); // Pinta el primer prompt
 
     #ifndef _WIN32
         // LINUX: Apagar el "Cooked Mode" y el "Echo" automático de la terminal
@@ -246,58 +283,71 @@ bool ConsoleMgr::Run() {
 bool ConsoleMgr::LaunchConsole(bool force) {
 
     // Si ya lo ha intentado, no hacerlo de nuevo (evita errores duplicados)
-    if(tried_to_launch_console_ && !force)
+    if (tried_to_launch_console_ && !force)
         return true;
     tried_to_launch_console_ = true;
 
-    SYS_INFO("AppController","Trying to launch console...");
+    SYS_INFO("ConsoleMgr", "Trying to launch console...");
+
+    bool success = false;
 
     #ifdef _WIN32
 
         // Comprobar si ya hay una terminal
         if (GetConsoleWindow() != NULL) {
-            SYS_INFO("AppController","Console already opened.");
+            SYS_INFO("ConsoleMgr", "Console already opened");
             return false;
         }
 
         // Abrir terminal en Windows
-        if (AllocConsole()) {
-            FILE* dummy = nullptr;
-            freopen_s(&dummy, "CONOUT$", "w", stdout);
-            freopen_s(&dummy, "CONIN$", "r", stdin);
-            freopen_s(&dummy, "CONOUT$", "w", stderr);
-            
-            // Desincronizar C y C++ stream buffers e inicializar estados
-            std::ios::sync_with_stdio();
-            std::cin.clear();
-            std::cout.clear();
-
-            // Opcional: Activar procesamiento de colores ANSI en la consola de Windows 10/11
-            HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (hOut != INVALID_HANDLE_VALUE) {
-                DWORD dwMode = 0;
-                if (GetConsoleMode(hOut, &dwMode)) {
-                    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-                }
-            }
-            
-            std::cout << std::endl;
-            SYS_INFO("AppController", "Console allocated successfully");
-            return true;
-        }
-
-        return false;
-
-    #else
-        /* (WIP) */
-
-        // Si la aplicación no tiene una TTY estándar asignada (lanzada por GUI/Doble clic)
-        if (isatty(STDIN_FILENO)) {
-            SYS_INFO("AppController","Console already opened.");
+        if (!AllocConsole()) {
+            SYS_WARN("ConsoleMgr", "Failed to alloc console");
             return false;
         }
 
-        SYS_INFO("AppController", "No TTY detected. Launching external terminal window...");
+        // Probar escritura
+        FILE* dummy = nullptr;
+        freopen_s(&dummy, "CONOUT$", "w", stdout);
+        freopen_s(&dummy, "CONIN$", "r", stdin);
+        freopen_s(&dummy, "CONOUT$", "w", stderr);
+        
+        // Forzar la reasignación de los búferes de std::cout, std::cerr y std::cin
+        static std::ofstream outConsole("CONOUT$");
+        static std::ofstream errConsole("CONOUT$");
+        static std::ifstream inConsole("CONIN$");
+
+        std::cout.rdbuf(outConsole.rdbuf());
+        std::cerr.rdbuf(errConsole.rdbuf());
+        std::cin.rdbuf(inConsole.rdbuf());
+        
+        // Desincronizar C y C++ stream buffers e inicializar estados
+        std::ios::sync_with_stdio();
+        std::cin.clear();
+        std::cout.clear();
+        std::cerr.clear();
+
+        // Activar procesamiento de colores ANSI
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOut != INVALID_HANDLE_VALUE) {
+            DWORD dwMode = 0;
+            if (GetConsoleMode(hOut, &dwMode)) {
+                SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+            }
+        }
+        
+        std::cout << std::endl;
+        SYS_INFO("ConsoleMgr", "Console allocated successfully");
+        success = true;
+
+    #else
+
+        // Si la aplicación no tiene una TTY estándar asignada
+        if (isatty(STDIN_FILENO)) {
+            SYS_INFO("ConsoleMgr", "Console already opened.");
+            return false;
+        }
+
+        SYS_INFO("ConsoleMgr", "No TTY detected. Launching external terminal window...");
 
         // Lanzar terminal ejecutando binario dentro de ella
         std::string cmd = 
@@ -310,21 +360,21 @@ bool ConsoleMgr::LaunchConsole(bool force) {
         int ret = std::system(cmd.c_str());
 
         if (ret == 0) {
-            // Al lanzar una instancia vinculada en la nueva ventana,
-            // cerramos el proceso padre actual "ciego" que no tenía TTY.
-            SYS_INFO("AppController", "Delegated execution to new terminal window. Exiting background process.");
+            SYS_INFO("ConsoleMgr", "Delegated execution to new terminal window. Exiting background process.");
             std::exit(0); 
         }
 
-        SYS_ERROR("AppController", "Failed to launch external terminal.");
+        SYS_ERROR("ConsoleMgr", "Failed to launch external terminal.");
         return false;
 
     #endif
 
-    // Poner el nombre de ventana
-    setConsoleTitle(AppName_);
+    if (success) {
+        // Poner el nombre de ventana (ahora sí se ejecuta en Windows)
+        setConsoleTitle(AppName_);
+    }
 
-    return tried_to_launch_console_;
+    return success;
 }
 
 void ConsoleMgr::setConsoleTitle(std::string const& title) {
@@ -343,7 +393,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
     // tratar como minúsculas siempre
     std::string cmd = command;
     for (char &c : cmd)
-        c = std::tolower(static_cast<unsigned char>(c));
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
     // Obtener las palabras por separado
     std::vector<std::string> tokens = tokenize_cli(cmd);
@@ -369,15 +419,16 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
 
         { "help", [this](std::vector<std::string> const&) {
             print("Available commands:\n"
-                  "  help                   - Show this help message\n"
-                  "  status                 - Show app general status\n"
-                  "  {clear|cls}            - Clear the terminal screen\n"
-                  "  {sounds|snd} [args]    - Execute sound-related commands\n"
-                  "  {symetrix|sym} [args]  - Execute symetrix-related commands\n"
-                  "  {totalmix|tmx} [args]  - Execute totalmix-related commands\n"
-                  "  {network|net} [args]   - Execute network-related commands (add, devices, remove)\n"
-                  "  online {on|off|toggle} - Switch online/offline mode (see 'status' to check it)\n"
-                  "  exit                   - Exit the application\n"
+                  "  help, h                -- Show this help message\n"
+                  "  status                 -- Show app general status\n"
+                  "  version                -- Show app version\n"
+                  "  clear, cls             -- Clear the terminal screen\n"
+                  "  sounds, snd <args>     -- Execute sound-related commands\n"
+                  "  symetrix, sym <args>   -- Execute symetrix-related commands\n"
+                  "  totalmix, tmx <args>   -- Execute totalmix-related commands\n"
+                  "  network, net <args>    -- Execute network-related commands (add, devices, remove)\n"
+                  "  online <args>          -- Switch online/offline mode\n"
+                  "  exit                   -- Exit the application\n"
                   "\n"
                   "Use '[command] help' for more information about a command"
             );
@@ -385,11 +436,20 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
 
         { "clear", [this](std::vector<std::string> const& tokens) {
             if (tokens.size() == 2 && tokens[1] == "help") {
-                print("Clears the terminal screen\n");
+                print("Clears the terminal screen.\n");
                 return;
             }
             // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)
             print("\033[2J\033[H");
+        }},
+
+        { "version", [this](std::vector<std::string> const& tokens) {
+            if (tokens.size() == 2 && tokens[1] == "help") {
+                print("Show app version.\n");
+                return;
+            }
+            // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)
+            print(AppName_ + " version: " + ctrl_->getVersion());
         }},
 
         { "status", [this](std::vector<std::string> const& tokens) {
@@ -443,7 +503,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
         }},
 
         { "exit", [this](std::vector<std::string> const&) {
-            SYS_INFO("AppController", "Exiting application...");
+            SYS_INFO("ConsoleMgr", "Exiting application...");
             running_ = false;
         }},
 
@@ -488,17 +548,23 @@ void ConsoleMgr::execute_cmd_online(std::vector<std::string> const& tokens) {
     }
 }
 
+
+// Subcomandos Network ------------------------------------------------------------------
+
 void ConsoleMgr::execute_cmd_snd(std::vector<std::string> const& tokens) {
     const std::string subCmd = get_token(tokens, 1);
 
     if (subCmd.empty() || subCmd == "help" || subCmd == "h") {
         print("Available 'sounds' commands:\n"
-              "  help                           - Show this help message\n"
-              "  {devices|device|dev|d} [type]  - List available devices (type: pb|cap)\n"
-              "  {players|player|p} [args]      - Execute commands to player modules\n"
-              "      -> then {audio|a} / {morse|m} / {tts|t} to manage each player type\n"
-              "      -> e.g. 'sounds players morse help' for morse-specific commands\n\n"
-              "Aliases: sound, sounds, snd");
+            "  help                               - Show this help message\n"
+            "  devices, device, dev, d [type]     - List available devices (type: pb|cap)\n"
+            "  {players|player|p} [args]          - Execute commands to player modules\n"
+            "      -> then {audio|a} / {morse|m} / {tts|t} to manage each player type\n"
+            "      -> e.g. 'sounds players morse help' for morse-specific commands\n\n"
+            "Aliases: sound, sounds, snd"
+            "\n"
+            "Use 'sounds [command] help' for more information about a command"
+        );
         return;
     }
 
@@ -796,8 +862,13 @@ void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
         else print_error("Cannot remove TTS player.");
     } 
     else if (action == "use" || action == "u") {
+
+        // Obtener y comprobar el player
         PlayerTTS* pt = snd->getPlayerTTS(name);
-        if (!pt) { print_error("TTS player '" + name + "' not found."); return; }
+        if (!pt) { 
+            print_error("TTS player '" + name + "' not found."); 
+            return; 
+        }
 
         if (get_token(tokens, 5) == "play") {
             std::string model = get_token(tokens, 6);
@@ -808,7 +879,10 @@ void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
                 print_error("Usage: sounds players tts use <name> play <model> <audioName> <text>");
                 return;
             }
-            if (!pt->playTTS(model, text, audioName)) print_error("Cannot play TTS.");
+            
+            if (!pt->playTTS(text, model, audioName)) 
+                print_error("Cannot play TTS.");
+
         } else if (!execute_playback_command(pt, tokens, 5)) {
             print_error("Unknown use subcommand: " + get_token(tokens, 5));
         }
@@ -912,6 +986,9 @@ bool ConsoleMgr::execute_playback_command(
 
     return false;
 }
+
+
+// Subcomandos Network ------------------------------------------------------------------
 
 void ConsoleMgr::execute_cmd_net(std::vector<std::string> const& tokens){
     const std::string subCmd = get_token(tokens, 1);
@@ -1153,11 +1230,13 @@ void ConsoleMgr::execute_totalmix_command(std::vector<std::string> const& tokens
 
     if (tokens.size() <= 1 || tokens[1] == "help") {
         print("Available 'totalmix' commands:\n"
-              "  totalmix status                 - Show module status\n"
-              "  totalmix volume <out> <value>   - Set output volume (0-100)\n"
-              "  totalmix threshold <in> <value> - Set threshold value (0-100)\n"
-              "  totalmix mute <out>             - Mute an output\n"
-              "  totalmix unmute <out>           - Unmute an output");
+              "  help                   - Show this help message\n"
+              "  status                 - Show module status\n"
+              "  volume <out> <value>   - Set output volume (0-100)\n"
+              "  threshold <in> <value> - Set threshold value (0-100)\n"
+              "  mute <out>             - Mute an output\n"
+              "  unmute <out>           - Unmute an output\n\n"
+              "Aliases: totalmix, tmx");
         return;
     }
 
@@ -1239,12 +1318,12 @@ void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens
 
     if (action.empty() || action == "help") {
         print("Available 'symetrix' commands:\n"
-              "  status                                - Show connection status\n"
+              "  status                                 - Show connection status\n"
               "  preset <1-1000>                        - Load a Composer preset\n"
               "  set <id> <value> <min> <max> [db]      - Set a component value (curve, or [db] for direct dB)\n"
               "  button <id> <on|off>                   - Set a binary component (button/mute)\n"
-              "  supermatrix <in> <out> <volume> [db]    - Set a supermatrix crosspoint volume\n"
-              "  tolerance <pct> [id]                    - Update send tolerance (global, or per id)");
+              "  supermatrix <in> <out> <volume> [db]   - Set a supermatrix crosspoint volume\n"
+              "  tolerance <pct> [id]                   - Update send tolerance (global, or per id)");
         return;
     }
 
@@ -1358,7 +1437,7 @@ void ConsoleMgr::execute_symetrix_command(std::vector<std::string> const& tokens
 
         try {
             const unsigned char  pct = static_cast<unsigned char>(std::stoi(pctStr));
-            const unsigned short id  = idStr.empty() ? 0 : static_cast<unsigned short>(std::stoi(idStr));
+            const unsigned short id  = idStr.empty() ? static_cast<unsigned short>(0) : static_cast<unsigned short>(std::stoi(idStr));
             sym->updateTolerancePct_CSQ(pct, id);
         } catch (std::exception const&) {
             print_error("Invalid numeric argument.");

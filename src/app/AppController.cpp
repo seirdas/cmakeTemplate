@@ -1,6 +1,5 @@
 #include "app/AppController.hpp"
 #include <string>               // Strings de texto
-#include <chrono>               // Controla tiempos de espera
 #include <filesystem>           // Controla directorios, rutas, etc.
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
@@ -9,7 +8,6 @@
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
-#include "logic/comms/CommsCore.hpp"  // Clase para lógica de comunicaciones
 #include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
 #include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
 #include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
@@ -28,16 +26,20 @@ AppController::AppController(int argc, char** argv) :
     argv_(argv),
     config_filename_("config.json"),
     net_(std::make_unique<NetMgr>()),
-    cli_(std::make_unique<ConsoleMgr>(this, argv_[0])),
-    gui_(std::make_unique<GuiMgr>(this)),
+    cli_(std::make_unique<ConsoleMgr>()),
+    gui_(std::make_unique<GuiMgr>()),
     snd_(std::make_unique<SoundMgr>()),
     tmx_(std::make_unique<TotalMix>()),
     sym_(std::make_unique<Symetrix>()),
     vip_(std::make_unique<VoIPMgr>()),
-    com_(std::make_unique<CommsCore>()),
     dds_(std::make_unique<FastDDS>()),
     cds_(std::make_unique<CycloneDDS>())
 {
+    // Establecer controladores de las interfaces de usuario
+    gui_->setController(this);
+    cli_->setController(this);
+    cli_->setAppName(argv_[0]);
+
     // Activa todos los módulos por defecto
     enable_flags_.setAll(1);
 }
@@ -97,23 +99,24 @@ bool AppController::init() {
     init_module(snd_, "Sounds",             enable_flags_.snd);
     init_module(tmx_, "Totalmix",           enable_flags_.tmx);
     init_module(sym_, "Symetrix",           enable_flags_.sym);
-    init_module(com_, "CommsDispatcher",    enable_flags_.com);
     init_module(dds_, "FastDDS",            enable_flags_.dds);
     init_module(cds_, "CycloneDDS",         enable_flags_.cds);
+
+    // #TODO
+    // init_module(ico_, "iComm",              enable_flags_.ico);
 
 
     // Vincular módulos a través de patrón observador a GUI ( #TODO )
     // if (gui_->isInitialized() && tts_->isInitialized())
     //     tts_->addObserver(gui_.get());
-    
-
 
 
     // Volcar datos que hayan escrito los módulos al config
     SYS_INFO("AppController","Updating json config files...");
     jsonMgr.update();
 
-
+    
+    // Informar y salir
     SYS_INFO("AppController","App initialized");
     return true;
 }
@@ -175,6 +178,10 @@ void AppController::loadConfig(void* config) {
     jsonMgr.get_or_set(cfg, "APP_enable_cycloneds", val);
     enable_flags_.cds = val;
 
+    val = enable_flags_.ico;
+    jsonMgr.get_or_set(cfg, "APP_enable_icomm", val);
+    enable_flags_.ico = val;
+
 }
 
 void AppController::close() {
@@ -184,57 +191,23 @@ void AppController::close() {
     // Notifica el estado de cerrado (para threads, etc.)
     running_ = false;
 
-    /* Cerrar módulos (opcional, recomendado) */
-    
-    if (cli_->isInitialized()) {
-        SYS_INFO("AppController","Closing GUI subsystem...");
-        gui_->close();
-    }
+    // Cerrar módulos (opcional, recomendado)
+    close_module(cli_, "CLI");
+    close_module(gui_, "GUI");
+    close_module(net_, "Network");
+    close_module(snd_, "Sound");
+    close_module(tmx_, "TotalMix");
+    close_module(sym_, "Symetrix");
+    close_module(dds_, "FastDDS");
+    close_module(cds_, "CycloneDDS");
 
-    if (gui_->isInitialized()) {
-        SYS_INFO("AppController","Closing GUI subsystem...");
-        gui_->close();
-    }
-
-    if (net_->isInitialized()) { // IMPRESCINDIBLE PARA CERRAR HILOS CONSUMIDORES
-        SYS_INFO("AppController","Closing Network subsystem...");
-        net_->close();
-    }
-
-    if (snd_->isInitialized()) {
-        SYS_INFO("AppController","Closing Sound subsystem...");
-        snd_->close();
-    }
-    
-    if (tmx_->isInitialized()) {
-        SYS_INFO("AppController","Closing Totalmix subsystem...");
-        tmx_->close();
-    }
-
-    if (sym_->isInitialized()) {
-        SYS_INFO("AppController","Closing Symetrix manager...");
-        sym_->close();
-    }
-
-    if (com_->isInitialized()) {
-        SYS_INFO("AppController","Closing Comms logic module...");
-        com_->close();
-    }
-
-    if (dds_->isInitialized()) {
-        SYS_INFO("AppController","Closing FastDDS manager...");
-        dds_->close();
-    }
-
-    if (cds_->isInitialized()) {
-        SYS_INFO("AppController","Closing CycloneDDS manager...");
-        cds_->close();
-    }
+    // #TODO
+    //close_module(ico_, "iComm");
 
     SYS_INFO("AppController","AppController closed successfully");
 }
 
-bool AppController::run() {
+bool AppController::Run() {
     SYS_INFO("AppController","Running app...");
     if (enable_flags_.gui && gui_ && gui_->isInitialized())
         return gui_->Run();     // Bloquea en la ventana en modo GUI
@@ -258,13 +231,15 @@ bool AppController::run() {
 
     void AppController::setOnlineMode(bool nuevo_online_mode) noexcept { 
         
+        // Comprobar si el modo ha cambiado
         if(online_mode_==nuevo_online_mode) 
             return;
         
+        // Establecer modo
         online_mode_=nuevo_online_mode;
-
         SYS_INFO("IAppControl", std::string(online_mode_ ? "ONLINE" : "OFFLINE") + " mode set.");
 
+        // Activar/desactivar la red
         if(online_mode_)
             net_->start();
         else
@@ -297,23 +272,31 @@ bool AppController::run() {
 
 // Módulos ------------------------------------------------------------------------------
 
-    template <typename T>
-    void AppController::init_module(T& module, std::string const& name, bool enabled) {
-        
-        // Comprobar si el módulo está activado
-        if (!enabled) {
-            SYS_INFO("AppController", name + " subsystem disabled");
-            return;
-        }
-
-        // Obtener la intancia de json y la configuación del módulo
-        JsonMgr& jsonMgr = JsonMgr::instance();
-        json* config_node = jsonMgr.getSubNode(config_filename_, name);
-
-        // Inicializar con su configuración
-        SYS_INFO("AppController", name + " loading...");
-        if (module->init(config_node))      // CUIDADO: aqui supone que todos los módulos tienen init(config)
-            SYS_INFO("AppController", name + " OK");
-        else
-            SYS_WARN("AppController", name + " FAIL");
+template <typename T>
+void AppController::init_module(T& module, std::string const& name, bool enabled) {
+    
+    // Comprobar si el módulo está activado
+    if (!enabled) {
+        SYS_INFO("AppController", name + " subsystem disabled");
+        return;
     }
+
+    // Obtener la intancia de json y la configuación del módulo
+    JsonMgr& jsonMgr = JsonMgr::instance();
+    json* config_node = jsonMgr.getSubNode(config_filename_, name);
+
+    // Inicializar con su configuración
+    SYS_INFO("AppController", name + " loading...");
+    if (module->init(config_node))      // CUIDADO: aqui supone que todos los módulos tienen init(config)
+        SYS_INFO("AppController", name + " OK");
+    else
+        SYS_WARN("AppController", name + " FAIL");
+}
+
+template <typename T>
+void AppController::close_module(T& module, std::string const& name) {
+    if (module->isInitialized()) {
+        SYS_INFO("AppController","Closing " + name + " subsystem...");
+        module->close();
+    }
+}

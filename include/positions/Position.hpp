@@ -5,10 +5,10 @@
 
 
 /**
- * @class Persona
+ * @class Position
  * @brief Gestiona la configuración de audio, información y estado de transmisión/recepción de un usuario.
  */
-class Persona {
+class Position {
 
 public:
 
@@ -17,12 +17,12 @@ public:
     /**
      * @brief Constructor por defecto
      */
-    Persona();
+    Position();
 
     /**
      * @brief Destructor por defecto
      */
-    ~Persona();
+    ~Position();
 
 
 // Inicialización y ejecución -----------------------------------------------------------

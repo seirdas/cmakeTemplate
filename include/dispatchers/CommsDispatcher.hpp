@@ -1,19 +1,19 @@
 #pragma once
 
 #include <vector>
-#include <memory>
-#include <unordered_map>
-#include <string>
 
-class Persona;      ///< Declaración implícita
-class IAppControl;  ///< Declaración implícita
+
+// Forward declaration
+class Position;         ///< Declaración implícita
+class IAppControl;      ///< Declaración implícita
 
 
 /** 
- * @class CommsCore
- * @brief Clase de lógica de comunicaciones entre personas
+ * @class CommsDispatcher
+ * @brief Clase de gestión de datos recibidos 
+ *  externamente de comunicaciones
  */
-class CommsCore {
+class CommsDispatcher {
 
 public:
 
@@ -22,12 +22,12 @@ public:
     /**
      * @brief Constructor estándar
      */
-    CommsCore(IAppControl* ctrl = nullptr);
+    CommsDispatcher();
 
     /**
      * @brief Destructor estándar
      */
-    ~CommsCore();
+    ~CommsDispatcher();
 
 
 // Inicialización -----------------------------------------------------------------------
@@ -61,6 +61,13 @@ public:
      */
     bool close();
 
+    /**
+     * @brief Establece el controlador de la aplicación (ctrl)
+     * @param ctrl Controlador de la aplicación
+     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
+     */
+    bool setController(IAppControl* controller);
+
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -69,15 +76,12 @@ public:
      *  Normalmente esto es una estructura de interfaz (ICD) obtenida del socket 
      * @param data Estructura de datos de comunicaciones (normalmente del ICD)
      */
-    bool Ejecutar(std::vector<char> data);
+    bool Dispatch(std::vector<char> data);
 
 
 private:
 
 /************ Variables ********************************************************/
-
-// Aliases
-    using ListaPersonas = std::unordered_map<std::string, std::unique_ptr<Persona>>;
 
 // Inicialización y ejecución
     bool            initialized_;       ///< Bandera para indicar inicialización exitosa
@@ -85,8 +89,5 @@ private:
 // Conexión con AppController (y módulos)
     IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
     unsigned long   last_packet_hash_;  ///< Hash del último data recibido, para comparar duplicados
-
-// Gestión de personas
-    ListaPersonas   personas_;          ///< Lista de personas gestionadas
 
 };

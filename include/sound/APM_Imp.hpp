@@ -45,7 +45,7 @@
         * @param context (ma_context*) Contexto de audio de miniaudio
         * @param devInfo (ma_device_info*) Información del dispositivo
         */
-        inline Impl(void* context, const void* devInfo) {
+        Impl(void* context, const void* devInfo) {
             ctx = static_cast<ma_context*>(context);
             device_info = *static_cast<const ma_device_info*>(devInfo);
         }

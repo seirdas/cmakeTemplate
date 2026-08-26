@@ -1,12 +1,11 @@
-#include "logic/comms/Persona.hpp"
+#include "positions/Position.hpp"
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
-#include <cstring>
 
 
 // General ------------------------------------------------------------------------------
 
-Persona::Persona() :
+Position::Position() :
     initialized_(false),
     name_(""),
     is_instructor_(false),
@@ -16,14 +15,14 @@ Persona::Persona() :
     memset((void*)&tm_, 0, sizeof(tm_));
 }
 
-Persona::~Persona() {
+Position::~Position() {
 
 }
 
 
 // Inicialización y ejecución -----------------------------------------------------------
 
-bool Persona::init(void* config) {
+bool Position::init(void* config) {
 
     // Validar y asignar valores de variables miembro a partir de la config pasada (json)
     if (config)
@@ -33,11 +32,11 @@ bool Persona::init(void* config) {
     return initialized_;
 }
 
-bool Persona::isInitialized() const {
+bool Position::isInitialized() const {
     return initialized_;
 }
 
-void Persona::loadConfig(void* config) {
+void Position::loadConfig(void* config) {
     if (!config) 
         return;
         
@@ -90,31 +89,31 @@ void Persona::loadConfig(void* config) {
 
 // Configuración ------------------------------------------------------------------------
 
-bool Persona::set_mic_in(short in_index) {
+bool Position::set_mic_in(short in_index) {
     // #TODO
     return false;
 }
 
-void Persona::set_spk_vol(short vol) {
+void Position::set_spk_vol(short vol) {
     spk_vol = vol;
 }
 
 
 // Información --------------------------------------------------------------------------
 
-void Persona::logInfo() {
-    SYS_INFO("Persona","Not yet implemented.");
+void Position::logInfo() {
+    SYS_INFO("Position","Not yet implemented.");
     return;
 }
 
-std::string Persona::name() {
+std::string Position::name() {
     return name_;
 }
 
-bool Persona::isTransmiting() {
+bool Position::isTransmiting() {
     return !TXs.empty();
 }
 
-bool Persona::isReceiving() {
+bool Position::isReceiving() {
     return !RXs.empty();
 }

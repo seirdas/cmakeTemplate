@@ -8,10 +8,9 @@
 Symetrix::Symetrix() :
     pimpl_(std::make_unique<Impl>()),
     initialized_(false),
-    running_(false),
     wsaStarted_(false),
+    running_(false),
     connected_(false),
-    m_waitingPingResponse_(false),
     connection_ping_timeout_ms_(500),
     ComposerPort_(48631),
     SymetrixIP_("192.168.7.21"),

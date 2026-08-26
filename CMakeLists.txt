@@ -394,9 +394,6 @@ elseif (MINGW)
     -Wdouble-promotion          # Conversión implícita de float a double
     -Wnull-dereference          # Punteros nulos potenciales
     -Woverloaded-virtual        # Sobrecargas virtuales ocultas
-    -Wduplicated-cond           # Condiciones duplicadas en if-else (GCC)
-    -Wduplicated-branches       # Ramas idénticas en if-else (GCC)
-    -Wlogical-op                # Uso sospechoso de operadores lógicos (GCC)
     # -Werror                   # Tratar warnings como errores
     
     # Flags específicos por configuración

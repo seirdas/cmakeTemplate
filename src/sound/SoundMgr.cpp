@@ -167,7 +167,7 @@
 
             // Transformar a minúsculas
             for (char &c : type)
-                c = std::tolower(static_cast<unsigned char>(c));
+                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
             // Agregar según el tipo de módulo
             if (type == "audio")

@@ -22,7 +22,7 @@
 
     // General ------------------------------------------------------------------------------
 
-    TTSCore::TTSCore(int const& thread_count) :
+    TTSCore::TTSCore(unsigned int const& thread_count) :
         initialized_(false),
         running_(false),
         active_tasks_(0),
@@ -319,7 +319,7 @@
         // Poner en minúsculas siempre (para comparar igual que las claves internas)
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Busca y devuelve la ruta del modelo (carpeta) si existe en ese directorio
         for (const auto& entry : fs::directory_iterator(models_path_)) {
@@ -332,7 +332,7 @@
             
             // Pasar a minúsculas
             for (char &c : entry_lc)
-                c = std::tolower(static_cast<unsigned char>(c));
+                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
             
             // Buscar si coincide con el parámetro
             if (entry_lc.find(modelName_lc) != std::string::npos)
@@ -366,7 +366,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         std::unique_lock<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName_lc);
@@ -384,7 +384,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Comprobar que el texto contiene algo para generar
         if (text == "") {
@@ -490,7 +490,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
         
         // Devuelve AudioData (samples + sample_rate)
         AudioData audio = generate(modelName_lc, text);
@@ -519,7 +519,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(models_mutex_);
@@ -541,7 +541,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(models_mutex_);
@@ -564,7 +564,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Busca el modelo, avisa si no lo encuentra
         std::lock_guard<std::mutex> lock(processing_mtx_);
@@ -588,7 +588,7 @@
 
         // Poner en minúsculas siempre
         for (char &c : st_modelname)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Devuelve vacío si no ha encontrado el modelo
         return st_modelname;
@@ -601,7 +601,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         return modelName_lc.find("en_") != std::string::npos;
     }
@@ -610,7 +610,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         return modelName_lc.find("en_gb") != std::string::npos; 
     }
@@ -619,7 +619,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         return modelName_lc.find("en_us") != std::string::npos; 
     }
@@ -628,7 +628,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         return modelName_lc.find("es_") != std::string::npos; 
     }
@@ -798,7 +798,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = st_modelname;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Agregarlo a la lista de modelos disponibles del TTSCore
         {
@@ -857,7 +857,7 @@
         // Poner en minúsculas siempre
         std::string modelName_lc = modelName;
         for (char &c : modelName_lc)
-            c = std::tolower(static_cast<unsigned char>(c));
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
         // Busca el modelo y lo borra
         std::lock_guard<std::mutex> lock(models_mutex_);

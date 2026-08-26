@@ -78,13 +78,13 @@ private:
     #include "system/SystemMgr.hpp"
 
 // General ------------------------------------------------------------------------------
-    inline iCommBridge::iCommBridge(TTSDispatcher* parent) : initialized_(true)   {}
+    inline iCommBridge::iCommBridge(TTSDispatcher*) : initialized_(false)   {}
     inline iCommBridge::~iCommBridge()              {}
 
 // Ejecución ----------------------------------------------------------------------------
     inline bool iCommBridge::init()     { 
         SYS_WARN("iCommBridge","iCommMgr only compatible with MSVC compiler (Windows)");
-        return false; 
+        return initialized_; 
     }
     inline bool iCommBridge::isInitialized() const  { return false; }
     inline bool iCommBridge::close()    { return false; }

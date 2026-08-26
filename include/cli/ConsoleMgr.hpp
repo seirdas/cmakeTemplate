@@ -33,7 +33,7 @@ public:
     /**
      * @brief Constructor
      */
-    ConsoleMgr(IAppControl* ctrl = nullptr, std::string const& exePath = "");
+    ConsoleMgr();
     
     /**
      * @brief Destructor
@@ -80,6 +80,19 @@ public:
      */
     bool close();
 
+    /**
+     * @brief Establece el controlador de la aplicación (ctrl)
+     * @param ctrl Controlador de la aplicación
+     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
+     */
+    bool setController(IAppControl* controller);
+
+    /**
+     * @brief Establece internamente el nombre de la aplicación
+     * @details Esto se usa para funciones de terminal en Linux
+     */
+    void setAppName(std::string const& appName);
+
 
 // Ejecución ----------------------------------------------------------------------------
 
@@ -123,6 +136,9 @@ private:
      * @param tokens Tokens de la línea completa, tokens[0] == "online".
      */
     void execute_cmd_online(std::vector<std::string> const& tokens);
+
+
+// Subcomandos Network ------------------------------------------------------------------
 
     /**
      * @brief Subcomando raíz "sounds": deriva a devices/players según el subcomando.
@@ -175,17 +191,8 @@ private:
         std::vector<std::string> const&  tokens,
         size_t                           subIdx);
 
-    /**
-     * @brief Subcomandos del comando "totalmix"
-     * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
-     */
-    void execute_totalmix_command(std::vector<std::string> const& tokens);
 
-    /**
-     * @brief Subcomandos del comando "symetrix"
-     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
-     */
-    void execute_symetrix_command(std::vector<std::string> const& tokens);
+// Subcomandos Network ------------------------------------------------------------------
 
     /**
      * @brief Subcomandos del comando "network"
@@ -241,6 +248,25 @@ private:
      */
     void execute_cmd_net_queue(std::vector<std::string> const& tokens);
 
+
+// Subcomandos Totalmix -----------------------------------------------------------------
+
+    /**
+     * @brief Subcomandos del comando "totalmix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "totalmix".
+     */
+    void execute_totalmix_command(std::vector<std::string> const& tokens);
+
+
+// Subcomandos Symetrix -----------------------------------------------------------------
+
+    /**
+     * @brief Subcomandos del comando "symetrix"
+     * @param tokens Tokens de la línea completa, tokens[0] == "symetrix".
+     */
+    void execute_symetrix_command(std::vector<std::string> const& tokens);
+
+
 // Tokens (comandos) --------------------------------------------------------------------
 
     /**
@@ -295,8 +321,9 @@ private:
     bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
 
 // Parámetros de la consola
-    std::string     AppName_;           ///< Nombre de la aplicación/ventana
-    std::string     exe_path_;          ///< Ruta de aplicación (para duplicar app en terminal con Linux)
-    bool            tried_to_launch_console_;  ///< Indica si ya se ha indtentado lanzar la consola
-
+    std::string     AppName_;                   ///< Nombre de la aplicación/ventana
+    std::string     exe_path_;                  ///< Ruta de aplicación (para duplicar app en terminal con Linux)
+    bool            tried_to_launch_console_;   ///< Indica si ya se ha indtentado lanzar la consola
+    bool            show_app_name_;             ///< Muestra el nombre de la aplicación en la consola o no
+    std::string     prefix_color_;              ///< Color del prefijo de entrada ( el '>>' )
 };
