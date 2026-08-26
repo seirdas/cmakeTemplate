@@ -20,7 +20,7 @@
 // intentar quitar esto si es posible:
 #include "datatypes/TTSDataTypes.hpp"
 #include "sound/TTSCore.hpp"
-#include "tts/ITTSObserver.hpp"     // Clase para observadores
+#include "tts_obsoleto/ITTSObserver.hpp"     // Clase para observadores
 
 
 class TTSMgr {
