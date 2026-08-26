@@ -73,7 +73,7 @@
     void GuiMgr::Style_Dashboard() {
 
         StyleColorsDark();
-        titleBarDarkMode(true);
+        titlebar_dark_mode(true);
 
         style_->Alpha                       = 1.0000f;
         style_->DisabledAlpha               = 0.5000f;

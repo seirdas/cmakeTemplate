@@ -1,6 +1,6 @@
 #include "CLI.NET/iCommBridge.hpp"
 #include "CLI.NET/iCommMgr.hpp"
-#include "tts/TTSMgr.hpp"
+#include "tts_obsoleto/TTSMgr.hpp"
 #include <vcclr.h>
 
 // General ------------------------------------------------------------------------------
