@@ -12,6 +12,7 @@
 
 
 #include "gui/GuiMgr.hpp"			// Clase de gestión de UI
+#include <cstdio>                  // std::snprintf (campos de solo lectura de panelNetwork)
 #include "sound/AudioCaptureModule.hpp"
 #include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
@@ -449,7 +450,7 @@
 				TextDisabled("Próximamente: control de Symetrix desde la GUI (ya disponible por CLI: 'symetrix').");
 				break;
 			}
-			case 3: panelPlaceholder("Network",  "Próximamente: gestión de sockets UDP desde la GUI (ya disponible por CLI: 'network')."); break;
+			case 3: panelNetwork(); break;
 			case 4: panelTTS(); break;
 			case 5: panelCapture(); break;
 			default: break;
@@ -579,6 +580,182 @@
 		SeparatorText(title);
 		Dummy(ImVec2(0, 8));
 		TextDisabled("%s", subtitle);
+	}
+
+	void GuiMgr::panelNetwork() {
+		NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+		if (!net) {
+			Text("Network module not available.");
+			return;
+		}
+
+		SetWindowFontScale(1.2f);
+
+		// ================================================================ Estado general
+		SeparatorText("Network");
+		Dummy(ImVec2(0, 4));
+
+		statusDot(net->isRunning() ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+		Text(net->isRunning() ? "Running" : "Stopped");
+		SameLine();
+		Dummy(ImVec2(16, 0));
+		SameLine();
+		Text("Packets pending in central queue: %zu", net->numUdpRcvElements());
+
+		Dummy(ImVec2(0, 20));
+
+		// ================================================================ Sockets UDP
+		SeparatorText("UDP Sockets");
+		Dummy(ImVec2(0, 4));
+
+		auto sockets = net->getUdpSockets();
+		std::string toRemove; // Borrado diferido: nunca tocar el puntero tras removeUdpSocket()
+
+		if (sockets.empty()) {
+			TextDisabled("No UDP sockets registered.");
+		} else if (BeginTable("net_sockets_tbl", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg, ImVec2(0, 0))) {
+			TableSetupColumn("Name");
+			TableSetupColumn("Port");
+			TableSetupColumn("Running");
+			TableSetupColumn("Has data");
+			TableSetupColumn("Last packet");
+			TableSetupColumn("##remove", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+			TableHeadersRow();
+
+			for (UdpSocket* sock : sockets) {
+				if (!sock) continue;
+				PushID(sock->name().c_str());
+
+				const bool running  = sock->isRunning();
+				const bool hasData  = sock->hasData();
+				const auto lastMs   = sock->getLastPacketMs();
+
+				TableNextRow();
+
+				TableNextColumn();
+				Text("%s", sock->name().c_str());
+
+				TableNextColumn();
+				Text("%u", sock->port());
+
+				TableNextColumn();
+				statusDot(running ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+				Text(running ? "Yes" : "No");
+
+				TableNextColumn();
+				statusDot(hasData ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+				Text(hasData ? "Yes" : "No");
+
+				TableNextColumn();
+				if (lastMs > 0) Text("%llu ms ago", lastMs);
+				else            TextDisabled("never");
+
+				TableNextColumn();
+				if (Button("Remove", ImVec2(-FLT_MIN, 0)))
+					toRemove = sock->name();
+
+				PopID();
+			}
+			EndTable();
+		}
+
+		// Aplicar el borrado (si lo hubo) fuera del bucle, ya con la tabla cerrada
+		if (!toRemove.empty())
+			net->removeUdpSocket(toRemove);
+
+		Dummy(ImVec2(0, 20));
+
+		// ================================================================ Añadir socket
+		SeparatorText("Add socket");
+		Dummy(ImVec2(0, 4));
+
+		static char newName[64] = "";
+		static char newIp[64]   = "";
+		static int  newPort     = 0;
+		static int  newSize     = 0;
+
+		Text("Name:"); SameLine();
+		PushItemWidth(200);
+		InputTextWithHint("##netNewName", "e.g. radio1", newName, sizeof(newName));
+		PopItemWidth();
+		SameLine(); Dummy(ImVec2(14, 0)); SameLine();
+		Text("Port:"); SameLine();
+		PushItemWidth(100);
+		InputInt("##netNewPort", &newPort, 0, 0);
+		PopItemWidth();
+
+		Text("Local IP:"); SameLine();
+		PushItemWidth(200);
+		InputTextWithHint("##netNewIp", "empty = all interfaces", newIp, sizeof(newIp));
+		PopItemWidth();
+		SameLine(); Dummy(ImVec2(14, 0)); SameLine();
+		Text("Expected size:"); SameLine();
+		PushItemWidth(100);
+		InputInt("##netNewSize", &newSize, 0, 0);
+		PopItemWidth();
+
+		Dummy(ImVec2(0, 8));
+		const bool validName = newName[0] != '\0';
+		const bool validPort = newPort > 0 && newPort <= 65535;
+		if (!validName || !validPort) BeginDisabled();
+		if (Button("+ Add socket", ImVec2(160, 40))) {
+			net->addUdpSocket(
+				newName,
+				(unsigned short)newPort,
+				newIp,
+				newSize > 0 ? (unsigned int)newSize : 0
+			);
+			newName[0] = '\0';
+			newIp[0]   = '\0';
+			newPort    = 0;
+			newSize    = 0;
+		}
+		if (!validName || !validPort) EndDisabled();
+
+		Dummy(ImVec2(0, 20));
+
+		// ================================================================ Network Checking
+		// Solo estructura visual (cuadros de solo lectura) todavía sin datos reales.
+		SeparatorText("Network Checking");
+		Dummy(ImVec2(0, 4));
+
+		auto readonlyField = [&](const char* label, const char* id, const char* value) {
+			Text("%s", label);
+			SameLine(110);
+			char buf[16];
+			std::snprintf(buf, sizeof(buf), "%s", value);
+			PushID(id);
+			PushItemWidth(110);
+			InputText("##val", buf, sizeof(buf), ImGuiInputTextFlags_ReadOnly);
+			PopItemWidth();
+			PopID();
+		};
+
+		if (BeginTable("net_checking_tbl", 2, ImGuiTableFlags_None)) {
+			TableNextRow();
+			TableNextColumn(); readonlyField("IP FROM",    "ipfrom",    "");
+			TableNextColumn(); readonlyField("LOCAL IP",   "localip",   "");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("PORT",       "port",      "0");
+			TableNextColumn(); readonlyField("LOCAL",      "local",     "0");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("Cicle",      "cicle",     "0");
+			TableNextColumn(); readonlyField("Cicle Time", "cicletime", "0");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("Size",       "size1",     "0");
+			TableNextColumn(); readonlyField("Real size",  "realsize1", "0");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("Size",       "size2",     "0");
+			TableNextColumn(); readonlyField("Real size",  "realsize2", "0");
+
+			EndTable();
+		}
+
+		SetWindowFontScale(1.0f);
 	}
 
 	void GuiMgr::panelAppearance() {

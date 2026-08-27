@@ -194,6 +194,15 @@ private:
     void panelCapture();
 
     /**
+     * @brief Panel real de "Network": tabla de sockets UDP gestionados por NetMgr
+     *  (nombre, puerto, running, datos, último paquete) + alta/baja de sockets.
+     * @details Usa exclusivamente la API pública ya existente de NetMgr/UdpSocket
+     *  (getUdpSockets, name/port/isRunning/hasData/getLastPacketMs, addUdpSocket,
+     *  removeUdpSocket, isRunning, numUdpRcvElements); no añade métodos nuevos.
+     */
+    void panelNetwork();
+
+    /**
      * @brief Panel de apariencia: selector de tema (movido de la antigua columna izquierda).
      */
     void panelAppearance();
