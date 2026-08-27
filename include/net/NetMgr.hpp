@@ -63,7 +63,6 @@ public:
      * @details Toma por defecto el número máximo permitido por el sistema.
      * Esto no significa que no se puedan hacer más hilos, porque se quedan "idle" 
      * esperando datos en los sockets.
-     * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
     bool onInit() override;
@@ -88,7 +87,7 @@ public:
 // Ejecución ----------------------------------------------------------------------------
 
     /**
-     * @brief Llama a init(), misma funcionalidad por compatibilidad.
+     * @brief Activa los sockets registrados, includendo envío/recepción.
      */    
     bool start();
 

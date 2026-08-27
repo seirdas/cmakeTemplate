@@ -167,6 +167,9 @@
 
     bool NetMgr::start() {
 
+        if (sockets_running_)
+            return true;
+
         // Iniciar (de nuevo si aplica) los sockets
         {
             // Proteger acceso a vector de sockets
@@ -186,7 +189,8 @@
     void NetMgr::stop() {
 
         // Si los sockets ya están inactivos, no hacer nada
-        if (!sockets_running_) return;
+        if (!sockets_running_) 
+            return;
 
         // Parar la recepción de los sockets
         SYS_INFO("NetMgr","Stopping sockets...");

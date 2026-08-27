@@ -46,7 +46,6 @@ public:
 
     /**
      * @brief Inicializa la lógica de reproducción de tonos
-     * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true si la inicialización fue exitosa, @c false si hubo algún error 
      */
     bool onInit() override;
