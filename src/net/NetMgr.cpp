@@ -50,7 +50,12 @@
 
     // Métodos comunes de módulo (IModule) --------------------------------------------------
 
-    bool NetMgr::onInit() {
+    bool NetMgr::init(void* config) {
+        // Ejecutar inicialización común (guarda config, cambia flags)
+        if (!IModule::init(config)) {
+            SYS_WARN("NetMgr", "Error in base initialization");
+            return false;
+        }
 
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {
@@ -136,7 +141,12 @@
 
     }
 
-    bool NetMgr::onClose() {
+    bool NetMgr::close() {
+        // Ejecutar cierre común (cambia flags, etc.)
+        if (!IModule::close()) {
+            SYS_WARN("NetMgr", "Error in base initialization");
+            return false;
+        }
 
         // Parar los sockets
         stop();

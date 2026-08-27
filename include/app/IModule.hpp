@@ -31,20 +31,20 @@ public:
     IModule& operator=(IModule&&) = delete;
 
 
-// Inicialización -----------------------------------------------------------------------
+// Inicialización y cierre --------------------------------------------------------------
 
     /**
      * @brief Inicialización del módulo.
      * @param config Datos de configuración (diseñado para recibir un puntero a json).
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    bool init(void* config);
+    virtual bool init(void* config);
 
     /**
-     * @brief Devuelve si la inicialización ha sido exitosa.
-     * @return @c true Si ha iniciado bien, @c false en caso contrario.
-     */
-    virtual bool isInitialized() const;
+    * @brief Cierra el módulo
+    * @returns @c true si se ha cerrado correctamente, @c false en caso contrario. 
+    */
+    virtual bool close();
 
 
 // Configuración ------------------------------------------------------------------------
@@ -57,15 +57,6 @@ public:
     virtual void loadConfig(void* config) = 0;
 
 
-// Cierre -------------------------------------------------------------------------------
-
-    /**
-    * @brief Cierra el módulo
-    * @returns @c true si se ha cerrado correctamente, @c false en caso contrario. 
-    */
-    bool close();
-
-
 // Parámetros del módulo ----------------------------------------------------------------
 
     /**
@@ -75,33 +66,14 @@ public:
      */
     bool setController(IAppControl* controller);
 
+    /**
+     * @brief Devuelve si la inicialización ha sido exitosa.
+     * @return @c true Si ha iniciado bien, @c false en caso contrario.
+     */
+    virtual bool isInitialized() const;
+
 
 protected:
-
-// Inicialización y cierre específico de módulo -----------------------------------------
-
-    /* 
-    * init() y close() son la interfaz pública; 
-    * onInit() y onClose() son hooks que las clases derivadas implementan.
-    */
-
-    /**
-     * @brief Parte de inicialización particular del módulo heredado.
-     * @note Este método es el que debe sobreescribirse en las clases heredadas
-     * @note Este método no es público, la inicialización del módulo se debe hacer a través de init()
-     * @param config Datos de configuración (diseñado para recibir un puntero a json).
-     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
-     */
-    virtual bool onInit();
-
-    /**
-     * @brief Parte de cerrar particular del módulo heredado.
-     * @note Este método no es público, la inicialización del módulo se debe hacer a través de init()
-     * @note Este método es el que debe sobreescribirse en las clases heredadas
-    * @returns @c true si se ha cerrado correctamente, @c false en caso contrario. 
-    */
-    virtual bool onClose();
-
 
 /************ Variables ****************************************************************/
 
@@ -110,8 +82,5 @@ protected:
     void*               config_;            ///< Configuración del módulo (considerado json)
     bool                initialized_;       ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>   threads_running_;   ///< Mantiene los hilos del módulo corriendo
-
-private:
-    // nada
     
 };

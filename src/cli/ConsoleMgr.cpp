@@ -43,8 +43,12 @@ ConsoleMgr::~ConsoleMgr() {
 
 // Métodos comunes de módulo (IModule) --------------------------------------------------
 
-bool ConsoleMgr::onInit() {
-    // Aquí no hace falta hacer nada específico, solo el override
+bool ConsoleMgr::init(void* config) {
+    if (!IModule::init(config)) {
+        SYS_WARN("NetMgr", "Error in base initialization");
+        return false;
+    }
+    
     return true;
 }
 
@@ -89,8 +93,13 @@ void ConsoleMgr::loadConfig(void* config) {
 
 }
 
-bool ConsoleMgr::onClose() {
-    // Aquí no hace falta hacer nada específico, solo el override
+bool ConsoleMgr::close() {
+    // Ejecutar cierre común (cambia flags, etc.)
+    if (!IModule::close()) {
+        SYS_WARN("NetMgr", "Error in base initialization");
+        return false;
+    }
+    
     return true;
 }
 

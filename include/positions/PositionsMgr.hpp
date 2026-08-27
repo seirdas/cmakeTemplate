@@ -41,13 +41,13 @@ public:
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    bool onInit() override;
+    bool init(void* config) override;
 
     /**
      * @brief Cierra la lógica de comunicaciones
      * @return @c true Si se cierra correctamente, @c false en caso contrario
      */
-    bool onClose() override;
+    bool close() override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.

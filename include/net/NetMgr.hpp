@@ -65,13 +65,7 @@ public:
      * esperando datos en los sockets.
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    bool onInit() override;
-
-    /**
-     * @brief Detiene los sockets y cierra todos los recursos de la clase
-     * @return @c true Si se ha cerrado correctamente, @c false en caso contrario
-     */
-    bool onClose() override;
+    bool init(void* config) override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -82,6 +76,12 @@ public:
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
     void loadConfig(void* config) override;
+
+    /**
+     * @brief Detiene los sockets y cierra todos los recursos de la clase
+     * @return @c true Si se ha cerrado correctamente, @c false en caso contrario
+     */
+    bool close() override;
 
 
 // Ejecución ----------------------------------------------------------------------------

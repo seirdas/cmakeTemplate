@@ -48,7 +48,7 @@ public:
      * @brief Inicializa la lógica de reproducción de tonos
      * @return @c true si la inicialización fue exitosa, @c false si hubo algún error 
      */
-    bool onInit() override;
+    bool init(void* config) override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -64,7 +64,7 @@ public:
      * @brief Cierra la lógica y libera los recursos asociados.
      * @return @c true Si ha cerrado correctamente, @c false en caso de error
      */
-    bool onClose() override;
+    bool close() override;
 
 
 // Ejecución ----------------------------------------------------------------------------

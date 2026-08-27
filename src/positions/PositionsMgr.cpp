@@ -22,7 +22,12 @@ PositionsMgr::~PositionsMgr() {
 
 // Métodos comunes de módulo (IModule) --------------------------------------------------
 
-bool PositionsMgr::onInit() {
+bool PositionsMgr::init(void* config) {
+    if (!IModule::init(config)) {
+        SYS_WARN("NetMgr", "Error in base initialization");
+        return false;
+    }
+    
 
     // #TODO
 
@@ -67,7 +72,12 @@ void PositionsMgr::loadConfig(void* config) {
 
 }
 
-bool PositionsMgr::onClose() {
-    // Aquí no hace falta hacer nada específico, solo el override
+bool PositionsMgr::close() {
+    // Ejecutar cierre común (cambia flags, etc.)
+    if (!IModule::close()) {
+        SYS_WARN("NetMgr", "Error in base initialization");
+        return false;
+    }
+
     return true;
 }

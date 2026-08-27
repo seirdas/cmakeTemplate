@@ -1,6 +1,7 @@
 #include "app/AppController.hpp"
 #include <string>               // Strings de texto
 #include <filesystem>           // Controla directorios, rutas, etc.
+#include <type_traits>          // Tipos de dato (factorización de init y close de módulos)
 
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
@@ -244,6 +245,13 @@ bool AppController::Run() {
 
 template <typename T>
 void AppController::init_module(T& module, std::string const& name, bool enabled) {
+
+    // Comprobar que el tipo subyacente deriva de IModule (descomentar cuando todos deriven de IModule)
+    /*
+    using ModuleType = typename T::element_type;
+    static_assert(std::is_base_of_v<IModule, ModuleType>, 
+        "init_module: T param must be derived from IModule");
+    */
     
     // Comprobar si el módulo está activado
     if (!enabled) {
@@ -265,6 +273,14 @@ void AppController::init_module(T& module, std::string const& name, bool enabled
 
 template <typename T>
 void AppController::close_module(T& module, std::string const& name) {
+
+    // Comprobar que el tipo subyacente deriva de IModule (descomentar cuando todos deriven de IModule)
+    /*
+    using ModuleType = typename T::element_type;
+    static_assert(std::is_base_of_v<IModule, ModuleType>, 
+        "init_module: T param must be derived from IModule");
+    */
+
     if (module->isInitialized()) {
         SYS_INFO("AppController","Closing " + name + " subsystem...");
         module->close();

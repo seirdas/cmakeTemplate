@@ -14,12 +14,14 @@ IModule::IModule() :
 IModule::~IModule() = default;
 
 
-// Inicialización -----------------------------------------------------------------------
+// Inicialización y cierre --------------------------------------------------------------
 
 bool IModule::init(void* config) {
     // Si ya está inicializado no hacer nada
-    if (initialized_)
-        return true;
+    if (initialized_) {
+        SYS_WARN("IModule","Already initialized");
+        return false;
+    }
 
     // Guardar la configuración del módulo
     config_ = config;
@@ -28,36 +30,16 @@ bool IModule::init(void* config) {
     if (config_)
         loadConfig(config_);
 
-    // Método que debe ser sobreescrito por el módulo
-    if(!onInit())
-        return false;
-
     threads_running_    = true;
     initialized_        = true;
     return true;
 }
 
-bool IModule::isInitialized() const {
-    return initialized_;
-}
-
-
-// Configuración ------------------------------------------------------------------------
-
-bool IModule::setController(IAppControl* controller) {
-    ctrl_ = controller;
-    return static_cast<bool>(ctrl_);
-}
-
-
-// Cierre -------------------------------------------------------------------------------
-
 bool IModule::close() {
-    if (!initialized_)
-        return true;
-
-    if(!onClose())
+    if (!initialized_){
+        SYS_WARN("IModule","Already closed");
         return false;
+    }
 
     // Parar flag para hilos
     threads_running_ = false;
@@ -70,16 +52,21 @@ bool IModule::close() {
 }
 
 
-// Inicialización y cierre específico de módulo -----------------------------------------
+// Configuración ------------------------------------------------------------------------
 
-bool IModule::onInit() {
-    // Si la derivada no sobrescribe 'onInit', se ejecuta esto:
-    SYS_WARN("IModule","Using default initialization (without override)");
-    return false;
+/* ... */
+
+
+// Parámetros del módulo ----------------------------------------------------------------
+
+bool IModule::isInitialized() const {
+    return initialized_;
 }
 
-bool IModule::onClose() {
-    // Si la derivada no sobrescribe 'onInit', se ejecuta esto:
-    SYS_WARN("IModule","Using default close method (without override)");
-    return false;
+
+// Configuración ------------------------------------------------------------------------
+
+bool IModule::setController(IAppControl* controller) {
+    ctrl_ = controller;
+    return static_cast<bool>(ctrl_);
 }
