@@ -165,6 +165,9 @@
 		// Obtener puntero a style e io para poder modificarlo
 		style_ = &GetStyle();
 		io_ = &GetIO();
+
+		// Activar Viewports para sacar ventanas del cuadro principal
+		io_->ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		
 		// No usar archivo .ini de imgui
 		io_->IniFilename = NULL;  
@@ -214,7 +217,7 @@
 		// marcar que está inicializado
 		initialized_ = true;
 		return true;
-    }
+	}
 
 	void GuiMgr::loadConfig(void* config) {
         if (!config)
@@ -317,6 +320,15 @@
 		Render();
 		glClear(GL_COLOR_BUFFER_BIT);
 		ImGui_ImplOpenGL3_RenderDrawData(GetDrawData());
+
+		// Renderizado de Viewports (Ventanas flotantes)
+		if (io_->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+			GLFWwindow* backup_current_context = glfwGetCurrentContext();
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+			glfwMakeContextCurrent(backup_current_context);
+		}
+
 		glfwSwapBuffers(window_);
 	}
 
@@ -347,17 +359,24 @@
 		PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); 
 
-		SetNextWindowPos(ImVec2(0,MainMenuBar_Height_));
-		SetNextWindowSize(ImVec2(io_->DisplaySize.x, io_->DisplaySize.y - MainMenuBar_Height_));
-		
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
-										ImGuiWindowFlags_NoCollapse |
-										ImGuiWindowFlags_NoResize |
-										ImGuiWindowFlags_NoScrollbar |
-										ImGuiWindowFlags_NoMove |
-										ImGuiWindowFlags_NoBringToFrontOnFocus |
-										ImGuiWindowFlags_NoNav;
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+        SetNextWindowPos(viewport->WorkPos);
+        SetNextWindowSize(viewport->WorkSize);
+        SetNextWindowViewport(viewport->ID);
+        // -------------------------------------------
+        
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
+                                        ImGuiWindowFlags_NoCollapse |
+                                        ImGuiWindowFlags_NoResize |
+                                        ImGuiWindowFlags_NoScrollbar |
+                                        ImGuiWindowFlags_NoMove |
+                                        ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                        ImGuiWindowFlags_NoNav;
 
+		
+		// Forzar a que esta ventana se quede en el frame principal
+		SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+		
 		// Ventana que cubre todo el frame
 		Begin("Ventana que cubre todo el frame", nullptr, window_flags);
 			main_window();
