@@ -605,8 +605,8 @@
 		SeparatorText("Network");
 		Dummy(ImVec2(0, 4));
 
-		statusDot(net->isRunning() ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
-		Text(net->isRunning() ? "Running" : "Stopped");
+		statusDot(net->hasSocketsRunnning() ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+		Text(net->hasSocketsRunnning() ? "Running" : "Stopped");
 		SameLine();
 		Dummy(ImVec2(16, 0));
 		SameLine();
@@ -986,8 +986,8 @@
 
 					SameLine();
 
-					Text(std::to_string(acm->getBufferSize()).c_str());
-					Text(std::to_string(acm->getRecBufferSize()).c_str());
+					Text("%s", std::to_string(acm->getBufferSize()).c_str());
+					Text("%s", std::to_string(acm->getRecBufferSize()).c_str());
 
 					SameLine();
 
@@ -1549,8 +1549,8 @@
 	
 								SameLine();
 	
-								Text(std::to_string(acm->getBufferSize()).c_str());
-								Text(std::to_string(acm->getRecBufferSize()).c_str());
+								Text("%s", std::to_string(acm->getBufferSize()).c_str());
+								Text("%s", std::to_string(acm->getRecBufferSize()).c_str());
 
 								SameLine();
 
