@@ -1,4 +1,5 @@
 #include "cli/ConsoleMgr.hpp"
+#include "app/IModule.hpp"
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
 #include "system/ANSI.hpp"
@@ -23,6 +24,7 @@
 // General ------------------------------------------------------------------------------
 
 ConsoleMgr::ConsoleMgr() :
+    IModule(),
     ctrl_(nullptr),
     initialized_(false),
     running_(false),
@@ -35,34 +37,20 @@ ConsoleMgr::ConsoleMgr() :
 }
 
 ConsoleMgr::~ConsoleMgr() {
-    close();
+    onClose();
 }
 
 
-// Inicialización -----------------------------------------------------------------------
+// Métodos comunes de módulo (IModule) --------------------------------------------------
 
-bool ConsoleMgr::init(void* config) {
-
-    // Validar y asignar valores de variables miembro a partir de la config pasada (json)
-    if (config)
-        loadConfig(config);
-    else  // Puede llegar aquí cuando se hace reload()
-        SYS_WARN("ConsoleMgr","Cannot load config. Using default values.");
-
-    // Validar ctrl
-    if(!ctrl_)
-        SYS_ERROR("ConsoleMgr","Cannot bind to app modules (ctrl=null)");
-    
-    initialized_ = true;
-    return initialized_;    //<- true
-}
-
-bool ConsoleMgr::isInitialized() const {
-    return initialized_;
+bool ConsoleMgr::onInit() {
+    // Aquí no hace falta hacer nada específico, solo el override
+    return true;
 }
 
 void ConsoleMgr::loadConfig(void* config) {
 
+    // Comprobar si existe previamente
     if (!config) 
         return;
         
@@ -70,6 +58,7 @@ void ConsoleMgr::loadConfig(void* config) {
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
+    // Obtener configuración
     jsonMgr.get_or_set(cfg, "app_name_window",	AppName_);
     jsonMgr.get_or_set(cfg, "show_app_name",	show_app_name_);
 
@@ -100,22 +89,9 @@ void ConsoleMgr::loadConfig(void* config) {
 
 }
 
-bool ConsoleMgr::close() {
-
-    // Comprobar si el módulo ya estaba cerrado
-    if (!initialized_) return true;
-
-    initialized_ = false;
-    return !initialized_;   // <- true
-}
-
-bool ConsoleMgr::setController(IAppControl* controller) {
-    ctrl_ = controller;
-    return static_cast<bool>(ctrl_);
-}
-
-void ConsoleMgr::setAppName(std::string const& appName) {
-    AppName_ = appName;
+bool ConsoleMgr::onClose() {
+    // Aquí no hace falta hacer nada específico, solo el override
+    return true;
 }
 
 
@@ -280,6 +256,10 @@ bool ConsoleMgr::Run() {
 
 
 // Opciones de consola ------------------------------------------------------------------
+
+void ConsoleMgr::setAppName(std::string const& appName) {
+    AppName_ = appName;
+}
 
 bool ConsoleMgr::LaunchConsole(bool force) {
 

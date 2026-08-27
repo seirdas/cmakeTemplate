@@ -21,14 +21,12 @@ bool IModule::init(void* config) {
     if (initialized_)
         return true;
 
-    // Validar y asignar valores de variables miembro a partir de la config pasada (json)
-    if (config) {
-        // Guardar la configuración del módulo
-        config_ = config;
+    // Guardar la configuración del módulo
+    config_ = config;
 
-        // Cargar la configuración
-        loadConfig(config);
-    }
+    // Cargar la configuración (si existe)
+    if (config_)
+        loadConfig(config_);
 
     // Método que debe ser sobreescrito por el módulo
     if(!onInit())

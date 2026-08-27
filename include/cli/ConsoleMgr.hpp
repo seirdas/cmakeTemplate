@@ -1,5 +1,7 @@
 #pragma once
 
+#include "app/IModule.hpp"
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -16,7 +18,6 @@
 
 
 // Foward declaration
-class IAppControl;
 class AudioPlaybackModule;
 
 
@@ -24,7 +25,7 @@ class AudioPlaybackModule;
  * @class ConsoleMgr
  * @brief Clase gestora de consola (fallback de GUI)
  */
-class ConsoleMgr {
+class ConsoleMgr : public IModule {
 
 public:
 
@@ -39,30 +40,16 @@ public:
      * @brief Destructor
      */
     ~ConsoleMgr();
-    
-    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
-    ConsoleMgr(ConsoleMgr const&) = delete;
-    ConsoleMgr& operator=(ConsoleMgr const&) = delete;
-
-    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
-    ConsoleMgr(ConsoleMgr&&) = delete;
-    ConsoleMgr& operator=(ConsoleMgr&&) = delete;
 
 
-// Inicialización -----------------------------------------------------------------------
+// Métodos comunes de módulo (IModule) --------------------------------------------------
 
     /**
      * @brief Inicializa la lógica de reproducción de tonos
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true si la inicialización fue exitosa, @c false si hubo algún error 
      */
-    bool init(void* config);
-    
-    /**
-     * @brief Devuelve si la inicialización ha sido exitosa
-     * @return @c true Si ha iniciado bien, @c false en caso contrario
-     */
-    bool isInitialized() const;
+    bool onInit() override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -72,26 +59,13 @@ public:
     * esté completo y sincronizado.
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
-    void loadConfig(void* config);
+    void loadConfig(void* config) override;
 
     /**
      * @brief Cierra la lógica y libera los recursos asociados.
      * @return @c true Si ha cerrado correctamente, @c false en caso de error
      */
-    bool close();
-
-    /**
-     * @brief Establece el controlador de la aplicación (ctrl)
-     * @param ctrl Controlador de la aplicación
-     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
-     */
-    bool setController(IAppControl* controller);
-
-    /**
-     * @brief Establece internamente el nombre de la aplicación
-     * @details Esto se usa para funciones de terminal en Linux
-     */
-    void setAppName(std::string const& appName);
+    bool onClose() override;
 
 
 // Ejecución ----------------------------------------------------------------------------
@@ -104,6 +78,12 @@ public:
 
 
 // Opciones de consola ------------------------------------------------------------------
+
+    /**
+     * @brief Establece internamente el nombre de la aplicación
+     * @details Esto se usa para funciones de terminal en Linux
+     */
+    void setAppName(std::string const& appName);
 
     /**
      * @brief Lanza la consola. 
