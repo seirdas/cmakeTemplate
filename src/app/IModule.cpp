@@ -61,6 +61,8 @@ bool IModule::setController(IAppControl* controller) {
 // Cierre -------------------------------------------------------------------------------
 
 bool IModule::close() {
+    if (!initialized_)
+        return true;
 
     if(!onClose())
         return false;

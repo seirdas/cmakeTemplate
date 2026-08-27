@@ -44,7 +44,7 @@
     }
 
     NetMgr::~NetMgr() {
-        onClose();
+        close();
     }
 
 
@@ -158,7 +158,6 @@
             dispatcher_thread_.join();
         }
 
-        initialized_ = false;
         return true;
     }
 
