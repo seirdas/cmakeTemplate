@@ -1,5 +1,7 @@
 #pragma once
 
+#include "app/IModule.hpp"
+
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -33,8 +35,9 @@ struct NetPacket;
   * @note Los receptores se almacenan en receivers_ usando unique_ptr para gestión RAII.
   * @note El constructor es explicit para evitar conversiones implícitas en thread_count.
   * @see UdpSocket
+  * @see IModule
   */
-class NetMgr {
+class NetMgr : public IModule {
 
 public:
 
@@ -50,18 +53,10 @@ public:
     /**
      * @brief Destructor. Detiene todos los sockets.
      */
-    ~NetMgr();
-
-    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
-    NetMgr(NetMgr const&) = delete;
-    NetMgr& operator=(NetMgr const&) = delete;
-
-    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
-    NetMgr(NetMgr&&) = delete;
-    NetMgr& operator=(NetMgr&&) = delete;
+    ~NetMgr() override;
 
 
-// Ejecución ----------------------------------------------------------------------------
+// Métodos comunes de módulo (IModule) --------------------------------------------------
 
     /**
      * @brief Inicia un número de hilos con el contexto de operaciones asíncronas.
@@ -71,13 +66,13 @@ public:
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    bool init(void* config = nullptr);
+    bool onInit() override;
 
     /**
-     * @brief Devuelve si la inicialización ha sido exitosa
-     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     * @brief Detiene los sockets y cierra todos los recursos de la clase
+     * @return @c true Si se ha cerrado correctamente, @c false en caso contrario
      */
-    bool isInitialized() const;
+    bool onClose() override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -87,7 +82,10 @@ public:
     * esté completo y sincronizado.
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
-    void loadConfig(void* config);
+    void loadConfig(void* config) override;
+
+
+// Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Llama a init(), misma funcionalidad por compatibilidad.
@@ -100,16 +98,10 @@ public:
     void stop();
 
     /**
-     * @brief Detiene los sockets y cierra todos los recursos de la clase
-     * @return @c true Si se ha cerrado correctamente, @c false en caso contrario
-     */
-    bool close();
-
-    /**
      * @brief Devuelve si la red está activa (los sockets están activos)
      * @returns true si los sockets están activos, false en caso contrario
      */
-    bool isRunning() const;
+    bool hasSocketsRunnning() const;
     
 
 // Gestión de sockets -------------------------------------------------------------------
@@ -269,14 +261,13 @@ private:
     struct Impl;                                            ///< Declaración de estructura PIMPL para no depender de la librería en el header
     std::unique_ptr<Impl>       pimpl_;                     ///< Miembros dependientes de la librería externa
 
-// Inicialización
-    bool                        initialized_;               ///< Bandera para indicar inicialización exitosa
-    std::atomic<bool>           running_;                   ///< flag de aplicación corriendo (para hilos)
-
 // Contexto de operaciones asíncronas
+    // asio::io_context         io_context_;                // en PIMPL
+    // WorkGuard                work_guard_;                // en PIMPL
+    // UDPSocketsVector         udp_sockets_;               // en PIMPL
     std::atomic<bool>           io_running_;                ///< Flag para saber si la red (io_context) está en funcionamiento
-    std::vector<std::thread>    threads_;                   ///< Hilos procesando operaciones asíncronas.
-    std::size_t                 num_threads_;               ///< Numero máximo de hilos gestionando operaciones asíncronas.
+    std::vector<std::thread>    io_threads_;                ///< Hilos procesando operaciones asíncronas.
+    std::size_t                 io_threads_num_;            ///< Numero máximo de hilos gestionando operaciones asíncronas.
 
 // Sockets
     mutable std::mutex          udp_sockets_mtx_;           ///< Mutex para gestion del vector de sockets

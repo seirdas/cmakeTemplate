@@ -1124,7 +1124,7 @@ void ConsoleMgr::execute_cmd_net_status(std::vector<std::string> const& tokens) 
         return;
     }
 
-    print(std::string("Network running: ") + (net->isRunning() ? "YES" : "NO"));
+    print(std::string("Network running: ") + (net->hasSocketsRunnning() ? "YES" : "NO"));
 }
 
 void ConsoleMgr::execute_cmd_net_exists(std::vector<std::string> const& tokens) {

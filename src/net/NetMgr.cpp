@@ -11,9 +11,10 @@
     using WorkGuard = asio::executor_work_guard<asio::io_context::executor_type>;
     using UDPSocketsVector = std::vector<std::shared_ptr<UdpSocket>>;
 
+
     // Implementación de miembros de la clase de asio (pimpl_)
     struct NetMgr::Impl {
-        asio::io_context    io_context_;       // UN ÚNICO contexto de operaciones asíncronas para todo
+        asio::io_context    io_context_;       // Contexto de operaciones asíncronas de red único
         WorkGuard           work_guard_;       // RAII para mantener vivo el io
         UDPSocketsVector    udp_sockets_;      // Lista de receptores UDP registrados
 
@@ -33,31 +34,23 @@
     // General ------------------------------------------------------------------------------
 
     NetMgr::NetMgr(std::size_t const& thread_count) :
+        IModule(),
         pimpl_(std::make_unique<Impl>()),
-        initialized_(false),
-        running_(false),
         io_running_(false),
         sockets_running_(false),
-        num_threads_(thread_count == 0 ? 1 : thread_count)
+        io_threads_num_(thread_count == 0 ? 1 : thread_count)
     {
 
     }
 
     NetMgr::~NetMgr() {
-        close();
+        onClose();
     }
 
 
-    // Ejecución ----------------------------------------------------------------------------
+    // Métodos comunes de módulo (IModule) --------------------------------------------------
 
-    bool NetMgr::init(void* config) {
-        // Si ya está inicializado no hacer nada
-        if (initialized_)
-            return true;
-
-        // Validar y asignar valores de variables miembro a partir de la config pasada (json)
-        if (config)
-            loadConfig(config);
+    bool NetMgr::onInit() {
 
         // Evitar lanzar hilos si ya están corriendo
         if (sockets_running_) {
@@ -68,9 +61,9 @@
         // Inicializar el io_context con varios hilos de recepción
         if (!io_running_) {
             pimpl_->io_context_.restart();
-            SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(num_threads_) + " threads...");
-            for (std::size_t i = 0; i < num_threads_; ++i) {
-                threads_.emplace_back([this]() {
+            SYS_INFO("NetMgr","Starting I/O context with " + std::to_string(io_threads_num_) + " threads...");
+            for (std::size_t i = 0; i < io_threads_num_; ++i) {
+                io_threads_.emplace_back([this]() {
                     pimpl_->io_context_.run();
                 });
             }
@@ -90,48 +83,35 @@
                 });
         }
 
-        // Activar running para los hilos
-        running_ = true;
-
         // Hilo consumidor de paquetes online (si net activo)
         SYS_INFO("NetMgr","Starting dispatcher thread...");
         dispatcher_thread_ = std::thread(&NetMgr::t_dispatcher, this);
 
         SYS_INFO("NetMgr","Sockets running");
         sockets_running_    = true;
-        running_            = true;            // Para hilo consumidor
-        initialized_        = true;
         return true;
     }
 
-    bool NetMgr::isInitialized() const {
-        return initialized_;
-    }
-
     void NetMgr::loadConfig(void* config) {
-
-        if (!config) 
-            return;
             
         // Se considera que la configuración se pasa como json    
         json* cfg = static_cast<json*>(config);
         JsonMgr& jsonMgr = JsonMgr::instance();
 
         // Thread_count
-        jsonMgr.get_or_set(cfg, "num_threads", num_threads_);
+        jsonMgr.get_or_set(cfg, "num_threads", io_threads_num_);
         
         // Establecer dentro de rango: 0=auto, >max = max
         unsigned short max_threads = std::thread::hardware_concurrency();
         if (max_threads < 1) max_threads = 1;
-        if (num_threads_ == 0) {
+        if (io_threads_num_ == 0) {
             SYS_INFO("NetMgr","Thread_count set auto to max hw concurrency (" + std::to_string(max_threads)+")");
-            num_threads_ = max_threads;
+            io_threads_num_ = max_threads;
         }
-        if (num_threads_ > max_threads) {
+        if (io_threads_num_ > max_threads) {
             SYS_WARN("NetMgr","Warn: Thread_count higher than max allowed. thread_count set to max hw concurrency (" + std::to_string(max_threads)+")");
-            num_threads_ = max_threads;
+            io_threads_num_ = max_threads;
         }
-
 
         // hago un vector que apunte al array de los nodos json dentro del nodo principal
         std::vector<json*> config_net = jsonMgr.getArrayElements(cfg, "udpSockets");
@@ -155,6 +135,36 @@
         }
 
     }
+
+    bool NetMgr::onClose() {
+
+        // Parar los sockets
+        stop();
+
+        // Soltar el work_guard para que io_context pueda drenar y terminar.
+        pimpl_->work_guard_.reset();
+
+        // Esperar a que los hilos salgan naturalmente (sin stop() forzado).
+        //    io_context terminará solo cuando no queden handlers pendientes.
+        for (auto& t : io_threads_)
+            if (t.joinable()) t.join(); // Esperar a los hilos de io_context
+        io_running_ = false;
+        io_threads_.clear();
+    
+        // Cerrar hilos pendientes de aplicación
+        dispatcher_cv_.notify_all();
+        if (dispatcher_thread_.joinable()) {
+            SYS_INFO("AppController","Waiting for consumer thread...");
+            dispatcher_thread_.join();
+        }
+
+        initialized_ = false;
+        return true;
+    }
+
+
+    // Ejecución ----------------------------------------------------------------------------
+
 
     bool NetMgr::start() {
 
@@ -197,35 +207,7 @@
         SYS_INFO("NetMgr","All sockets stopped");
     }
 
-    bool NetMgr::close() {
-        // Parar los sockets
-        stop();
-
-        // Parar flag para hilos
-        running_ = false;
-
-        // Soltar el work_guard para que io_context pueda drenar y terminar.
-        pimpl_->work_guard_.reset();
-
-        // Esperar a que los hilos salgan naturalmente (sin stop() forzado).
-        //    io_context terminará solo cuando no queden handlers pendientes.
-        for (auto& t : threads_)
-            if (t.joinable()) t.join(); // Esperar a los hilos de io_context
-        io_running_ = false;
-        threads_.clear();
-    
-        // Cerrar hilos pendientes de aplicación
-        dispatcher_cv_.notify_all();
-        if (dispatcher_thread_.joinable()) {
-            SYS_INFO("AppController","Waiting for consumer thread...");
-            dispatcher_thread_.join();
-        }
-
-        initialized_ = false;
-        return true;
-    }
-
-    bool NetMgr::isRunning() const {
+    bool NetMgr::hasSocketsRunnning() const {
         return sockets_running_;
     }
 
@@ -477,7 +459,7 @@
 
     void NetMgr::t_dispatcher() {
 
-        while (running_) {
+        while (threads_running_) {
             NetPacket packet;               // Estructura de datos recibidos
             std::vector<char> data = {};    // Datos recibidos (de la estructura)
             
@@ -486,11 +468,11 @@
                 // Forzar la espera hasta que sea notificado de un paquete nuevo
                 std::unique_lock<std::mutex> lock(udp_rcv_data_mtx_);
                 dispatcher_cv_.wait(lock, [this] {
-                    return !running_ || !pimpl_->udp_rcv_data_.empty();
+                    return !threads_running_ || !pimpl_->udp_rcv_data_.empty();
                 });
 
                 // Salir si el programa se está cerrando
-                if (!running_) 
+                if (!threads_running_) 
                     break;
 
                 // Obtener los datos de la cola
@@ -512,7 +494,7 @@
             );
 
             // Salir si el programa se está cerrando (después de getpacket)
-            if (!running_) break;
+            if (!threads_running_) break;
 
             // Si no hay datos no hacer nada
             if (packet.data_rcv.empty()) {
