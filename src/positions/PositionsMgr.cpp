@@ -1,4 +1,5 @@
 #include "positions/PositionsMgr.hpp"
+#include "app/IModule.hpp"
 #include "positions/Position.hpp"
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
@@ -9,6 +10,7 @@
 // General ------------------------------------------------------------------------------
 
 PositionsMgr::PositionsMgr() :
+    IModule(),
     initialized_(false)
 {
 
@@ -19,28 +21,16 @@ PositionsMgr::~PositionsMgr() {
 }
 
 
-// Inicialización -----------------------------------------------------------------------
+// Métodos comunes de módulo (IModule) --------------------------------------------------
 
-bool PositionsMgr::init(void* config) {
-
-    // Validar y asignar valores de variables miembro a partir de la config pasada (json)
-    if (config)
-        loadConfig(config);
-    else  // Puede llegar aquí cuando se hace reload()
-        SYS_WARN("PositionsMgr","Cannot load config. Using default values.");
-
+bool PositionsMgr::onInit() {
 
     // #TODO
 
     
     SYS_WARN("PositionsMgr","Comms logic not yet fully implemented");
     
-    initialized_ = true;
-    return initialized_;    //<- true
-}
-
-bool PositionsMgr::isInitialized() const {
-    return initialized_;
+    return true;
 }
 
 void PositionsMgr::loadConfig(void* config) {
@@ -78,11 +68,7 @@ void PositionsMgr::loadConfig(void* config) {
 
 }
 
-bool PositionsMgr::close() {
-    // Comprobar si el módulo ya estaba cerrado
-    if (!initialized_) return true;
-
-
-    initialized_ = false;
-    return !initialized_;   // <- true
+bool PositionsMgr::onClose() {
+    // Aquí no hace falta hacer nada específico, solo el override
+    return true;
 }

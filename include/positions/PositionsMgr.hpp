@@ -1,5 +1,7 @@
 #pragma once
 
+#include "app/IModule.hpp"
+
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -15,7 +17,7 @@ class Position;         ///< Declaración implícita
  * @brief Clase de gestión de datos recibidos 
  *  externamente de comunicaciones
  */
-class PositionsMgr {
+class PositionsMgr : IModule {
 
 public:
 
@@ -29,23 +31,23 @@ public:
     /**
      * @brief Destructor estándar
      */
-    ~PositionsMgr();
+    ~PositionsMgr() override;
 
 
-// Inicialización -----------------------------------------------------------------------
+// Métodos comunes de módulo (IModule) --------------------------------------------------
 
     /**
      * @brief Inicializa a las personas
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    bool init(void* config);
+    bool onInit() override;
 
     /**
-     * @brief Devuelve si la inicialización ha sido exitosa
-     * @return @c true Si ha iniciado bien, @c false en caso contrario
+     * @brief Cierra la lógica de comunicaciones
+     * @return @c true Si se cierra correctamente, @c false en caso contrario
      */
-    bool isInitialized() const;
+    bool onClose() override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -55,13 +57,7 @@ public:
     * esté completo y sincronizado.
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
-    void loadConfig(void* config);
-
-    /**
-     * @brief Cierra la lógica de comunicaciones
-     * @return @c true Si se cierra correctamente, @c false en caso contrario
-     */
-    bool close();
+    void loadConfig(void* config) override;
 
 
 // Ejecución ----------------------------------------------------------------------------
