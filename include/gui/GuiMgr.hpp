@@ -14,6 +14,7 @@
 struct GLFWwindow;
 struct ImGuiStyle;
 struct ImGuiIO;
+struct ImVec4;
 class IAppControl;
 class AudioPlaybackModule;
 
@@ -146,9 +147,35 @@ private:
     void main_window();
 
     /**
-     * @brief Gestión de la columna derecha
+     * @brief Gestión de la columna derecha (legado: pestañas de prueba/demo).
+     * @details Ya no se llama desde main_window(); se conserva como espacio de pruebas.
      */
     void columnaDerecha();
+
+    /**
+     * @brief Dibuja un punto de color relleno (indicador de estado) en la posición actual del
+     *  cursor y avanza el cursor para que el siguiente Text()/etc. quede en la misma línea.
+     * @details Se dibuja con ImDrawList (no con un carácter de fuente tipo "●") porque la fuente
+     *  cargada solo tiene el rango de glifos por defecto (Basic Latin + Latin-1) y esos caracteres
+     *  no existen ahí, mostrándose como "?" en su lugar.
+     * @param color Color de relleno del punto.
+     */
+    void statusDot(ImVec4 const& color);
+
+    /**
+     * @brief Barra de estado superior: badges de modo online y conexión Symetrix.
+     */
+    void status_bar_top();
+
+    /**
+     * @brief Barra de estado inferior: FPS y versión de la app.
+     */
+    void status_bar_bottom();
+
+    /**
+     * @brief Sidebar de navegación (columna izquierda): cambia activeSection_.
+     */
+    void sidebar_nav();
 
     /**
      * @brief Panel real de "Sounds": dispositivos y players de audio/morse/tts
@@ -157,25 +184,53 @@ private:
     void panelSounds();
 
     /**
+     * @brief Panel de players TTS en vivo: añadir, eliminar, reproducir con modelo/texto propios.
+     */
+    void panelTTS();
+
+    /**
+     * @brief Panel de dispositivos de captura/grabación (movido desde columnaDerecha()).
+     */
+    void panelCapture();
+
+    /**
+     * @brief Panel de apariencia: selector de tema (movido de la antigua columna izquierda).
+     */
+    void panelAppearance();
+
+    /**
+     * @brief Panel placeholder genérico para secciones aún sin contenido real.
+     * @param title Título de la sección.
+     * @param subtitle Texto descriptivo/"próximamente".
+     */
+    void panelPlaceholder(const char* title, const char* subtitle);
+
+    /**
      * @brief Dibuja una "card" grande con los controles comunes de un player
-     *  (nombre, estado, play, stop, knob de volumen de módulo, eliminar).
+     *  (nombre, estado, campos propios del player, play, stop, slider de volumen
+     *  de módulo, eliminar).
      * @details onRemove se invoca DESPUÉS de cerrar la card, para no usar @p mod
      *  tras haberlo destruido.
      * @param idPrefix Prefijo único por sección (p.ej. "audio", "morse", "tts") para que
      *  dos players de distinto tipo con el mismo nombre no compartan ID de ImGui.
      * @param name Nombre del player a mostrar.
      * @param mod Puntero al módulo base (para volumen/estado). Puede ser nullptr.
+     * @param drawFields Callback que dibuja los campos propios de este player
+     *  (filepath/texto/modelo...), dentro de la card y antes de Play/Stop.
      * @param onPlay Callback al pulsar "Play".
      * @param onStop Callback al pulsar "Stop".
      * @param onRemove Callback al pulsar "Remove".
+     * @param cardHeight Alto en px de la card (varía según cuántas filas de campos tenga).
      */
     void playerCard(
         std::string const&           idPrefix,
         std::string const&           name,
         AudioPlaybackModule*         mod,
+        std::function<void()> const& drawFields,
         std::function<void()> const& onPlay,
         std::function<void()> const& onStop,
-        std::function<void()> const& onRemove);
+        std::function<void()> const& onRemove,
+        float                        cardHeight = 210.0f);
 
 
 // Carga de imágenes --------------------------------------------------------------------
@@ -388,8 +443,21 @@ private:
     std::unordered_map<std::string, imageData> images_;         ///< Mapa de imágenes cargadas
     uintptr_t defaultTexture_ = 0;                              ///< Textura generada por defecto (mosaico blaco/rosa)
 
+// Estado de UI de cada player en panelSounds() (uno por player, no compartido entre ellos)
+    struct PlayerUIState {
+        char textBuf[256]     = "";    ///< Filepath (audio) / texto (morse) / texto a decir (tts)
+        int  playVolume       = 100;   ///< Volumen inicial de reproducción (solo audio)
+        int  modelIdx         = 0;     ///< Índice del modelo de voz seleccionado (solo tts)
+        char audioNameBuf[64] = "";    ///< Nombre identificador del audio (solo tts)
+    };
+    std::unordered_map<std::string, PlayerUIState> playerUIState_;   ///< Clave: idPrefix + "::" + nombre del player
+
 // Variables (MenuBar)
     float           MainMenuBar_Height_       = 0.0f;           ///< Almacena el alto de la barra de menú para ajustar la ventana principal
+
+// Navegación (sidebar)
+    int             activeSection_            = 0;              ///< Sección activa del sidebar: 0=Sounds,1=Totalmix,2=Symetrix,3=Network,4=TTS,5=Capture
+    bool            showAppearanceWindow_     = false;          ///< Ventana flotante de "Apariencia", abierta desde el menú Ajustes
 
 
 // Datos de módulos recibidos de interfaces observador
