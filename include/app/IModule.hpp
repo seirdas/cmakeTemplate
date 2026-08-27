@@ -41,14 +41,6 @@ public:
     bool init(void* config);
 
     /**
-     * @brief Parte de inicialización particular del módulo heredado.
-     * @note Este método es el que debe sobreescribirse en las clases heredadas
-     * @param config Datos de configuración (diseñado para recibir un puntero a json).
-     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
-     */
-    virtual bool onInit();
-
-    /**
      * @brief Devuelve si la inicialización ha sido exitosa.
      * @return @c true Si ha iniciado bien, @c false en caso contrario.
      */
@@ -73,13 +65,6 @@ public:
     */
     bool close();
 
-    /**
-    * @brief Parte de cerrar particular del módulo heredado.
-     * @note Este método es el que debe sobreescribirse en las clases heredadas
-    * @returns @c true si se ha cerrado correctamente, @c false en caso contrario. 
-    */
-    virtual bool onClose();
-
 
 // Parámetros del módulo ----------------------------------------------------------------
 
@@ -92,6 +77,33 @@ public:
 
 
 protected:
+
+// Inicialización y cierre específico de módulo -----------------------------------------
+
+    /* 
+    * init() y close() son la interfaz pública; 
+    * onInit() y onClose() son hooks que las clases derivadas implementan.
+    */
+
+    /**
+     * @brief Parte de inicialización particular del módulo heredado.
+     * @note Este método es el que debe sobreescribirse en las clases heredadas
+     * @note Este método no es público, la inicialización del módulo se debe hacer a través de init()
+     * @param config Datos de configuración (diseñado para recibir un puntero a json).
+     * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
+     */
+    virtual bool onInit();
+
+    /**
+     * @brief Parte de cerrar particular del módulo heredado.
+     * @note Este método no es público, la inicialización del módulo se debe hacer a través de init()
+     * @note Este método es el que debe sobreescribirse en las clases heredadas
+    * @returns @c true si se ha cerrado correctamente, @c false en caso contrario. 
+    */
+    virtual bool onClose();
+
+
+/************ Variables ****************************************************************/
 
 // Inicialización y ejecución
     IAppControl*        ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros    

@@ -37,12 +37,6 @@ bool IModule::init(void* config) {
     return true;
 }
 
-bool IModule::onInit() {
-    // Si la derivada no sobrescribe 'onInit', se ejecuta esto:
-    SYS_WARN("IModule","Using default initialization (without override)");
-    return false;
-}
-
 bool IModule::isInitialized() const {
     return initialized_;
 }
@@ -73,6 +67,15 @@ bool IModule::close() {
 
     // Devolver cierre correcto
     return true;
+}
+
+
+// Inicialización y cierre específico de módulo -----------------------------------------
+
+bool IModule::onInit() {
+    // Si la derivada no sobrescribe 'onInit', se ejecuta esto:
+    SYS_WARN("IModule","Using default initialization (without override)");
+    return false;
 }
 
 bool IModule::onClose() {
