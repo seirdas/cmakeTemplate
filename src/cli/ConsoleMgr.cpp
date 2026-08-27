@@ -37,7 +37,7 @@ ConsoleMgr::ConsoleMgr() :
 }
 
 ConsoleMgr::~ConsoleMgr() {
-    onClose();
+    close();
 }
 
 

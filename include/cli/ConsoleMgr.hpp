@@ -39,7 +39,7 @@ public:
     /**
      * @brief Destructor
      */
-    ~ConsoleMgr();
+    ~ConsoleMgr() override;
 
 
 // Métodos comunes de módulo (IModule) --------------------------------------------------
