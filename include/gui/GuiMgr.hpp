@@ -203,6 +203,14 @@ private:
     void panelNetwork();
 
     /**
+     * @brief Contenido de la ventana flotante "Network Checking": cuadros de solo lectura
+     *  con el detalle de un socket (IP FROM/LOCAL IP/PORT/LOCAL/Cicle/Cicle Time/Size/Real size).
+     * @details Se abre desde Ajustes -> "Sockets...", no desde el sidebar (igual que Apariencia).
+     *  Todavía sin datos reales.
+     */
+    void panelNetworkChecking();
+
+    /**
      * @brief Panel de apariencia: selector de tema (movido de la antigua columna izquierda).
      */
     void panelAppearance();
@@ -467,6 +475,7 @@ private:
 // Navegación (sidebar)
     int             activeSection_            = 0;              ///< Sección activa del sidebar: 0=Sounds,1=Totalmix,2=Symetrix,3=Network,4=TTS,5=Capture
     bool            showAppearanceWindow_     = false;          ///< Ventana flotante de "Apariencia", abierta desde el menú Ajustes
+    bool            showNetworkCheckingWindow_ = false;         ///< Ventana flotante de "Network Checking", abierta desde el menú Ajustes
 
 
 // Datos de módulos recibidos de interfaces observador

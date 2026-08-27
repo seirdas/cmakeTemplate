@@ -401,6 +401,7 @@
 			if (BeginMenu("Ajustes")) {
 				// Atajos directos a secciones del sidebar (mismo activeSection_ que usa la navegación)
 				if (MenuItem("Configurar conexión...")) activeSection_ = 3; // Network
+				if (MenuItem("Sockets..."))              showNetworkCheckingWindow_ = true; // ventana flotante propia
 				if (MenuItem("Temas de interfaz..."))   showAppearanceWindow_ = true; // ventana flotante propia
 				ImGui::EndMenu();
 			}
@@ -463,6 +464,15 @@
 			SetNextWindowSize(ImVec2(360, 200), ImGuiCond_FirstUseEver);
 			if (Begin("Apariencia", &showAppearanceWindow_))
 				panelAppearance();
+			End();
+		}
+
+		// ============================================================ Ventana flotante: Network Checking
+		// Se abre desde el menú Ajustes > "Sockets...", no desde el sidebar.
+		if (showNetworkCheckingWindow_) {
+			SetNextWindowSize(ImVec2(320, 260), ImGuiCond_FirstUseEver);
+			if (Begin("Network Checking", &showNetworkCheckingWindow_))
+				panelNetworkChecking();
 			End();
 		}
 
@@ -712,13 +722,13 @@
 		}
 		if (!validName || !validPort) EndDisabled();
 
-		Dummy(ImVec2(0, 20));
+		SetWindowFontScale(1.0f);
+	}
 
-		// ================================================================ Network Checking
+	void GuiMgr::panelNetworkChecking() {
 		// Solo estructura visual (cuadros de solo lectura) todavía sin datos reales.
-		SeparatorText("Network Checking");
-		Dummy(ImVec2(0, 4));
-
+		// Se abre como ventana flotante chiquitita desde Ajustes -> Sockets...,
+		// no desde el sidebar (igual que Apariencia).
 		auto readonlyField = [&](const char* label, const char* id, const char* value) {
 			Text("%s", label);
 			SameLine(110);
@@ -754,8 +764,6 @@
 
 			EndTable();
 		}
-
-		SetWindowFontScale(1.0f);
 	}
 
 	void GuiMgr::panelAppearance() {
