@@ -139,9 +139,23 @@ public:
     bool removeUdpSocket(unsigned int port);
 
     /**
-     * @brief Imprime por cout los sockets creados.
+     * @brief Devuelve el puntero a un socket UDP gestionado, buscado por nombre.
+     * @details Pensado para consultar datos de un socket (nombre, puerto, último
+     *  paquete...) desde código externo (GUI/CLI).
+     * @param name Nombre del socket buscado
+     * @return Puntero al UdpSocket si existe, @c nullptr en caso contrario.
+     * @warning El puntero solo es válido mientras el socket siga registrado en NetMgr
+     *  (no sobrevive a un removeUdpSocket() ni a la destrucción de NetMgr).
      */
-    void printUdpSockets() const;
+    UdpSocket* getUdpSocket(std::string const& name) const;
+
+    /**
+     * @brief Devuelve los punteros a todos los sockets UDP gestionados actualmente.
+     * @details Pensado para pintar el estado de los sockets en una UI (GUI/CLI).
+     * @return Vector de UdpSocket*, en el mismo orden en que fueron añadidos.
+     * @warning Los punteros solo son válidos mientras los sockets sigan registrados en NetMgr.
+     */
+    std::vector<UdpSocket*> getUdpSockets() const;
 
     /**
      * @brief Comprueba si un socket se está gestionando por nombre

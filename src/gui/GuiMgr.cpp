@@ -12,9 +12,14 @@
 
 
 #include "gui/GuiMgr.hpp"			// Clase de gestión de UI
+#include <cstdio>                  // std::snprintf (campos de solo lectura de panelNetwork)
 #include "sound/AudioCaptureModule.hpp"
 #include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
+#include "devices/Symetrix.hpp"     // Estado de conexión, mostrado en la sección Symetrix
+#include "devices/TotalMix.hpp"     // Estado de inicialización, mostrado en status_bar_bottom()
+#include "net/NetMgr.hpp"           // Estado de inicialización, mostrado en status_bar_bottom()
+#include "net/UdpSocket.hpp"        // Datos por socket (nombre/puerto/último paquete), mostrados en status_bar_bottom()
 
 
 #if defined IMGUILIB || defined IMGUILIB_VERSION
@@ -393,8 +398,11 @@
 				if (MenuItem("Redo", "Ctrl+Y")) {}
 				ImGui::EndMenu();
 			}
-			if (BeginMenu("Settings")) {
-				if (MenuItem("Connections...")) { /* Abrir un popup de ajustes */ }
+			if (BeginMenu("Ajustes")) {
+				// Atajos directos a secciones del sidebar (mismo activeSection_ que usa la navegación)
+				if (MenuItem("Configurar conexión...")) activeSection_ = 3; // Network
+				if (MenuItem("Sockets..."))              showNetworkCheckingWindow_ = true; // ventana flotante propia
+				if (MenuItem("Temas de interfaz..."))   showAppearanceWindow_ = true; // ventana flotante propia
 				ImGui::EndMenu();
 			}
 			
@@ -406,110 +414,645 @@
 	}
 
 	void GuiMgr::main_window() {
-		// Variables estáticas (solo se crean una vez) para guardar datos
-		static float heightRightTop = 0.5f; 
-		static float totalHeight = GetContentRegionAvail().y;
-		static float sizeX__Izq = GetContentRegionAvail().x * 0.3f;
-		static std::string TTS_text;
-		
-		// COLUMNA IZQUIERDA
-		BeginGroup();
+
+		const float topBarHeight    = 34.0f;
+		const float bottomBarHeight = 34.0f;
+		const ImVec4 barBg = GetStyle().Colors[ImGuiCol_MenuBarBg]; // fondo diferenciado, coherente con el tema activo
+
+		// ============================================================ Barra superior de estado
+		PushStyleColor(ImGuiCol_ChildBg, barBg);
+		BeginChild("##topbar", ImVec2(0, topBarHeight), ImGuiChildFlags_AlwaysUseWindowPadding);
+		status_bar_top();
+		EndChild();
+		PopStyleColor();
+
+		// ============================================================ Sidebar + contenido
+		const float sidebarWidth  = 210.0f;
+		const float contentHeight = GetContentRegionAvail().y - bottomBarHeight;
+
+		BeginChild("##sidebar", ImVec2(sidebarWidth, contentHeight), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+		sidebar_nav();
+		EndChild();
+
+		SameLine();
+
+		BeginChild("##content", ImVec2(0, contentHeight), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
+		switch (activeSection_) {
+			case 0: panelSounds(); break;
+			case 1: panelPlaceholder("Totalmix", "Próximamente: control de Totalmix desde la GUI (ya disponible por CLI: 'totalmix')."); break;
+			case 2: {
+				SeparatorText("Symetrix");
+				Dummy(ImVec2(0, 8));
+				Symetrix* sym = ctrl_ ? ctrl_->getSymetrixModule() : nullptr;
+				const bool symConnected = sym && sym->isConnected();
+				statusDot(symConnected ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.85f,0.35f,0.35f,1.0f));
+				Text(symConnected ? "Connected" : "Disconnected");
+				Dummy(ImVec2(0, 8));
+				TextDisabled("Próximamente: control de Symetrix desde la GUI (ya disponible por CLI: 'symetrix').");
+				break;
+			}
+			case 3: panelNetwork(); break;
+			case 4: panelTTS(); break;
+			case 5: panelCapture(); break;
+			default: break;
+		}
+		EndChild();
+
+		// ============================================================ Ventana flotante: Apariencia
+		// Se abre desde el menú Ajustes > "Temas de interfaz...", no desde el sidebar.
+		if (showAppearanceWindow_) {
+			SetNextWindowSize(ImVec2(360, 200), ImGuiCond_FirstUseEver);
+			if (Begin("Apariencia", &showAppearanceWindow_))
+				panelAppearance();
+			End();
+		}
+
+		// ============================================================ Ventana flotante: Network Checking
+		// Se abre desde el menú Ajustes > "Sockets...", no desde el sidebar.
+		if (showNetworkCheckingWindow_) {
+			SetNextWindowSize(ImVec2(320, 260), ImGuiCond_FirstUseEver);
+			if (Begin("Network Checking", &showNetworkCheckingWindow_))
+				panelNetworkChecking();
+			End();
+		}
+
+		// ============================================================ Barra inferior de estado
+		PushStyleColor(ImGuiCol_ChildBg, barBg);
+		BeginChild("##bottombar", ImVec2(0, bottomBarHeight), ImGuiChildFlags_AlwaysUseWindowPadding);
+		status_bar_bottom();
+		EndChild();
+		PopStyleColor();
+	}
+
+	void GuiMgr::statusDot(ImVec4 const& color) {
+		// Se dibuja con ImDrawList en vez de un carácter de fuente (p.ej. "●") porque
+		// la fuente cargada solo tiene el rango de glifos por defecto de ImGui
+		// (Basic Latin + Latin-1 Supplement) y ese carácter no está ahí: se veía como "?".
+		const float  radius = GetFontSize() * 0.3f;
+		const float  lineH  = GetTextLineHeight();
+		const ImVec2 pos    = GetCursorScreenPos();
+
+		GetWindowDrawList()->AddCircleFilled(
+			ImVec2(pos.x + radius, pos.y + lineH * 0.5f),
+			radius,
+			GetColorU32(color)
+		);
+
+		Dummy(ImVec2(radius * 2.0f + 4.0f, lineH));
+		SameLine(0.0f, 4.0f);
+	}
+
+	void GuiMgr::status_bar_top() {
+		const bool online = ctrl_ && ctrl_->isOnlineMode();
+
+		// Badge único, alineado a la derecha; clicable para alternar online/offline
+		const float badgeW = 190.0f;
+		SetCursorPosX(GetCursorPosX() + GetContentRegionAvail().x - badgeW);
+
+		PushStyleColor(ImGuiCol_Button,        online ? ImVec4(0.13f,0.45f,0.30f,1.0f) : ImVec4(0.45f,0.16f,0.13f,1.0f));
+		PushStyleColor(ImGuiCol_ButtonHovered, online ? ImVec4(0.16f,0.55f,0.36f,1.0f) : ImVec4(0.55f,0.20f,0.16f,1.0f));
+		PushStyleColor(ImGuiCol_ButtonActive,  online ? ImVec4(0.13f,0.45f,0.30f,1.0f) : ImVec4(0.45f,0.16f,0.13f,1.0f));
+		if (Button(online ? "Online: ONLINE" : "Online: OFFLINE", ImVec2(badgeW, 0)) && ctrl_)
+			ctrl_->setOnlineMode(!online);
+		PopStyleColor(3);
+	}
+
+	void GuiMgr::status_bar_bottom() {
+		// Punto de color + texto, separados por un pequeño hueco
+		auto dot = [&](bool ok) {
+			statusDot(ok ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+		};
+		auto gap = [&]() {
+			SameLine();
+			Dummy(ImVec2(16, 0));
+			SameLine();
+		};
+
+		// ● Host: ONLINE/OFFLINE  (modo online general de la app)
+		const bool online = ctrl_ && ctrl_->isOnlineMode();
+		dot(online);
+		Text(online ? "Host: ONLINE" : "Host: OFFLINE");
+
+		// ● <nombre> : <puerto> (con datos/sin datos), uno por cada socket UDP real de NetMgr
+		NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+		if (net) {
+			for (UdpSocket* sock : net->getUdpSockets()) {
+				if (!sock) continue;
+				gap();
+				const bool hasData = sock->getLastPacketMs() > 0;
+				dot(hasData);
+				Text("%s : %u (%s)", sock->name().c_str(), sock->port(), hasData ? "con datos" : "sin datos");
+			}
+		}
+
+		// Versión a la derecha
+		if (ctrl_) {
+			const std::string ver = ctrl_->getVersion();
+			const float w = CalcTextSize(ver.c_str()).x;
+			SameLine(GetCursorPosX() + GetContentRegionAvail().x - w);
+			TextDisabled("%s", ver.c_str());
+		}
+	}
+
+	void GuiMgr::sidebar_nav() {
+		TextDisabled("NAVEGACION");
+		Separator();
+		Dummy(ImVec2(0, 4));
+
+		// Lambda local: dibuja un botón de navegación grande, resaltado si está activo
+		auto navItem = [&](const char* label, int section) {
+			const bool active = (activeSection_ == section);
+			if (active) {
+				PushStyleColor(ImGuiCol_Button,        ImVec4(0.2039f, 0.8275f, 0.6000f, 0.30f));
+				PushStyleColor(ImGuiCol_ButtonHovered,  ImVec4(0.2039f, 0.8275f, 0.6000f, 0.40f));
+				PushStyleColor(ImGuiCol_ButtonActive,   ImVec4(0.2039f, 0.8275f, 0.6000f, 0.30f));
+				PushStyleColor(ImGuiCol_Text,          ImVec4(0.2863f, 0.8784f, 0.6627f, 1.00f));
+			}
+			if (Button(label, ImVec2(-FLT_MIN, 34)))
+				activeSection_ = section;
+			if (active)
+				PopStyleColor(4);
+		};
+
+		TextDisabled("MODULOS");
+		navItem("Sounds",   0);
+		navItem("Totalmix", 1);
+		navItem("Symetrix", 2);
+		navItem("Network",  3);
+
+		Dummy(ImVec2(0, 14));
+		TextDisabled("HERRAMIENTAS");
+		navItem("TTS players", 4);
+		navItem("Capture",       5);
+	}
+
+	void GuiMgr::panelPlaceholder(const char* title, const char* subtitle) {
+		SeparatorText(title);
+		Dummy(ImVec2(0, 8));
+		TextDisabled("%s", subtitle);
+	}
+
+	void GuiMgr::panelNetwork() {
+		NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+		if (!net) {
+			Text("Network module not available.");
+			return;
+		}
+
+		SetWindowFontScale(1.2f);
+
+		// ================================================================ Estado general
+		SeparatorText("Network");
+		Dummy(ImVec2(0, 4));
+
+		statusDot(net->isRunning() ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+		Text(net->isRunning() ? "Running" : "Stopped");
+		SameLine();
+		Dummy(ImVec2(16, 0));
+		SameLine();
+		Text("Packets pending in central queue: %zu", net->numUdpRcvElements());
+
+		Dummy(ImVec2(0, 20));
+
+		// ================================================================ Sockets UDP
+		SeparatorText("UDP Sockets");
+		Dummy(ImVec2(0, 4));
+
+		auto sockets = net->getUdpSockets();
+		std::string toRemove; // Borrado diferido: nunca tocar el puntero tras removeUdpSocket()
+
+		if (sockets.empty()) {
+			TextDisabled("No UDP sockets registered.");
+		} else if (BeginTable("net_sockets_tbl", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg, ImVec2(0, 0))) {
+			TableSetupColumn("Name");
+			TableSetupColumn("Port");
+			TableSetupColumn("Running");
+			TableSetupColumn("Has data");
+			TableSetupColumn("Last packet");
+			TableSetupColumn("##remove", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+			TableHeadersRow();
+
+			for (UdpSocket* sock : sockets) {
+				if (!sock) continue;
+				PushID(sock->name().c_str());
+
+				const bool running  = sock->isRunning();
+				const bool hasData  = sock->hasData();
+				const auto lastMs   = sock->getLastPacketMs();
+
+				TableNextRow();
+
+				TableNextColumn();
+				Text("%s", sock->name().c_str());
+
+				TableNextColumn();
+				Text("%u", sock->port());
+
+				TableNextColumn();
+				statusDot(running ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+				Text(running ? "Yes" : "No");
+
+				TableNextColumn();
+				statusDot(hasData ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+				Text(hasData ? "Yes" : "No");
+
+				TableNextColumn();
+				if (lastMs > 0) Text("%llu ms ago", lastMs);
+				else            TextDisabled("never");
+
+				TableNextColumn();
+				if (Button("Remove", ImVec2(-FLT_MIN, 0)))
+					toRemove = sock->name();
+
+				PopID();
+			}
+			EndTable();
+		}
+
+		// Aplicar el borrado (si lo hubo) fuera del bucle, ya con la tabla cerrada
+		if (!toRemove.empty())
+			net->removeUdpSocket(toRemove);
+
+		Dummy(ImVec2(0, 20));
+
+		// ================================================================ Añadir socket
+		SeparatorText("Add socket");
+		Dummy(ImVec2(0, 4));
+
+		static char newName[64] = "";
+		static char newIp[64]   = "";
+		static int  newPort     = 0;
+		static int  newSize     = 0;
+
+		Text("Name:"); SameLine();
+		PushItemWidth(200);
+		InputTextWithHint("##netNewName", "e.g. radio1", newName, sizeof(newName));
+		PopItemWidth();
+		SameLine(); Dummy(ImVec2(14, 0)); SameLine();
+		Text("Port:"); SameLine();
+		PushItemWidth(100);
+		InputInt("##netNewPort", &newPort, 0, 0);
+		PopItemWidth();
+
+		Text("Local IP:"); SameLine();
+		PushItemWidth(200);
+		InputTextWithHint("##netNewIp", "empty = all interfaces", newIp, sizeof(newIp));
+		PopItemWidth();
+		SameLine(); Dummy(ImVec2(14, 0)); SameLine();
+		Text("Expected size:"); SameLine();
+		PushItemWidth(100);
+		InputInt("##netNewSize", &newSize, 0, 0);
+		PopItemWidth();
+
+		Dummy(ImVec2(0, 8));
+		const bool validName = newName[0] != '\0';
+		const bool validPort = newPort > 0 && newPort <= 65535;
+		if (!validName || !validPort) BeginDisabled();
+		if (Button("+ Add socket", ImVec2(160, 40))) {
+			net->addUdpSocket(
+				newName,
+				(unsigned short)newPort,
+				newIp,
+				newSize > 0 ? (unsigned int)newSize : 0
+			);
+			newName[0] = '\0';
+			newIp[0]   = '\0';
+			newPort    = 0;
+			newSize    = 0;
+		}
+		if (!validName || !validPort) EndDisabled();
+
+		SetWindowFontScale(1.0f);
+	}
+
+	void GuiMgr::panelNetworkChecking() {
+		// Solo estructura visual (cuadros de solo lectura) todavía sin datos reales.
+		// Se abre como ventana flotante chiquitita desde Ajustes -> Sockets...,
+		// no desde el sidebar (igual que Apariencia).
+		auto readonlyField = [&](const char* label, const char* id, const char* value) {
+			Text("%s", label);
+			SameLine(110);
+			char buf[16];
+			std::snprintf(buf, sizeof(buf), "%s", value);
+			PushID(id);
+			PushItemWidth(110);
+			InputText("##val", buf, sizeof(buf), ImGuiInputTextFlags_ReadOnly);
+			PopItemWidth();
+			PopID();
+		};
+
+		if (BeginTable("net_checking_tbl", 2, ImGuiTableFlags_None)) {
+			TableNextRow();
+			TableNextColumn(); readonlyField("IP FROM",    "ipfrom",    "");
+			TableNextColumn(); readonlyField("LOCAL IP",   "localip",   "");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("PORT",       "port",      "0");
+			TableNextColumn(); readonlyField("LOCAL",      "local",     "0");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("Cicle",      "cicle",     "0");
+			TableNextColumn(); readonlyField("Cicle Time", "cicletime", "0");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("Size",       "size1",     "0");
+			TableNextColumn(); readonlyField("Real size",  "realsize1", "0");
+
+			TableNextRow();
+			TableNextColumn(); readonlyField("Size",       "size2",     "0");
+			TableNextColumn(); readonlyField("Real size",  "realsize2", "0");
+
+			EndTable();
+		}
+	}
+
+	void GuiMgr::panelAppearance() {
+		SeparatorText("Apariencia");
+		Dummy(ImVec2(0, 8));
+
+		Text("Tema:");
+		SameLine();
+		static const char* theme_items[] = {
+			"Dashboard",
+			"Adobe Inspired",
+			"Ayu Dark",
+			"Confy",
+			"Dark Cyan",
+			"Default Dark",
+			"Default Light",
+			"Everforest",
+			"FutureDark",
+			"Gold",
+			"Hazy Dark",
+			"Kazam's Cherry",
+			"Light Orange",
+			"Quick Minimal Look",
+			"Modern",
+			"Microfrost",
+			"Moonlight",
+			"Sonic Riders",
+			"VisualStudio"
+		};
+		static int item_selected_idx;
+		if (BeginCombo("##cbth", theme_items[item_selected_idx]))
 		{
-			// Panel F1 (Arriba Izquierda)
-			BeginChild("##F1", ImVec2(sizeX__Izq, GetContentRegionAvail().y), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_FrameStyle);
-	
-			// Botón de modo
-			if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
-				ctrl_->setOnlineMode(!ctrl_->isOnlineMode());
+			// Recorremos todas las opciones
+			for (int n = 0; n < static_cast<int>(std::size(theme_items)); ++n) {
+				const bool is_selected = (item_selected_idx == n);
+
+				// **SELECTABLE**: se ejecuta *una sola vez* cuando el usuario
+				// hace click (o pulsa Enter) sobre la opción.
+				if (Selectable(theme_items[n], is_selected)) {
+					// ----> CAMBIO DE SELECCIÓN <----
+					item_selected_idx = n;                     // actualizar índice
+
+					// ----> ACCIÓN A EJECUTAR ----
+					switch(n){
+						case 0: Style_Dashboard(); 			break;
+						case 1: Style_AdobeInspired(); 		break;
+						case 2: Style_AyuDark(); 			break;
+						case 3: Style_Confy(); 				break;
+						case 4: Style_DarkCyan(); 			break;
+						case 5: Style_DefaultDark(); 		break;
+						case 6: Style_DefaultLight();		break;
+						case 7: Style_Everforest(); 		break;
+						case 8: Style_FutureDark(); 		break;
+						case 9: Style_Gold(); 				break;
+						case 10: Style_HazyDark(); 			break;
+						case 11: Style_KazamsCherry(); 		break;
+						case 12: Style_LightOrange(); 		break;
+						case 13: Style_QuickMinimalLook(); 	break;
+						case 14: Style_Modern(); 			break;
+						case 15: Style_Microfrost(); 		break;
+						case 16: Style_Moonlight(); 		break;
+						case 17: Style_SonicRiders(); 		break;
+						case 18: Style_VisualStudio(); 		break;
+
+					}
+				}
+
+				// Mantener el foco visual en el elemento activo
+				if (is_selected)
+					SetItemDefaultFocus();
+			}
+			EndCombo();
+		}
+	}
+
+	void GuiMgr::panelTTS() {
+		// Players TTS en vivo: cada uno reproduce con su propio modelo/nombre/texto.
+		SeparatorText("TTS players");
+		Dummy(ImVec2(0, 4));
+
+		SoundMgr* snd = ctrl_->getSoundsModule();
+
+		Text("New player name:");
+		SameLine();
+		static char ttsNewName[64] = "";
+		PushItemWidth(260);
+		InputTextWithHint("##ttsNewName", "e.g. announcer", ttsNewName, sizeof(ttsNewName));
+		PopItemWidth();
+		SameLine();
+		if (Button("+ Add player##ttsAdd", ImVec2(180, 36)) && ttsNewName[0] != '\0') {
+			snd->addPlayerTTS(nullptr, ttsNewName, "");
+			ttsNewName[0] = '\0';
+		}
+
+		Dummy(ImVec2(0, 14));
+
+		for (auto const& name : snd->getPlayerTTSNames()) {
+			PlayerTTS* pt = snd->getPlayerTTS(name);
+			PlayerUIState& st = playerUIState_["tts::" + name];
+
+			playerCard("tts", name, pt,
+				[this, &st]() {
+					// Voice Model: desplegable con los modelos realmente cargados
+					// (misma lista que usa el generador de arriba)
+					Text("Voice Model:");
+					SameLine();
+					PushItemWidth(220);
+					const auto& models = soundsData_.tts.loaded_models;
+					if (st.modelIdx < 0 || st.modelIdx >= static_cast<int>(models.size()))
+						st.modelIdx = 0;
+					const char* preview = models.empty() ? "(no models loaded)" : models[st.modelIdx].c_str();
+					if (BeginCombo("##ttsmodel", preview)) {
+						for (int n = 0; n < static_cast<int>(models.size()); ++n) {
+							const bool selected = (st.modelIdx == n);
+							if (Selectable(models[n].c_str(), selected)) st.modelIdx = n;
+							if (selected) SetItemDefaultFocus();
+						}
+						EndCombo();
+					}
+					PopItemWidth();
+					SameLine();
+					Text("Playback name:");
+					SameLine();
+					TextDisabled("(?)");
+					if (IsItemHovered()) {
+						BeginTooltip();
+						PushTextWrapPos(GetFontSize() * 25.0f);
+						TextUnformatted(
+							"A name YOU choose to identify THIS specific playback.\n"
+							"Used afterwards to stop it or check if it's still playing.\n"
+							"Can be anything, e.g. 'greeting1'."
+						);
+						PopTextWrapPos();
+						EndTooltip();
+					}
+					SameLine();
+					PushItemWidth(-FLT_MIN);
+					InputTextWithHint("##ttsaudioname", "e.g. greeting1", st.audioNameBuf, sizeof(st.audioNameBuf));
+					PopItemWidth();
+
+					Text("Text:");
+					SameLine();
+					PushItemWidth(-FLT_MIN);
+					InputTextWithHint("##ttstext", "hello world", st.textBuf, sizeof(st.textBuf));
+					PopItemWidth();
+				},
+				[this, pt, &st]() {
+					if (!pt) return;
+					const auto& models = soundsData_.tts.loaded_models;
+					if (models.empty() || st.modelIdx < 0 || st.modelIdx >= static_cast<int>(models.size())) return;
+					if (st.audioNameBuf[0] == '\0' || st.textBuf[0] == '\0') return;
+					pt->playTTS(st.textBuf, models[st.modelIdx], st.audioNameBuf);
+				},
+				[pt, &st]() { if (pt && st.audioNameBuf[0] != '\0') pt->stop(st.audioNameBuf, false, 0, 0); },
+				[this, snd, name]() { snd->removePlayerTTS(name); playerUIState_.erase("tts::" + name); },
+				260.0f
+			);
+		}
+	}
+
+	void GuiMgr::panelCapture() {
+		SoundMgr* snd = ctrl_->getSoundsModule();
+
+		// Pide al controlador la lista de micrófonos disponibles en este momento
+		std::vector<std::string> entradas = snd->getAvailableCaptures();
+
+		// Lista con los nombres de los dispositivos que el usuario ha activado
+		static std::vector<std::string> dispositivos_activos;
+		dispositivos_activos = snd->getCaptureModuleNames();
+
+		// Flag para abrir/cerrar la ventana flotante del selector
+		static bool show_device_selector = false;
+
+		SeparatorText("Capture");
+		Dummy(ImVec2(0, 4));
+
+		// --- Muestra los dispositivos activos ---
+		Text("Dispositivos activos:");
+		if (dispositivos_activos.empty()) {
+			TextDisabled("  (ninguno)");   // Si no hay ninguno, muestra texto gris
+		} else {
+
+			// #TODO (rehacer)
+
+			AudioCaptureModule* acm = nullptr;
+
+			short i = 0;
+			for (std::string const& captureName : dispositivos_activos) {
+				PushID(i);
+
+				// Obtener el dispositivo de captura
+				acm = snd->getCapture(captureName);
+
+				if (!acm) {
+					PopID();
+					continue;
+				}
+
+				// Si el dispositivo se ha desconectado, mostrar aviso en rojo
+				if (!acm->isValid()) {
+					TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
+					SameLine();
+					if (SmallButton("x"))
+						snd->removeCaptureDevice(captureName);
+
+
+				} else {
+
+					Text("%s", captureName.c_str());
+					SameLine();
+					if (SmallButton("Grabar"))
+						acm->StartRec(acm->getModuleName() + "_REC");
+					SameLine();
+					if (SmallButton("Parar"))
+						acm->StopRec();
+					SameLine();
+					if (SmallButton("x"))
+						snd->removeCaptureDevice(captureName);
+
+
+					SameLine();
+
+					Text(std::to_string(acm->getBufferSize()).c_str());
+					Text(std::to_string(acm->getRecBufferSize()).c_str());
+
+					SameLine();
+
+					// Medidor VU - barra vertical RMS
+					float LevelVal = acm->getPeakLevel();
+
+					ImVec4 barColor;
+					if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
+					else if (LevelVal < 85.f) 	barColor = ImVec4(1.00f, 0.75f, 0.00f, 1.0f); // amarillo
+					else						barColor = ImVec4(0.90f, 0.15f, 0.15f, 1.0f); // rojo
+
+					if (ImPlot::BeginPlot("##vu", ImVec2(30, 70),
+						ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText |
+						ImPlotFlags_NoMenus  | ImPlotFlags_NoTitle     | ImPlotFlags_NoFrame))
+					{
+						ImPlot::SetupAxes(nullptr, nullptr,
+							ImPlotAxisFlags_NoDecorations,
+							ImPlotAxisFlags_NoDecorations);
+						ImPlot::SetupAxisLimits(ImAxis_X1, 0.5, 1.5, ImGuiCond_Always);
+						ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, 100.0, ImGuiCond_Always);
+						ImPlot::SetNextFillStyle(barColor);
+						ImPlot::PlotBars("##bar", &LevelVal, 1, 0.9, 1.0);
+						ImPlot::EndPlot();
+					}
+				}
+				i++;
+				PopID();
 			}
 
-			// Test de temas (Combobox from imgui demo)
+		}
 
-			Text("Tema:"); SameLine();
-			static const char* theme_items[] = {
-				"Dashboard",
-				"Adobe Inspired",
-				"Ayu Dark",
-				"Confy",
-				"Dark Cyan",
-				"Default Dark",
-				"Default Light",
-				"Everforest",
-				"FutureDark",
-				"Gold",
-				"Hazy Dark",
-				"Kazam's Cherry",
-				"Light Orange",
-				"Quick Minimal Look",
-				"Modern",
-				"Microfrost",
-				"Moonlight",
-				"Sonic Riders",
-				"VisualStudio"
-			};
-			static int item_selected_idx;
-			if (BeginCombo("##cbth", theme_items[item_selected_idx]))
-			{
-				// Recorremos todas las opciones
-				for (int n = 0; n < static_cast<int>(std::size(theme_items)); ++n) {
-					const bool is_selected = (item_selected_idx == n);
+		// Botón para abrir el selector de dispositivos disponibles
+		if (Button("Selecciona dispositivo disponible"))
+			show_device_selector = true;
 
-					// **SELECTABLE**: se ejecuta *una sola vez* cuando el usuario
-					// hace click (o pulsa Enter) sobre la opción.
-					if (Selectable(theme_items[n], is_selected)) {
-						// ----> CAMBIO DE SELECCIÓN <----
-						item_selected_idx = n;                     // actualizar índice
+		SameLine();
 
-						// ----> ACCIÓN A EJECUTAR ----
-						// Por ejemplo:
-						switch(n){
-							case 0: Style_Dashboard(); 			break;
-							case 1: Style_AdobeInspired(); 		break;
-							case 2: Style_AyuDark(); 			break;
-							case 3: Style_Confy(); 				break;
-							case 4: Style_DarkCyan(); 			break;
-							case 5: Style_DefaultDark(); 		break;
-							case 6: Style_DefaultLight();		break;
-							case 7: Style_Everforest(); 		break;
-							case 8: Style_FutureDark(); 		break;
-							case 9: Style_Gold(); 				break;
-							case 10: Style_HazyDark(); 			break;
-							case 11: Style_KazamsCherry(); 		break;
-							case 12: Style_LightOrange(); 		break;
-							case 13: Style_QuickMinimalLook(); 	break;
-							case 14: Style_Modern(); 			break;
-							case 15: Style_Microfrost(); 		break;
-							case 16: Style_Moonlight(); 		break;
-							case 17: Style_SonicRiders(); 		break;
-							case 18: Style_VisualStudio(); 		break;
-
+		// --- Ventana flotante: selector de dispositivos disponibles ---
+		if (show_device_selector) {
+			SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);    // Tamaño inicial de la ventana
+			if (Begin("Dispositivos de entrada", &show_device_selector)) {  // &show_device_selector: la X de la ventana la cierra
+				if (entradas.empty()) {
+					TextDisabled("No hay dispositivos disponibles.");
+				} else {
+					for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
+						if (Selectable(entradas[n].c_str())) {
+							snd->addCaptureDevice(nullptr, entradas[n]);
+							show_device_selector = false;               // Cierra el popup
 						}
 					}
-
-					// Mantener el foco visual en el elemento activo
-					if (is_selected)
-						SetItemDefaultFocus();
 				}
-				EndCombo();
 			}
-
-			EndChild();
+			End();
 		}
-		EndGroup();
-
-		SameLine(); // Pegamos la siguiente columna
-	
-		columnaDerecha();
-	
 	}
 	
 	void GuiMgr::playerCard(
 		std::string const&           idPrefix,
 		std::string const&           name,
 		AudioPlaybackModule*         mod,
+		std::function<void()> const& drawFields,
 		std::function<void()> const& onPlay,
 		std::function<void()> const& onStop,
-		std::function<void()> const& onRemove)
+		std::function<void()> const& onRemove,
+		float                        cardHeight)
 	{
 		// idPrefix distingue el tipo (audio/morse/tts): dos players con el mismo
 		// nombre pero de distinto tipo no deben compartir ID de ImGui.
@@ -519,7 +1062,7 @@
 		const bool playing = mod && mod->isPlaying();
 		BeginChild(
 			"##card",
-			ImVec2(0, 170),
+			ImVec2(0, cardHeight),
 			ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding
 		);
 
@@ -529,16 +1072,26 @@
 		SetWindowFontScale(1.0f);
 		SameLine();
 		SetWindowFontScale(1.2f);
-		TextColored(
-			playing ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f),
-			playing ? "● Playing" : "○ Idle"
-		);
+		statusDot(playing ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+		Text(playing ? "Playing" : "Idle");
 		SetWindowFontScale(1.0f);
+
+		Dummy(ImVec2(0, 8));
+
+		// Campos propios de este player (filepath/texto/modelo...), definidos por el caller
+		if (drawFields) drawFields();
 
 		Dummy(ImVec2(0, 10));
 
-		// Botones grandes: Play / Stop
-		const ImVec2 bigBtn(130, 50);
+		// Botones grandes: Play / Stop / Remove, con ancho proporcional al espacio
+		// disponible (entre 80 y 130px) para que no se salgan en ventanas estrechas.
+		const float avail = GetContentRegionAvail().x;
+		const float gap   = 14.0f;
+		float btnW = avail * 0.15f;
+		if (btnW < 80.0f)  btnW = 80.0f;
+		if (btnW > 130.0f) btnW = 130.0f;
+		const ImVec2 bigBtn(btnW, 50);
+
 		PushStyleColor(ImGuiCol_Button,        ImVec4(0.18f,0.55f,0.30f,1.0f));
 		PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.22f,0.68f,0.36f,1.0f));
 		PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.14f,0.45f,0.24f,1.0f));
@@ -549,20 +1102,24 @@
 
 		// Slider de volumen del módulo (a la derecha de Play/Stop): más cómodo
 		// de manejar con ratón que un knob, y muestra el valor exacto siempre.
+		// Etiqueta oculta ("##vol") y dibujada aparte, para no descuadrar el ancho
+		// reservado (el texto de una etiqueta de SliderInt no cuenta en PushItemWidth).
 		if (mod) {
 			int vol = mod->getModuleVolume();
 			SameLine();
-			Dummy(ImVec2(20, 0));
+			Dummy(ImVec2(gap, 0));
 			SameLine();
-			const float sliderWidth = GetContentRegionAvail().x - bigBtn.x - 20.0f;
-			PushItemWidth(sliderWidth > 80.0f ? sliderWidth : 80.0f);
-			if (SliderInt("Volume", &vol, 0, 100, "%d%%"))
+			Text("Vol:");
+			SameLine();
+			const float sliderWidth = GetContentRegionAvail().x - btnW - gap;
+			PushItemWidth(sliderWidth > 50.0f ? sliderWidth : 50.0f);
+			if (SliderInt("##vol", &vol, 0, 100, "%d%%"))
 				mod->setModuleVolume(static_cast<unsigned short>(vol));
 			PopItemWidth();
 		}
 
 		// Botón eliminar en rojo, separado a la derecha del todo
-		SameLine(GetContentRegionAvail().x - bigBtn.x + GetCursorPosX());
+		SameLine(GetContentRegionAvail().x - btnW + GetCursorPosX());
 		PushStyleColor(ImGuiCol_Button,        ImVec4(0.65f,0.15f,0.15f,1.0f));
 		PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.80f,0.20f,0.20f,1.0f));
 		PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.50f,0.10f,0.10f,1.0f));
@@ -640,35 +1197,30 @@
 			audioNewName[0] = '\0';
 		}
 
-		Dummy(ImVec2(0, 6));
-
-		Text("File to play:");
-		SameLine();
-		static char audioFilepath[256] = "";
-		PushItemWidth(340);
-		InputTextWithHint("##audioFilepath", "path/to/sound.wav", audioFilepath, sizeof(audioFilepath));
-		PopItemWidth();
-		SameLine();
-		Dummy(ImVec2(10, 0));
-		SameLine();
-		Text("Volume:");
-		SameLine();
-		static int audioPlayVolume = 100;
-		PushItemWidth(180);
-		SliderInt("##audioPlayVolume", &audioPlayVolume, 0, 100, "%d%%");
-		PopItemWidth();
-
 		Dummy(ImVec2(0, 14));
 
 		for (auto const& name : snd->getPlayerAudioNames()) {
 			PlayerAudio* pa = snd->getPlayerAudio(name);
-			const std::string filepath = audioFilepath;
-			const int         volume   = audioPlayVolume;
+			PlayerUIState& st = playerUIState_["audio::" + name];
 
 			playerCard("audio", name, pa,
-				[pa, filepath, volume]() { if (pa && !filepath.empty()) pa->playAudio(filepath, static_cast<unsigned short>(volume)); },
-				[pa, filepath]()         { if (pa && !filepath.empty()) pa->stop(filepath, false, 0, 0); },
-				[snd, name]()            { snd->removePlayerAudio(name); }
+				[&st]() {
+					Text("File:");
+					SameLine();
+					PushItemWidth(-170.0f);
+					InputTextWithHint("##filepath", "path/to/sound.wav", st.textBuf, sizeof(st.textBuf));
+					PopItemWidth();
+					SameLine();
+					Text("Vol:");
+					SameLine();
+					PushItemWidth(-FLT_MIN);
+					SliderInt("##playvol", &st.playVolume, 0, 100, "%d%%");
+					PopItemWidth();
+				},
+				[pa, &st]() { if (pa && st.textBuf[0] != '\0') pa->playAudio(st.textBuf, static_cast<unsigned short>(st.playVolume)); },
+				[pa, &st]() { if (pa && st.textBuf[0] != '\0') pa->stop(st.textBuf, false, 0, 0); },
+				[this, snd, name]() { snd->removePlayerAudio(name); playerUIState_.erase("audio::" + name); },
+				210.0f
 			);
 		}
 
@@ -690,85 +1242,24 @@
 			morseNewName[0] = '\0';
 		}
 
-		Dummy(ImVec2(0, 6));
-
-		Text("Text to play:");
-		SameLine();
-		static char morseText[256] = "";
-		PushItemWidth(340);
-		InputTextWithHint("##morseText", "SOS", morseText, sizeof(morseText));
-		PopItemWidth();
-
 		Dummy(ImVec2(0, 14));
 
 		for (auto const& name : snd->getPlayerMorseNames()) {
 			PlayerMorse* pm = snd->getPlayerMorse(name);
-			const std::string text = morseText;
+			PlayerUIState& st = playerUIState_["morse::" + name];
 
 			playerCard("morse", name, pm,
-				[pm, text]() { if (pm && !text.empty()) pm->playMorse(text); },
-				[pm, text]() { if (pm && !text.empty()) pm->stop(text, false, 0, 0); },
-				[snd, name]() { snd->removePlayerMorse(name); }
-			);
-		}
-
-		Dummy(ImVec2(0, 24));
-
-		// ================================================================ TTS players
-		SeparatorText("TTS players");
-		Dummy(ImVec2(0, 4));
-
-		Text("New player name:");
-		SameLine();
-		static char ttsNewName[64] = "";
-		PushItemWidth(260);
-		InputTextWithHint("##ttsNewName", "e.g. announcer", ttsNewName, sizeof(ttsNewName));
-		PopItemWidth();
-		SameLine();
-		if (Button("+ Add player##ttsAdd", ImVec2(180, 36)) && ttsNewName[0] != '\0') {
-			snd->addPlayerTTS(nullptr, ttsNewName, "");
-			ttsNewName[0] = '\0';
-		}
-
-		Dummy(ImVec2(0, 6));
-
-		Text("Model:");
-		SameLine();
-		static char ttsModel[64] = "";
-		PushItemWidth(180);
-		InputTextWithHint("##ttsModel", "model", ttsModel, sizeof(ttsModel));
-		PopItemWidth();
-		SameLine();
-		Dummy(ImVec2(10, 0));
-		SameLine();
-		Text("Audio name:");
-		SameLine();
-		static char ttsAudioName[64] = "";
-		PushItemWidth(180);
-		InputTextWithHint("##ttsAudioName", "id", ttsAudioName, sizeof(ttsAudioName));
-		PopItemWidth();
-
-		Dummy(ImVec2(0, 6));
-
-		Text("Text to say:");
-		SameLine();
-		static char ttsText[256] = "";
-		PushItemWidth(340);
-		InputTextWithHint("##ttsText", "hello world", ttsText, sizeof(ttsText));
-		PopItemWidth();
-
-		Dummy(ImVec2(0, 14));
-
-		for (auto const& name : snd->getPlayerTTSNames()) {
-			PlayerTTS* pt = snd->getPlayerTTS(name);
-			const std::string model     = ttsModel;
-			const std::string audioName = ttsAudioName;
-			const std::string text      = ttsText;
-
-			playerCard("tts", name, pt,
-				[pt, model, audioName, text]() { if (pt && !model.empty() && !audioName.empty() && !text.empty()) pt->playTTS(model, text, audioName); },
-				[pt, audioName]()               { if (pt && !audioName.empty()) pt->stop(audioName, false, 0, 0); },
-				[snd, name]()                    { snd->removePlayerTTS(name); }
+				[&st]() {
+					Text("Text:");
+					SameLine();
+					PushItemWidth(-FLT_MIN);
+					InputTextWithHint("##morsetext", "SOS", st.textBuf, sizeof(st.textBuf));
+					PopItemWidth();
+				},
+				[pm, &st]() { if (pm && st.textBuf[0] != '\0') pm->playMorse(st.textBuf); },
+				[pm, &st]() { if (pm && st.textBuf[0] != '\0') pm->stop(st.textBuf, false, 0, 0); },
+				[this, snd, name]() { snd->removePlayerMorse(name); playerUIState_.erase("morse::" + name); },
+				210.0f
 			);
 		}
 

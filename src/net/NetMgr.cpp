@@ -312,24 +312,32 @@
         return remove_udp_socket_locked(get_socket_index(port));
     }
 
-    void NetMgr::printUdpSockets() const {
+    UdpSocket* NetMgr::getUdpSocket(std::string const& name) const {
+        // Proteger acceso a vector de sockets
+        std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
 
-        SYS_INFO("NetMgr", "--- SOCKETS ENABLED ---");
-        {
-            // Proteger acceso a vector de sockets
-            std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
+        for (auto const& sock : pimpl_->udp_sockets_)
+            if (sock->name() == name)
+                return sock.get();
 
-            // Recorrer e imprimir sockets
-            for (unsigned int i = 0; i < pimpl_->udp_sockets_.size(); i++)
-            SYS_INFO("NetMgr", 
-                "[" + std::to_string(i) + "] Socket '" + 
-                pimpl_->udp_sockets_[i]->name() + ":" + 
-                std::to_string(pimpl_->udp_sockets_[i]->port() ) + "'"
-            );
-        }
-        
+        return nullptr;
     }
 
+    std::vector<UdpSocket*> NetMgr::getUdpSockets() const {
+        // Proteger acceso a vector de sockets
+        std::lock_guard<std::mutex> lock(udp_sockets_mtx_);
+
+        std::vector<UdpSocket*> result;
+        result.reserve(pimpl_->udp_sockets_.size());
+        for (auto const& sock : pimpl_->udp_sockets_)
+            result.push_back(sock.get());
+
+        return result;
+    }
+
+
+
+   
     bool NetMgr::socketExists(std::string const& socketname) const {
         {
             // Proteger acceso a vector de sockets
@@ -581,7 +589,8 @@ struct NetMgr::Impl {};
     ) { return false; }
     bool NetMgr::removeUdpSocket(std::string const&)    { return false; }
     bool NetMgr::removeUdpSocket(unsigned int)          { return false; }
-    void NetMgr::printUdpSockets() const                { return; }
+    UdpSocket* NetMgr::getUdpSocket(std::string const&) const { return nullptr; }
+    std::vector<UdpSocket*> NetMgr::getUdpSockets() const     { return {}; }
     bool NetMgr::socketExists(std::string const&) const { return false; }
     bool NetMgr::socketExists(unsigned short) const     { return false; }
 

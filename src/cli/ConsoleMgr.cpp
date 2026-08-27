@@ -13,6 +13,7 @@
 #include "devices/TotalMix.hpp"
 #include "devices/Symetrix.hpp"
 #include "net/NetMgr.hpp"
+#include "net/UdpSocket.hpp"
 
 // Otros
 #include <iostream>
@@ -1103,10 +1104,17 @@ void ConsoleMgr::execute_cmd_net_devices(std::vector<std::string> const& tokens)
         return;
     }
 
-    // NetMgr no expone un getter que devuelva los sockets como vector<string>;
-    // printUdpSockets() vuelca la lista al log de la aplicación (SYS_INFO).
-    net->printUdpSockets();
-    print("Socket list printed to the application log.");
+    auto sockets = net->getUdpSockets();
+    if (sockets.empty()) {
+        print("No UDP sockets registered.");
+        return;
+    }
+
+    for (UdpSocket* sock : sockets) {
+        if (!sock) continue;
+        print(sock->name() + " : " + std::to_string(sock->port())
+            + (sock->isRunning() ? " (running)" : " (stopped)"));
+    }
 }
 
 void ConsoleMgr::execute_cmd_net_status(std::vector<std::string> const& tokens) {
