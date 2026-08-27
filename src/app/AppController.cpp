@@ -5,6 +5,7 @@
 #include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
 #include "net/NetMgr.hpp"       // Clase para gestionar sockets
 #include "cli/ConsoleMgr.hpp"   // Clase para gestionar sockets
+#include "positions/PositionsMgr.hpp"
 #include "sound/SoundMgr.hpp"   // Clase para gestionar audio
 #include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
 #include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
@@ -25,6 +26,7 @@ AppController::AppController(int argc, char** argv) :
     argv_(argv),
     config_filename_("config.json"),
     net_(std::make_unique<NetMgr>()),
+    pos_(std::make_unique<PositionsMgr>()),
     cli_(std::make_unique<ConsoleMgr>()),
     gui_(std::make_unique<GuiMgr>()),
     snd_(std::make_unique<SoundMgr>()),
@@ -95,6 +97,7 @@ bool AppController::init() {
 
     // Iniciar módulos
     init_module(net_, "Network",            enable_flags_.net);
+    init_module(pos_, "Positions",          enable_flags_.pos);
     init_module(snd_, "Sounds",             enable_flags_.snd);
     init_module(tmx_, "Totalmix",           enable_flags_.tmx);
     init_module(sym_, "Symetrix",           enable_flags_.sym);
@@ -140,6 +143,7 @@ void AppController::loadConfig(void* config) {
     };
     enable_flags_.net = loadFlag(enable_flags_.net, "APP_enable_network");
     enable_flags_.cli = loadFlag(enable_flags_.cli, "APP_enable_cli");
+    enable_flags_.pos = loadFlag(enable_flags_.pos, "APP_enable_positions");
     enable_flags_.gui = loadFlag(enable_flags_.gui, "APP_enable_gui");
     enable_flags_.snd = loadFlag(enable_flags_.snd, "APP_enable_sounds");
     enable_flags_.tmx = loadFlag(enable_flags_.tmx, "APP_enable_totalmix");
@@ -157,9 +161,10 @@ void AppController::close() {
     SYS_INFO("AppController","Closing AppController...");
 
     // Cerrar módulos (opcional, recomendado)
+    close_module(net_, "Network");
+    close_module(pos_, "Positions");
     close_module(cli_, "CLI");
     close_module(gui_, "GUI");
-    close_module(net_, "Network");
     close_module(snd_, "Sound");
     close_module(tmx_, "TotalMix");
     close_module(sym_, "Symetrix");

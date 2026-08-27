@@ -99,4 +99,7 @@ protected:
     bool                initialized_;       ///< Bandera para indicar inicialización exitosa
     std::atomic<bool>   threads_running_;   ///< Mantiene los hilos del módulo corriendo
 
+private:
+    // nada
+    
 };

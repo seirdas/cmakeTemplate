@@ -10,8 +10,7 @@
 // General ------------------------------------------------------------------------------
 
 PositionsMgr::PositionsMgr() :
-    IModule(),
-    initialized_(false)
+    IModule()
 {
 
 }

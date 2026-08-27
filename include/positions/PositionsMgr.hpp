@@ -17,7 +17,7 @@ class Position;         ///< Declaración implícita
  * @brief Clase de gestión de datos recibidos 
  *  externamente de comunicaciones
  */
-class PositionsMgr : IModule {
+class PositionsMgr : public IModule {
 
 public:
 
@@ -75,9 +75,6 @@ private:
 
 // Aliases
     using PositionList = std::unordered_map<std::string, std::unique_ptr<Position>>;
-
-    // Inicialización y ejecución
-    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
 
 // Gestión de personas
     PositionList    positions_;          ///< Lista de personas gestionadas

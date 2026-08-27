@@ -7,6 +7,7 @@
 // Declaración implícita
 class NetMgr;
 class GuiMgr;
+class PositionsMgr;
 class ConsoleMgr;
 class SoundMgr;
 class TotalMix;
@@ -198,6 +199,7 @@ private:
 
 // Módulos
     std::unique_ptr<NetMgr>         net_;          ///< Gestor de sockets de red
+    std::unique_ptr<PositionsMgr>   pos_;          ///< Gestor de posiciones (personas)
     std::unique_ptr<ConsoleMgr>     cli_;          ///< Gestor de ventanas para interfaz de consola
     std::unique_ptr<GuiMgr>         gui_;          ///< Gestor de ventanas para la interfaz gráfica
     std::unique_ptr<SoundMgr>       snd_;          ///< Gestor de audio
@@ -213,6 +215,7 @@ private:
 // Bits de activación de módulos (Bitfield)
     struct ModuleFlags {
         bool net : 1;
+        bool pos : 1;
         bool cli : 1;
         bool gui : 1;
         bool snd : 1;
