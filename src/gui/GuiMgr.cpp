@@ -16,10 +16,10 @@
 #include "sound/AudioCaptureModule.hpp"
 #include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
-#include "devices/Symetrix.hpp"     // Estado de conexión, mostrado en la sección Symetrix
-#include "devices/TotalMix.hpp"     // Estado de inicialización, mostrado en status_bar_bottom()
-#include "net/NetMgr.hpp"           // Estado de inicialización, mostrado en status_bar_bottom()
-#include "net/UdpSocket.hpp"        // Datos por socket (nombre/puerto/último paquete), mostrados en status_bar_bottom()
+#include "devices/Symetrix.hpp"     // Clase de gestión de Symetrix
+#include "devices/TotalMix.hpp"     // Clase de gestión de Totalmix
+#include "net/NetMgr.hpp"           // Clase de gestión de red (Network)
+#include "net/UdpSocket.hpp"        // Clase de gestión de sockets de red
 
 
 #if defined IMGUILIB || defined IMGUILIB_VERSION
@@ -71,10 +71,6 @@
 	// General ------------------------------------------------------------------------------
 
 	GuiMgr::GuiMgr() : 
-		config_(nullptr),
-		ctrl_(nullptr),
-		running_(false),
-		initialized_(false),
 		window_(nullptr),
 		style_(nullptr),
 		io_(nullptr),
@@ -101,15 +97,15 @@
 		close();
 	}
 
-	bool GuiMgr::setController(IAppControl* controller){
-		ctrl_ = controller;
-		return static_cast<bool>(ctrl_);
-	}
-
 
 	// Ejecución ----------------------------------------------------------------------------
 
 	bool GuiMgr::init(void* config) {
+        // Ejecutar inicialización común (guarda config, cambia flags)
+        if (!IModule::init(config)) {
+            SYS_WARN("NetMgr", "Error in base initialization");
+            return false;
+        }
 
 		SYS_INFO("GuiMgr", "Initializing UI...");
 
@@ -218,10 +214,6 @@
 		// marcar que está inicializado
 		initialized_ = true;
 		return true;
-	}
-
-	bool GuiMgr::isInitialized() const{
-        return initialized_;
     }
 
 	void GuiMgr::loadConfig(void* config) {
@@ -247,18 +239,18 @@
 
 	bool GuiMgr::Run() {
 
-		running_ = true;
-
-		while (isRunning())
-			bucle_principal();		// <-- Se queda aqui hasta cerrar
+		while (isWindowOpened())
+			bucle_principal();		// <-- BLOQUEANTE hasta cerrar ventana
 		
 		return close();
 	}
 
 	bool GuiMgr::close() {
-		// No intentar cerrar de nuevo (excepción)
-		if(!running_) 
-			return true;
+        // Ejecutar cierre común (cambia flags, etc.)
+        if (!IModule::close()) {
+            SYS_WARN("GuiMgr", "Error in base close method");
+            return false;
+        }
 
 		SYS_INFO("GuiMgr", "Closing UI...");
 
@@ -277,13 +269,10 @@
 		unload_images();
 
 		SYS_INFO("GuiMgr", "UI closed.");
-		running_ = false;
-		initialized_ = false;
-
-		return !initialized_; // <- true
+		return true;
 	}
 
-	bool GuiMgr::isRunning() const {
+	bool GuiMgr::isWindowOpened() const {
 		return window_ && !glfwWindowShouldClose(window_);
 	}
 	

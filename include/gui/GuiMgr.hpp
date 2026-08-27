@@ -1,6 +1,7 @@
 #pragma once
 
-#include <memory>               // unique_ptr (pimpl)
+#include "app/IModule.hpp"
+
 #include <string>
 #include <cstdint>              // uintptr_t
 #include <unordered_map>
@@ -28,8 +29,9 @@ class AudioPlaybackModule;
   * @note bucle_principal() puede ser sobreescrito para modificar los elementos de la UI.
   * @see IAppControl
   */
-class GuiMgr 
-    : public ISoundObserver
+class GuiMgr : 
+    public IModule,
+    public ISoundObserver
 {
 
 public:
@@ -45,36 +47,15 @@ public:
      * @brief Destructor. Llama a cerrar() para liberar recursos.
      */
     ~GuiMgr();
-    
-    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
-    GuiMgr(GuiMgr const&) = delete;
-    GuiMgr& operator=(GuiMgr const&) = delete;
 
-    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
-    GuiMgr(GuiMgr&&) = delete;
-    GuiMgr& operator=(GuiMgr&&) = delete;
-    
-    /**
-     * @brief Establece el controlador de la aplicación (ctrl)
-     * @param ctrl Controlador de la aplicación
-     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
-     */
-    bool setController(IAppControl* controller);
-    
 
-// Ejecución ----------------------------------------------------------------------------
+// Métodos comunes de módulo (IModule) --------------------------------------------------
 
     /**
      * @brief Inicializa la gestión de ventanas con GLFW y OpenGL, y configura ImGui.
      * @return	True si la inicialización fue exitosa, false si hubo algún error 
      */
-    bool init(void* config);
-    
-    /**
-     * @brief Devuelve si la inicialización ha sido exitosa
-     * @return @c true Si ha iniciado bien, @c false en caso contrario
-     */
-    bool isInitialized() const;
+    bool init(void* config) override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -84,7 +65,15 @@ public:
     * esté completo y sincronizado.
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
-    void loadConfig(void* config);
+    void loadConfig(void* config) override;
+
+    /**
+     * @brief Cierra la ventana y libera los recursos asociados.
+     */
+    bool close() override;
+
+
+// Ejecución ----------------------------------------------------------------------------
 
     /**
      * @brief Inicia el bucle principal de la ventana. 
@@ -93,15 +82,10 @@ public:
     bool Run();
 
     /**
-     * @brief Cierra la ventana y libera los recursos asociados.
-     */
-    bool close();
-
-    /**
     * @brief Comprueba si la ventana sigue abierta.
     * @return	True si la ventana está abierta, false si se ha cerrado.
     */
-    bool isRunning() const;
+    bool isWindowOpened() const;
 
 
 private:
@@ -419,12 +403,6 @@ private:
 
     
 /************ Variables ********************************************************/
-
-// Inicialización y ejecución
-    void*           config_;            ///< Configuración del módulo (considerado json)
-    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
-    bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
-    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
 
 // Propiedades de la ventana
     GLFWwindow*     window_;            ///< Puntero a la ventana GLFW
