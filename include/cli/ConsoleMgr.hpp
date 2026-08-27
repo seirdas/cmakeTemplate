@@ -293,16 +293,12 @@ private:
 
 /************ Variables ********************************************************/
 
-// Inicialización y ejecución
-    void*           config_;            ///< Configuración del módulo (considerado json)
-    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
-    bool            initialized_;       ///< Bandera para indicar inicialización exitosa
-    bool            running_;           ///< Indica si la ventana se ha cerrado para evitar cerrar varias veces
-
 // Parámetros de la consola
     std::string     AppName_;                   ///< Nombre de la aplicación/ventana
     std::string     exe_path_;                  ///< Ruta de aplicación (para duplicar app en terminal con Linux)
+    bool            cli_running_;               ///< Flag de consola abierta corriendo
     bool            tried_to_launch_console_;   ///< Indica si ya se ha indtentado lanzar la consola
     bool            show_app_name_;             ///< Muestra el nombre de la aplicación en la consola o no
     std::string     prefix_color_;              ///< Color del prefijo de entrada ( el '>>' )
+    
 };

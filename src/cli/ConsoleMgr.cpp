@@ -25,10 +25,9 @@
 
 ConsoleMgr::ConsoleMgr() :
     IModule(),
-    ctrl_(nullptr),
-    initialized_(false),
-    running_(false),
     AppName_("app"),
+    exe_path_(""),
+    cli_running_(false),
     tried_to_launch_console_(false),
     show_app_name_(true),
     prefix_color_(ANSI_BRIGHT_BLUE)
@@ -96,7 +95,7 @@ void ConsoleMgr::loadConfig(void* config) {
 bool ConsoleMgr::close() {
     // Ejecutar cierre común (cambia flags, etc.)
     if (!IModule::close()) {
-        SYS_WARN("NetMgr", "Error in base initialization");
+        SYS_WARN("ConsoleMgr", "Error in base close method");
         return false;
     }
     
@@ -116,7 +115,7 @@ bool ConsoleMgr::Run() {
     
     // Info
     SYS_INFO("ConsoleMgr", "Running in CLI Mode. Type 'help' for commands or 'exit' to quit.");
-    running_ = true;
+    cli_running_ = true;
 
     std::string command;
     size_t      cursor = 0; // Posición del cursor dentro de "command" (no siempre al final)
@@ -142,7 +141,7 @@ bool ConsoleMgr::Run() {
         tcsetattr(STDIN_FILENO, TCSANOW, &newt);
     #endif
 
-    while (running_) {
+    while (cli_running_) {
         char c;
 
         #ifdef _WIN32
@@ -494,7 +493,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
 
         { "exit", [this](std::vector<std::string> const&) {
             SYS_INFO("ConsoleMgr", "Exiting application...");
-            running_ = false;
+            cli_running_ = false;
         }},
 
     };
