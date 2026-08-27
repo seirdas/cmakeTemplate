@@ -245,29 +245,24 @@
 // ============================================================
 
 // General ------------------------------------------------------------------------------
-PlayerTTS::PlayerTTS(std::string const&, void*, const void*) :
-    AudioPlaybackModule("", nullptr, nullptr),
-    onTextToAudio_cb_(nullptr)
-{}
-
-PlayerTTS::~PlayerTTS() {}
+PlayerTTS::PlayerTTS(std::string const& moduleName, void* ctx, const void* device_info)
+    : AudioPlaybackModule(moduleName, ctx, device_info), playbackName_(moduleName), texto_en_proceso_("") { }
+PlayerTTS::~PlayerTTS()                                 { }
 
 // Inicialización -----------------------------------------------------------------------
-bool PlayerTTS::init(void*, std::string const&) { return false; }
-bool PlayerTTS::close()                          { return false; }
+bool PlayerTTS::init(void* config, std::string const& playbackName) { return false; }
+bool PlayerTTS::close()                                 { return false; }
 
 // Ejecución ----------------------------------------------------------------------------
-bool PlayerTTS::playTTS(std::string const&, std::string const&, std::string const&) { return false; }
+bool PlayerTTS::playTTS(std::string const&, std::string const&, std::string const&, unsigned short, bool, bool) { return false; }
 
 // Inyección de función texto a audio ---------------------------------------------------
-void PlayerTTS::setCallback_onTextToAudio(TTSFunction) { return; }
-void PlayerTTS::clearCallback_onTextToAudio()           { return; }
+void PlayerTTS::setCallback_onTextToAudio(TTSFunction)  { }
+void PlayerTTS::clearCallback_onTextToAudio()           { }
 bool PlayerTTS::hasCallback_onTextToAudio()             { return false; }
 
-// Hilos --------------------------------------------------------------------------------
-void PlayerTTS::t_data_consumer()                       { return; }
-
-// Procesado de elementos de la cola -----------------------------------------------------
+// Privados -----------------------------------------------------------------------------
+void PlayerTTS::t_data_consumer()                       { }
 bool PlayerTTS::reproducir_elemento(queueElement)       { return false; }
 
 #endif

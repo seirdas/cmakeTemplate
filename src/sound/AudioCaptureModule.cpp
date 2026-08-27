@@ -432,58 +432,80 @@
 //  (Stubs)
 // ============================================================
 
-// Definición del struct de pimpl vacío
-struct AudioCaptureModule::Impl {};
+    struct AudioCaptureModule::Impl {};
 
-// General ------------------------------------------------------------------------------
-AudioCaptureModule::AudioCaptureModule(void*, const void*) : 
-    max_int16_val_(std::numeric_limits<int16_t>::max())
-{}
-AudioCaptureModule::~AudioCaptureModule()   { return; }
+    // General ------------------------------------------------------------------------------
+    AudioCaptureModule::AudioCaptureModule(std::string const& moduleName, void* ctx, const void* device_info) : 
+        pimpl_(std::make_unique<Impl>()), 
+        name_(moduleName), 
+        is_valid_(false), 
+        initialized_(false), 
+        running_(false), 
+        channels_(0), 
+        sampleRate_(0), 
+        deviceName_(""), 
+        selectedChannel_(0), 
+        codec_inited_(false), 
+        recording_(false), 
+        rec_filename_(""), 
+        max_int16_val_(32767), 
+        rmsLevel_(0.0f), 
+        peakLevel_(0.0f), 
+        processBufferSize_(0), 
+        smoothedValues_(false), 
+        attackCoeff_(0.0f), 
+        releaseCoeff_(0.0f)                                                                 { }
 
-// Ejecución -----------------------------------------------------------------------------
-bool AudioCaptureModule::init(void*, std::string const&)  { return false; }
-bool AudioCaptureModule::isInitialized() const            { return false; }
-void AudioCaptureModule::loadConfig(void* config)         { return; }
-void AudioCaptureModule::close()                          { return; }
-bool AudioCaptureModule::reload()                         { return false; }
-bool AudioCaptureModule::startCapture()                          { return false; }
-bool AudioCaptureModule::stopCapture()                           { return false; }
+    AudioCaptureModule::~AudioCaptureModule()                                               { }
 
-// Información y parámetros --------------------------------------------------------------
-std::string AudioCaptureModule::getDeviceName() const             { return ""; }
-std::string AudioCaptureModule::getModuleName() const             { return ""; }
-unsigned short AudioCaptureModule::getNumChannels() const         { return 0; }
-unsigned short AudioCaptureModule::getSelectedChannel() const     { return 0; }        
-unsigned int AudioCaptureModule::getSampleRate() const            { return 0; }
-bool AudioCaptureModule::setDeviceName(std::string const&)        { return false; }
-bool AudioCaptureModule::setNumChannels(unsigned short)           { return false; }
-bool AudioCaptureModule::setSampleRate(unsigned int)              { return false; }
-bool AudioCaptureModule::setSelectedChannel(unsigned short)       { return false; }
-bool AudioCaptureModule::isValid() const                          { return false; }
+    // Inicialización -----------------------------------------------------------------------
+    bool AudioCaptureModule::init(void*, std::string const&)                                { return false; }
+    bool AudioCaptureModule::isInitialized() const                                          { return false; }
+    void AudioCaptureModule::loadConfig(void*)                                              { }
+    void AudioCaptureModule::close()                                                        { }
+    bool AudioCaptureModule::reload()                                                       { return false; }
 
-// Captura ------------------------------------------------------------------------------
-float  AudioCaptureModule::getRmsLevel()   const  { return 0.0f;  }
-float  AudioCaptureModule::getPeakLevel()  const  { return 0;     }
-size_t AudioCaptureModule::getBufferSize() const  { return 0;     }
+    // Ejecución ----------------------------------------------------------------------------
+    bool AudioCaptureModule::startCapture()                                                 { return false; }
+    bool AudioCaptureModule::stopCapture()                                                  { return false; }
 
-// Callback expuesto --------------------------------------------------------------------
-void AudioCaptureModule::setCallback_OnFrame(AudioCallback)    { return; }
-void AudioCaptureModule::clearCallback_OnFrame()               { return; }
+    // Parámetros del módulo ----------------------------------------------------------------
+    std::string AudioCaptureModule::getDeviceName() const                                   { return ""; }
+    std::string AudioCaptureModule::getModuleName() const                                   { return ""; }
+    unsigned short AudioCaptureModule::getNumChannels() const                               { return 0; }
+    unsigned short AudioCaptureModule::getSelectedChannel() const                           { return 0; }
+    unsigned int AudioCaptureModule::getSampleRate() const                                  { return 0; }
+    bool AudioCaptureModule::setDeviceName(std::string const&)                              { return false; }
+    bool AudioCaptureModule::setNumChannels(unsigned short)                                 { return false; }
+    bool AudioCaptureModule::setSampleRate(unsigned int)                                    { return false; }
+    bool AudioCaptureModule::setSelectedChannel(unsigned short)                             { return false; }
+    bool AudioCaptureModule::isValid() const                                                { return false; }
 
-// Grabación ----------------------------------------------------------------------------
-bool AudioCaptureModule::StartRec(std::string const&) { return false; }
-bool AudioCaptureModule::StopRec()                    { return false; }
-size_t AudioCaptureModule::getRecBufferSize() const   { return 0; }
-bool AudioCaptureModule::isRecording() const          { return false; }
+    // Captura ------------------------------------------------------------------------------
+    float AudioCaptureModule::getRmsLevel() const                                           { return 0.0f; }
+    float AudioCaptureModule::getPeakLevel() const                                          { return 0.0f; }
+    size_t AudioCaptureModule::getBufferSize() const                                        { return 0; }
 
-// Codificador de grabación (Privados) --------------------------------------------------
-bool AudioCaptureModule::init_rec_encoder(std::string const&) { return false; }
-void AudioCaptureModule::uninit_rec_encoder()                 { return; }
-bool AudioCaptureModule::save_recording()                     { return false; }
-    
-// Suavizado de niveles -----------------------------------------------------------------
-float AudioCaptureModule::smooth_level(float const,float const&,float,float) { return 0; }
+    // Callback expuesto --------------------------------------------------------------------
+    void AudioCaptureModule::setCallback_OnFrame(AudioCallback)                             { }
+    void AudioCaptureModule::clearCallback_OnFrame()                                        { }
+    bool AudioCaptureModule::hasCallback_OnFrame()                                          { return false; }
 
+    // Grabación ----------------------------------------------------------------------------
+    bool AudioCaptureModule::StartRec(std::string const&)                                   { return false; }
+    bool AudioCaptureModule::StopRec()                                                      { return false; }
+    size_t AudioCaptureModule::getRecBufferSize() const                                     { return 0; }
+    bool AudioCaptureModule::isRecording() const                                            { return false; }
+
+    // Parámetros de suavizado de valores ---------------------------------------------------
+    void AudioCaptureModule::enableSmoothedValues(bool)                                     { }
+    void AudioCaptureModule::setSmoothAttackCoeff(float)                                    { }
+    void AudioCaptureModule::setSmoothReleaseCoeff(float)                                   { }
+
+    // Privados -----------------------------------------------------------------------------
+    bool AudioCaptureModule::init_rec_encoder(std::string const&)                           { return false; }
+    void AudioCaptureModule::uninit_rec_encoder()                                           { }
+    bool AudioCaptureModule::save_recording()                                               { return false; }
+    float AudioCaptureModule::smooth_level(float const, float const&, float, float)         { return 0.0f; }
 
 #endif

@@ -1,4 +1,3 @@
-//creo la clase de los inputs
 #pragma once
 
 #include <string>               // std::string

@@ -938,37 +938,65 @@
 // ============================================================
 
     // General ------------------------------------------------------------------------------
-    TTSCore::TTSCore(std::size_t const&) {
-		SYS_WARN("TTSCore", "Sherpa TTS library has not been implemented.");
-    };
-    TTSCore::~TTSCore() {};
+    TTSCore::TTSCore(unsigned int const& thread_count) : 
+        initialized_(false), 
+        running_(false), 
+        active_tasks_(0), 
+        num_available_models_(0), 
+        num_threads_(thread_count), 
+        concurrent_init_(false), 
+        lazy_load_(false), 
+        keep_alive_seconds_(0), 
+        num_load_retries_(0), 
+        loading_(false)                                     { }
+    TTSCore::~TTSCore()                                     { }
 
     // Ejecución ----------------------------------------------------------------------------
-    bool TTSCore::init()              { return false; };
-    void TTSCore::close()            { return; };
-    void TTSCore::reload()            { return; }
-    void TTSCore::loadMissingModels() { return; }
-    bool TTSCore::isWorking() const   { return false; }
+    bool TTSCore::init(void*)                               { return false; }
+    bool TTSCore::isInitialized() const                     { return false; }
+    void TTSCore::loadConfig(void*)                         { }
+    void TTSCore::close()                                   { }
+    void TTSCore::reload()                                  { }
+    void TTSCore::loadMissingModels()                       { }
+    bool TTSCore::isWorking() const                         { return false; }
 
-    // Datos del módulo TTS -----------------------------------------------------------------
-    std::vector<std::string> TTSCore::getAvailableModels()       { return {}; }
-    std::vector<std::string> TTSCore::getAvailableModelsPath()   { return {}; }
-    std::vector<std::string> TTSCore::getLoadedModels() const    { return {}; }
-    std::string TTSCore::getModelPath(std::string) const         { return ""; }
-    short   TTSCore::numAvailableModels() const                  { return 0; }
-    short   TTSCore::numLoadedModels() const                     { return 0; }
+    // Datos de modelos disponibles/cargados ------------------------------------------------
+    std::vector<std::string> TTSCore::getAvailableModels()  { return {}; }
+    std::vector<std::string> TTSCore::getAvailableModelsPath() { return {}; }
+    std::vector<std::string> TTSCore::getLoadedModels() const { return {}; }
+    std::string TTSCore::getModelPath(std::string) const    { return ""; }
+    unsigned short TTSCore::numAvailableModels() const      { return 0; }
+    unsigned short TTSCore::numLoadedModels() const         { return 0; }
+    bool TTSCore::isModelLoaded(std::string const&) const   { return false; }
 
-    // Datos y control de modelos -----------------------------------------------------------
+    // Control de modelos individuales ------------------------------------------------------
     AudioData TTSCore::generate(std::string const&, std::string const&) { return {}; }
-    int     TTSCore::getSampleRate(std::string const&) const         { return 0; }
-    int     TTSCore::getNumSpeakers(std::string const&) const        { return 0; }
-    std::string TTSCore::getProccesingText(std::string const&) const { return ""; }
-    std::string TTSCore::getModelName(std::filesystem::path)         { return ""; }
+    bool TTSCore::generateWav(std::string const&, std::string const&, std::string) { return false; }
+    int TTSCore::getSampleRate(std::string const&) const    { return 0; }
+    int TTSCore::getNumSpeakers(std::string const&) const   { return 0; }
+    std::string TTSCore::getProccessingText(std::string const&) const { return ""; }
+    std::string TTSCore::getModelName(std::filesystem::path) const { return ""; }
 
-    // Inicialización de modelos ------------------------------------------------------------
-    void TTSCore::loadModels()                                    { return;       }
-    bool TTSCore::load_vits_model(std::filesystem::path)          { return false; }
-    bool TTSCore::checkAvailableModel(std::filesystem::path) const{ return false; }
-    bool TTSCore::unload_model(std::string const&)                { return false; }
-    void TTSCore::keepAliveWorker()                               { return;       }
+    // Idiomas ------------------------------------------------------------------------------
+    bool TTSCore::isEnglish(std::string const&) const       { return false; }
+    bool TTSCore::isBritainEnglish(std::string const&) const { return false; }
+    bool TTSCore::isAmericanEnglish(std::string const&) const { return false; }
+    bool TTSCore::isSpanish(std::string const&) const       { return false; }
+    std::vector<std::string> TTSCore::getLoadedModelsEnglish() const { return {}; }
+    std::vector<std::string> TTSCore::getLoadedModelsBritainEnglish() const { return {}; }
+    std::vector<std::string> TTSCore::getLoadedModelsAmericanEnglish() const { return {}; }
+    std::vector<std::string> TTSCore::getLoadedModelsSpanish() const { return {}; }
+
+    // Función inyectada de notificación a observers ------------------------------------
+    void TTSCore::notify()                                  { }
+    void TTSCore::setCallback_onNotify(std::function<void(void)>) { }
+    void TTSCore::clearCallback_onNotify()                  { }
+    bool TTSCore::hasCallback_onNotify() const              { return false; }
+
+    // Privados -----------------------------------------------------------------------------
+    void TTSCore::load_models()                             { }
+    bool TTSCore::load_vits_model(std::filesystem::path)    { return false; }
+    bool TTSCore::check_available_model(std::filesystem::path) const { return false; }
+    bool TTSCore::unload_model(std::string const&)          { return false; }
+    void TTSCore::t_keepalive()                             { }
 #endif

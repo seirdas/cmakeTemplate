@@ -580,65 +580,51 @@
 
 #else
 // ============================================================
-//  (Stubs)
+//  Stubs
 // ============================================================
 
-// Definición del struct de pimpl vacío
-struct NetMgr::Impl {};
+    struct NetMgr::Impl {};
 
-
-// General ------------------------------------------------------------------------------
-    NetMgr::NetMgr(std::size_t const&) {
-		SYS_WARN("NetMgr", "Network library has not been implemented.");
+    // General ------------------------------------------------------------------------------
+    NetMgr::NetMgr(std::size_t const& thread_count) 
+        : pimpl_(std::make_unique<Impl>()), io_running_(false), io_threads_num_(thread_count), sockets_running_(false) 
+    {
+        SYS_WARN("NetMgr", "Network library has not been implemented.");
     }
-    NetMgr::~NetMgr()                               { }
+    NetMgr::~NetMgr() = default;
 
-// Gestión de sockets -------------------------------------------------------------------
-    bool NetMgr::addUdpSocket(
-        std::string         ,
-        unsigned short      , 
-        const std::string&  , 
-        unsigned int        
-    ) { return false; }
-    bool NetMgr::removeUdpSocket(std::string const&)    { return false; }
-    bool NetMgr::removeUdpSocket(unsigned int)          { return false; }
+    // Métodos comunes de módulo (IModule) --------------------------------------------------
+    bool NetMgr::init(void*)                                { return false; }
+    void NetMgr::loadConfig(void*)                          { }
+    bool NetMgr::close()                                    { return true; }
+
+    // Ejecución ----------------------------------------------------------------------------
+    bool NetMgr::start()                                    { return false; }
+    void NetMgr::stop()                                     { }
+    bool NetMgr::hasSocketsRunnning() const                 { return false; }
+
+    // Gestión de sockets -------------------------------------------------------------------
+    bool NetMgr::addUdpSocket(std::string, unsigned short, const std::string&, unsigned int) { return false; }
+    bool NetMgr::removeUdpSocket(std::string const&)        { return false; }
+    bool NetMgr::removeUdpSocket(unsigned int)              { return false; }
     UdpSocket* NetMgr::getUdpSocket(std::string const&) const { return nullptr; }
-    std::vector<UdpSocket*> NetMgr::getUdpSockets() const     { return {}; }
-    bool NetMgr::socketExists(std::string const&) const { return false; }
-    bool NetMgr::socketExists(unsigned short) const     { return false; }
+    std::vector<UdpSocket*> NetMgr::getUdpSockets() const { return {}; }
+    bool NetMgr::socketExists(std::string const&) const     { return false; }
+    bool NetMgr::socketExists(unsigned short) const         { return false; }
+    unsigned long long NetMgr::getLastPacketMs(std::string const&) const { return 0; }
+    unsigned long long NetMgr::getLastPacketMs(unsigned short) const     { return 0; }
 
-// Ejecución ----------------------------------------------------------------------------
-    bool NetMgr::start()                                { return false; }
-    void NetMgr::stop()                                 { return; }
-    bool NetMgr::isRunning() const                      { return false; }
-    
-// Envío --------------------------------------------------------------------------------
-    bool NetMgr::sendData(
-        std::string              , 
-        const std::vector<char>& ,
-        const std::string&       ,
-        unsigned short           
-    ) { return false; }
-    bool NetMgr::sendData(
-        unsigned short           , 
-        const std::vector<char>& ,
-        const std::string&       ,
-        unsigned short           
-    ) { return false; }
+    // Envío --------------------------------------------------------------------------------
+    bool NetMgr::sendData(std::string, const std::vector<char>&, const std::string&, unsigned short) { return false; }
+    bool NetMgr::sendData(unsigned short, const std::vector<char>&, const std::string&, unsigned short) { return false; }
 
-// Recepción ----------------------------------------------------------------------------
-    std::vector<char> NetMgr::getNextUdpPacket(std::string*, unsigned short*) { return {}; }
-    std::vector<char> NetMgr::getDataFromSocket(std::string const&)           { return {}; }
-    std::vector<char> NetMgr::getDataFromSocket(unsigned short)               { return {}; }
+    // Recepción ----------------------------------------------------------------------------
+    size_t NetMgr::numUdpRcvElements()                     { return 0; }
 
-// Datos de los sockets guardados -------------------------------------------------------
-    int NetMgr::get_socket_index(short port) const          { return 0; }
-    int NetMgr::get_socket_index(std::string const&) const  { return 0; }
-    
-    template <typename Lambda>
-    std::vector<char> extract_packet_if(Lambda)             { return {}; }
-
-// Operaciones privadas con sockets -----------------------------------------------------
-    bool remove_udp_socket_locked(int)                      { return false; }
+    // Privados -----------------------------------------------------------------------------
+    void NetMgr::t_dispatcher()                             { }
+    int NetMgr::get_socket_index(short) const               { return -1; }
+    int NetMgr::get_socket_index(std::string const&) const  { return -1; }
+    bool NetMgr::remove_udp_socket_locked(int)              { return false; }
 
 #endif

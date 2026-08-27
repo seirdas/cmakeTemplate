@@ -565,58 +565,51 @@
 //  (Stubs)
 // ============================================================
 
-// Definición del struct de pimpl vacío
-struct AudioPlaybackModule::Impl {};
+    struct AudioPlaybackModule::Impl {};
 
-// General ------------------------------------------------------------------------------
-AudioPlaybackModule::AudioPlaybackModule(void* ctx, const void* device_info) {}
-AudioPlaybackModule::~AudioPlaybackModule()  {}
+    // General ------------------------------------------------------------------------------
+    AudioPlaybackModule::AudioPlaybackModule(std::string const& moduleName, void*, const void*)
+        : pimpl_(std::make_unique<Impl>()), 
+        initialized_(false), running_(false), 
+        name_(moduleName), 
+        globalVol_(100), 
+        selectedChannel_(0), 
+        active_fadeouts_threads_(0)                         { }
+    AudioPlaybackModule::AudioPlaybackModule(std::string const& moduleName, std::unique_ptr<Impl> customImpl)
+        : pimpl_(std::move(customImpl)), 
+        initialized_(false), 
+        running_(false), 
+        name_(moduleName), 
+        globalVol_(100), 
+        selectedChannel_(0), 
+        active_fadeouts_threads_(0)                         { }
+    AudioPlaybackModule::~AudioPlaybackModule()             { }
 
-// Inicialización y ejecución -----------------------------------------------------------
-bool AudioPlaybackModule::init(void*, std::string const&)    { return false; }
-bool AudioPlaybackModule::isInitialized() const              { return false; }
-void AudioPlaybackModule::loadConfig(void*)                  { return; }
-bool AudioPlaybackModule::close()                            { return false; }
-bool AudioPlaybackModule::reload()                           { return false; }
+    // Inicialización -----------------------------------------------------------------------
+    bool AudioPlaybackModule::init(void*, std::string const&) { return false; }
+    bool AudioPlaybackModule::isInitialized() const         { return false; }
+    void AudioPlaybackModule::loadConfig(void*)             { }
+    bool AudioPlaybackModule::close()                       { return false; }
+    bool AudioPlaybackModule::reload()                      { return false; }
 
-// Acciones -----------------------------------------------------------------------------
-void AudioPlaybackModule::playAudio(const std::string&, unsigned short, bool, bool, unsigned short) { return; }
-void AudioPlaybackModule::stop(std::string const&, bool, unsigned int, unsigned int)           { return; }
-void AudioPlaybackModule::setVolume(std::string const&, unsigned short) { return; }
-void AudioPlaybackModule::setModuleVolume(unsigned short)               { return; }
-void AudioPlaybackModule::setPitch(std::string const&, float)           { return; }
+    // Ejecución ----------------------------------------------------------------------------
+    void AudioPlaybackModule::stop(std::string const&, bool, unsigned int, unsigned int) { }
+    void AudioPlaybackModule::setVolume(std::string const&, unsigned short) { }
+    void AudioPlaybackModule::setModuleVolume(unsigned short)               { }
+    void AudioPlaybackModule::setPitch(std::string const&, float)           { }
+    void AudioPlaybackModule::setSelectedChannel(unsigned short)            { }
 
-// Parámetros del módulo ----------------------------------------------------------------
-std::string AudioPlaybackModule::getDeviceName() const           { return "";    }
-std::string AudioPlaybackModule::getModuleName() const           { return "";    }
-bool AudioPlaybackModule::isPlaying(std::string const&) const    { return false; }
-bool AudioPlaybackModule::isBusy() const                         { return false; }
+    // Parámetros del módulo ----------------------------------------------------------------
+    std::string AudioPlaybackModule::getDeviceName() const  { return ""; }
+    std::string AudioPlaybackModule::getModuleName() const  { return ""; }
+    unsigned short AudioPlaybackModule::getModuleVolume() const { return 0; }
+    bool AudioPlaybackModule::isPlaying(std::string const&) const { return false; }
 
-// Caché --------------------------------------------------------------------------------
-bool AudioPlaybackModule::preload_audio_on_cache(const std::string&)   { return false; }
-
-// Limpieza de sonidos ------------------------------------------------------------------
-void AudioPlaybackModule::t_cleanup()                           { return; }
-void AudioPlaybackModule::stop_and_send_to_cleanup(void*)       { return; }
-void AudioPlaybackModule::cleanup_sounds()                      { return; }
-
-// Limpieza de caché de audios ----------------------------------------------------------
-void AudioPlaybackModule::t_cache_reaper()                  { return; }
-
-// Thread de pitchOut -------------------------------------------------------------------
-    void start_fadeout_thread(
-        std::string const&,
-        void*,
-        unsigned int
-    ) { return; }
-    void start_pitchout_thread(
-        std::string const&,
-        void*,
-        unsigned int,
-        float,
-        bool
-    ) { return; }
-
-
+    // Limpieza y Hilos ---------------------------------------------------------------------
+    void AudioPlaybackModule::t_cleanup()                       { }
+    void AudioPlaybackModule::stop_and_send_to_cleanup(void*)   { }
+    void AudioPlaybackModule::cleanup_sounds()                  { }
+    void AudioPlaybackModule::start_fadeout_thread(std::string const&, void*, unsigned int) { }
+    void AudioPlaybackModule::start_pitchout_thread(std::string const&, void*, unsigned int, float, bool) { }
 
 #endif

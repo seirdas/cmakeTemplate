@@ -1729,27 +1729,27 @@
 //  (Stubs)
 // ============================================================
 
-// Temas --------------------------------------------------------------------------------
-    void GuiMgr::apply_theme()               { return; }
-    void GuiMgr::saveConfig()               { return; }
-    void GuiMgr::Style_Dashboard()          { return; }
-    void GuiMgr::Style_AdobeInspired()      { return; }
-    void GuiMgr::Style_AyuDark()            { return; }
-    void GuiMgr::Style_Confy()              { return; }
-    void GuiMgr::Style_DarkCyan()           { return; }
-    void GuiMgr::Style_DefaultDark()        { return; }
-    void GuiMgr::Style_DefaultLight()       { return; }
-    void GuiMgr::Style_Everforest()         { return; }
-    void GuiMgr::Style_FutureDark()         { return; }
-    void GuiMgr::Style_Gold()               { return; }
-    void GuiMgr::Style_HazyDark()           { return; }
-    void GuiMgr::Style_KazamsCherry()       { return; }
-    void GuiMgr::Style_LightOrange()        { return; }
-    void GuiMgr::Style_QuickMinimalLook()   { return; }
-    void GuiMgr::Style_Modern()             { return; }
-    void GuiMgr::Style_Microfrost()         { return; }
-    void GuiMgr::Style_Moonlight()          { return; }
-    void GuiMgr::Style_SonicRiders()        { return; }
-    void GuiMgr::Style_VisualStudio()       { return; }
+	// Temas --------------------------------------------------------------------------------
+	void GuiMgr::apply_theme()                              { }
+	void GuiMgr::saveConfig()                               { }
+	void GuiMgr::Style_Dashboard()                          { }
+	void GuiMgr::Style_AdobeInspired()                      { }
+	void GuiMgr::Style_AyuDark()                            { }
+	void GuiMgr::Style_Confy()                              { }
+	void GuiMgr::Style_DarkCyan()                           { }
+	void GuiMgr::Style_DefaultDark()                        { }
+	void GuiMgr::Style_DefaultLight()                       { }
+	void GuiMgr::Style_Everforest()                         { }
+	void GuiMgr::Style_FutureDark()                         { }
+	void GuiMgr::Style_Gold()                               { }
+	void GuiMgr::Style_HazyDark()                           { }
+	void GuiMgr::Style_KazamsCherry()                       { }
+	void GuiMgr::Style_LightOrange()                        { }
+	void GuiMgr::Style_QuickMinimalLook()                   { }
+	void GuiMgr::Style_Modern()                             { }
+	void GuiMgr::Style_Microfrost()                         { }
+	void GuiMgr::Style_Moonlight()                          { }
+	void GuiMgr::Style_SonicRiders()                        { }
+	void GuiMgr::Style_VisualStudio()                       { }
 
 #endif

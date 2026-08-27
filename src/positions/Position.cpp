@@ -9,10 +9,11 @@ Position::Position() :
     initialized_(false),
     name_(""),
     is_instructor_(false),
-    spk_vol(0)
+    spk_vol(0),
+    tm_({}),
+    symIDs_({})
 {
-    memset(&symIDs_, 0, sizeof(symIDs_));
-    memset((void*)&tm_, 0, sizeof(tm_));
+    
 }
 
 Position::~Position() {

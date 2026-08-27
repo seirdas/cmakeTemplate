@@ -311,21 +311,23 @@
 //  (Stubs)
 // ============================================================
 
-// General ------------------------------------------------------------------------------
-PlayerAudio::PlayerAudio(std::string const&, void*, const void*) :
-    AudioPlaybackModule("", nullptr, nullptr)
-{}
+    // General ------------------------------------------------------------------------------
+    PlayerAudio::PlayerAudio(std::string const& moduleName, void* ctx, const void* device_info)
+        : AudioPlaybackModule(moduleName, ctx, device_info), audioFolder_(""), keep_alive_seconds_(0) { }
 
-// Ejecución ----------------------------------------------------------------------------
-void PlayerAudio::playFromFolder(
-    std::string const&,
-    unsigned short,
-    bool,
-    bool,
-    unsigned short 
-) { return; }
+    // Inicialización -----------------------------------------------------------------------
+    bool PlayerAudio::init(void* config, std::string const& playbackName) { return false; }
+    bool PlayerAudio::close()                                               { return false; }
 
-// Parámetros del módulo ----------------------------------------------------------------
-void PlayerAudio::setAudioFolder(std::string const&)     { return; }
+    // Ejecución ----------------------------------------------------------------------------
+    void PlayerAudio::playAudio(const std::string&, unsigned short, bool, bool, unsigned short) { }
+    void PlayerAudio::playFromFolder(std::string const&, unsigned short, bool, bool, unsigned short) { }
+
+    // Parámetros del módulo ----------------------------------------------------------------
+    void PlayerAudio::setAudioFolder(std::string const& audioFolder)        { audioFolder_ = audioFolder; }
+
+    // Privados / Caché ---------------------------------------------------------------------
+    bool PlayerAudio::preload_audio_on_cache(const std::string&)            { return false; }
+    void PlayerAudio::t_cache_reaper()                                      { }
 
 #endif

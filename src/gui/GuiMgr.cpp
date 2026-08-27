@@ -195,7 +195,7 @@
 			// Cargar el icono de la ventana utilizando WinAPI
 			HICON hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
 			SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-		#else // Alternativa Linux. Necesita el icon.png en imageres
+		#elif defined STB || defined STB_VERSION // Alternativa Linux. Necesita el icon.png en imageres
 			int width, height, channels;
 			fs::path rutaIcono = fs::absolute("imageres") / "icon.png";
 			unsigned char* pixels = stbi_load(rutaIcono.string().c_str(), &width, &height, &channels, 4);
@@ -1847,38 +1847,76 @@
 // ============================================================
 //  (Stubs)
 // ============================================================
+// ============================================================
+//  (Stubs) GuiMgr
+// ============================================================
 
-    GuiMgr::GuiMgr(IAppControl*)	{
-		SYS_WARN("GuiMgr", "ImGUI Graphics library has not been implemented.");
-	}
+	// General ------------------------------------------------------------------------------
+	GuiMgr::GuiMgr() : 
+		config_(nullptr), 
+		ctrl_(nullptr), 
+		running_(false), 
+		initialized_(false), 
+		window_(nullptr), 
+		style_(nullptr), 
+		io_(nullptr), 
+		captureKeys_(false), 
+		windowSizeX_(0), 
+		windowSizeY_(0), 
+		windowPosX_(0), 
+		windowPosY_(0), 
+		fullscreen_(false), 
+		transparent_bk_(false), 
+		fontSize_(0.0f), 
+		deviceRefreshInterval_(0.0f) 						{ }
+	GuiMgr::~GuiMgr()                                       { }
+	bool GuiMgr::setController(IAppControl*)                { return false; }
 
-    GuiMgr::~GuiMgr()									{ }
-    void GuiMgr::setController(IAppControl*)	{ return; }
-    
 	// Ejecución ----------------------------------------------------------------------------
-    bool GuiMgr::init(void*)		{ return false;}
-    void GuiMgr::run()				{ return; }
-    bool GuiMgr::isRunning() const 	{ return false; }
-    bool GuiMgr::close()			{ return false; }
+	bool GuiMgr::init(void*)                                { return false; }
+	bool GuiMgr::isInitialized() const                      { return false; }
+	void GuiMgr::loadConfig(void*)                          { }
+	bool GuiMgr::Run()                                      { return false; }
+	bool GuiMgr::close()                                    { return false; }
+	bool GuiMgr::isRunning() const                          { return false; }
+
+	// Captura de teclas --------------------------------------------------------------------
+	void GuiMgr::capture_keys()                             { }
 
 	// Bucle principal ----------------------------------------------------------------------
-    void GuiMgr::init_frame()		{ return; }
-    void GuiMgr::end_frame()		{ return; }
-    void GuiMgr::capture_keys()		{ return; }
-    void GuiMgr::bucle_principal()	{ return; }
+	void GuiMgr::init_frame()                               { }
+	void GuiMgr::end_frame()                                { }
+	void GuiMgr::bucle_principal()                          { }
 
 	// Elementos de interfaz ----------------------------------------------------------------
-    void GuiMgr::mainmenu_bar()		{ return; }
-    void GuiMgr::main_window()		{ return; }
+	void GuiMgr::mainmenu_bar()                             { }
+	void GuiMgr::main_window()                              { }
+	void GuiMgr::columnaDerecha()                           { }
+	void GuiMgr::statusDot(ImVec4 const&)                   { }
+	void GuiMgr::status_bar_top()                           { }
+	void GuiMgr::status_bar_bottom()                        { }
+	void GuiMgr::sidebar_nav()                              { }
+	void GuiMgr::panelSounds()                              { }
+	void GuiMgr::panelTTS()                                 { }
+	void GuiMgr::panelCapture()                             { }
+	void GuiMgr::panelNetwork()                             { }
+	void GuiMgr::panelNetworkChecking()                     { }
+	void GuiMgr::panelAppearance()                          { }
+	void GuiMgr::panelPlaceholder(const char*, const char*) { }
+	void GuiMgr::playerCard(std::string const&, std::string const&, AudioPlaybackModule*, std::function<void()> const&, std::function<void()> const&, std::function<void()> const&, std::function<void()> const&, float) { }
 
 	// Carga de imágenes --------------------------------------------------------------------
-    uintptr_t GuiMgr::get_image(std::string)					{ return 0; }
-    void GuiMgr::unload_images()								{ return; }
-    void GuiMgr::add_texture_from_file(std::string)			{ return; }
-    void GuiMgr::generate_default_texture()					{ return; }
-    
-	// Aspecto y temas ----------------------------------------------------------------------
-    void update_density(int)						{ return; }
-    void titlebar_dark_mode(bool)					{ return; }
+	uintptr_t GuiMgr::get_image(std::string)                { return 0; }
+	void GuiMgr::unload_images()                            { }
+	void GuiMgr::add_texture_from_file(std::string)         { }
+	void GuiMgr::generate_default_texture()                 { }
+
+	// Aspecto ------------------------------------------------------------------------------
+	bool GuiMgr::set_fullscreen(bool)                       { return false; }
+	void GuiMgr::update_density(int)                        { }
+	void GuiMgr::titlebar_dark_mode(bool)                   { }
+
+	// Overrides de interfaces observador ---------------------------------------------------
+	void GuiMgr::onSoundsDataChanged(OBS_SoundsData const&) { }
 
 #endif

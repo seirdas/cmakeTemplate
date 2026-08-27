@@ -768,48 +768,70 @@
 //  (Stubs)
 // ============================================================
 
-// Definición del struct de pimpl vacío
-struct SoundMgr::Impl {};
+    struct SoundMgr::Impl {};
 
-// General ------------------------------------------------------------------------------
-SoundMgr::SoundMgr()                    { }
-SoundMgr::~SoundMgr()                   { }
-bool SoundMgr::init(void*)              { return false; }
-bool SoundMgr::isInitialized() const    { return false; }
-bool SoundMgr::close()                   { return false; }
-bool SoundMgr::updateDevices()          { return false; }
+    // General ------------------------------------------------------------------------------
+    SoundMgr::SoundMgr() : 
+        pimpl_(std::make_unique<Impl>()), 
+        initialized_(false), 
+        running_(false), 
+        MAX_REINIT_ATTEMPTS(0), 
+        fallbackToDefault_(false), 
+        enabledSmoothedValues_(false), 
+        attackCoeff_(0.0f), 
+        releaseCoeff_(0.0f)                                 { }
+    SoundMgr::~SoundMgr()                                   { }
 
-// Dispositivos de Captura --------------------------------------------------------------
-AudioCaptureModule* SoundMgr::getCapture(std::string captureName) const       { return nullptr;}
-std::vector<std::string> SoundMgr::getAvailableCaptures() const             { return {}; }
-std::vector<std::string> SoundMgr::getManagedCaptures() const               { return {}; }
-bool        SoundMgr::isOnManagedCaptures(std::string const&) const         { return false; }
-std::string SoundMgr::getDefaultCaptureDevice() const                       { return {}; }
-bool SoundMgr::addCaptureDevice(void*,std::string const&,std::string const&){ return false; }
-bool SoundMgr::removeCaptureDevice(std::string const&)                      { return false; }
+    // Inicialización -----------------------------------------------------------------------
+    bool SoundMgr::init(void*)                              { return false; }
+    bool SoundMgr::isInitialized() const                    { return false; }
+    void SoundMgr::loadConfig(void*)                        { }
+    bool SoundMgr::close()                                  { return false; }
 
-// Dispositivos Playback ----------------------------------------------------------------
-AudioPlaybackModule* SoundMgr::getPlayback(std::string captureName) const   { return nullptr; }
-std::vector<std::string> SoundMgr::getAvailablePlaybacks() const { return {}; }
-std::vector<std::string> SoundMgr::getManagedPlayerAudios() const   { return {}; }
-bool SoundMgr::isOnManagedPlayerAudios(std::string const&) const    { return false; }
-std::string SoundMgr::getDefaultPlaybackDevice() const           { return ""; }
-void SoundMgr::listAvailablePlaybacks() const                    { return; }
-bool SoundMgr::addPlayerAudio(void*,std::string const&,std::string const&, std::string const&) { return false; }
-bool SoundMgr::removePlayerAudio(std::string const&)          { return false; }
+    // Ejecución ----------------------------------------------------------------------------
+    bool SoundMgr::updateDevices()                          { return false; }
+    bool SoundMgr::playbackTest()                           { return false; }
 
-// Ejecución y datos de playbacks -------------------------------------------------------
-bool SoundMgr::playbackTest()                               { return false; }
-bool SoundMgr::playMorse(std::string const&, std::string const&, std::string const&, unsigned short, bool) { return false;}
-bool SoundMgr::stopTone(std::string const&) { return false;}
+    // Módulos de Captura -------------------------------------------------------------------
+    bool SoundMgr::addCaptureDevice(void*, std::string const&, std::string const&) { return false; }
+    bool SoundMgr::removeCaptureDevice(std::string const&) { return false; }
+    AudioCaptureModule* SoundMgr::getCapture(std::string) const { return nullptr; }
+    std::vector<std::string> SoundMgr::getCaptureModuleNames() const { return {}; }
 
-// Funciones internas auxiliares --------------------------------------------------------
-const void* SoundMgr::get_device_info(std::string&, bool) const     { return nullptr; }
-const void* SoundMgr::get_playback_device_info(std::string&) const  { return nullptr; }
-const void* SoundMgr::get_capture_device_info(std::string&) const   { return nullptr; }
+    // Módulos PlayerAudio ------------------------------------------------------------------
+    bool SoundMgr::addPlayerAudio(void*, std::string const&, std::string const&) { return false; }
+    bool SoundMgr::removePlayerAudio(std::string const&)   { return false; }
+    PlayerAudio* SoundMgr::getPlayerAudio(std::string) const { return nullptr; }
+    std::vector<std::string> SoundMgr::getPlayerAudioNames() const { return {}; }
 
-// Listas de dispositivos de audio ------------------------------------------------------
-void SoundMgr::update_available_inputs()    { return; }
-void SoundMgr::update_available_playbacks() { return; }
+    // Módulos PlayerMorse ------------------------------------------------------------------
+    bool SoundMgr::addPlayerMorse(void*, std::string const&, std::string const&) { return false; }
+    bool SoundMgr::removePlayerMorse(std::string const&)   { return false; }
+    PlayerMorse* SoundMgr::getPlayerMorse(std::string) const { return nullptr; }
+    std::vector<std::string> SoundMgr::getPlayerMorseNames() const { return {}; }
+
+    // Módulos PlayerTTS --------------------------------------------------------------------
+    bool SoundMgr::addPlayerTTS(void*, std::string const&, std::string const&) { return false; }
+    bool SoundMgr::removePlayerTTS(std::string const&)     { return false; }
+    PlayerTTS* SoundMgr::getPlayerTTS(std::string) const   { return nullptr; }
+    std::vector<std::string> SoundMgr::getPlayerTTSNames() const { return {}; }
+    TTSCore* SoundMgr::getTTSCore() const                   { return nullptr; }
+
+    // Datos de dispositivos ----------------------------------------------------------------
+    std::vector<std::string> SoundMgr::getAvailableCaptures() const { return {}; }
+    std::string SoundMgr::getDefaultCaptureDevice() const   { return ""; }
+    std::vector<std::string> SoundMgr::getAvailablePlaybacks() const { return {}; }
+    std::string SoundMgr::getDefaultPlaybackDevice() const  { return ""; }
+
+    // Observadores -------------------------------------------------------------------------
+    void SoundMgr::addObserver(ISoundObserver*)             { }
+
+    // Auxiliares Privados ------------------------------------------------------------------
+    void SoundMgr::notify()                                 { }
+    const void* SoundMgr::get_device_info(std::string&, bool) const { return nullptr; }
+    const void* SoundMgr::get_playback_device_info(std::string&) const { return nullptr; }
+    const void* SoundMgr::get_capture_device_info(std::string&) const { return nullptr; }
+    void SoundMgr::update_available_inputs()               { }
+    void SoundMgr::update_available_playbacks()            { }
 
 #endif

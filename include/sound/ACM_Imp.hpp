@@ -36,6 +36,6 @@
 
 #else
 
-struct AudioCaptureModule::Impl { }
+struct AudioCaptureModule::Impl { };
 
 #endif
