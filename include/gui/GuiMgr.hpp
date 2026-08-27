@@ -6,7 +6,7 @@
 #include <unordered_map>
 
 // Interfaces de observador
-#include "tts_obsoleto/ITTSObserver.hpp"
+#include "sound/ISoundObserver.hpp"
 
 
 // Forward declaration
@@ -19,16 +19,14 @@ class IAppControl;
 /**
   * @class GuiMgr
   * @brief Gestor de ventana y loop principal usando GLFW, OpenGL e ImGui.
-  *  Comunica con el resto de la aplicación mediante la interfaz IAppControl suministrada.
-  * @note El destructor virtual garantiza la limpieza correcta en clases derivadas.
+  * @details Comunica con el resto de la aplicación mediante la interfaz IAppControl suministrada.
   * @note Los métodos privados init_frame() y end_frame() encapsulan el inicio y fin de
   *  cada frame de ImGui.
   * @note bucle_principal() puede ser sobreescrito para modificar los elementos de la UI.
-  * @note Proporciona varias funciones de estilo para configurar la apariencia de ImGui.
   * @see IAppControl
   */
 class GuiMgr 
-    : public ITTSObserver
+    : public ISoundObserver
 {
 
 public:
@@ -126,8 +124,9 @@ private:
     void end_frame();
 
     /**
-     * @brief Bucle principal de la ventana. Se encarga de iniciar un nuevo frame, renderizar el contenido de ImGui, y actualizar la ventana.
-     *        Se llama repetidamente mientras la ventana esté abierta.
+     * @brief Bucle principal de la ventana. Se encarga de iniciar un nuevo frame, 
+     *  renderizar el contenido de ImGui, y actualizar la ventana.
+     * @details Se llama repetidamente mientras la ventana esté abierta.
      */
     virtual void bucle_principal();
 
@@ -203,12 +202,11 @@ private:
 // Overrides de interfaces observador ---------------------------------------------------
 
     /**
-     * @brief Cuando TTSMgr o TTSCore notifiquen un cambio, guardamos los datos en pimpl_
-     * @param data Paquete de datos internos de TTS
+     * @brief Recibe datos del módulo de sonidos cuando éste notifique un cambio
+     * @param data Paquete de datos internos del módulo de sonidos
      */
-	void onTTSDataChanged(const TTSCoreData& data) override;
+	void onSoundsDataChanged(OBS_SoundsData const& data) override;
 
-    
 
 // Temas --------------------------------------------------------------------------------
 
@@ -314,10 +312,6 @@ private:
 
     
 /************ Variables ********************************************************/
-    
-// Pointer to implementation
-    struct Impl;                        ///< Estructura PIMPL
-    std::unique_ptr<Impl> pimpl_;       ///< Miembros dependientes de IAppController
 
 // Inicialización y ejecución
     void*           config_;            ///< Configuración del módulo (considerado json)
@@ -361,6 +355,11 @@ private:
 
 // Variables (MenuBar)
     float           MainMenuBar_Height_       = 0.0f;           ///< Almacena el alto de la barra de menú para ajustar la ventana principal
+
+
+// Datos de módulos recibidos de interfaces observador
+    OBS_SoundsData  soundsData_;            ///< Datos del módulo de sonidos
+
 
 };
 

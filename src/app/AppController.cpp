@@ -20,7 +20,6 @@
 AppController::AppController(int argc, char** argv) :
     version_("0.0.0"),
     initialized_(false),
-    running_(false),
     online_mode_(true),
     argc_(argc),
     argv_(argv),
@@ -106,9 +105,9 @@ bool AppController::init() {
     // init_module(ico_, "iComm",              enable_flags_.ico);
 
 
-    // Vincular módulos a través de patrón observador a GUI ( #TODO )
-    // if (gui_->isInitialized() && tts_->isInitialized())
-    //     tts_->addObserver(gui_.get());
+    // Vincular módulos a través de patrón observador a GUI
+    if (gui_->isInitialized() && snd_->isInitialized())
+        snd_->addObserver(gui_.get());
 
 
     // Volcar datos que hayan escrito los módulos al config
@@ -129,67 +128,33 @@ void AppController::loadConfig(void* config) {
     if (!config)
         return;
 
-    // Se considera que la configuración se pasa como json
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
-    jsonMgr.get_or_set(cfg, "version",                  version_);
-    
-    // Para los bitfields se necesita un bool:
-    bool val = false;
-    
-    val = enable_flags_.net;
-    jsonMgr.get_or_set(cfg, "APP_enable_network", val);
-    enable_flags_.net = val;
+    jsonMgr.get_or_set(cfg, "version", version_);
 
-    val = enable_flags_.cli;
-    jsonMgr.get_or_set(cfg, "APP_enable_cli", val);
-    enable_flags_.cli = val;
-
-    val = enable_flags_.gui;
-    jsonMgr.get_or_set(cfg, "APP_enable_gui", val);
-    enable_flags_.gui = val;
-
-    val = enable_flags_.snd;
-    jsonMgr.get_or_set(cfg, "APP_enable_sounds", val);
-    enable_flags_.snd = val;
-
-    val = enable_flags_.tmx;
-    jsonMgr.get_or_set(cfg, "APP_enable_totalmix", val);
-    enable_flags_.tmx = val;
-
-    val = enable_flags_.sym;
-    jsonMgr.get_or_set(cfg, "APP_enable_symetrix", val);
-    enable_flags_.sym = val;
-
-    val = enable_flags_.vip;
-    jsonMgr.get_or_set(cfg, "APP_enable_voip", val);
-    enable_flags_.vip = val;
-
-    val = enable_flags_.com;
-    jsonMgr.get_or_set(cfg, "APP_enable_comms", val);
-    enable_flags_.com = val;
-
-    val = enable_flags_.dds;
-    jsonMgr.get_or_set(cfg, "APP_enable_fastdds", val);
-    enable_flags_.dds = val;
-
-    val = enable_flags_.cds;
-    jsonMgr.get_or_set(cfg, "APP_enable_cycloneds", val);
-    enable_flags_.cds = val;
-
-    val = enable_flags_.ico;
-    jsonMgr.get_or_set(cfg, "APP_enable_icomm", val);
-    enable_flags_.ico = val;
+    // Lambda para manejar los bitfields
+    auto loadFlag = [&](bool flag, const char* key) -> bool {
+        jsonMgr.get_or_set(cfg, key, flag);
+        return flag;
+    };
+    enable_flags_.net = loadFlag(enable_flags_.net, "APP_enable_network");
+    enable_flags_.cli = loadFlag(enable_flags_.cli, "APP_enable_cli");
+    enable_flags_.gui = loadFlag(enable_flags_.gui, "APP_enable_gui");
+    enable_flags_.snd = loadFlag(enable_flags_.snd, "APP_enable_sounds");
+    enable_flags_.tmx = loadFlag(enable_flags_.tmx, "APP_enable_totalmix");
+    enable_flags_.sym = loadFlag(enable_flags_.sym, "APP_enable_symetrix");
+    enable_flags_.vip = loadFlag(enable_flags_.vip, "APP_enable_voip");
+    enable_flags_.com = loadFlag(enable_flags_.com, "APP_enable_comms");
+    enable_flags_.dds = loadFlag(enable_flags_.dds, "APP_enable_fastdds");
+    enable_flags_.cds = loadFlag(enable_flags_.cds, "APP_enable_cycloneds");
+    enable_flags_.ico = loadFlag(enable_flags_.ico, "APP_enable_icomm");
 
 }
 
 void AppController::close() {
 
     SYS_INFO("AppController","Closing AppController...");
-
-    // Notifica el estado de cerrado (para threads, etc.)
-    running_ = false;
 
     // Cerrar módulos (opcional, recomendado)
     close_module(cli_, "CLI");

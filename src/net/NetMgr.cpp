@@ -5,7 +5,6 @@
 
     #include <asio.hpp>                 // asio external lib
     #include "net/UdpSocket.hpp"        // Para conocer UdpSocket
-    #include "datatypes/netTypes.hpp"   // Para conocer NetPacket
     #include "files/JsonMgr.hpp"        // Para conocer json
 
 

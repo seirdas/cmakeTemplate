@@ -8,8 +8,16 @@
 #include <string>               // Para std::string
 #include <memory>               // Para std::unique_ptr y std::enable_shared_from_this
 
-// Para evitar la inclusión del hpp en este header
-struct NetPacket;
+
+/**
+ * @brief Datos del paquete recibidos para implementar en cola centralizada de NetMgr
+ */
+struct NetPacket {
+    std::string         socket_name;        ///< Nombre del socket
+    unsigned short      port = 0;           ///< Puerto del socket
+    std::vector<char>   data_rcv;           ///< Datos recibidos
+};
+
 
 
 /**
@@ -59,6 +67,14 @@ public:
      * @brief Destructor. Detiene la recepción de datos y cierra el socket.
      */
     ~UdpSocket();
+    
+    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
+    UdpSocket(UdpSocket const&) = delete;
+    UdpSocket& operator=(UdpSocket const&) = delete;
+
+    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    UdpSocket(UdpSocket&&) = delete;
+    UdpSocket& operator=(UdpSocket&&) = delete; 
 
     
 // Ejecución ----------------------------------------------------------------------------

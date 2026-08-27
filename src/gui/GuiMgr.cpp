@@ -16,8 +16,6 @@
 #include "system/SystemMgr.hpp"
 #include "app/IAppControl.hpp"      // Interfaz de comunicación entre miembros de la aplicación
 
-#include "datatypes/TTSDataTypes.hpp"
-
 
 #if defined IMGUILIB || defined IMGUILIB_VERSION
 
@@ -60,16 +58,10 @@
 	// Se puede evitar poner "ImGui::" para simplificar
 	using namespace ImGui;
 
-	// Implementación de miembros de declaraciones forward
-    struct GuiMgr::Impl {
-        TTSCoreData         datosTTS;
-    };
-
 
 	// General ------------------------------------------------------------------------------
 
 	GuiMgr::GuiMgr() : 
-        pimpl_(std::make_unique<Impl>()),
 		config_(nullptr),
 		ctrl_(nullptr),
 		running_(false),
@@ -87,7 +79,8 @@
 		theme_selected_("DefaultLight"),
 		transparent_bk_(false),
 		fontSize_(16),
-		deviceRefreshInterval_(5)
+		deviceRefreshInterval_(5),
+		soundsData_({})
 	{
 		// Avisa si no tiene soporte STB para imágenes
 		#ifndef STB
@@ -420,17 +413,6 @@
 		{
 			// Panel F1 (Arriba Izquierda)
 			BeginChild("##F1", ImVec2(sizeX__Izq, GetContentRegionAvail().y), ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_FrameStyle);
-
-			// Mostrar carga de TTS
-			if (pimpl_->datosTTS.init_percent < 100) {
-				ImSpinner::SpinnerPulsar("Pulsar",  6, 2, ImColor(.5f,.5f,.5f));
-				SameLine();
-				TTS_text = "Loading TTS voice models: ";
-				TTS_text += std::to_string(pimpl_->datosTTS.num_loaded_models) + "/" + std::to_string(pimpl_->datosTTS.num_available_models);
-			} else TTS_text = "TTS voice models loaded.";
-			
-			Text("%s", TTS_text.c_str());
-			ProgressBar(pimpl_->datosTTS.init_percent/100.0f, ImVec2(0.0f, 0.0f));
 	
 			// Botón de modo
 			if (Button(       (ctrl_->isOnlineMode()) ? "ONLINE" : "OFFLINE"        ) ){
@@ -662,7 +644,7 @@
 				if (BeginTabItem("TTS")) {
 					// --- CONFIGURACIÓN PREVIA ---
 					static int selected_idx = 0;
-					std::string current_model = (!pimpl_->datosTTS.loaded_models.empty()) ? pimpl_->datosTTS.loaded_models[selected_idx] : "";
+					std::string current_model = (!soundsData_.tts.loaded_models.empty()) ? soundsData_.tts.loaded_models[selected_idx] : "";
 	
 					static std::string proc_text;
 
@@ -712,10 +694,10 @@
 						if (is_online) BeginDisabled(); // Si es online, todo lo que sigue se deshabilita
 
 						SetNextItemWidth(-FLT_MIN); // Que ocupe todo el ancho del child
-						const char* preview_value = (pimpl_->datosTTS.loaded_models.empty()) ? "" : pimpl_->datosTTS.loaded_models[selected_idx].c_str();
+						const char* preview_value = (soundsData_.tts.loaded_models.empty()) ? "" : soundsData_.tts.loaded_models[selected_idx].c_str();
 						if (BeginCombo("##cb_model", preview_value)) {
-							for (int n = 0; n < static_cast<int>(pimpl_->datosTTS.loaded_models.size()); ++n) {
-								if (Selectable(pimpl_->datosTTS.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
+							for (int n = 0; n < static_cast<int>(soundsData_.tts.loaded_models.size()); ++n) {
+								if (Selectable(soundsData_.tts.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
 							}
 							EndCombo();
 						}
@@ -1073,13 +1055,18 @@
 
 	/* ITTSOberver */
 
-	void GuiMgr::onTTSDataChanged(const TTSCoreData& data) {
+	void GuiMgr::onSoundsDataChanged(OBS_SoundsData const& data) {
 		
 		/* Recomendable implementar mutex */
-		//std::lock_guard<std::mutex> lock(pimpl_->tts_data_mtx);
+		//std::lock_guard<std::mutex> lock(...);
 		
-		pimpl_->datosTTS = data;
+		soundsData_ = data;
     }
+
+
+	// Temas --------------------------------------------------------------------------------
+
+	/* De aquí en adelante, implementado en GuiMgr_Themes.cpp */
 
 
 #else

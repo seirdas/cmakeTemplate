@@ -11,16 +11,8 @@
 
 
 struct AudioData {
-    std::vector<float>  samples;
-    unsigned int        sample_rate = 0;
-
-    /**
-     * @brief Método utilitario para saber si está vacío
-     * @return @c true si está vacío, @c false en caso contrario
-     */
-    bool empty() const { 
-        return samples.empty(); 
-    }
+    std::vector<float>  samples;        ///< Samples de audio
+    unsigned int        sample_rate;    ///< Frecuencia de muestreo
 };
 
 
@@ -141,7 +133,7 @@ public:
     /**
      * @brief Obtiene el número de modelos cargados
      * @returns Número de modelos cargados disponibles. 
-     *  Con lazy_load activo, NO CUENTA los modelos disponibles no cargados
+     * @note Con lazy_load activo, los modelos disponibles se consideran como cargados
      */
     unsigned short numLoadedModels() const;
 
@@ -201,7 +193,7 @@ public:
     std::string getModelName(std::filesystem::path modelAbsPath) const;
 
 
-// Idiomas-------------------------------------------------------------------------------
+// Idiomas ------------------------------------------------------------------------------
 
     /**
      * @brief Comprueba si un modelo de voz corresponde al idioma inglés.
@@ -345,7 +337,7 @@ private:
 // Modelos de voz
     TTSModelsMap            loaded_models_;         ///< Mapa de modelos TTS cargados
     unsigned short          num_available_models_;  ///< Número de modelos disponibles
-    int                     num_threads_;           ///< Número de hilos con los que se generarán los audios
+    unsigned int            num_threads_;           ///< Número de hilos con los que se generarán los audios
     bool                    concurrent_init_;       ///< Activa/desactiva la inicialización concurrente (experimental)
     std::string             models_path_;           ///< Ruta de carpetas donde residen los modelos
     mutable std::mutex      models_mutex_;          ///< Mutex para proteger el mapa de modelos

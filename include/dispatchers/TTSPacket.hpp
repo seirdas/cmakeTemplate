@@ -3,17 +3,6 @@
 #include <vector>
 
 /**
- * @brief Datos agrupados del módulo TTS Core (para GUI)
- */
-struct TTSCoreData {
-    short init_percent;
-    short num_available_models;
-    short num_loaded_models;
-    std::vector<std::string> available_models;
-    std::vector<std::string> loaded_models;
-};
-
-/**
  * @brief Estructura con los datos que procesa TTSMgr (->TTSPlay)
  */
 struct TTSPacket { 

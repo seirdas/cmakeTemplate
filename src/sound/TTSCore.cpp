@@ -348,17 +348,9 @@
     }
 
     unsigned short TTSCore::numLoadedModels() const {
+        // Proteger mapa y devolver el tamaño de la lista de modelos
         std::lock_guard<std::mutex> lock(models_mutex_);
-
-        // en lazy_load, solo devolver el número de los modelos cargados de verdad
-        if (lazy_load_) {
-            unsigned short num = 0;
-            for(const auto& [name, model] : loaded_models_)
-                if (model) 
-                    num++;
-            return num;
-        }
-        else return static_cast<unsigned short>(loaded_models_.size());
+        return static_cast<unsigned short>(loaded_models_.size());
     };
 
     bool TTSCore::isModelLoaded(std::string const& modelName) const {
@@ -368,11 +360,13 @@
         for (char &c : modelName_lc)
             c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); 
 
+        // Comprobar que el nombre está en la lista de modelos cargados
         std::unique_lock<std::mutex> lock(models_mutex_);
         auto it = loaded_models_.find(modelName_lc);
         if (it == loaded_models_.end()) 
             return false;
-        else return true;
+
+        return true;
     }
 
     
@@ -478,7 +472,7 @@
         // Retornar el audio generado copiando samples y sample_rate a un AudioData
         AudioData out_audio;
         out_audio.samples.assign(audio->samples, audio->samples + audio->n);
-        out_audio.sample_rate = audio->sample_rate;
+        out_audio.sample_rate = static_cast<unsigned int>(audio->sample_rate);
 
         // Liberar el audio (ya guardado en AudioData)
         SherpaOnnxDestroyOfflineTtsGeneratedAudio(audio);
@@ -496,7 +490,7 @@
         AudioData audio = generate(modelName_lc, text);
 
         // Comprobar si se ha generado audio
-        if (audio.empty()) {
+        if (audio.samples.empty()) {
             SYS_WARN("TTSCore", "Cannot generate audio for WAV file: Empty audio generated");
             return false;
         }
@@ -506,7 +500,7 @@
         SherpaOnnxWriteWave(
             audio.samples.data(),
             static_cast<int32_t>(audio.samples.size()),
-            audio.sample_rate,
+            static_cast<int>(audio.sample_rate),
             (wavname + ".wav").c_str()
         );
 
@@ -771,7 +765,7 @@
         config.model.vits.model     = st_modelname_path.c_str();
         config.model.vits.tokens    = st_tokens_path.c_str();
         config.model.vits.data_dir  = st_datadir_path.c_str();
-        config.model.num_threads    = num_threads_; // CUIDADO con la generación paralela (usar varios tts a la vez)
+        config.model.num_threads    = static_cast<int>(num_threads_); // Hilos de procesamiento
         config.model.debug          = 0;            // 1 para logs en consola
         config.model.vits.noise_scale   = 1.0f;     // Controla la expresividad/varianza
         config.model.vits.noise_scale_w = 0.8f;     // Varianza en la duración de los fonemas

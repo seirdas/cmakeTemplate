@@ -11,9 +11,8 @@
 #include <cwctype>
 
 // Datos para el paquete al TTS
-#include "datatypes/TTSDataTypes.hpp"
-
-#include "logic/tts/TTSDispatcher.hpp"
+#include "dispatchers/TTSDispatcher.hpp"
+#include "dispatchers/TTSPacket.hpp"
 
 
 // General ------------------------------------------------------------------------------

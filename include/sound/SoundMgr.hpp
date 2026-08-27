@@ -17,6 +17,7 @@ class PlayerAudio;
 class PlayerMorse;
 class PlayerTTS;
 class TTSCore;
+class ISoundObserver;
 
 
 /**
@@ -275,10 +276,10 @@ public:
     std::string getDefaultCaptureDevice() const;
 
     /**
-     * @brief Muestra en el log del sistema la lista
-     *  de dispositivos de captura disponibles
+     * @brief Devuelve una lista con los nombres de todos
+     *  los dispositivos de reproducción disponibles
      */
-    void listAvailableCaptures() const;
+    std::vector<std::string> getAvailablePlaybacks() const;
 
     /**
      * @brief Obtiene el dispositivo de reproducción playback predeterminado
@@ -286,20 +287,25 @@ public:
      */
     std::string getDefaultPlaybackDevice() const;
 
-    /**
-     * @brief Devuelve una lista con los nombres de todos
-     *  los dispositivos de reproducción disponibles
-     */
-    std::vector<std::string> getAvailablePlaybacks() const;
+
+// Observadores -------------------------------------------------------------------------
 
     /**
-     * @brief Muestra en el log del sistema la lista
-     *  de dispositivos de captura disponibles
+     * @brief Método para añadir una clase observadora
      */
-    void listAvailablePlaybacks() const;
+    void addObserver(ISoundObserver* obs);
 
 
 private:
+
+// Notificar a observadores -------------------------------------------------------------
+
+    /**
+     * @brief Método privado para encapsular datos y mandarlos externamente
+     *  a través del patrón observador
+     */
+    void notify();
+
 
 // Funciones internas auxiliares --------------------------------------------------------
 
@@ -379,7 +385,6 @@ private:
     using PlayersAudioList  = std::unordered_map<std::string, std::unique_ptr<PlayerAudio>>;
     using PlayersMorseList  = std::unordered_map<std::string, std::unique_ptr<PlayerMorse>>;
     using PlayerTTSList     = std::unordered_map<std::string, std::unique_ptr<PlayerTTS>>;
-    using TonePoolsList     = std::unordered_map<std::string, std::vector<std::string>>;
 
 // Pointer to implementation (PIMPL) para quitar includes del header
     struct Impl;
@@ -392,7 +397,7 @@ private:
     bool                        fallbackToDefault_;         ///< Fallback a dispositivo por defecto
 
 // Listas de dispositivos de audio
-    std::vector<std::string>    available_inputs_;          ///< Lista de dispositivos de entrada disponibles
+    std::vector<std::string>    available_captures_;          ///< Lista de dispositivos de entrada disponibles
     std::vector<std::string>    available_playbacks_;       ///< Lista de dispositivos playback disponibles
     mutable std::mutex          available_inputs_mtx_;      ///< Mutex para lista de dispositivos de entrada disponibles
     mutable std::mutex          available_playbacks_mtx_;   ///< Mutex para lista de dispositivos playback disponibles
@@ -411,5 +416,8 @@ private:
     bool                        enabledSmoothedValues_;     ///< Suaviza los valores obtenidos en los módulos (peak, rms...)
     float                       attackCoeff_;               ///< Valor de ataque (+grande = subida lenta)
     float                       releaseCoeff_;              ///< Valor de release (+grande = bajada lenta)
+
+// Observador 
+    std::vector<ISoundObserver*>  observers_;               ///< Lista de observadores para transferir datos
 
 };

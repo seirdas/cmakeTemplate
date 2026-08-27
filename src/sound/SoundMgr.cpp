@@ -15,8 +15,9 @@
     #include <chrono>
     #include <algorithm>
     #include "system/SystemMgr.hpp"
-    #include "files/JsonMgr.hpp"    // Para conocer json
-
+    #include "files/JsonMgr.hpp"            // Para conocer json
+    #include "sound/ISoundObserver.hpp"     // Datos para mandar a patrón observador
+    
     
     // Implementación de miembros de la clase de miniaudio (pimpl_)
     struct SoundMgr::Impl {
@@ -84,10 +85,10 @@
         SYS_INFO("SoundMgr","Starting TTSCore async load...");
         initTTS_thread_ = std::thread([this, config]() {
 
-                // Inyectar función de notify al TTSCore ( #TODO )
-                // tts_->setCallback_onNotify([this](){
-                //     this->notify();
-                // });
+                // Inyectar función de notify al TTSCore
+                tts_->setCallback_onNotify([this](){
+                    this->notify();
+                });
 
                 // Inicializar submódulo 
                 if(!tts_->init(config))
@@ -268,6 +269,9 @@
         // Actualizar las listas de dispositivos disponibles/manejados
         update_available_inputs();
         update_available_playbacks();
+
+        // Notificar a observadores
+        notify();
 
         return true;
     }
@@ -472,6 +476,25 @@
     
     // Datos de dispositivos ----------------------------------------------------------------
 
+    std::vector<std::string> SoundMgr::getAvailableCaptures() const {
+        std::lock_guard<std::mutex> lock(available_inputs_mtx_);
+        return available_captures_;
+    }
+
+    std::string SoundMgr::getDefaultCaptureDevice() const {
+        // Si no está inicializado no se puede hacer nada
+        if (!initialized_) return {};
+
+        // Recorre todos los dispositivos de captura (para esto se tiene que usar la lista de infos)
+        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
+        // Cuando encuentra el que tiene Default = true devuelve su nombre
+            if (pimpl_->pCaptureDevInfos_[i].isDefault)
+                return pimpl_->pCaptureDevInfos_[i].name;
+
+        // Si no hay ninguno predeterminado, devuelve un ""
+        /*else*/ return "";
+    }
+
     std::vector<std::string> SoundMgr::getAvailablePlaybacks() const {
         std::lock_guard<std::mutex> lock(available_playbacks_mtx_);
         return available_playbacks_;
@@ -491,34 +514,35 @@
 
         /*else*/ return "";
     }
-
-    void SoundMgr::listAvailablePlaybacks() const {
-        for (std::string const& name : getAvailablePlaybacks())
-            SYS_INFO("SoundMgr", "Playback: " + name);
-    }
     
-    std::vector<std::string> SoundMgr::getAvailableCaptures() const {
-        std::lock_guard<std::mutex> lock(available_inputs_mtx_);
-        return available_inputs_;
+
+    // Observadores -------------------------------------------------------------------------
+
+    void SoundMgr::addObserver(ISoundObserver* obs) {
+        observers_.push_back(obs);
     }
 
-    std::string SoundMgr::getDefaultCaptureDevice() const {
-        // Si no está inicializado no se puede hacer nada
-        if (!initialized_) return {};
 
-        // Recorre todos los dispositivos de captura (para esto se tiene que usar la lista de infos)
-        for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
-        // Cuando encuentra el que tiene Default = true devuelve su nombre
-            if (pimpl_->pCaptureDevInfos_[i].isDefault)
-                return pimpl_->pCaptureDevInfos_[i].name;
+    // Notificar a observadores -------------------------------------------------------------
 
-        // Si no hay ninguno predeterminado, devuelve un ""
-        /*else*/ return "";
-    }
+    void SoundMgr::notify() {
+        // Estructura para mandar a través de la función
+        OBS_SoundsData data = {};
 
-    void SoundMgr::listAvailableCaptures() const {
-        for (std::string const& name : getAvailableCaptures())
-            SYS_INFO("SoundMgr", "Capture: " + name);
+        // Rellenar los datos de la estructura
+        data.captures                   = getAvailableCaptures();
+        data.players_audio              = getPlayerAudioNames();
+        data.players_morse              = getPlayerMorseNames();
+        data.players_tts                = getPlayerTTSNames();
+        data.tts.available_models       = tts_->getAvailableModels();
+        data.tts.loaded_models          = tts_->getLoadedModels();
+        data.tts.num_available_models   = tts_->numAvailableModels();
+        data.tts.num_loaded_models      = tts_->numLoadedModels();
+
+        // Notificar a los observadores pasándoles la estructura
+        for (auto* obs : observers_) {
+            obs->onSoundsDataChanged(data);
+        }
     }
 
 
@@ -534,7 +558,6 @@
         for (ma_uint32 i = 0; i < devInfosSize; ++i)
             if (myDevName == devInfos[i].name)  
                 return &devInfos[i];
-
 
         // Si no ha encontrado nada literalmente igual y llega hasta aquí, busca parecidos (ignore case)
         ma_device_info* selectedDeviceInfo  = nullptr;  // Dispositivo a devolver
@@ -689,6 +712,9 @@
         map[usedModuleName] = std::move(module);
         SYS_INFO("SoundMgr", "New module added: '" + usedModuleName + "' (" + realDeviceName + ")");
 
+        // Notificar a observadores
+        notify();
+
         return true;
     }
 
@@ -712,6 +738,10 @@
         it->second->close();
         map.erase(it);
         SYS_INFO("SoundMgr", "Deleted '" + name + "'.");
+
+        // Notificar a observadores
+        notify();
+
         return true;
     }
 
@@ -720,9 +750,9 @@
 
     void SoundMgr::update_available_inputs() {
         std::lock_guard<std::mutex> lock(available_inputs_mtx_);
-        available_inputs_.clear();
+        available_captures_.clear();
         for (unsigned int i = 0; i < pimpl_->captureDevCount_; ++i) 
-            available_inputs_.push_back(pimpl_->pCaptureDevInfos_[i].name);
+            available_captures_.push_back(pimpl_->pCaptureDevInfos_[i].name);
     }
 
     void SoundMgr::update_available_playbacks() {
@@ -755,7 +785,6 @@ std::vector<std::string> SoundMgr::getAvailableCaptures() const             { re
 std::vector<std::string> SoundMgr::getManagedCaptures() const               { return {}; }
 bool        SoundMgr::isOnManagedCaptures(std::string const&) const         { return false; }
 std::string SoundMgr::getDefaultCaptureDevice() const                       { return {}; }
-void SoundMgr::listAvailableCaptures() const                                { return; }
 bool SoundMgr::addCaptureDevice(void*,std::string const&,std::string const&){ return false; }
 bool SoundMgr::removeCaptureDevice(std::string const&)                      { return false; }
 
@@ -781,11 +810,6 @@ const void* SoundMgr::get_capture_device_info(std::string&) const   { return nul
 
 // Listas de dispositivos de audio ------------------------------------------------------
 void SoundMgr::update_available_inputs()    { return; }
-void SoundMgr::update_managed_inputs()      { return; }
 void SoundMgr::update_available_playbacks() { return; }
-void SoundMgr::update_managed_playbacks()   { return; }
-
-// Morse --------------------------------------------------------------------------------
-std::vector<float> SoundMgr::generate_morse(std::string const&, std::string const&) const  { return {}; }
 
 #endif

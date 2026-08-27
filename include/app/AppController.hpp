@@ -187,12 +187,11 @@ private:
     bool                    initialized_;       ///< Bandera para indicar inicialización exitosa
 
 // Inicialización y ejecución
-    std::atomic<bool>       running_;           ///< flag de aplicación corriendo (para hilos)
-    std::atomic<bool>       online_mode_;       ///< Modo Online (gestionar paquetes de socket) o offline (ejecuta desde UI)
+    std::atomic<bool>       online_mode_;       ///< Modo online/offline
     
 // Parámetros de entrada (igual que main)
-    int         argc_;                          ///< Número de parámetros de entrada
-    char**      argv_;                          ///< Texto de parámetro de entrada
+    int                     argc_;              ///< Número de parámetros de entrada
+    char**                  argv_;              ///< Texto de parámetro de entrada
 
 // Archivos de configuración
     std::string             config_filename_;   ///< Nombre de archivo de configuración

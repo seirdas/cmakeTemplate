@@ -104,3 +104,74 @@ private:
     unsigned long   last_packet_hash_;  ///< Hash del último data recibido, para comparar duplicados
 
 };
+
+
+
+
+
+/* LOGICA ANTIGUA TTSMgr */
+
+    //std::unique_lock<std::mutex> lock(queue_mtx_);
+
+    // // Comprobar si la entidad existe ya en la info de algún player
+    // TTSMgrInfo* myinfo = nullptr;
+    // for (auto& it : ttsPlayers_) {
+    //     for (auto& info : PlayersInfo_[it.first])
+    //         if(entityName == info.entityName) {
+    //             myinfo = &info;
+    //             break;
+    //         }
+    //     if (myinfo) break;
+    // }
+
+    // // Si se ha definido un nuevo modelo de voz, se asigna (exista o no la info)
+    // if (!modelName.empty()) {
+    //     if (!ttsCore_.isModelLoaded(modelName)) {
+    //         SYS_WARN("TTSMgr","Play error: Model selected doesn't exist");
+    //         return false;
+    //     }
+    //     /* #TODO */
+    //     //myinfo->model_name_assigned = modelName;
+    // }
+
+    // // Caso cuando no existe la info (info nueva)
+    // if (!myinfo) {
+    //     TTSMgrInfo newInfo;
+    //     newInfo.entityName = entityName;
+
+    //     // Si no se ha definido un modelo de voz, elegir uno cualquiera
+    //     if (modelName.empty()) {
+    //         std::vector<std::string> models = ttsCore_.getLoadedModels();
+    //         if (models.empty()) {
+    //             SYS_WARN("TTSMgr","Play error: Cannot gather any TTS model.");
+    //             return false;
+    //         }
+    //         unsigned short sel = rand() % models.size();
+    //         /* #TODO */
+    //         //myinfo->model_name_assigned = modelName;
+    //     }
+
+    //     // Guardar la entidad en la info
+    //     newInfo.entityName = entityName;
+    // }
+
+    // Desbloqueo de mutex antes de reproducir para evitar deadlocks
+    //lock.unlock();
+    
+    // Asignar a un PlayerTTS...
+    /* #TODO */
+
+    // Callback para mostrar texto mientras se está reproduciendo, quitar después
+    /* #TODO */
+
+
+
+    // /**
+    //  * @brief Estructura de información de elementos en reproducción
+    //  * @details Contiene además los datos de TTSPacket recibidos 
+    //  */
+    // struct TTSMgrInfo : TTSPacket {
+    //     std::chrono::seconds    keep_alive_seconds_;    ///< Tiempo de vida de la asignación voz <-> entidad
+    //     std::string             model_name_assigned;    ///< Nombre del modelo asociado a la entidad
+    // };
+    // using TTSInfos      = std::unordered_map<std::string, std::vector<TTSMgrInfo>>;

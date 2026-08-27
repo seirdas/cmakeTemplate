@@ -169,7 +169,7 @@
 
         // Generar audio (muestras + sample rate real del modelo usado)
         AudioData audio = onTextToAudio_cb_(element.modelName, element.text);
-        if (audio.empty()) {
+        if (audio.samples.empty()) {
             SYS_WARN("PlayerTTS", "Empty audio generated from " + element.modelName);
             texto_en_proceso_.clear();
             return false;

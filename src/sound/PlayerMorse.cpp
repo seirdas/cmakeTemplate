@@ -4,7 +4,7 @@
 
     #include "miniaudio.h"
     #include "system/SystemMgr.hpp"
-    #include "datatypes/MorseDict.hpp"
+    #include "sound/MorseDict.hpp"
     #include "sound/APM_Imp.hpp"
     #include <memory>
     #include <cmath>
