@@ -12,7 +12,9 @@
 	// Temas --------------------------------------------------------------------------------
     
     void GuiMgr::apply_theme() {
-        if (theme_selected_ == "AdobeInspired")
+        if (theme_selected_ == "Dashboard")
+            Style_Dashboard();
+        else if (theme_selected_ == "AdobeInspired")
             Style_AdobeInspired();
         else if (theme_selected_ == "AyuDark")
             Style_AyuDark();
@@ -66,6 +68,109 @@
         json* cfg = static_cast<json*>(config_);
         JsonMgr& jsonMgr = JsonMgr::instance();
         jsonMgr.get_or_set(cfg, "theme_selected", theme_selected_);
+    }
+
+    void GuiMgr::Style_Dashboard() {
+
+        StyleColorsDark();
+        titlebar_dark_mode(true);
+
+        style_->Alpha                       = 1.0000f;
+        style_->DisabledAlpha               = 0.5000f;
+        style_->WindowPadding               = ImVec2(16.0000f, 16.0000f);
+        style_->WindowRounding              = 8.0000f;
+        style_->WindowBorderSize            = 0.0000f;
+        style_->WindowMinSize               = ImVec2(20.0000f, 20.0000f);
+        style_->WindowTitleAlign            = ImVec2(0.0000f, 0.5000f);
+        style_->WindowMenuButtonPosition    = ImGuiDir_Right;
+        style_->ChildRounding               = 10.0000f;
+        style_->ChildBorderSize             = 1.0000f;
+        style_->PopupRounding               = 8.0000f;
+        style_->PopupBorderSize             = 1.0000f;
+        style_->FramePadding                = ImVec2(10.0000f, 6.0000f);
+        style_->FrameRounding               = 6.0000f;
+        style_->FrameBorderSize             = 1.0000f;
+        style_->ItemSpacing                 = ImVec2(10.0000f, 8.0000f);
+        style_->ItemInnerSpacing            = ImVec2(8.0000f, 6.0000f);
+        style_->CellPadding                 = ImVec2(10.0000f, 8.0000f);
+        style_->IndentSpacing               = 18.0000f;
+        style_->ColumnsMinSpacing           = 6.0000f;
+        style_->ScrollbarSize               = 12.0000f;
+        style_->ScrollbarRounding           = 8.0000f;
+        style_->GrabMinSize                 = 10.0000f;
+        style_->GrabRounding                = 6.0000f;
+        style_->TabRounding                 = 6.0000f;
+        style_->TabBorderSize               = 0.0000f;
+        style_->ColorButtonPosition         = ImGuiDir_Right;
+        style_->ButtonTextAlign             = ImVec2(0.5000f, 0.5000f);
+        style_->SelectableTextAlign         = ImVec2(0.0000f, 0.0000f);
+
+        // Paleta: fondo casi negro, cards ligeramente más claras, acento verde esmeralda
+        const ImVec4 bgWindow    = ImVec4(0.0431f, 0.0431f, 0.0510f, 1.0000f); // #0B0B0D
+        const ImVec4 bgPanel     = ImVec4(0.0745f, 0.0745f, 0.0863f, 1.0000f); // #131316
+        const ImVec4 bgPanelAlt  = ImVec4(0.0941f, 0.0941f, 0.1059f, 1.0000f); // #18181B
+        const ImVec4 border      = ImVec4(0.1569f, 0.1569f, 0.1765f, 1.0000f); // #28282D
+        const ImVec4 textPrimary = ImVec4(0.9255f, 0.9255f, 0.9373f, 1.0000f); // #ECECEF
+        const ImVec4 textMuted   = ImVec4(0.5216f, 0.5294f, 0.5569f, 1.0000f); // #85878E
+        const ImVec4 accent      = ImVec4(0.2039f, 0.8275f, 0.6000f, 1.0000f); // #34D399 (verde esmeralda)
+        const ImVec4 accentHov   = ImVec4(0.2863f, 0.8784f, 0.6627f, 1.0000f); // más claro
+        const ImVec4 accentAct   = ImVec4(0.1569f, 0.7059f, 0.5020f, 1.0000f); // más oscuro
+
+        style_->Colors[ImGuiCol_Text]                     = textPrimary;
+        style_->Colors[ImGuiCol_TextDisabled]              = textMuted;
+        style_->Colors[ImGuiCol_WindowBg]                 = bgWindow;
+        style_->Colors[ImGuiCol_ChildBg]                  = bgPanel;
+        style_->Colors[ImGuiCol_PopupBg]                  = bgPanel;
+        style_->Colors[ImGuiCol_Border]                   = border;
+        style_->Colors[ImGuiCol_BorderShadow]             = ImVec4(0.0000f, 0.0000f, 0.0000f, 0.0000f);
+        style_->Colors[ImGuiCol_FrameBg]                  = bgPanelAlt;
+        style_->Colors[ImGuiCol_FrameBgHovered]           = ImVec4(0.1216f, 0.1216f, 0.1373f, 1.0000f);
+        style_->Colors[ImGuiCol_FrameBgActive]            = ImVec4(0.1490f, 0.1490f, 0.1686f, 1.0000f);
+        style_->Colors[ImGuiCol_TitleBg]                  = bgWindow;
+        style_->Colors[ImGuiCol_TitleBgActive]            = bgWindow;
+        style_->Colors[ImGuiCol_TitleBgCollapsed]         = bgWindow;
+        style_->Colors[ImGuiCol_MenuBarBg]                = bgPanel;
+        style_->Colors[ImGuiCol_ScrollbarBg]              = bgWindow;
+        style_->Colors[ImGuiCol_ScrollbarGrab]            = bgPanelAlt;
+        style_->Colors[ImGuiCol_ScrollbarGrabHovered]     = border;
+        style_->Colors[ImGuiCol_ScrollbarGrabActive]      = accent;
+        style_->Colors[ImGuiCol_CheckMark]                = accent;
+        style_->Colors[ImGuiCol_SliderGrab]               = accent;
+        style_->Colors[ImGuiCol_SliderGrabActive]         = accentHov;
+        style_->Colors[ImGuiCol_Button]                   = bgPanelAlt;
+        style_->Colors[ImGuiCol_ButtonHovered]            = ImVec4(0.1216f, 0.1216f, 0.1373f, 1.0000f);
+        style_->Colors[ImGuiCol_ButtonActive]             = ImVec4(0.1490f, 0.1490f, 0.1686f, 1.0000f);
+        style_->Colors[ImGuiCol_Header]                   = ImVec4(0.2039f, 0.8275f, 0.6000f, 0.1600f);
+        style_->Colors[ImGuiCol_HeaderHovered]            = ImVec4(0.2039f, 0.8275f, 0.6000f, 0.2600f);
+        style_->Colors[ImGuiCol_HeaderActive]             = ImVec4(0.2039f, 0.8275f, 0.6000f, 0.3600f);
+        style_->Colors[ImGuiCol_Separator]                = border;
+        style_->Colors[ImGuiCol_SeparatorHovered]         = accent;
+        style_->Colors[ImGuiCol_SeparatorActive]          = accentAct;
+        style_->Colors[ImGuiCol_ResizeGrip]               = ImVec4(0.1569f, 0.1569f, 0.1765f, 0.0000f);
+        style_->Colors[ImGuiCol_ResizeGripHovered]        = accent;
+        style_->Colors[ImGuiCol_ResizeGripActive]         = accentAct;
+        style_->Colors[ImGuiCol_Tab]                      = bgPanel;
+        style_->Colors[ImGuiCol_TabHovered]               = ImVec4(0.2039f, 0.8275f, 0.6000f, 0.3000f);
+        style_->Colors[ImGuiCol_TabActive]                = ImVec4(0.2039f, 0.8275f, 0.6000f, 0.2000f);
+        style_->Colors[ImGuiCol_TabUnfocused]             = bgPanel;
+        style_->Colors[ImGuiCol_TabUnfocusedActive]       = bgPanelAlt;
+        style_->Colors[ImGuiCol_PlotLines]                = accent;
+        style_->Colors[ImGuiCol_PlotLinesHovered]         = accentHov;
+        style_->Colors[ImGuiCol_PlotHistogram]            = accent;
+        style_->Colors[ImGuiCol_PlotHistogramHovered]     = accentHov;
+        style_->Colors[ImGuiCol_TableHeaderBg]            = bgPanelAlt;
+        style_->Colors[ImGuiCol_TableBorderStrong]        = border;
+        style_->Colors[ImGuiCol_TableBorderLight]         = ImVec4(0.1176f, 0.1176f, 0.1333f, 1.0000f);
+        style_->Colors[ImGuiCol_TableRowBg]               = ImVec4(0.0000f, 0.0000f, 0.0000f, 0.0000f);
+        style_->Colors[ImGuiCol_TableRowBgAlt]            = ImVec4(1.0000f, 1.0000f, 1.0000f, 0.0300f);
+        style_->Colors[ImGuiCol_TextSelectedBg]           = ImVec4(0.2039f, 0.8275f, 0.6000f, 0.3500f);
+        style_->Colors[ImGuiCol_DragDropTarget]           = accent;
+        style_->Colors[ImGuiCol_NavHighlight]             = accent;
+        style_->Colors[ImGuiCol_NavWindowingHighlight]    = ImVec4(1.0000f, 1.0000f, 1.0000f, 0.7000f);
+        style_->Colors[ImGuiCol_NavWindowingDimBg]        = ImVec4(0.0431f, 0.0431f, 0.0510f, 0.6000f);
+        style_->Colors[ImGuiCol_ModalWindowDimBg]         = ImVec4(0.0431f, 0.0431f, 0.0510f, 0.6000f);
+
+        SYS_INFO("GuiMgr", "'Dashboard' theme applied.");
     }
 
     void GuiMgr::Style_AdobeInspired() {
@@ -1627,6 +1732,7 @@
 // Temas --------------------------------------------------------------------------------
     void GuiMgr::apply_theme()               { return; }
     void GuiMgr::saveConfig()               { return; }
+    void GuiMgr::Style_Dashboard()          { return; }
     void GuiMgr::Style_AdobeInspired()      { return; }
     void GuiMgr::Style_AyuDark()            { return; }
     void GuiMgr::Style_Confy()              { return; }

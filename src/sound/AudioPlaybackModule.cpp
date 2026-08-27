@@ -254,7 +254,8 @@
         float finalVolume = 0;
         float globalFactor = static_cast<float>(globalVol_) / 100.0f;
         for (auto& [id, inst] : pimpl_->playing_sounds) {
-            finalVolume = inst->volume * globalFactor;
+            // inst->volume está en 0-100: normalizar antes de aplicar el factor global (0.0-1.0)
+            finalVolume = (static_cast<float>(inst->volume) / 100.0f) * globalFactor;
             ma_sound_set_volume(&inst->sound, finalVolume);
         }
     }

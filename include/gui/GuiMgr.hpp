@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>              // uintptr_t
 #include <unordered_map>
+#include <functional>           // std::function (callbacks de las cards de players)
 
 // Interfaces de observador
 #include "sound/ISoundObserver.hpp"
@@ -14,6 +15,7 @@ struct GLFWwindow;
 struct ImGuiStyle;
 struct ImGuiIO;
 class IAppControl;
+class AudioPlaybackModule;
 
 
 /**
@@ -148,6 +150,33 @@ private:
      */
     void columnaDerecha();
 
+    /**
+     * @brief Panel real de "Sounds": dispositivos y players de audio/morse/tts
+     *  (añadir, eliminar, play/stop, volumen), conectado a SoundMgr.
+     */
+    void panelSounds();
+
+    /**
+     * @brief Dibuja una "card" grande con los controles comunes de un player
+     *  (nombre, estado, play, stop, knob de volumen de módulo, eliminar).
+     * @details onRemove se invoca DESPUÉS de cerrar la card, para no usar @p mod
+     *  tras haberlo destruido.
+     * @param idPrefix Prefijo único por sección (p.ej. "audio", "morse", "tts") para que
+     *  dos players de distinto tipo con el mismo nombre no compartan ID de ImGui.
+     * @param name Nombre del player a mostrar.
+     * @param mod Puntero al módulo base (para volumen/estado). Puede ser nullptr.
+     * @param onPlay Callback al pulsar "Play".
+     * @param onStop Callback al pulsar "Stop".
+     * @param onRemove Callback al pulsar "Remove".
+     */
+    void playerCard(
+        std::string const&           idPrefix,
+        std::string const&           name,
+        AudioPlaybackModule*         mod,
+        std::function<void()> const& onPlay,
+        std::function<void()> const& onStop,
+        std::function<void()> const& onRemove);
+
 
 // Carga de imágenes --------------------------------------------------------------------
    
@@ -219,6 +248,12 @@ private:
      * @brief Guarda el tema en la configuración pasado como parámetro (considerado json)
      */
     void saveConfig();
+
+    /**
+     * @brief Dark - Dashboard: fondo casi negro, cards con borde sutil y esquinas
+     *  redondeadas, acento verde esmeralda. Inspirado en dashboards SaaS oscuros.
+     */
+    void Style_Dashboard();
 
     /**
      * @brief Dark - AdobeInspired style by nexacopic from ImThemes
