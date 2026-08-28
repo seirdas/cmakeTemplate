@@ -424,44 +424,55 @@
 
 	void GuiMgr::main_window() {
 
-		const float topBarHeight    = 34.0f;
 		const float bottomBarHeight = 34.0f;
-		const ImVec4 barBg = GetStyle().Colors[ImGuiCol_MenuBarBg]; // fondo diferenciado, coherente con el tema activo
+		const ImVec4 barBg = GetStyle().Colors[ImGuiCol_MenuBarBg]; 
 
 		// ============================================================ Sidebar + contenido
 		const float sidebarWidth  = 210.0f;
 		const float contentHeight = GetContentRegionAvail().y - bottomBarHeight;
 
-		BeginChild("##sidebar", ImVec2(sidebarWidth, contentHeight), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
-		sidebar_nav();
-		EndChild();
+		// Aplicar los estilos
+		PushStyleVar(ImGuiStyleVar_ChildRounding, popup_titlebar_rounding_); 
+		PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
 
-		SameLine();
+		// Configuración limpia de flags
+		ImGuiChildFlags childFlags = ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_Borders;
 
-		BeginChild("##content", ImVec2(0, contentHeight), ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding);
-		switch (activeSection_) {
-			case 0: panelSounds(); break;
-			case 1: panelPlaceholder("Totalmix", "Próximamente: control de Totalmix desde la GUI (ya disponible por CLI: 'totalmix')."); break;
-			case 2: {
-				SeparatorText("Symetrix");
-				Dummy(ImVec2(0, 8));
-				Symetrix* sym = ctrl_ ? ctrl_->getSymetrixModule() : nullptr;
-				const bool symConnected = sym && sym->isConnected();
-				generate_dot(symConnected ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.85f,0.35f,0.35f,1.0f));
-				Text(symConnected ? "Connected" : "Disconnected");
-				Dummy(ImVec2(0, 8));
-				TextDisabled("Próximamente: control de Symetrix desde la GUI (ya disponible por CLI: 'symetrix').");
-				break;
-			}
-			case 3: panelNetwork(); break;
-			case 4: panelTTS(); break;
-			case 5: panelCapture(); break;
-			default: break;
+		// --- Sidebar ---
+		if (BeginChild("##sidebar", ImVec2(sidebarWidth, contentHeight), childFlags)) {
+			sidebar_nav();
 		}
 		EndChild();
 
+		SameLine();
+		if (BeginChild("##content", ImVec2(0, contentHeight), childFlags)) {
+			switch (activeSection_) {
+				case 0: panelSounds(); break;
+				case 1: panelPlaceholder("Totalmix", "Próximamente: control de Totalmix desde la GUI (ya disponible por CLI: 'totalmix')."); break;
+				case 2: {
+					SeparatorText("Symetrix");
+					Dummy(ImVec2(0, 8));
+					Symetrix* sym = ctrl_ ? ctrl_->getSymetrixModule() : nullptr;
+					const bool symConnected = sym && sym->isConnected();
+					generate_dot(symConnected ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.85f,0.35f,0.35f,1.0f));
+					Text(symConnected ? "Connected" : "Disconnected");
+					Dummy(ImVec2(0, 8));
+					TextDisabled("Próximamente: control de Symetrix desde la GUI (ya disponible por CLI: 'symetrix').");
+					break;
+				}
+				case 3: panelNetwork(); break;
+				case 4: panelTTS(); break;
+				case 5: panelCapture(); break;
+				case 6: panelCommsMatrix(); break;
+				default: break;
+			}
+		}
+		EndChild();
+		PopStyleVar(2);
+
 		// ============================================================ Ventana flotante: Apariencia
 		// Se abre desde el menú Ajustes > "Temas de interfaz...", no desde el sidebar.
+		ImGuiWindowFlags flags;
 		if (showAppearanceWindow_) {
 
 			// Personalizar barra de título
@@ -470,7 +481,7 @@
 			PushStyleVar(ImGuiStyleVar_WindowBorderSize, popup_border_size_);		// Borde de ventana
 
 			// Personalizar ventana
-			ImGuiWindowFlags flags = 
+			flags = 
 				ImGuiWindowFlags_NoCollapse |
 				ImGuiWindowFlags_AlwaysAutoResize;
 
@@ -492,7 +503,7 @@
 			PushStyleVar(ImGuiStyleVar_WindowBorderSize, popup_border_size_);		// Borde de ventana
 			
 			// Personalizar ventana
-			ImGuiWindowFlags flags = 
+			flags = 
 				ImGuiWindowFlags_NoCollapse |
 				ImGuiWindowFlags_AlwaysAutoResize;
 
@@ -578,8 +589,10 @@
 
 		Dummy(ImVec2(0, 14));
 		TextDisabled("HERRAMIENTAS");
-		navItem("TTS players", 4);
-		navItem("Capture",       5);
+		navItem("TTS players", 		4);
+		navItem("Capture",			5);
+		navItem("Communications",	6);
+
 	}
 
 	void GuiMgr::panelPlaceholder(const char* title, const char* subtitle) {
@@ -1651,6 +1664,63 @@
 		}
 		EndGroup();       // grupo principal
 
+	}
+
+    /**
+     * @brief Panel de matrix de comunicaciones
+     */
+    void GuiMgr::panelCommsMatrix() {
+		// Definimos los nombres de las columnas. 
+		const char* col_names[] = { "TX/RX", "Piloto", "Copiloto", "3Hombre", "IOS OnBoard", "IOS Offboard 1", "IOS OffBoard 2" };
+		
+		// Calculamos el número de columnas dinámicamente
+		const int num_col = (int)(sizeof(col_names) / sizeof(col_names[0]));
+		const int num_rows = num_col-1; // Puedes cambiar esto por una constante o variable de tu lógica
+
+		// Matriz de valores para los Knobs: [Filas][Columnas]
+		static float k_vals[num_rows][num_col];
+
+		//style_->TableAngledHeadersAngle = 35.0f;
+
+		if (BeginTable("KnobTable", num_col, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders, ImVec2(0, 0))) {
+			
+			// Primera columna (Nombres de canales)
+			TableSetupColumn(col_names[0], ImGuiTableColumnFlags_WidthFixed, 100.0f);
+			
+			// Resto de columnas (Angled Headers)
+			for (int n = 1; n < num_col; n++) {
+				TableSetupColumn(col_names[n], ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed, 55.0f);
+			}
+
+			TableAngledHeadersRow();
+			TableHeadersRow();
+
+			for (int row = 0; row < num_rows; row++) {
+				PushID(row);
+				TableNextRow(ImGuiTableRowFlags_None, 65.0f);
+				
+				// Columna 0: Etiqueta del canal
+				TableSetColumnIndex(0);
+				AlignTextToFramePadding();
+				Text("%s", col_names[row+1]);
+
+				// Columnas 1 a N: Knobs
+				for (int col = 1; col < num_col; col++) {
+					if (TableSetColumnIndex(col)) {
+						PushID(col);
+						
+						float c_width = GetColumnWidth();
+						// Centramos el knob (40.0f es su diámetro)
+						SetCursorPosX(GetCursorPosX() + (c_width - 40.0f) * 0.5f);								
+						ImGuiKnobs::Knob("##vol", &k_vals[row][col], 0.0f, 100.0f, 1.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 40.0f, ImGuiKnobFlags_ValueTooltip | ImGuiKnobFlags_NoTitle);
+						
+						PopID();
+					}
+				}
+				PopID();
+			}
+			EndTable();
+		}
 	}
 
 

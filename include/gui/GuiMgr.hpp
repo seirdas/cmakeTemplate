@@ -218,6 +218,10 @@ private:
         std::function<void()> const& onRemove,
         float                        cardHeight = 210.0f);
 
+    /**
+     * @brief Panel de matrix de comunicaciones
+     */
+    void panelCommsMatrix();
 
 // Carga de imágenes/iconos -------------------------------------------------------------
    
@@ -400,10 +404,10 @@ private:
 /************ Variables ********************************************************/
 
 // Propiedades de la ventana
-    GLFWwindow*     window_;            ///< Puntero a la ventana GLFW
-    ImGuiStyle*     style_;             ///< Modificar ajustes de estilo
-    ImGuiIO*        io_;                ///< Manejar entrada/salida
-    bool            captureKeys_;       ///< Modo Debug para detección de teclas en consola
+    GLFWwindow*         window_;            ///< Puntero a la ventana GLFW
+    ImGuiStyle*         style_;             ///< Modificar ajustes de estilo
+    ImGuiIO*            io_;                ///< Manejar entrada/salida
+    bool                captureKeys_;       ///< Modo Debug para detección de teclas en consola
 
 // Parámetros de la ventana principal
     std::string     AppName_;               ///< Nombre de la aplicación/ventana
