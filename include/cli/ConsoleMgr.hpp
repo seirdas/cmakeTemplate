@@ -41,6 +41,12 @@ public:
      */
     ~ConsoleMgr() override;
 
+    // Sin copia ni movimiento
+    ConsoleMgr(const ConsoleMgr&) = delete;
+    ConsoleMgr& operator=(const ConsoleMgr&) = delete;
+    ConsoleMgr(ConsoleMgr&&) = delete;
+    ConsoleMgr& operator=(ConsoleMgr&&) = delete;
+
 
 // Métodos comunes de módulo (IModule) --------------------------------------------------
 

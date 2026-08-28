@@ -6,6 +6,7 @@ class TTSDispatcher;
 /**
  * @class iCommBridge
  * @brief Clase puente (bridge) para la comunicación con iComm (.NET).
+ * @note No puede heredar de IModule porque se mezcla con clases no administradas
  * 
  * Esta clase actúa como interfaz nativa para gestionar la interacción con la librería 
  * administrada (managed) de iComm. Utiliza un patrón PIMPL para encapsular el 
@@ -14,16 +15,15 @@ class TTSDispatcher;
  * de manera transparente.
  */
 class iCommBridge {
+    
 public:
 
 // General ------------------------------------------------------------------------------
 
     /**
-     * @brief Constructor.
-     * @param parent Referencia a clase padre para que 
-     *   el código .NET pueda llamarlo de vuelta
+     * @brief Constructor
      */
-    iCommBridge(TTSDispatcher* parent);
+    iCommBridge();
 
     /**
      * @brief Destructor
@@ -41,7 +41,7 @@ public:
      *  - Suscribe eventos a funciones que ejecutará TTSMgr
      * @return @c true Si la inicialización ha sido correcta, @c false en caso contrario
      */
-    bool init();
+    bool init(void* config);
 
     /**
      * @brief Devuelve si la inicialización ha sido exitosa
@@ -67,6 +67,8 @@ private:
 
 };
 
+
+
 #if not defined _MSC_VER
 // ============================================================
 //  (Stubs para no MSVC)
@@ -78,7 +80,7 @@ private:
     #include "system/SystemMgr.hpp"
 
 // General ------------------------------------------------------------------------------
-    inline iCommBridge::iCommBridge(TTSDispatcher*) : initialized_(false)   {}
+    inline iCommBridge::iCommBridge() : initialized_(false)   {}
     inline iCommBridge::~iCommBridge()              {}
 
 // Ejecución ----------------------------------------------------------------------------
