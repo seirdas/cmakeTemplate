@@ -999,8 +999,28 @@
 
 					SameLine();
 
+					// --- Selector de canal (se adapta al nº de canales del dispositivo) ---
+					{
+						int nCh = acm->getNumChannels();
+						int sel = acm->getSelectedChannel();
+						std::string chPreview = (sel == 0) ? std::string("Todos") : ("Canal " + std::to_string(sel));
+						SetNextItemWidth(90);
+						if (BeginCombo("##ch", chPreview.c_str())) {
+							if (Selectable("Todos", sel == 0))
+								acm->setSelectedChannel(0);
+							for (int c = 1; c <= nCh; ++c) {
+								std::string chLabel = "Canal " + std::to_string(c);
+								if (Selectable(chLabel.c_str(), sel == c))
+									acm->setSelectedChannel(static_cast<unsigned short>(c));
+							}
+							EndCombo();
+						}
+					}
+
+					SameLine();
+
 					// Medidor VU - barra vertical RMS
-					float LevelVal = acm->getPeakLevel();
+					float LevelVal = acm->getRmsLevel();
 
 					ImVec4 barColor;
 					if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
@@ -1042,7 +1062,7 @@
 				} else {
 					for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 						if (Selectable(entradas[n].c_str())) {
-							snd->addCaptureDevice(nullptr, entradas[n]);
+							snd->addCaptureDevice(nullptr, entradas[n], entradas[n]);
 							show_device_selector = false;               // Cierra el popup
 						}
 					}
@@ -1562,8 +1582,28 @@
 
 								SameLine();
 
+								// --- Selector de canal (se adapta al nº de canales del dispositivo) ---
+								{
+									int nCh = acm->getNumChannels();
+									int sel = acm->getSelectedChannel();
+									std::string chPreview = (sel == 0) ? std::string("Todos") : ("Canal " + std::to_string(sel));
+									SetNextItemWidth(90);
+									if (BeginCombo("##ch", chPreview.c_str())) {
+										if (Selectable("Todos", sel == 0))
+											acm->setSelectedChannel(0);
+										for (int c = 1; c <= nCh; ++c) {
+											std::string chLabel = "Canal " + std::to_string(c);
+											if (Selectable(chLabel.c_str(), sel == c))
+												acm->setSelectedChannel(static_cast<unsigned short>(c));
+										}
+										EndCombo();
+									}
+								}
+
+								SameLine();
+
 								// Medidor VU - barra vertical RMS
-								float LevelVal = acm->getPeakLevel();
+								float LevelVal = acm->getRmsLevel();
 
 								ImVec4 barColor;
 								if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
@@ -1605,7 +1645,7 @@
 							} else {
 								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 									if (Selectable(entradas[n].c_str())) {
-										snd->addCaptureDevice(nullptr, entradas[n]);
+										snd->addCaptureDevice(nullptr, entradas[n], entradas[n]);
 										show_device_selector = false;               // Cierra el popup
 									}
 								}
