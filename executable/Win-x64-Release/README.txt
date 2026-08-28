@@ -1,1 +1,0 @@
-place here files that executable will need in the same path
