@@ -94,10 +94,8 @@ void ConsoleMgr::loadConfig(void* config) {
 
 bool ConsoleMgr::close() {
     // Ejecutar cierre común (cambia flags, etc.)
-    if (!IModule::close()) {
-        SYS_WARN("ConsoleMgr", "Error in base close method");
+    if (!IModule::close())
         return false;
-    }
     
     return true;
 }

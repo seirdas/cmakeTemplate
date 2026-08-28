@@ -143,10 +143,8 @@
 
     bool NetMgr::close() {
         // Ejecutar cierre común (cambia flags, etc.)
-        if (!IModule::close()) {
-            SYS_WARN("NetMgr", "Error in base initialization");
+        if (!IModule::close())
             return false;
-        }
 
         // Parar los sockets
         stop();

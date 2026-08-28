@@ -19,7 +19,7 @@ IModule::~IModule() = default;
 bool IModule::init(void* config) {
     // Si ya está inicializado no hacer nada
     if (initialized_) {
-        SYS_WARN("IModule","Already initialized");
+        SYS_INFO("IModule","Already initialized");
         return false;
     }
 
@@ -36,10 +36,8 @@ bool IModule::init(void* config) {
 }
 
 bool IModule::close() {
-    if (!initialized_){
-        SYS_WARN("IModule","Already closed");
+    if (!initialized_)
         return false;
-    }
 
     // Parar flag para hilos
     threads_running_ = false;
