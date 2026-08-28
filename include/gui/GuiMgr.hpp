@@ -137,21 +137,6 @@ private:
     void columnaDerecha();
 
     /**
-     * @brief Dibuja un punto de color relleno (indicador de estado) en la posición actual del
-     *  cursor y avanza el cursor para que el siguiente Text()/etc. quede en la misma línea.
-     * @details Se dibuja con ImDrawList (no con un carácter de fuente tipo "●") porque la fuente
-     *  cargada solo tiene el rango de glifos por defecto (Basic Latin + Latin-1) y esos caracteres
-     *  no existen ahí, mostrándose como "?" en su lugar.
-     * @param color Color de relleno del punto.
-     */
-    void statusDot(ImVec4 const& color);
-
-    /**
-     * @brief Barra de estado superior: badges de modo online y conexión Symetrix.
-     */
-    void status_bar_top();
-
-    /**
      * @brief Barra de estado inferior: FPS y versión de la app.
      */
     void status_bar_bottom();
@@ -234,7 +219,7 @@ private:
         float                        cardHeight = 210.0f);
 
 
-// Carga de imágenes --------------------------------------------------------------------
+// Carga de imágenes/iconos -------------------------------------------------------------
    
     /**
      * @brief Utiliza una imagen y la precarga en el sistema para usos posteriores.
@@ -261,6 +246,16 @@ private:
      */
     void generate_default_texture();
     
+    /**
+     * @brief Dibuja un punto de color relleno (indicador de estado) en la posición actual del
+     *  cursor y avanza el cursor para que el siguiente Text()/etc. quede en la misma línea.
+     * @details Se dibuja con ImDrawList (no con un carácter de fuente tipo "●") porque la fuente
+     *  cargada solo tiene el rango de glifos por defecto (Basic Latin + Latin-1) y esos caracteres
+     *  no existen ahí, mostrándose como "?" en su lugar.
+     * @param color Color de relleno del punto.
+     */
+    void generate_dot(ImVec4 const& color);
+
 
 // Aspecto ------------------------------------------------------------------------------
 
@@ -410,20 +405,25 @@ private:
     ImGuiIO*        io_;                ///< Manejar entrada/salida
     bool            captureKeys_;       ///< Modo Debug para detección de teclas en consola
 
-// Parámetros de la ventana
-    std::string     AppName_;           ///< Nombre de la aplicación/ventana
-    unsigned int    windowSizeX_;       ///< Tamaño horizontal (x) de la ventana
-    unsigned int    windowSizeY_;       ///< Tamaño vertical (y) de la ventana
-    unsigned int    windowPosX_;        ///< Posición horizontal (x) de la ventana
-    unsigned int    windowPosY_;        ///< Posición vertical (y) de la ventana
-    bool            fullscreen_;        ///< Modo ventana completa activo
-    std::string     theme_selected_;    ///< Tema seleccionado
-    bool            transparent_bk_;    ///< Habilita transparencia en el fondo
+// Parámetros de la ventana principal
+    std::string     AppName_;               ///< Nombre de la aplicación/ventana
+    unsigned int    windowSizeX_;           ///< Tamaño horizontal (x) de la ventana
+    unsigned int    windowSizeY_;           ///< Tamaño vertical (y) de la ventana
+    unsigned int    windowPosX_;            ///< Posición horizontal (x) de la ventana
+    unsigned int    windowPosY_;            ///< Posición vertical (y) de la ventana
+    bool            fullscreen_;            ///< Modo ventana completa activo
+    std::string     theme_selected_;        ///< Tema seleccionado
+    bool            transparent_bk_;        ///< Habilita transparencia en el fondo
+
+// Parámetros de ventanas emergentes
+    float   popup_titlebar_height_  = 10.0f;    ///< Altura de la barra de título de popups (Windows ~= 10.0f)
+    float   popup_titlebar_rounding_= 10.0f;    ///< Redondeo de la barra de título de popups
+    float   popup_border_size_      = 2.0f;     ///< Anchura de borde de popup
 
 // Parámetros de fuente de letra
-    float              fontSize_;           ///< Tamaño de fuente predeterminado
-    unsigned int const MAX_FONT_SIZE_ = 30; ///< Tamaño de fuente máximo permitido
-    unsigned int const MIN_FONT_SIZE_ = 14; ///< Tamaño de fuente mínimo permitido
+    float              fontSize_        = 16.0f;     ///< Tamaño de fuente predeterminado
+    unsigned int const MAX_FONT_SIZE_   = 30;   ///< Tamaño de fuente máximo permitido
+    unsigned int const MIN_FONT_SIZE_   = 14;   ///< Tamaño de fuente mínimo permitido
 
 // Tiempos de refresco
     float deviceRefreshInterval_;           ///< Tiempo de refrescar los dispositivos de entrada
@@ -446,9 +446,6 @@ private:
         char audioNameBuf[64] = "";    ///< Nombre identificador del audio (solo tts)
     };
     std::unordered_map<std::string, PlayerUIState> playerUIState_;   ///< Clave: idPrefix + "::" + nombre del player
-
-// Variables (MenuBar)
-    float           MainMenuBar_Height_       = 0.0f;           ///< Almacena el alto de la barra de menú para ajustar la ventana principal
 
 // Navegación (sidebar)
     int             activeSection_            = 0;              ///< Sección activa del sidebar: 0=Sounds,1=Totalmix,2=Symetrix,3=Network,4=TTS,5=Capture

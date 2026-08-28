@@ -83,7 +83,6 @@
 		fullscreen_(false),
 		theme_selected_("DefaultLight"),
 		transparent_bk_(false),
-		fontSize_(16),
 		deviceRefreshInterval_(5),
 		soundsData_({})
 	{
@@ -250,10 +249,8 @@
 
 	bool GuiMgr::close() {
         // Ejecutar cierre común (cambia flags, etc.)
-        if (!IModule::close()) {
-            SYS_WARN("GuiMgr", "Error in base close method");
+        if (!IModule::close())
             return false;
-        }
 
 		SYS_INFO("GuiMgr", "Closing UI...");
 
@@ -393,7 +390,13 @@
 	// Elementos de interfaz ----------------------------------------------------------------
 
 	void GuiMgr::mainmenu_bar() {
+
+		// Personalizar barra de título
+		PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style_->FramePadding.x, popup_titlebar_height_)); // Modifica la ALTURA de la barra de título (eje Y)
+			
 		if (BeginMainMenuBar()) {
+			PopStyleVar(1);
+
 			if (BeginMenu("File")) {
 				if (MenuItem("New", "Ctrl+N")) { /* Acción */ }
 				if (MenuItem("Open", "Ctrl+O")) { /* Acción */ }
@@ -406,19 +409,17 @@
 				if (MenuItem("Redo", "Ctrl+Y")) {}
 				ImGui::EndMenu();
 			}
-			if (BeginMenu("Ajustes")) {
+			if (BeginMenu("Settings")) {
 				// Atajos directos a secciones del sidebar (mismo activeSection_ que usa la navegación)
-				if (MenuItem("Configurar conexión...")) activeSection_ = 3; // Network
-				if (MenuItem("Sockets..."))              showNetworkCheckingWindow_ = true; // ventana flotante propia
-				if (MenuItem("Temas de interfaz..."))   showAppearanceWindow_ = true; // ventana flotante propia
+				if (MenuItem("Network...")) 	activeSection_ = 3; // Network
+				if (MenuItem("Sockets..."))		showNetworkCheckingWindow_ = true; // ventana flotante propia
+				if (MenuItem("Appearance..."))	showAppearanceWindow_ = true; // ventana flotante propia
 				ImGui::EndMenu();
 			}
 			
 			// Guardamos el alto de la barra para ajustar la ventana de abajo
 			EndMainMenuBar();
-		}
-
-		MainMenuBar_Height_ = GetFrameHeight();
+		} else PopStyleVar(1);
 	}
 
 	void GuiMgr::main_window() {
@@ -426,13 +427,6 @@
 		const float topBarHeight    = 34.0f;
 		const float bottomBarHeight = 34.0f;
 		const ImVec4 barBg = GetStyle().Colors[ImGuiCol_MenuBarBg]; // fondo diferenciado, coherente con el tema activo
-
-		// ============================================================ Barra superior de estado
-		PushStyleColor(ImGuiCol_ChildBg, barBg);
-		BeginChild("##topbar", ImVec2(0, topBarHeight), ImGuiChildFlags_AlwaysUseWindowPadding);
-		status_bar_top();
-		EndChild();
-		PopStyleColor();
 
 		// ============================================================ Sidebar + contenido
 		const float sidebarWidth  = 210.0f;
@@ -453,7 +447,7 @@
 				Dummy(ImVec2(0, 8));
 				Symetrix* sym = ctrl_ ? ctrl_->getSymetrixModule() : nullptr;
 				const bool symConnected = sym && sym->isConnected();
-				statusDot(symConnected ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.85f,0.35f,0.35f,1.0f));
+				generate_dot(symConnected ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.85f,0.35f,0.35f,1.0f));
 				Text(symConnected ? "Connected" : "Disconnected");
 				Dummy(ImVec2(0, 8));
 				TextDisabled("Próximamente: control de Symetrix desde la GUI (ya disponible por CLI: 'symetrix').");
@@ -469,19 +463,45 @@
 		// ============================================================ Ventana flotante: Apariencia
 		// Se abre desde el menú Ajustes > "Temas de interfaz...", no desde el sidebar.
 		if (showAppearanceWindow_) {
-			SetNextWindowSize(ImVec2(360, 200), ImGuiCond_FirstUseEver);
-			if (Begin("Apariencia", &showAppearanceWindow_))
+
+			// Personalizar barra de título
+			PushStyleVar(ImGuiStyleVar_WindowRounding, popup_titlebar_rounding_);        // Esquinas redondeadas de la ventana
+			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style_->FramePadding.x, popup_titlebar_height_)); // Modifica la ALTURA de la barra de título (eje Y)
+			PushStyleVar(ImGuiStyleVar_WindowBorderSize, popup_border_size_);		// Borde de ventana
+
+			// Personalizar ventana
+			ImGuiWindowFlags flags = 
+				ImGuiWindowFlags_NoCollapse |
+				ImGuiWindowFlags_AlwaysAutoResize;
+
+			// Renderizado de la ventana
+			if(Begin("Apariencia", &showAppearanceWindow_, flags)) {
+				PopStyleVar(3);
 				panelAppearance();
-			End();
+				End();
+			} else PopStyleVar(3);
 		}
 
 		// ============================================================ Ventana flotante: Network Checking
 		// Se abre desde el menú Ajustes > "Sockets...", no desde el sidebar.
 		if (showNetworkCheckingWindow_) {
-			SetNextWindowSize(ImVec2(320, 260), ImGuiCond_FirstUseEver);
-			if (Begin("Network Checking", &showNetworkCheckingWindow_))
+
+			// Personalizar barra de título
+			PushStyleVar(ImGuiStyleVar_WindowRounding, popup_titlebar_rounding_);        // Esquinas redondeadas de la ventana
+			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style_->FramePadding.x, popup_titlebar_height_)); // Modifica la ALTURA de la barra de título (eje Y)
+			PushStyleVar(ImGuiStyleVar_WindowBorderSize, popup_border_size_);		// Borde de ventana
+			
+			// Personalizar ventana
+			ImGuiWindowFlags flags = 
+				ImGuiWindowFlags_NoCollapse |
+				ImGuiWindowFlags_AlwaysAutoResize;
+
+			// Abrir ventana
+			if(Begin("Network Checking", &showNetworkCheckingWindow_, flags)) {
+				PopStyleVar(3);
 				panelNetworkChecking();
-			End();
+				End();
+			} else PopStyleVar(3);
 		}
 
 		// ============================================================ Barra inferior de estado
@@ -492,43 +512,10 @@
 		PopStyleColor();
 	}
 
-	void GuiMgr::statusDot(ImVec4 const& color) {
-		// Se dibuja con ImDrawList en vez de un carácter de fuente (p.ej. "●") porque
-		// la fuente cargada solo tiene el rango de glifos por defecto de ImGui
-		// (Basic Latin + Latin-1 Supplement) y ese carácter no está ahí: se veía como "?".
-		const float  radius = GetFontSize() * 0.3f;
-		const float  lineH  = GetTextLineHeight();
-		const ImVec2 pos    = GetCursorScreenPos();
-
-		GetWindowDrawList()->AddCircleFilled(
-			ImVec2(pos.x + radius, pos.y + lineH * 0.5f),
-			radius,
-			GetColorU32(color)
-		);
-
-		Dummy(ImVec2(radius * 2.0f + 4.0f, lineH));
-		SameLine(0.0f, 4.0f);
-	}
-
-	void GuiMgr::status_bar_top() {
-		const bool online = ctrl_ && ctrl_->isOnlineMode();
-
-		// Badge único, alineado a la derecha; clicable para alternar online/offline
-		const float badgeW = 190.0f;
-		SetCursorPosX(GetCursorPosX() + GetContentRegionAvail().x - badgeW);
-
-		PushStyleColor(ImGuiCol_Button,        online ? ImVec4(0.13f,0.45f,0.30f,1.0f) : ImVec4(0.45f,0.16f,0.13f,1.0f));
-		PushStyleColor(ImGuiCol_ButtonHovered, online ? ImVec4(0.16f,0.55f,0.36f,1.0f) : ImVec4(0.55f,0.20f,0.16f,1.0f));
-		PushStyleColor(ImGuiCol_ButtonActive,  online ? ImVec4(0.13f,0.45f,0.30f,1.0f) : ImVec4(0.45f,0.16f,0.13f,1.0f));
-		if (Button(online ? "Online: ONLINE" : "Online: OFFLINE", ImVec2(badgeW, 0)) && ctrl_)
-			ctrl_->setOnlineMode(!online);
-		PopStyleColor(3);
-	}
-
 	void GuiMgr::status_bar_bottom() {
 		// Punto de color + texto, separados por un pequeño hueco
 		auto dot = [&](bool ok) {
-			statusDot(ok ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+			generate_dot(ok ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
 		};
 		auto gap = [&]() {
 			SameLine();
@@ -536,10 +523,11 @@
 			SameLine();
 		};
 
-		// ● Host: ONLINE/OFFLINE  (modo online general de la app)
+		// ONLINE/OFFLINE  (modo online general de la app)
 		const bool online = ctrl_ && ctrl_->isOnlineMode();
 		dot(online);
-		Text(online ? "Host: ONLINE" : "Host: OFFLINE");
+		if (SmallButton(online ? "ONLINE" : "OFFLINE"))
+			ctrl_->setOnlineMode(!online);
 
 		// ● <nombre> : <puerto> (con datos/sin datos), uno por cada socket UDP real de NetMgr
 		NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
@@ -613,7 +601,7 @@
 		SeparatorText("Network");
 		Dummy(ImVec2(0, 4));
 
-		statusDot(net->hasSocketsRunnning() ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+		generate_dot(net->hasSocketsRunnning() ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
 		Text(net->hasSocketsRunnning() ? "Running" : "Stopped");
 		SameLine();
 		Dummy(ImVec2(16, 0));
@@ -657,11 +645,11 @@
 				Text("%u", sock->port());
 
 				TableNextColumn();
-				statusDot(running ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+				generate_dot(running ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
 				Text(running ? "Yes" : "No");
 
 				TableNextColumn();
-				statusDot(hasData ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+				generate_dot(hasData ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
 				Text(hasData ? "Yes" : "No");
 
 				TableNextColumn();
@@ -1100,7 +1088,7 @@
 		SetWindowFontScale(1.0f);
 		SameLine();
 		SetWindowFontScale(1.2f);
-		statusDot(playing ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
+		generate_dot(playing ? ImVec4(0.35f,0.85f,0.35f,1.0f) : ImVec4(0.55f,0.55f,0.55f,1.0f));
 		Text(playing ? "Playing" : "Idle");
 		SetWindowFontScale(1.0f);
 
@@ -1666,7 +1654,7 @@
 	}
 
 
-	// Carga de imágenes --------------------------------------------------------------------
+	// Carga de imágenes/iconos -------------------------------------------------------------
 
 	uintptr_t GuiMgr::get_image(std::string path) {
 		// Si la imagen no está precacheada, se añade
@@ -1796,6 +1784,24 @@
 
 		defaultTexture_ = (uintptr_t)texture;
 		return;
+	}
+
+	void GuiMgr::generate_dot(ImVec4 const& color) {
+		// Se dibuja con ImDrawList en vez de un carácter de fuente (p.ej. "●") porque
+		// la fuente cargada solo tiene el rango de glifos por defecto de ImGui
+		// (Basic Latin + Latin-1 Supplement) y ese carácter no está ahí: se veía como "?".
+		const float  radius = GetFontSize() * 0.3f;
+		const float  lineH  = GetTextLineHeight();
+		const ImVec2 pos    = GetCursorScreenPos();
+
+		GetWindowDrawList()->AddCircleFilled(
+			ImVec2(pos.x + radius, pos.y + lineH * 0.5f),
+			radius,
+			GetColorU32(color)
+		);
+
+		Dummy(ImVec2(radius * 2.0f + 4.0f, lineH));
+		SameLine(0.0f, 4.0f);
 	}
 
 
@@ -1940,7 +1946,7 @@
 	void GuiMgr::mainmenu_bar()                             { }
 	void GuiMgr::main_window()                              { }
 	void GuiMgr::columnaDerecha()                           { }
-	void GuiMgr::statusDot(ImVec4 const&)                   { }
+	void GuiMgr::generate_dot(ImVec4 const&)                   { }
 	void GuiMgr::status_bar_top()                           { }
 	void GuiMgr::status_bar_bottom()                        { }
 	void GuiMgr::sidebar_nav()                              { }
