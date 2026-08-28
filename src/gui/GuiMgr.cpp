@@ -321,8 +321,8 @@
 		// Renderizado de Viewports (Ventanas flotantes)
 		if (io_->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 			GLFWwindow* backup_current_context = glfwGetCurrentContext();
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
+			UpdatePlatformWindows();
+			RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
 		}
 
@@ -356,7 +356,7 @@
 		PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10)); 
 
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGuiViewport* viewport = GetMainViewport();
         SetNextWindowPos(viewport->WorkPos);
         SetNextWindowSize(viewport->WorkSize);
         SetNextWindowViewport(viewport->ID);
@@ -364,7 +364,7 @@
         
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
                                         ImGuiWindowFlags_NoCollapse |
-                                        ImGuiWindowFlags_NoResize |
+                                        ImGuiWindowFlags_AlwaysAutoResize |
                                         ImGuiWindowFlags_NoScrollbar |
                                         ImGuiWindowFlags_NoMove |
                                         ImGuiWindowFlags_NoBringToFrontOnFocus |
@@ -372,7 +372,7 @@
 
 		
 		// Forzar a que esta ventana se quede en el frame principal
-		SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+		SetNextWindowViewport(GetMainViewport()->ID);
 		
 		// Ventana que cubre todo el frame
 		Begin("Ventana que cubre todo el frame", nullptr, window_flags);
@@ -424,12 +424,10 @@
 
 	void GuiMgr::main_window() {
 
-		const float bottomBarHeight = 34.0f;
-		const ImVec4 barBg = GetStyle().Colors[ImGuiCol_MenuBarBg]; 
-
 		// ============================================================ Sidebar + contenido
+		const float bottomBarHeight = 32.0f;
 		const float sidebarWidth  = 210.0f;
-		const float contentHeight = GetContentRegionAvail().y - bottomBarHeight;
+		const float contentHeight = GetContentRegionAvail().y - bottomBarHeight - GetStyle().ItemSpacing.y;
 
 		// Aplicar los estilos
 		PushStyleVar(ImGuiStyleVar_ChildRounding, popup_titlebar_rounding_); 
@@ -516,11 +514,16 @@
 		}
 
 		// ============================================================ Barra inferior de estado
+		const ImVec4 barBg = GetStyle().Colors[ImGuiCol_MenuBarBg]; 
 		PushStyleColor(ImGuiCol_ChildBg, barBg);
-		BeginChild("##bottombar", ImVec2(0, bottomBarHeight), ImGuiChildFlags_AlwaysUseWindowPadding);
+		PushStyleVar(ImGuiStyleVar_ChildRounding, 8.0f);
+		ImGuiWindowFlags bottomFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+
+		BeginChild("##bottombar", ImVec2(0, bottomBarHeight), ImGuiChildFlags_AlwaysUseWindowPadding, bottomFlags);
 		status_bar_bottom();
 		EndChild();
 		PopStyleColor();
+		PopStyleVar();
 	}
 
 	void GuiMgr::status_bar_bottom() {
@@ -533,6 +536,10 @@
 			Dummy(ImVec2(16, 0));
 			SameLine();
 		};
+
+		// Cálculo para poner el cursor en el centro (Y)
+		float offsetTop = (GetWindowHeight() - GetTextLineHeight()) * 0.5f;
+		SetCursorPos(ImVec2(GetCursorPosX(), offsetTop));
 
 		// ONLINE/OFFLINE  (modo online general de la app)
 		const bool online = ctrl_ && ctrl_->isOnlineMode();
@@ -1381,7 +1388,7 @@
 					ImGuiKnobs::Knob("Logarithmic", &val7, 20, 20000, 20.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_Logarithmic | ImGuiKnobFlags_AlwaysClamp);
 					
 					// Double click to reset
-					if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0)) {
+					if (IsItemActive() && IsMouseDoubleClicked(0)) {
 						val1 = 0; val2 = 0; val3 = 0; val4 = 0;	val5 = 0; val6 = 0;	val7 = 0;
 					}
 
@@ -1666,9 +1673,6 @@
 
 	}
 
-    /**
-     * @brief Panel de matrix de comunicaciones
-     */
     void GuiMgr::panelCommsMatrix() {
 		// Definimos los nombres de las columnas. 
 		const char* col_names[] = { "TX/RX", "Piloto", "Copiloto", "3Hombre", "IOS OnBoard", "IOS Offboard 1", "IOS OffBoard 2" };
