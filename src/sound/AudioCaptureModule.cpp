@@ -17,7 +17,7 @@
     is_valid_(false),
     initialized_(false),
     running_(false),
-    channels_(2),
+    channels_(0),
     sampleRate_(48000),
     selectedChannel_(0),
     codec_inited_(false),
@@ -47,13 +47,6 @@
         if (config)
             loadConfig(config);
 
-        // Fallo si selectedchannels no está dentro de numChannels
-        if (selectedChannel_ > channels_) {
-            SYS_WARN("CaptureModule","Cannot initialize channel: selected:" 
-                + std::to_string(selectedChannel_) + ", channels: " + std::to_string(channels_));
-            return false;
-        }
-
         // Ponerle nombre a este módulo (sobreescribe el de la config)
         if (!captureName.empty()) name_ = captureName;
 
@@ -61,12 +54,13 @@
         ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
 
         // rellenar los parámetros de la configuración de miniaudio
+        // channels_ == 0 -> miniaudio abre el dispositivo con sus canales nativos
         deviceConfig.capture.format       = ma_format_s16;
         deviceConfig.capture.channels     = static_cast<unsigned int>(channels_);
         deviceConfig.sampleRate           = sampleRate_;
         deviceConfig.dataCallback         = Impl::dataCallback_;
         deviceConfig.notificationCallback = Impl::notificationCallback_;
-        deviceConfig.pUserData            = this;             
+        deviceConfig.pUserData            = this;
         deviceConfig.capture.pDeviceID    = &pimpl_->device_info.id;
 
         // Inicializar
@@ -75,6 +69,19 @@
             is_valid_ = false;
             return false;
         }
+
+        // Nº de canales REAL con el que se ha abierto el dispositivo (puede diferir del pedido)
+        channels_ = static_cast<unsigned short>(pimpl_->device.capture.channels);
+
+        // Validar el canal seleccionado contra los canales reales (0 = todos, 1..N = ese canal)
+        if (selectedChannel_ > channels_) {
+            SYS_WARN("CaptureModule","'" + name_ + "': selected_channel " + std::to_string(selectedChannel_)
+                + " > " + std::to_string(channels_) + " canales disponibles. Se capturarán todos (0).");
+            selectedChannel_ = 0;
+        }
+
+        SYS_INFO("CaptureModule","'" + name_ + "': " + std::to_string(channels_)
+            + " canal(es), seleccionado: " + std::to_string(selectedChannel_));
 
         // Comenzar a capturar audio
         running_ = startCapture();
@@ -232,6 +239,9 @@
 
         // Guarda el dispositivo encontrado
         pimpl_->device_info = *selectedDeviceInfo;
+
+        // Que el nuevo dispositivo se abra con sus canales nativos (init lee el real tras abrir)
+        channels_ = 0;
 
         // Reinicializa (si aplica)
         return initialized_ ? reload() : true;
