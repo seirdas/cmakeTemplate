@@ -1,10 +1,12 @@
 #pragma once
 
+#include "app/IModule.hpp"
 #include <memory>
 
 
 // Foward declaration
 class IAppControl;
+struct TTSPacket;
 
 
 /** 
@@ -12,7 +14,7 @@ class IAppControl;
  * @brief Clase de lógica de reproducción de tonos a partir de un paquete
  *  de datos externo (de red, o de servidor iComm)
  */
-class TTSDispatcher {
+class TTSDispatcher : IModule {
 
 public:
 
@@ -28,29 +30,21 @@ public:
      */
     ~TTSDispatcher();
 
-    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
-    TTSDispatcher(TTSDispatcher const&) = delete;
-    TTSDispatcher& operator=(TTSDispatcher const&) = delete;
-
-    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    // Sin copia ni movimiento
+    TTSDispatcher(const TTSDispatcher&) = delete;
+    TTSDispatcher& operator=(const TTSDispatcher&) = delete;
     TTSDispatcher(TTSDispatcher&&) = delete;
     TTSDispatcher& operator=(TTSDispatcher&&) = delete;
 
 
-// Inicialización -----------------------------------------------------------------------
+// Métodos comunes de módulo (IModule) --------------------------------------------------
 
     /**
      * @brief Inicializa la lógica de reproducción de tonos
      * @param config Datos de configuración (diseñado para recibir un puntero a json)
      * @return @c true si la inicialización fue exitosa, @c false si hubo algún error 
      */
-    bool init(void* config);
-    
-    /**
-     * @brief Devuelve si la inicialización ha sido exitosa
-     * @return @c true Si ha iniciado bien, @c false en caso contrario
-     */
-    bool isInitialized() const;
+    bool init(void* config) override;
 
     /**
     * @brief Carga y valida la configuración de la aplicación desde un objeto JSON.
@@ -60,20 +54,13 @@ public:
     * esté completo y sincronizado.
     * @param config Puntero al objeto JSON que contiene los parámetros de configuración.
     */
-    void loadConfig(void* config);
+    void loadConfig(void* config) override;
 
     /**
      * @brief Cierra la lógica y libera los recursos asociados.
      * @return @c true Si ha cerrado correctamente, @c false en caso de error
      */
-    bool close();
-
-    /**
-     * @brief Establece el controlador de la aplicación (ctrl)
-     * @param ctrl Controlador de la aplicación
-     * @return @c true si el controlador se ha establecido correctamente, @c false en caso contrario
-     */
-    bool setController(IAppControl* controller);
+    bool close() override;
 
 
 // Ejecución ----------------------------------------------------------------------------
@@ -84,7 +71,7 @@ public:
      *  (Habitualmente por el iComm) 
      * @return 
      */
-    bool Dispatch();
+    bool Dispatch(TTSPacket* data);
 
 
 private:
@@ -92,15 +79,7 @@ private:
 
 /************ Variables ********************************************************/
 
-// Pointer to implementation (PIMPL) para añadir iComm (clase administrada CLI.NET)
-    struct Impl;
-    std::unique_ptr<Impl> pimpl_;
-
-// Inicialización
-    bool                initialized_;   ///< Bandera para indicar inicialización exitosa
-
-// Conexión con AppController (y módulos)
-    IAppControl*    ctrl_;              ///< Puntero al controlador de la aplicación para comunicación entre miembros
+// Datos de paquetes gestionados
     unsigned long   last_packet_hash_;  ///< Hash del último data recibido, para comparar duplicados
 
 };

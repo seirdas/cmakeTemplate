@@ -17,8 +17,7 @@
 
 // General ------------------------------------------------------------------------------
 
-iCommMgr::iCommMgr(TTSDispatcher* tts) :
-    tts_(tts),
+iCommMgr::iCommMgr() :
     icomm(iComm::iCommManager::GetInstance()),
     initialized_(false),
     ATIS_ID_(0),

@@ -208,9 +208,7 @@ private:
     std::unique_ptr<VoIPMgr>        vip_;          ///< Gestor módulos Voiprec / Voipplay
     std::unique_ptr<FastDDS>        dds_;          ///< Gestor DDS (FastDDS)
     std::unique_ptr<CycloneDDS>     cds_;          ///< Gestor DDS (CycloneDDS)
-    
-    // #TODO
-    //std::unique_ptr<iCommBridge>    ico_;          ///< Gestor iComm (TTS)
+    std::unique_ptr<iCommBridge>    ico_;          ///< Gestor iComm (TTS)
 
 // Bits de activación de módulos (Bitfield)
     struct ModuleFlags {

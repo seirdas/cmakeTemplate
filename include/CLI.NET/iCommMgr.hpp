@@ -27,10 +27,9 @@ public:
 // General ------------------------------------------------------------------------------
 
     /**
-     * @brief Constructor
-     *  Inicializa el módulo TTSMgr y obtiene instancia de iComm
+     * @brief Constructor.
      */
-    iCommMgr(TTSDispatcher* tts);
+    iCommMgr();
 
     /**
      * @brief Destructor.
@@ -84,6 +83,12 @@ public:
      * @return Número identificador ID de ATC
      */
     unsigned short get_ATC_ID();
+
+
+// Dispatch -----------------------------------------------------------------------------
+
+    /* (#TBD) Inyectar el callback para dispatch los datos que le llegan */
+    // void setCallback_onReceive(std::function<?????( ?? )> cb);
 
 
 // Notify functions (to use externally) -------------------------------------------------
@@ -151,6 +156,5 @@ private:
 
 // Módulos
     iComm::IMessageSender^  icomm;   ///< icomm manager pointer instance (.NET)
-    TTSDispatcher*          tts_;       ///< Puntero a TTSMgr para usar sus funciones
 
 };

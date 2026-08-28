@@ -3,18 +3,19 @@
 #include <filesystem>           // Controla directorios, rutas, etc.
 #include <type_traits>          // Tipos de dato (factorización de init y close de módulos)
 
-#include "gui/GuiMgr.hpp"       // Clase de gestión de ventana UI
-#include "net/NetMgr.hpp"       // Clase para gestionar sockets
-#include "cli/ConsoleMgr.hpp"   // Clase para gestionar sockets
-#include "positions/PositionsMgr.hpp"
-#include "sound/SoundMgr.hpp"   // Clase para gestionar audio
-#include "devices/TotalMix.hpp" // Clase para gestionar driver TotalmixFX
-#include "devices/Symetrix.hpp" // Clase para gestionar driver Symetrix Composer
-#include "voip/VoIPMgr.hpp"     // Clase para gestión Voiprec/Voipplay
-#include "dds/FastDDS.hpp"      // Clase para gestión de DDS (con FastDDS)
-#include "dds/CycloneDDS.hpp"   // Clase para gestión de DDS (con CycloneDDS)
-#include "files/JsonMgr.hpp"    // Gestión de archivos json
-#include "system/SystemMgr.hpp" // Gestión de log del sistema
+#include "files/JsonMgr.hpp"            // Gestión de archivos json
+#include "net/NetMgr.hpp"               // Gestión de red
+#include "gui/GuiMgr.hpp"               // Gestión de ventana gráfica UI
+#include "cli/ConsoleMgr.hpp"           // Gestión de sockets
+#include "positions/PositionsMgr.hpp"   // Gestión de posiciones
+#include "sound/SoundMgr.hpp"           // Gestión de audio
+#include "devices/TotalMix.hpp"         // Gestión de driver TotalmixFX
+#include "devices/Symetrix.hpp"         // Gestión de driver Symetrix Composer
+#include "voip/VoIPMgr.hpp"             // Gestión de Voiprec/Voipplay
+#include "dds/FastDDS.hpp"              // Gestión de DDS (con FastDDS)
+#include "dds/CycloneDDS.hpp"           // Gestión de DDS (con CycloneDDS)
+#include "system/SystemMgr.hpp"         // Gestión de log del sistema
+#include "CLI.NET/iCommBridge.hpp"      // Gestión de cliente/servidor iComm
 
 
 // General ------------------------------------------------------------------------------
@@ -35,7 +36,8 @@ AppController::AppController(int argc, char** argv) :
     sym_(std::make_unique<Symetrix>()),
     vip_(std::make_unique<VoIPMgr>()),
     dds_(std::make_unique<FastDDS>()),
-    cds_(std::make_unique<CycloneDDS>())
+    cds_(std::make_unique<CycloneDDS>()),
+    ico_(std::make_unique<iCommBridge>())
 {
     // Establecer controladores de las interfaces de usuario
     gui_->setController(this);
@@ -104,9 +106,7 @@ bool AppController::init() {
     init_module(sym_, "Symetrix",           enable_flags_.sym);
     init_module(dds_, "FastDDS",            enable_flags_.dds);
     init_module(cds_, "CycloneDDS",         enable_flags_.cds);
-
-    // #TODO
-    // init_module(ico_, "iComm",              enable_flags_.ico);
+    init_module(ico_, "iComm",              enable_flags_.ico);
 
 
     // Vincular módulos a través de patrón observador a GUI
@@ -171,6 +171,7 @@ void AppController::close() {
     close_module(sym_, "Symetrix");
     close_module(dds_, "FastDDS");
     close_module(cds_, "CycloneDDS");
+    close_module(ico_, "iComm");
 
     // #TODO
     //close_module(ico_, "iComm");
