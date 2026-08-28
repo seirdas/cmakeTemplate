@@ -229,7 +229,7 @@ private:
 
         // Método para poner todos al valor deseado
         void setAll(bool val) {
-            net = cli = gui = snd = tmx = sym = vip = com = dds = cds = val;
+            net = pos = cli = gui = snd = tmx = sym = vip = com = dds = cds = ico = val;
         }
     } enable_flags_;                            ///< Bits de activación de módulos (Bitfield)
 

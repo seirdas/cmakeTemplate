@@ -5,6 +5,7 @@
     "APP_enable_fastdds": true,
     "APP_enable_gui": true,
     "APP_enable_network": true,
+    "APP_enable_positions": true,
     "APP_enable_sounds": true,
     "APP_enable_symetrix": true,
     "APP_enable_totalmix": true,
@@ -14,7 +15,7 @@
         "prefix_color": "light blue",
         "show_app_name": true
     },
-    "CommsDispatcher": {
+    "Positions": {
         "positions": [
             {
                 "alias": "PILOT",

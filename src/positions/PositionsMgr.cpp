@@ -45,8 +45,6 @@ void PositionsMgr::loadConfig(void* config) {
     json* cfg = static_cast<json*>(config);
     JsonMgr& jsonMgr = JsonMgr::instance();
 
-    // #TODO
-    /*
     
     // Inicializar cada Position definida en el json
     std::string name;
@@ -58,17 +56,21 @@ void PositionsMgr::loadConfig(void* config) {
         // Obtener el nombre desde aquí (puesto 'alias' para que salga lo primero)
         jsonMgr.get(cfg_node, "alias", name);
 
+        // Sin 'alias' no hay clave para la lista: se descarta
+        if (name.empty()) {
+            SYS_WARN("PositionsMgr","Skipping position without 'alias'");
+            continue;
+        }
+
         // Inicializar la Position con los datos de la configuración
-        if(!name.empty() && !pers->init(cfg_node)) {
+        if (!pers->init(cfg_node)) {
             SYS_WARN("PositionsMgr","Cannot initialize new position '" + name + "'");
             continue;
         }
 
         // Agregar Position creada a la lista de Positions
-        Positions_[name] = std::move(pers);
+        positions_[name] = std::move(pers);
     }
-    */
-
 
 }
 
