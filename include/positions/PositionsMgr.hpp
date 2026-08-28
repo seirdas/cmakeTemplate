@@ -33,6 +33,12 @@ public:
      */
     ~PositionsMgr() override;
 
+    // Sin copia ni movimiento
+    PositionsMgr(const PositionsMgr&) = delete;
+    PositionsMgr& operator=(const PositionsMgr&) = delete;
+    PositionsMgr(PositionsMgr&&) = delete;
+    PositionsMgr& operator=(PositionsMgr&&) = delete;
+
 
 // Métodos comunes de módulo (IModule) --------------------------------------------------
 

@@ -55,6 +55,12 @@ public:
      */
     ~NetMgr() override;
 
+    // Sin copia ni movimiento
+    NetMgr(const NetMgr&) = delete;
+    NetMgr& operator=(const NetMgr&) = delete;
+    NetMgr(NetMgr&&) = delete;
+    NetMgr& operator=(NetMgr&&) = delete;
+
 
 // Métodos comunes de módulo (IModule) --------------------------------------------------
 

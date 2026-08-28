@@ -1,0 +1,165 @@
+{
+    "APP_enable_cli": true,
+    "APP_enable_comms": true,
+    "APP_enable_cycloneds": true,
+    "APP_enable_fastdds": true,
+    "APP_enable_gui": true,
+    "APP_enable_network": true,
+    "APP_enable_sounds": true,
+    "APP_enable_symetrix": true,
+    "APP_enable_totalmix": true,
+    "APP_enable_voip": true,
+    "CLI": {
+        "app_name_window": "Audio Control Center (CLI)",
+        "prefix_color": "light blue",
+        "show_app_name": true
+    },
+    "CommsDispatcher": {
+        "positions": [
+            {
+                "alias": "PILOT",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "COPILOT",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            }
+        ]
+    },
+    "CycloneDDS": {
+    },
+    "FastDDS": {
+        "DOMAIN_ID": 0,
+        "enable": true,
+        "pqos_name": "DDSMonitorParticipant",
+        "topics": [
+            {
+                "history_depth": 10,
+                "name": "cualquiera",
+                "publish": true,
+                "reliability": "RELIABLE",
+                "subscribe": true,
+                "type": "HelloWorld"
+            }
+        ]
+    },
+    "GUI": {
+        "app_name_window": "Audio Control Center",
+        "device_refresh_interval": 5.0,
+        "font_size": 16.0,
+        "fullscreen": false,
+        "theme_selected": "DefaultLight",
+        "transparent_background": false,
+        "window_pos_x": 0,
+        "window_pos_y": 0,
+        "window_size_x": 1280,
+        "window_size_y": 720
+    },
+    "Network": {
+        "num_threads": 4,
+        "udpSockets": [
+            {
+                "name": "host",
+                "port": 8001
+            },
+            {
+                "name": "tts",
+                "port": 8002
+            }
+        ]
+    },
+    "Sounds": {
+        "Capture": [
+            {
+                "device": "mic",
+                "name": "PILOTO",
+                "numchannels": 2,
+                "process_buffer_size": 1024,
+                "sample_rate": 48000,
+                "selected_channel": 1
+            },
+            {
+                "device": "Monitor",
+                "name": "COPILOTO",
+                "numchannels": 2,
+                "process_buffer_size": 1024,
+                "sample_rate": 48000,
+                "selected_channel": 2
+            },
+            {
+                "device": "Monitor",
+                "name": "IOS",
+                "numchannels": 2,
+                "process_buffer_size": 1024,
+                "sample_rate": 48000,
+                "selected_channel": 0
+            }
+        ],
+        "Playbacks": null,
+        "attack_coefficient": 0.5,
+        "fallback_to_default": true,
+        "release_coefficient": 0.1,
+        "smoothedValues": true,
+        "tts_concurrent_init_": {
+            "active": false,
+            "tts_model_num_load_retries": 2
+        },
+        "tts_lazy_load": {
+            "active": true,
+            "tts_model_keep_alive_seconds": 20
+        },
+        "tts_models_path": "tts-voices",
+        "tts_num_threads": 16
+    },
+    "Symetrix": {
+        "composer_port": 48631,
+        "connection_check_seconds": 5,
+        "connection_ping_timeout_ms": 500,
+        "dB_curve_gamma": 0.415,
+        "kBootPreset": 1,
+        "supermatrix_ins": 20,
+        "supermatrix_outs": 20,
+        "symetrix_ip": "192.168.7.21",
+        "tolerance_percent": 2
+    },
+    "Totalmix": {
+        "local_ip": "127.0.0.1",
+        "local_port": 12321,
+        "num_inputs": 32,
+        "num_outputs": 32,
+        "num_playbacks": 32,
+        "remote_ip": "127.0.0.1",
+        "remote_port": 7001
+    },
+    "version": "0.12.4"
+}

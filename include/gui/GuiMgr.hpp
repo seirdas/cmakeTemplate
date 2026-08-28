@@ -48,6 +48,12 @@ public:
      */
     ~GuiMgr();
 
+    // Sin copia ni movimiento
+    GuiMgr(const GuiMgr&) = delete;
+    GuiMgr& operator=(const GuiMgr&) = delete;
+    GuiMgr(GuiMgr&&) = delete;
+    GuiMgr& operator=(GuiMgr&&) = delete;
+
 
 // Métodos comunes de módulo (IModule) --------------------------------------------------
 
