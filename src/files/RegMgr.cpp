@@ -243,29 +243,35 @@
 	// Otros (privado) ------------------------------------------------------------------
 
 	void* RegMgr::resolve_root(std::wstring const& root) {
-		// Se devuelve en void* y luego se castea a HKEY (debería ser lo mismo)
-		if (root == L"HKEY_CURRENT_USER" 	|| root == L"HKCU")	return (void*)HKEY_CURRENT_USER;
-		if (root == L"HKEY_LOCAL_MACHINE" 	|| root == L"HKLM")	return (void*)HKEY_LOCAL_MACHINE;
-		if (root == L"HKEY_CLASSES_ROOT" 	|| root == L"HKCR")	return (void*)HKEY_CLASSES_ROOT;
-		if (root == L"HKEY_USERS" 			|| root == L"HKU")	return (void*)HKEY_USERS;
-		
-		/*else*/
-		SYS_ERROR("RegMgr","Invalid registry root: " + toStr(root));
+		// Se devuelve en void* y luego se castea a HKEY
+		if (root == L"HKEY_CURRENT_USER" || root == L"HKCU")
+			return reinterpret_cast<void*>(HKEY_CURRENT_USER);
+
+		else if (root == L"HKEY_LOCAL_MACHINE" || root == L"HKLM")
+			return reinterpret_cast<void*>(HKEY_LOCAL_MACHINE);
+
+		else if (root == L"HKEY_CLASSES_ROOT" || root == L"HKCR")
+			return reinterpret_cast<void*>(HKEY_CLASSES_ROOT);
+
+		else if (root == L"HKEY_USERS" || root == L"HKU")
+			return reinterpret_cast<void*>(HKEY_USERS);
+
+		SYS_ERROR("RegMgr", "Invalid registry root: " + toStr(root));
 		return nullptr;
 	}
 
-	uint32_t RegMgr::query_type(void* hRoot, const std::wstring& path, const std::wstring& clave) {
+	unsigned int RegMgr::query_type(void* hRoot, const std::wstring& path, const std::wstring& clave) {
 		DWORD type = REG_NONE;
 		DWORD size = 0;
 		RegGetValueW(static_cast<HKEY>(hRoot), path.c_str(), clave.c_str(), RRF_RT_ANY, &type, nullptr, &size);
 		return type;
 	}
 
-	const char* RegMgr::reg_typename(uint32_t type) {
+	const char* RegMgr::reg_typename(unsigned int type) {
 		switch (type) {
-			case (DWORD)REG_DWORD: return "REG_DWORD";
-			case (DWORD)REG_QWORD: return "REG_QWORD";
-			case (DWORD)REG_SZ:    return "REG_SZ";
+			case REG_DWORD: return "REG_DWORD";
+			case REG_QWORD: return "REG_QWORD";
+			case REG_SZ:    return "REG_SZ";
 			default:        return "REG_UNKNOWN";
 		}
 	}

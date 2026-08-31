@@ -158,12 +158,12 @@ private:
 	 * @param path Ruta del registro
 	 * @param clave Clave de registro
 	 */
-	uint32_t query_type(void* hRoot, const std::wstring& path, const std::wstring& clave);
+	unsigned int query_type(void* hRoot, const std::wstring& path, const std::wstring& clave);
 
 	/**
 	 * @brief Nombre legible del tipo de registro para mensajes de error
 	  */
-	const char* reg_typename(uint32_t type);
+	const char* reg_typename(unsigned int type);
 
 
 // Comunes por SO -----------------------------------------------------------------------
