@@ -163,6 +163,8 @@ private:
     iComm::IMessageSender^  icomm;   ///< icomm manager pointer instance (.NET)
 
 // Dispatch
-    std::function<void(TTSPacket&)> callback_onReceive_;   ///< Callback registrado por AppController (hacia TTSDispatcher)
+    // Puntero nativo, no el objeto directo: una clase administrada (ref class)
+    // no puede tener un tipo nativo no trivial (std::function) como miembro.
+    std::function<void(TTSPacket&)>* callback_onReceive_;   ///< Callback registrado por AppController (hacia TTSDispatcher)
 
 };

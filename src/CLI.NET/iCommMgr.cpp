@@ -20,13 +20,14 @@ iCommMgr::iCommMgr() :
     icomm(iComm::iCommManager::GetInstance()),
     initialized_(false),
     ATIS_ID_(0),
-    ATC_ID_(0)
+    ATC_ID_(0),
+    callback_onReceive_(new std::function<void(TTSPacket&)>())
 {
 
 };
 
 void iCommMgr::setCallback_onReceive(std::function<void(TTSPacket&)> cb) {
-    callback_onReceive_ = cb;
+    *callback_onReceive_ = cb;
 }
 
 iCommMgr::~iCommMgr() {
@@ -34,9 +35,13 @@ iCommMgr::~iCommMgr() {
 
     // Borrar puntero a iCommMgr
     if (icomm != nullptr) {
-        delete icomm; 
+        delete icomm;
         icomm = nullptr;
     }
+
+    // Borrar el callback nativo (no lo gestiona el garbage collector)
+    delete callback_onReceive_;
+    callback_onReceive_ = nullptr;
 }
 
 
@@ -215,8 +220,8 @@ void iCommMgr::on_received_text_voice_command(iComm::Net::Data::NetData^ _pNetDa
     data.texto      = converter.to_bytes(msclr::interop::marshal_as<std::wstring>(packet->VoiceText));
     data.lang       = get_language(packet);
 
-    if (callback_onReceive_)
-        callback_onReceive_(data);
+    if (callback_onReceive_ && *callback_onReceive_)
+        (*callback_onReceive_)(data);
     else
         SYS_WARN("iCommMgr","No callback registered for TTS packets");
 }
