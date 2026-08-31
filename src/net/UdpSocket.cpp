@@ -310,6 +310,41 @@
     }
 
 
+    // Estadísticas / diagnóstico ---------------------------------------------------------
+
+    // Devuelve una FOTO de cómo va el socket ahora mismo, para pintarla en la ventana
+    // "Network Checking". La GUI llama a esto; no puede leer las variables internas
+    // directamente (son privadas y las cambia el hilo de red a la vez).
+    //
+    // Cómo funciona: crea una caja 'Stats' vacía, copia dentro cada dato, y la devuelve.
+    // Al ser una copia, la GUI la pinta tranquila aunque justo después lleguen más paquetes.
+    UdpSocket::Stats UdpSocket::stats() const {
+
+        Stats s;   // caja vacía que iremos rellenando
+
+        // --- Datos que van con 'atomic' (números): se copian directamente ---
+        s.running       = running_;            
+        s.rx_count      = rx_count_;           
+        s.period_ms     = last_period_ms_;     
+        s.last_size     = last_rx_bytes_;      
+
+        // --- Datos que ya calculaban otras funciones del socket ---
+        s.since_last_ms = getLastPacketMs();     // ms desde el último paquete (0 si nunca llegó ninguno)
+        s.expected_size = rcv_packet_size_;      // tamaño que se espera (0 = cualquiera) -> "Size"
+        s.local_ip      = pimpl_->local_endpoint_.address().to_string();  // IP local -> "LOCAL IP"
+        s.local_port    = port();                // puerto local                 -> "PORT"
+
+        // --- IP del emisor: es texto, lo copiamos con el candado echado ---
+        // (así no lo leemos a medias mientras el hilo de red lo está escribiendo)
+        {
+            std::lock_guard<std::mutex> lk(stats_mtx_);
+            s.remote_ip   = remote_ip_;          // quién mandó el último paquete -> "IP FROM"
+            s.remote_port = remote_port_;
+        }
+
+        return s;   // entregamos la foto
+    }
+
     // Creación de socket -------------------------------------------------------------------
 
     bool UdpSocket::create_local_endpoint(unsigned short local_port, const std::string& local_ip) {
@@ -439,9 +474,27 @@
             return;
         }
 
-        // Marcar el tiempo en el que ha llegado este paquete
-        last_packet_time_ = std::chrono::steady_clock::now();
-        has_rcv_packet_ = true;
+        // Estadísticas para la ventana "Network Checking"
+        // Llegados aquí, el paquete es válido. Guardamos unos cuantos datos que luego la GUI leerá con stats().
+
+        auto now = std::chrono::steady_clock::now();// Hora de ahora (cronómetro interno del sistema)
+
+        // Si YA había llegado algún paquete antes -> cuánto tiempo ha pasado desde ese hasta este.
+        // La primera vez no se calcula porque no hay un "paquete anterior" con el que comparar.
+        if (has_rcv_packet_)
+            last_period_ms_ = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_packet_time_).count();
+
+        last_packet_time_ = now;             // este paquete pasa a ser "el último"
+        has_rcv_packet_   = true;            // a partir de ahora sí hay un "paquete anterior"
+        ++rx_count_;                         // un paquete más -> este contador es el "Cicle"
+        last_rx_bytes_    = bytes_recvd;     // tamaño real de este paquete -> "Real size"
+
+        // De quién vino (IP + puerto del emisor).
+        {
+            std::lock_guard<std::mutex> lk(stats_mtx_);
+            remote_ip_   = pimpl_->remote_endpoint_.address().to_string();   // -> "IP FROM"
+            remote_port_ = pimpl_->remote_endpoint_.port();
+        }
 
         // Añade el paquete recibido a la cola listo para gestionar
         if (onReceive_cb_) {
@@ -538,6 +591,9 @@ struct UdpSocket::Impl {};
     std::string const& UdpSocket::name() const     { return name_; }
     bool UdpSocket::isRunning() const              { return false; }
     bool UdpSocket::isOpen() const                 { return false; }
+
+// Estadísticas / diagnóstico -----------------------------------------------------------
+    UdpSocket::Stats UdpSocket::stats() const { return {}; }
 
 // Creación de socket -------------------------------------------------------------------
     bool UdpSocket::create_local_endpoint(unsigned short, const std::string&) { return false;}
