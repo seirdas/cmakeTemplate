@@ -99,6 +99,31 @@ void Position::set_spk_vol(short vol) {
     spk_vol = vol;
 }
 
+void Position::set_vox_level(unsigned int level) {
+    vox_level_ = level;
+}
+
+void Position::set_mic_enabled(bool enabled) {
+    mic_enabled_ = enabled;
+}
+
+
+// Transmisión / Recepción ----------------------------------------------------------------
+
+void Position::setTx(std::vector<unsigned long long> const& ids) {
+    TXs.clear();
+    TXs.reserve(ids.size());
+    for (unsigned long long id : ids)
+        TXs.push_back({ id });
+}
+
+void Position::setRx(std::vector<std::pair<unsigned long long, short>> const& rx) {
+    RXs.clear();
+    RXs.reserve(rx.size());
+    for (auto const& [id, vol] : rx)
+        RXs.push_back({ id, vol });
+}
+
 
 // Información --------------------------------------------------------------------------
 

@@ -14,7 +14,7 @@ struct TTSPacket;
  * @brief Clase de lógica de reproducción de tonos a partir de un paquete
  *  de datos externo (de red, o de servidor iComm)
  */
-class TTSDispatcher : IModule {
+class TTSDispatcher : public IModule {
 
 public:
 

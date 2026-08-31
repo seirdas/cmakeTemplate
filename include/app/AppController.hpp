@@ -16,6 +16,9 @@ class VoIPMgr;
 class FastDDS;
 class CycloneDDS;
 class iCommBridge;
+class CommsCore;
+class TonesCore;
+class TTSDispatcher;
 
 
 /**
@@ -209,6 +212,9 @@ private:
     std::unique_ptr<FastDDS>        dds_;          ///< Gestor DDS (FastDDS)
     std::unique_ptr<CycloneDDS>     cds_;          ///< Gestor DDS (CycloneDDS)
     std::unique_ptr<iCommBridge>    ico_;          ///< Gestor iComm (TTS)
+    std::unique_ptr<CommsCore>      comms_;        ///< Lógica de comunicaciones (paquetes de net/dds/CLI.NET)
+    std::unique_ptr<TonesCore>      tones_;        ///< Lógica de tonos (paquetes de net/dds/CLI.NET)
+    std::unique_ptr<TTSDispatcher>  tts_;          ///< Lógica de TTS (paquetes de iComm, conectado vía callback a ico_)
 
 // Bits de activación de módulos (Bitfield)
     struct ModuleFlags {
@@ -221,13 +227,14 @@ private:
         bool sym : 1;
         bool vip : 1;
         bool com : 1;
+        bool tns : 1;   ///< Activa/desactiva TonesCore
         bool dds : 1;
         bool cds : 1;
         bool ico : 1;
 
         // Método para poner todos al valor deseado
         void setAll(bool val) {
-            net = pos = cli = gui = snd = tmx = sym = vip = com = dds = cds = ico = val;
+            net = pos = cli = gui = snd = tmx = sym = vip = com = tns = dds = cds = ico = val;
         }
     } enable_flags_;                            ///< Bits de activación de módulos (Bitfield)
 

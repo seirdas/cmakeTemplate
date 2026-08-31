@@ -5,10 +5,11 @@
 #using <iComm.iATC.dll>
 
 #include <string>
+#include <functional>
 
 
 // Declaración implícita
-class TTSDispatcher;
+struct TTSPacket;
 
 
 /**
@@ -87,8 +88,12 @@ public:
 
 // Dispatch -----------------------------------------------------------------------------
 
-    /* (#TBD) Inyectar el callback para dispatch los datos que le llegan */
-    // void setCallback_onReceive(std::function<?????( ?? )> cb);
+    /**
+     * @brief Registra el callback al que se le entregará cada TTSPacket recibido.
+     * @details Lo conecta AppController, normalmente hacia TTSDispatcher::Dispatch().
+     * @param cb Callback a invocar con el paquete recibido.
+     */
+    void setCallback_onReceive(std::function<void(TTSPacket&)> cb);
 
 
 // Notify functions (to use externally) -------------------------------------------------
@@ -156,5 +161,8 @@ private:
 
 // Módulos
     iComm::IMessageSender^  icomm;   ///< icomm manager pointer instance (.NET)
+
+// Dispatch
+    std::function<void(TTSPacket&)> callback_onReceive_;   ///< Callback registrado por AppController (hacia TTSDispatcher)
 
 };

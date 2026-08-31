@@ -16,6 +16,10 @@
 #include "dds/CycloneDDS.hpp"           // Gestión de DDS (con CycloneDDS)
 #include "system/SystemMgr.hpp"         // Gestión de log del sistema
 #include "CLI.NET/iCommBridge.hpp"      // Gestión de cliente/servidor iComm
+#include "logic/comms/CommsCore.hpp"    // Lógica de comunicaciones
+#include "logic/tones/TonesCore.hpp"    // Lógica de tonos
+#include "dispatchers/TTSDispatcher.hpp" // Lógica de TTS
+#include "dispatchers/TTSPacket.hpp"    // Paquete de TTS (para el callback con iComm)
 
 
 // General ------------------------------------------------------------------------------
@@ -37,7 +41,10 @@ AppController::AppController(int argc, char** argv) :
     vip_(std::make_unique<VoIPMgr>()),
     dds_(std::make_unique<FastDDS>()),
     cds_(std::make_unique<CycloneDDS>()),
-    ico_(std::make_unique<iCommBridge>())
+    ico_(std::make_unique<iCommBridge>()),
+    comms_(std::make_unique<CommsCore>()),
+    tones_(std::make_unique<TonesCore>()),
+    tts_(std::make_unique<TTSDispatcher>())
 {
     // Establecer controladores de las interfaces de usuario
     gui_->setController(this);
@@ -107,6 +114,25 @@ bool AppController::init() {
     init_module(dds_, "FastDDS",            enable_flags_.dds);
     init_module(cds_, "CycloneDDS",         enable_flags_.cds);
     init_module(ico_, "iComm",              enable_flags_.ico);
+    init_module(comms_, "Comms",            enable_flags_.com);
+    init_module(tones_, "Tones",            enable_flags_.tns);
+    init_module(tts_, "TTS",                enable_flags_.ico);
+
+    // Conectar Comms/Tones con el gestor de posiciones
+    if (comms_->isInitialized())
+        comms_->setPositionsManager(pos_.get());
+    if (tones_->isInitialized())
+        tones_->setPositionsManager(pos_.get());
+
+    // Conectar iComm con TTSDispatcher: cada TTSPacket recibido por iComm
+    // se reenvía a TTSDispatcher::Dispatch(), sin que ninguno de los dos
+    // se conozca directamente entre sí (solo AppController los conecta).
+    if (ico_->isInitialized() && tts_->isInitialized()) {
+        TTSDispatcher* ttsPtr = tts_.get();
+        ico_->setCallback_onReceive([ttsPtr](TTSPacket& packet) {
+            ttsPtr->Dispatch(&packet);
+        });
+    }
 
 
     // Vincular módulos a través de patrón observador a GUI
@@ -151,6 +177,7 @@ void AppController::loadConfig(void* config) {
     enable_flags_.sym = loadFlag(enable_flags_.sym, "APP_enable_symetrix");
     enable_flags_.vip = loadFlag(enable_flags_.vip, "APP_enable_voip");
     enable_flags_.com = loadFlag(enable_flags_.com, "APP_enable_comms");
+    enable_flags_.tns = loadFlag(enable_flags_.tns, "APP_enable_tones");
     enable_flags_.dds = loadFlag(enable_flags_.dds, "APP_enable_fastdds");
     enable_flags_.cds = loadFlag(enable_flags_.cds, "APP_enable_cycloneds");
     enable_flags_.ico = loadFlag(enable_flags_.ico, "APP_enable_icomm");
@@ -172,9 +199,9 @@ void AppController::close() {
     close_module(dds_, "FastDDS");
     close_module(cds_, "CycloneDDS");
     close_module(ico_, "iComm");
-
-    // #TODO
-    //close_module(ico_, "iComm");
+    close_module(comms_, "Comms");
+    close_module(tones_, "Tones");
+    close_module(tts_, "TTS");
 
     SYS_INFO("AppController","AppController closed successfully");
 }

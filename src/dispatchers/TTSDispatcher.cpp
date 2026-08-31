@@ -2,6 +2,7 @@
 #include "files/JsonMgr.hpp"
 #include "system/SystemMgr.hpp"
 #include "dispatchers/TTSPacket.hpp"
+#include <functional>
 
 
 // General ------------------------------------------------------------------------------
@@ -22,6 +23,8 @@ TTSDispatcher::~TTSDispatcher() {
 bool TTSDispatcher::init(void* config) {
     if (!IModule::init(config))
         return false;
+
+    return true;
 }
 
 void TTSDispatcher::loadConfig(void* config) {
@@ -40,11 +43,25 @@ void TTSDispatcher::loadConfig(void* config) {
 bool TTSDispatcher::close() {
     if (!IModule::close())
         return false;
+
+    return true;
 }
 
 // Ejecución ----------------------------------------------------------------------------
 
-bool Dispatch() {
+bool TTSDispatcher::Dispatch(TTSPacket* data) {
+    if (!data)
+        return false;
 
-    return false;
+    // Deduplicar (el mismo paquete puede llegar repetido por iComm)
+    std::string key = data->entityName + "|" + data->texto + "|" + data->lang;
+    std::size_t hash_actual = std::hash<std::string>{}(key);
+    if (hash_actual == last_packet_hash_)
+        return false;
+    last_packet_hash_ = static_cast<unsigned long>(hash_actual);
+
+    // #TODO: reenviar el paquete al motor de síntesis (ver sound/TTSCore.hpp, sound/PlayerTTS.cpp)
+    SYS_INFO("TTSDispatcher","TTS packet from '" + data->entityName + "' (" + data->lang + "): " + data->texto);
+
+    return true;
 }
