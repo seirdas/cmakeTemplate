@@ -1,6 +1,5 @@
 #include "CLI.NET/iCommBridge.hpp"
 #include "CLI.NET/iCommMgr.hpp"
-#include "dispatchers/TTSDispatcher.hpp"
 #include <vcclr.h>
 
 
@@ -44,4 +43,9 @@ bool iCommBridge::close() {
     gcroot<iCommMgr^>* handle = static_cast<gcroot<iCommMgr^>*>(managedWrapper_);
     initialized_ = !(*handle)->close();
     return !initialized_;
+}
+
+void iCommBridge::setCallback_onReceive(std::function<void(TTSPacket&)> cb) {
+    auto handle = static_cast<gcroot<iCommMgr^>*>(managedWrapper_);
+    (*handle)->setCallback_onReceive(cb);
 }

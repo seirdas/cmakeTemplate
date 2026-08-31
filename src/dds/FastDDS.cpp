@@ -267,8 +267,14 @@ void FastDDS::loadConfig(void* config) {
 // Topics -------------------------------------------------------------------------------
 
     bool FastDDS::createTopic(std::string const& typeName, bool withPublish, bool withSubscriber) {
-        
+
         /* WIP */
+
+        // #TODO: una vez creado el listener/reader real de un topic de comms/tones,
+        // su callback debe mapear los campos del tipo generado por IDL a
+        // CommsPacket/TonePacket (mismos structs que usa net/) y llamar a
+        // comms_core_->Dispatch(...)/tones_core_->Dispatch(...).
+        // Ver el boceto completo en NetMgr::t_dispatcher() (src/net/NetMgr.cpp).
 
 
         // // Crear el topic (esto sí, uno por entrada, aunque el tipo se repita)

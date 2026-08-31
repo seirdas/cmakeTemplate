@@ -1,7 +1,9 @@
 #pragma once
 
-// Declaración anticipada para evitar incluir TTSMgr.hpp aquí
-class TTSDispatcher;
+#include <functional>
+
+// Declaración anticipada para evitar incluir TTSPacket.hpp aquí
+struct TTSPacket;
 
 /**
  * @class iCommBridge
@@ -56,7 +58,14 @@ public:
      */
     bool close();
 
-    
+    /**
+     * @brief Registra el callback al que se le entregará cada TTSPacket recibido.
+     * @details Lo conecta AppController, normalmente hacia TTSDispatcher::Dispatch().
+     * @param cb Callback a invocar con el paquete recibido.
+     */
+    void setCallback_onReceive(std::function<void(TTSPacket&)> cb);
+
+
 private:
 
 // Inicialización
@@ -90,4 +99,5 @@ private:
     }
     inline bool iCommBridge::isInitialized() const  { return false; }
     inline bool iCommBridge::close()    { return false; }
+    inline void iCommBridge::setCallback_onReceive(std::function<void(TTSPacket&)>) { }
 #endif

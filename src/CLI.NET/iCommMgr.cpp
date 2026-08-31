@@ -11,7 +11,6 @@
 #include <cwctype>
 
 // Datos para el paquete al TTS
-#include "dispatchers/TTSDispatcher.hpp"
 #include "dispatchers/TTSPacket.hpp"
 
 
@@ -25,6 +24,10 @@ iCommMgr::iCommMgr() :
 {
 
 };
+
+void iCommMgr::setCallback_onReceive(std::function<void(TTSPacket&)> cb) {
+    callback_onReceive_ = cb;
+}
 
 iCommMgr::~iCommMgr() {
     close();
@@ -212,8 +215,10 @@ void iCommMgr::on_received_text_voice_command(iComm::Net::Data::NetData^ _pNetDa
     data.texto      = converter.to_bytes(msclr::interop::marshal_as<std::wstring>(packet->VoiceText));
     data.lang       = get_language(packet);
 
-    SYS_WARN("iCommMgr","on_received_text_voice_command not implemented");
-	//tts_->play(data);
+    if (callback_onReceive_)
+        callback_onReceive_(data);
+    else
+        SYS_WARN("iCommMgr","No callback registered for TTS packets");
 }
 
 

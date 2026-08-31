@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <mutex>
 
 
 // Forward declaration
@@ -72,6 +73,13 @@ public:
 
     bool removePosition();
 
+    /**
+     * @brief Busca una posición por su nombre/alias.
+     * @param name Nombre/alias de la posición.
+     * @return Puntero a la posición, o @c nullptr si no existe.
+     */
+    Position* getPosition(std::string const& name);
+
     std::vector<std::string> getPositions();
 
 
@@ -83,6 +91,7 @@ private:
     using PositionList = std::unordered_map<std::string, std::unique_ptr<Position>>;
 
 // Gestión de personas
-    PositionList    positions_;          ///< Lista de personas gestionadas
+    PositionList        positions_;      ///< Lista de personas gestionadas
+    mutable std::mutex  positions_mtx_;  ///< Protege positions_ entre hilos (Comms/Tones llaman desde hilos distintos)
 
 };

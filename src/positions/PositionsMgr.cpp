@@ -79,3 +79,16 @@ bool PositionsMgr::close() {
 
     return true;
 }
+
+
+// Ejecución ----------------------------------------------------------------------------
+
+Position* PositionsMgr::getPosition(std::string const& name) {
+    std::lock_guard<std::mutex> lock(positions_mtx_);
+
+    auto it = positions_.find(name);
+    if (it == positions_.end())
+        return nullptr;
+
+    return it->second.get();
+}

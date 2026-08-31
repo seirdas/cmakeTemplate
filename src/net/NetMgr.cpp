@@ -525,6 +525,54 @@
             SYS_INFO("NetMgr", "Procesando paquete de datos...");
             SYS_INFO("NetMgr","Size of data " + std::to_string(data.size()));
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+            /* #TODO: parseo real de ICD -> CommsPacket/TonePacket (boceto, sin implementar)
+             *
+             * 1) Distinguir a qué dominio pertenece 'packet' (comms/tones/otro).
+             *    Hoy no hay forma de saberlo: candidatos son packet.socket_name o
+             *    packet.port (cada socket UDP podría dedicarse a un tipo de ICD),
+             *    o un campo de cabecera dentro de los propios bytes si el ICD lo trae.
+             *
+             * 2) Si es un paquete de comms, mapear los bytes crudos al struct real
+             *    del ICD (ver ICD_Communication.h, #pragma pack(1), pensado para
+             *    esto):
+             *
+             *      auto const* host = reinterpret_cast<
+             *          indra::sim::inex::ifccomms::st_commFromHost const*>(data.data());
+             *
+             *      CommsPacket comms_packet;
+             *      for (auto const& slot : host->slots) {
+             *          if (slot.role_id == indra::sim::inex::ifccomms::POSITIONS::NONE)
+             *              continue;   // slot sin asignar, se ignora
+             *
+             *          CommsPositionUpdate update;
+             *          update.entityName = toEntityName(slot.role_id);  // enum -> "PILOT", "COPILOT"...
+             *          for (auto const& tx : slot.Tx) if (tx.id != 0) update.tx.push_back({ tx.id });
+             *          for (auto const& rx : slot.Rx) if (rx.id != 0) update.rx.push_back({ rx.id, rx.vol });
+             *          update.speaker_vol = slot.speaker_vol;
+             *          update.vox_level   = slot.vox_level;
+             *          update.mic_enabled = (slot.mic_enabled != indra::sim::inex::ifccomms::MIC_ENABLED::NONE);
+             *          comms_packet.positions.push_back(update);
+             *      }
+             *
+             *      // NetMgr necesitará un puntero a CommsCore (inyectado por AppController,
+             *      // igual que PositionsMgr se inyecta en CommsCore) para poder llamar:
+             *      // comms_core_->Dispatch(comms_packet);
+             *
+             * 3) Si es un paquete de tones, análogo pero recorriendo cada campo fijo
+             *    de ICD_Tones.hpp (st_warnings, st_other, st_radio, st_markers,
+             *    st_tcad, st_nav) y volcando cada uno como un ToneState con su
+             *    tone_id (nombre del campo, p.ej. "c_Bell") dentro de un TonePacket.
+             *    Dado el volumen de campos (~100), esto pide una función/tabla que
+             *    mapee "nombre del campo" <-> "puntero al st_tone dentro del struct",
+             *    en vez de escribirlo a mano campo a campo.
+             *
+             * 4) DDS (dds/FastDDS.cpp, dds/CycloneDDS.cpp) seguiría el mismo patrón,
+             *    pero el "parseo de bytes" lo da la propia librería DDS (el callback
+             *    del DataReader ya entrega la muestra deserializada con el tipo
+             *    generado por IDL) - solo hay que mapear esos campos a los mismos
+             *    CommsPacket/TonePacket y llamar al mismo Dispatch().
+             */
         }
 
         SYS_INFO("NetMgr", "Consumer thread stopped.");

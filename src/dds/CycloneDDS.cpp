@@ -212,6 +212,11 @@
                 while (sub_running_.load()) {
                     auto samples = reader.take();
 
+                    // #TODO: esto es el topic de demo (HelloWorld). Cuando haya un topic
+                    // real de comms/tones generado por IDL, el patrón es: mapear sus
+                    // campos a CommsPacket/TonePacket (mismos structs que usa net/) y
+                    // llamar a comms_core_->Dispatch(...)/tones_core_->Dispatch(...).
+                    // Ver el boceto completo en NetMgr::t_dispatcher() (src/net/NetMgr.cpp).
                     for (const auto& sample : samples) {
                         if (sample.info().valid()) {
                             const HelloWorld& msg = sample.data();

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
 
 /**
@@ -61,6 +62,37 @@ public:
      */
     void set_spk_vol(short vol);
 
+    /**
+     * @brief Establece el nivel de VOX (umbral de activación por voz).
+     * @param level Nivel de VOX a asignar.
+     */
+    void set_vox_level(unsigned int level);
+
+    /**
+     * @brief Establece si el micrófono está activo.
+     * @param enabled @c true si el micrófono está habilitado, @c false en caso contrario.
+     */
+    void set_mic_enabled(bool enabled);
+
+
+// Transmisión / Recepción ----------------------------------------------------------------
+
+    /**
+     * @brief Sustituye la lista completa de transmisiones activas de la posición.
+     * @details El ICD manda una foto completa en cada paquete (no deltas), por eso
+     *  se reemplaza la lista entera en vez de añadir/quitar elemento a elemento.
+     * @param ids Identificadores de las transmisiones activas en este ciclo.
+     */
+    void setTx(std::vector<unsigned long long> const& ids);
+
+    /**
+     * @brief Sustituye la lista completa de recepciones activas de la posición.
+     * @details El ICD manda una foto completa en cada paquete (no deltas), por eso
+     *  se reemplaza la lista entera en vez de añadir/quitar elemento a elemento.
+     * @param rx Pares {id, volumen} de las recepciones activas en este ciclo.
+     */
+    void setRx(std::vector<std::pair<unsigned long long, short>> const& rx);
+
 
 // Información --------------------------------------------------------------------------
 
@@ -99,6 +131,8 @@ private:
     std::string name_;              ///< Nombre de la persona
     bool        is_instructor_;     ///< flag que indica si es un instructor
     short       spk_vol;            ///< Volumen de speaker asociado
+    unsigned int vox_level_ = 0;    ///< Nivel de VOX (umbral de activación por voz)
+    bool         mic_enabled_ = false; ///< Indica si el micrófono está activo
 
 
 // Datos de entradas/salidas (totalmix)
