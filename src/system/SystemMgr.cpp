@@ -79,7 +79,7 @@ void SystemMgr::info(std::string const& module, std::string const& msg) {
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(static_cast<int>(split_width_)) << module_brackets << msg;
     log_.write(ss.str());
     
     // Protección para la consola
@@ -104,7 +104,7 @@ void SystemMgr::warning(std::string const& module, std::string const& msg) {
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(static_cast<int>(split_width_)) << module_brackets << msg;
     log_.write(ss.str());
     errlog_.write(ss.str());
     
@@ -129,7 +129,7 @@ void SystemMgr::error(std::string const& module, std::string const& msg) {
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(static_cast<int>(split_width_)) << module_brackets << msg;
     log_.write(ss.str());
     errlog_.write(ss.str());
     
@@ -160,7 +160,7 @@ void SystemMgr::solved(std::string const& module, std::string const& msg) {
 
     // Para el archivo de log (usando un stringstream para aplicar el ancho)
     std::ostringstream ss;
-    ss << prefix << std::left << std::setw(split_width_) << module_brackets << msg;
+    ss << prefix << std::left << std::setw(static_cast<int>(split_width_)) << module_brackets << msg;
     log_.write(ss.str());
     errlog_.write(ss.str());
     
