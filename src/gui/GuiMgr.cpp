@@ -547,15 +547,18 @@
 		if (SmallButton(online ? "ONLINE" : "OFFLINE"))
 			ctrl_->setOnlineMode(!online);
 
-		// ● <nombre> : <puerto> (con datos/sin datos), uno por cada socket UDP real de NetMgr
+		// ● <nombre> : <puerto> (activo/sin trafico), uno por cada socket UDP real de NetMgr
 		NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
 		if (net) {
 			for (UdpSocket* sock : net->getUdpSockets()) {
 				if (!sock) continue;
 				gap();
-				const bool hasData = sock->getLastPacketMs() > 0;
-				dot(hasData);
-				Text("%s : %u (%s)", sock->name().c_str(), sock->port(), hasData ? "con datos" : "sin datos");
+				// "activo" solo si ha entrado un paquete hace poco (< 2 s); getLastPacketMs()
+				// vale 0 si nunca llegó ninguno, y va creciendo tras el último recibido.
+				const unsigned long long ms = sock->getLastPacketMs();
+				const bool alive = sock->isRunning() && ms > 0 && ms < 2000;
+				dot(alive);
+				Text("%s : %u (%s)", sock->name().c_str(), sock->port(), alive ? "activo" : "sin trafico");
 			}
 		}
 
@@ -673,8 +676,10 @@
 				Text(hasData ? "Yes" : "No");
 
 				TableNextColumn();
-				if (lastMs > 0) Text("%llu ms ago", lastMs);
-				else            TextDisabled("never");
+				// lastMs crece solo con el tiempo: bajo = llegando ahora, alto = parado
+				if (lastMs == 0)          TextDisabled("nunca");
+				else if (lastMs < 2000)   Text("%llu ms", lastMs);                 // recibiendo
+				else                      TextDisabled("hace %llu s", lastMs / 1000); // sin trafico
 
 				TableNextColumn();
 				if (Button("Remove", ImVec2(-FLT_MIN, 0)))
@@ -742,16 +747,54 @@
 	}
 
 	void GuiMgr::panelNetworkChecking() {
-		// Solo estructura visual (cuadros de solo lectura) todavía sin datos reales.
-		// Se abre como ventana flotante chiquitita desde Ajustes -> Sockets...,
-		// no desde el sidebar (igual que Apariencia).
-		auto readonlyField = [&](const char* label, const char* id, const char* value) {
+		// Ventana "Network Checking": enseña si por un socket UDP están entrando datos
+		// y si son correctos. Todos los valores salen de UdpSocket::stats(), que a su vez
+		// los rellena en UdpSocket::handle_received_packet cada vez que llega un paquete.
+		// La ventana se redibuja sola muchas veces por segundo, así que solo hay que leer.
+
+		NetMgr* net = ctrl_ ? ctrl_->getNetModule() : nullptr;
+		if (!net) {
+			Text("Network module not available.");
+			return;
+		}
+
+		std::vector<UdpSocket*> sockets = net->getUdpSockets();
+		if (sockets.empty()) {
+			TextDisabled("No hay sockets UDP registrados.");
+			return;
+		}
+
+		// --- Elegir qué socket mirar ---
+		static int sel = 0;
+		if (sel >= static_cast<int>(sockets.size())) sel = 0;
+		PushItemWidth(180);
+		if (BeginCombo("Socket", sockets[sel]->name().c_str())) {
+			for (int i = 0; i < static_cast<int>(sockets.size()); ++i)
+				if (Selectable(sockets[i]->name().c_str(), i == sel))
+					sel = i;
+			EndCombo();
+		}
+		PopItemWidth();
+
+		// Foto de los contadores de ese socket (copia segura, no memoria viva)
+		UdpSocket::Stats st = sockets[sel]->stats();
+
+		// --- Luz: verde si el socket está vivo y ha entrado un paquete hace < 2 s ---
+		const bool cycling = st.running && st.since_last_ms > 0 && st.since_last_ms < 2000;
+		generate_dot(cycling ? ImVec4(0.35f, 0.85f, 0.35f, 1.0f)
+		                     : ImVec4(0.85f, 0.35f, 0.35f, 1.0f));
+		Text(cycling ? "CICLANDO" : "SIN CICLO");
+
+		Dummy(ImVec2(0, 6));
+
+		// --- Cuadros de solo lectura ---
+		auto field = [&](const char* label, const std::string& value) {
 			Text("%s", label);
 			SameLine(110);
-			char buf[16];
-			std::snprintf(buf, sizeof(buf), "%s", value);
-			PushID(id);
-			PushItemWidth(110);
+			char buf[64];
+			std::snprintf(buf, sizeof(buf), "%s", value.c_str());
+			PushID(label);
+			PushItemWidth(150);
 			InputText("##val", buf, sizeof(buf), ImGuiInputTextFlags_ReadOnly);
 			PopItemWidth();
 			PopID();
@@ -759,24 +802,24 @@
 
 		if (BeginTable("net_checking_tbl", 2, ImGuiTableFlags_None)) {
 			TableNextRow();
-			TableNextColumn(); readonlyField("IP FROM",    "ipfrom",    "");
-			TableNextColumn(); readonlyField("LOCAL IP",   "localip",   "");
+			TableNextColumn(); field("IP FROM",    st.remote_ip.empty() ? "-" : st.remote_ip);
+			TableNextColumn(); field("LOCAL IP",   st.local_ip);
 
 			TableNextRow();
-			TableNextColumn(); readonlyField("PORT",       "port",      "0");
-			TableNextColumn(); readonlyField("LOCAL",      "local",     "0");
+			TableNextColumn(); field("Puerto rem", std::to_string(st.remote_port));
+			TableNextColumn(); field("PORT",       std::to_string(st.local_port));
 
 			TableNextRow();
-			TableNextColumn(); readonlyField("Cicle",      "cicle",     "0");
-			TableNextColumn(); readonlyField("Cicle Time", "cicletime", "0");
+			TableNextColumn(); field("Cicle",      std::to_string(st.rx_count));            // sube = entran paquetes
+			TableNextColumn(); field("Cicle Time", std::to_string(st.period_ms) + " ms");   // estable = ritmo constante
 
 			TableNextRow();
-			TableNextColumn(); readonlyField("Size",       "size1",     "0");
-			TableNextColumn(); readonlyField("Real size",  "realsize1", "0");
+			TableNextColumn(); field("Desde ult.", std::to_string(st.since_last_ms) + " ms");
+			TableNextColumn(); field("Running",    st.running ? "si" : "no");
 
 			TableNextRow();
-			TableNextColumn(); readonlyField("Size",       "size2",     "0");
-			TableNextColumn(); readonlyField("Real size",  "realsize2", "0");
+			TableNextColumn(); field("Size",       st.expected_size ? std::to_string(st.expected_size) : "any");
+			TableNextColumn(); field("Real size",  std::to_string(st.last_size));           // deberia coincidir con Size
 
 			EndTable();
 		}

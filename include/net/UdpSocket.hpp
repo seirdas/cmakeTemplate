@@ -7,7 +7,8 @@
 #include <functional>           // Para std::function
 #include <string>               // Para std::string
 #include <memory>               // Para std::unique_ptr y std::enable_shared_from_this
-
+#include <atomic>               // Para std::atomic (contadores compartidos entre hilos)
+#include <chrono>               // Para std::chrono (medir tiempo entre paquetes)
 
 /**
  * @brief Datos del paquete recibidos para implementar en cola centralizada de NetMgr
@@ -211,6 +212,31 @@ public:
     bool isOpen() const;
 
 
+// Estadísticas / diagnóstico ---------------------------------------------------------
+    struct Stats {
+        bool                running       = false;  ///< socket vivo
+        unsigned long long  rx_count      = 0;      
+        unsigned long long  period_ms     = 0;      
+        unsigned long long  since_last_ms = 0;      
+        std::size_t         last_size     = 0;      
+        std::size_t         expected_size = 0;      
+        std::string         remote_ip;              
+        unsigned short      remote_port   = 0;
+        std::string         local_ip;               
+        unsigned short      local_port    = 0;      
+    };
+
+    /**
+     * @brief Devuelve una copia instantánea de los contadores y el estado del socket.
+     * @details Pensado para consultar desde la GUI/CLI sin bloquear la recepción:
+     *  los contadores se leen de variables atómicas y los campos de texto (IPs)
+     *  bajo un mutex propio. Los valores son los del último paquete válido recibido.
+     * @return Estructura @ref Stats con nº de paquetes (Cicle), tiempo entre paquetes
+     *  (Cicle Time), tamaño real/esperado, IP y puerto remotos y locales, y si está en ejecución.
+     */
+    Stats stats() const;
+
+
 private:
     
 // Creación de socket -------------------------------------------------------------------
@@ -308,5 +334,14 @@ private:
     std::condition_variable         condition_;                 ///< Condición para notificar al main que hay datos nuevos
     const std::size_t               MAX_QUEUE_ELEMENTS = 20;    ///< Número máximo de elementos en la cola
     bool                            ignore_dupe_;               ///< Flag para eliminar duplicados
+
+
+// Contadores de recepción (se leen desde la GUI mediante stats())
+    std::atomic<unsigned long long> rx_count_{0};        ///< Nº total de paquetes válidos recibidos (contador de "ciclo")
+    std::atomic<unsigned long long> last_period_ms_{0};  ///< Tiempo transcurrido entre los dos últimos paquetes válidos (ms)
+    std::atomic<std::size_t>        last_rx_bytes_{0};   ///< Tamaño en bytes del último datagrama recibido
+    mutable std::mutex              stats_mtx_;          ///< Protege remote_ip_ / remote_port_ (no son atómicos)
+    std::string                     remote_ip_;          ///< IP del emisor del último paquete válido
+    unsigned short                  remote_port_ = 0;    ///< Puerto del emisor del último paquete válido
 
 };
