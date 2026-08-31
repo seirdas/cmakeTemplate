@@ -49,6 +49,18 @@ bool IModule::close() {
     return true;
 }
 
+bool IModule::reload() {
+
+    SYS_INFO("IModule", "Reloading module...");
+
+    // Parar todo si está inicializado
+    if (initialized_)
+        close();
+
+    // Inicializa tomando los parámetros nuevos
+    return init();
+}
+
 
 // Configuración ------------------------------------------------------------------------
 

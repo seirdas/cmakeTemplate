@@ -16,7 +16,9 @@ public:
 
 // General ------------------------------------------------------------------------------
 
-    // (Constructor)
+    /**
+     * @brief Constructor de la interfaz
+     */
     IModule();
 
     /**
@@ -38,13 +40,19 @@ public:
      * @param config Datos de configuración (diseñado para recibir un puntero a json).
      * @return @c true cuando se ha inicializado correctamente, @c false en caso contrario.
      */
-    virtual bool init(void* config);
+    virtual bool init(void* config = nullptr);
 
     /**
     * @brief Cierra el módulo
     * @returns @c true si se ha cerrado correctamente, @c false en caso contrario. 
     */
     virtual bool close();
+
+    /**
+     * @brief Cierra el módulo y lo abre de nuevo (close()->init())
+     * @return @c true si se ha reiniciado correctamente, @c false en caso contrario
+     */
+    bool reload();
 
 
 // Configuración ------------------------------------------------------------------------
