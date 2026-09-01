@@ -93,7 +93,7 @@ private:
     inline iCommBridge::~iCommBridge()              {}
 
 // Ejecución ----------------------------------------------------------------------------
-    inline bool iCommBridge::init()     { 
+    inline bool iCommBridge::init(void*)     { 
         SYS_WARN("iCommBridge","iCommMgr only compatible with MSVC compiler (Windows)");
         return initialized_; 
     }
