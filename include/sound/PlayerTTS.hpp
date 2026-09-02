@@ -54,14 +54,6 @@ public:
      */
     bool close() override;
 
-    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
-    PlayerTTS(PlayerTTS const&) = delete;
-    PlayerTTS& operator=(PlayerTTS const&) = delete;
-
-    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
-    PlayerTTS(PlayerTTS&&) = delete;
-    PlayerTTS& operator=(PlayerTTS&&) = delete;
-
 
 // Ejecución ----------------------------------------------------------------------------
 
