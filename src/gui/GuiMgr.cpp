@@ -976,8 +976,15 @@
 					if (st.audioNameBuf[0] == '\0' || st.textBuf[0] == '\0') return;
 					pt->playTTS(st.textBuf, models[st.modelIdx], st.audioNameBuf);
 				},
-				[pt, &st]() { if (pt && st.audioNameBuf[0] != '\0') pt->stop(st.audioNameBuf, false, 0, 0); },
-				[this, snd, name]() { snd->removePlayerTTS(name); playerUIState_.erase("tts::" + name); },
+				[pt, &st]() { 
+					// #TODO Revisar
+					//if (pt && st.audioNameBuf[0] != '\0') 
+					//	pt->stop(st.audioNameBuf, false, 0, 0); 
+					},
+				[this, snd, name]() {
+					snd->removePlayerTTS(name);
+					playerUIState_.erase("tts::" + name); 
+				},
 				260.0f
 			);
 		}
@@ -1138,7 +1145,9 @@
 		const std::string cardId = idPrefix + "##" + name;
 		PushID(cardId.c_str());
 
-		const bool playing = mod && mod->isPlaying();
+		// #TODO Revisar
+		bool playing = false;
+		//const bool playing = mod && mod->isPlaying();
 		BeginChild(
 			"##card",
 			ImVec2(0, cardHeight),
@@ -1296,9 +1305,20 @@
 					SliderInt("##playvol", &st.playVolume, 0, 100, "%d%%");
 					PopItemWidth();
 				},
-				[pa, &st]() { if (pa && st.textBuf[0] != '\0') pa->playAudio(st.textBuf, static_cast<unsigned short>(st.playVolume)); },
-				[pa, &st]() { if (pa && st.textBuf[0] != '\0') pa->stop(st.textBuf, false, 0, 0); },
-				[this, snd, name]() { snd->removePlayerAudio(name); playerUIState_.erase("audio::" + name); },
+				[pa, &st]() {
+					// #TODO Revisar
+					//if (pa && st.textBuf[0] != '\0') 
+					//	pa->playAudio(st.textBuf, static_cast<unsigned short>(st.playVolume)); 
+				},
+				[pa, &st]() {
+					// #TODO Revisar
+					//if (pa && st.textBuf[0] != '\0') 
+					//	pa->stop(st.textBuf, false, 0, 0); 
+				},
+				[this, snd, name]() { 
+					snd->removePlayerAudio(name); 
+					playerUIState_.erase("audio::" + name); 
+				},
 				210.0f
 			);
 		}
@@ -1336,7 +1356,11 @@
 					PopItemWidth();
 				},
 				[pm, &st]() { if (pm && st.textBuf[0] != '\0') pm->playMorse(st.textBuf); },
-				[pm, &st]() { if (pm && st.textBuf[0] != '\0') pm->stop(st.textBuf, false, 0, 0); },
+				[pm, &st]() {
+					// #TODO Revisar
+					//if (pm && st.textBuf[0] != '\0') 
+					//	pm->stop(st.textBuf, false, 0, 0); 
+				},
 				[this, snd, name]() { snd->removePlayerMorse(name); playerUIState_.erase("morse::" + name); },
 				210.0f
 			);
@@ -1696,7 +1720,7 @@
 							} else {
 								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 									if (Selectable(entradas[n].c_str())) {
-										snd->addCaptureModule(nullptr, entradas[n], entradas[n]);
+										snd->addCaptureModule(nullptr, entradas[n]);
 										show_device_selector = false;               // Cierra el popup
 									}
 								}

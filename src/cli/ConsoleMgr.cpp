@@ -777,8 +777,9 @@ void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
 
     if (action == "add" || action == "a") {
         std::string device = get_token(tokens, 5);
-        if (snd->addPlayerAudio(nullptr, name, device)) print("Audio player '" + name + "' added.");
-        else print_error("Cannot add audio player.");
+        // #TODO Revisar
+        //if (snd->addPlayerAudio(nullptr, name)) print("Audio player '" + name + "' added.");
+        //else print_error("Cannot add audio player.");
     } 
     else if (action == "remove" || action == "delete" || action == "r" || action == "d") {
         if (snd->removePlayerAudio(name)) print("Audio player '" + name + "' removed.");
@@ -798,7 +799,8 @@ void ConsoleMgr::execute_cmd_snd_audio(std::vector<std::string> const& tokens) {
                 try { vol = static_cast<unsigned short>(std::stoi(volStr)); }
                 catch (...) { print_error("Invalid volume."); return; }
             }
-            pa->playAudio(filepath, vol);
+            // #TODO revisar
+            // pa->playAudio(filepath, vol);
         } else if (!execute_playback_command(pa, tokens, 5)) {
             print_error("Unknown use subcommand: " + get_token(tokens, 5));
         }
@@ -841,8 +843,9 @@ void ConsoleMgr::execute_cmd_snd_tts(std::vector<std::string> const& tokens) {
 
     if (action == "add" || action == "a") {
         std::string device = get_token(tokens, 5);
-        if (snd->addPlayerTTS(nullptr, name, device)) print("TTS player '" + name + "' added.");
-        else print_error("Cannot add TTS player.");
+        // #TODO Revisar
+        //if (snd->addPlayerTTS(nullptr, name)) print("TTS player '" + name + "' added.");
+        //else print_error("Cannot add TTS player.");
     } 
     else if (action == "remove" || action == "delete" || action == "r" || action == "d") {
         if (snd->removePlayerTTS(name)) print("TTS player '" + name + "' removed.");
@@ -903,7 +906,8 @@ bool ConsoleMgr::execute_playback_command(
             print_error("Invalid <fadeOutMs>/<pitchOutMs>, must be numeric.");
             return true;
         }
-        mod->stop(audioName, force, fadeOutMs, pitchOutMs);
+        // #TODO Revisar
+        //mod->stop(audioName, force, fadeOutMs, pitchOutMs);
         return true;
     }
 
@@ -944,7 +948,8 @@ bool ConsoleMgr::execute_playback_command(
             return true;
         }
         try {
-            mod->setPitch(audioName, std::stof(pitchStr));
+            // #TODO Revisar
+            // mod->setPitch(audioName, std::stof(pitchStr));
         } catch (std::exception const&) {
             print_error("Invalid <pitch>, must be numeric.");
         }
@@ -962,12 +967,6 @@ bool ConsoleMgr::execute_playback_command(
         } catch (std::exception const&) {
             print_error("Invalid <channel>, must be numeric.");
         }
-        return true;
-    }
-
-    if (sub == "isplaying") {
-        const std::string audioName = get_token(tokens, subIdx + 1);
-        print(std::string("Playing: ") + (mod->isPlaying(audioName) ? "YES" : "NO"));
         return true;
     }
 
