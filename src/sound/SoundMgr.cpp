@@ -301,24 +301,28 @@
         // puntero al APM que acabamos de meter
         PlayerAudio* pm = getPlayerAudio("playbackTest");
         SYS_INFO("SoundMgr", "Testing module: '"
-            + pm->getDeviceName() + ")");
+            + pm->getModuleName() + ")");
+
+        // Añadir dispositivo por defecto
+        pm->addPlaybackDevice(defDevice, 1, "Left");
+        pm->addPlaybackDevice(defDevice, 2, "Right");
 
         /* reproducir */
-        pm->playAudio("audio/ding.mp3", "", 100, true);
-        pm->playAudio("audio/cat.mp3");
+        pm->playAudio("audio/ding.mp3", "Left", 100, true);
+        pm->playAudio("audio/cat.mp3", "Left");
 
         SYS_INFO("SoundMgr", "Sleep for 500ms...");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // /* modificar mientras reproduce */
-        pm->setVolume("audio/cat.mp3", "", 40);
+        pm->setVolume("audio/cat.mp3", 40, "Left");
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         pm->setVolume("click", 30);
-        pm->setPitch("audio/cat.mp3", 1.7f);
+        pm->setPitch("audio/cat.mp3", 1.7f, "Left");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         /* cortar música */
-        pm->stop("audio/cat.mp3", true, 2000, 5000);  // (forzado)
+        pm->stop("audio/cat.mp3", "Left", true, 2000, 5000);  // (forzado)
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
         pm->stop("audio/ding.mp3");   // Esperar a que termine el wav (desactivar loop, forcestop = false)
@@ -657,7 +661,7 @@
 
         // Intentar inicializar
         SYS_INFO("SoundMgr", "Initializing module...");
-        if (!module->init(config, usedModuleName))
+        if (!module->init(config))
         {
             SYS_WARN("SoundMgr","Failed to initialize module");
             return false;
