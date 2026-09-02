@@ -106,20 +106,18 @@ public:
      *  los valores de la configuración si se hubiera proporcionado.
      * @param config Puntero a configuración (json).
      * @param moduleName Nombre asignado a este módulo (cualquiera).
-     * @param deviceName Nombre del dispositivo de captura.
      * @return @c true Si se ha creado correctamente, @c false en caso contrario.
      */
-    bool addCaptureDevice(
+    bool addCaptureModule(
         void*               config, 
-        std::string const&  moduleName, 
-        std::string const&  deviceName  = ""
+        std::string const&  moduleName
     );
 
     /**
      * @brief Eliminar el dispositivo de captura.
      * @param moduleName Nombre del módulo seleccionado.
      */
-    bool removeCaptureDevice(std::string const& moduleName);
+    bool removeCaptureModule(std::string const& moduleName);
 
     /**
      * @brief Obtiene el módulo de captura asociado a un nombre
@@ -127,7 +125,7 @@ public:
      * @param moduleName Nombre del módulo seleccionado
      * @return Puntero al módulo de captura o @c nullptr si no existe con ese nombre
      */
-    AudioCaptureModule* getCapture(std::string moduleName) const;
+    AudioCaptureModule* getCaptureModule(std::string moduleName) const;
 
     /**
      * @brief Devuelve una lista con los nombres de todos
@@ -151,8 +149,7 @@ public:
      */
     bool addPlayerAudio(
         void*               config,
-        std::string const&  moduleName = "",
-        std::string const&  deviceName = ""
+        std::string const&  moduleName = ""
     );
 
     /**
@@ -191,8 +188,7 @@ public:
      */
     bool addPlayerMorse(
         void*               config,
-        std::string const&  moduleName = "",
-        std::string const&  deviceName = ""
+        std::string const&  moduleName = ""
     );
 
     /**
@@ -231,8 +227,7 @@ public:
      */
     bool addPlayerTTS(
         void*               config,
-        std::string const&  moduleName = "",
-        std::string const&  deviceName = ""
+        std::string const&  moduleName = ""
     );
 
     /**
@@ -349,8 +344,7 @@ private:
     template <typename MapT>
     bool add_module(
         void*               config, 
-        std::string const&  moduleName, 
-        std::string const&  deviceName, 
+        std::string const&  moduleName,
         MapT&               map,
         bool                isCapture);
 
@@ -397,7 +391,7 @@ private:
     bool                        fallbackToDefault_;         ///< Fallback a dispositivo por defecto
 
 // Listas de dispositivos de audio
-    std::vector<std::string>    available_captures_;          ///< Lista de dispositivos de entrada disponibles
+    std::vector<std::string>    available_captures_;        ///< Lista de dispositivos de entrada disponibles
     std::vector<std::string>    available_playbacks_;       ///< Lista de dispositivos playback disponibles
     mutable std::mutex          available_inputs_mtx_;      ///< Mutex para lista de dispositivos de entrada disponibles
     mutable std::mutex          available_playbacks_mtx_;   ///< Mutex para lista de dispositivos playback disponibles

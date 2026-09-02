@@ -9,8 +9,8 @@
 
 // General ------------------------------------------------------------------------------
 
-    PlayerTTS::PlayerTTS(std::string const& moduleName, void* ctx, const void* device_info) :
-        AudioPlaybackModule(moduleName, ctx, device_info),
+    PlayerTTS::PlayerTTS(std::string const& moduleName, void* ctx) :
+        AudioPlaybackModule(moduleName, ctx),
         onTextToAudio_cb_(nullptr)
     {
 
@@ -23,19 +23,13 @@
 
 // Inicialización -----------------------------------------------------------------------
 
-    bool PlayerTTS::init(void* config, std::string const& playbackName) {
-
-        // Guardar si ya estaba inicializado antes de llamar al padre (evita relanzar el hilo)
-        bool wasInitialized = initialized_;
-
-        if (!AudioPlaybackModule::init(config, playbackName))
+    bool PlayerTTS::init(void* config) {
+        if (!AudioPlaybackModule::init(config))
             return false;
 
-        // Arrancar el hilo consumidor de textos solo la primera vez
-        if (!wasInitialized) {
-            SYS_INFO("PlayerTTS","Starting text consumer thread...");
-            data_consumer_thread_ = std::thread(&PlayerTTS::t_data_consumer, this);
-        }
+        // Arrancar el hilo consumidor de textos
+        SYS_INFO("PlayerTTS","Starting text consumer thread...");
+        data_consumer_thread_ = std::thread(&PlayerTTS::t_data_consumer, this);
 
         return true;
     }
@@ -47,7 +41,7 @@
         SYS_INFO("PlayerTTS","Stopping text consumer thread...");
 
         // Marcar como no corriendo para que el hilo consumidor salga del bucle
-        running_ = false;
+        threads_running_ = false;
         cola_textos_cv_.notify_all();
 
         if (data_consumer_thread_.joinable())
@@ -127,19 +121,19 @@
         // Elemento a reproducir de la cola
         queueElement element;
 
-        while(running_) {
+        while(threads_running_) {
 
             // Salir si el programa se está cerrando (antes)
-            if (!running_) break;
+            if (!threads_running_) break;
 
             // Forzar espera hasta que haya algo en la cola o se cierre este player
             std::unique_lock<std::mutex> lock(cola_textos_mtx_);
             cola_textos_cv_.wait(lock, [this] {
-                return !running_ || !cola_textos_.empty();
+                return !threads_running_ || !cola_textos_.empty();
             });
 
             // Salir si el programa se está cerrando (después)
-            if(!running_) break;
+            if(!threads_running_) break;
 
             // Obtener tarea de la cola
             element = cola_textos_.front();
@@ -196,7 +190,7 @@
             texto_en_proceso_.clear();
             return false;
         }
-        inst->isBuffer = true;
+        inst->hasBuffer = true;
 
         // Envolver el buffer como un sonido reproducible por el motor
         if (ma_sound_init_from_data_source(&pimpl_->engine, &inst->buffer, 0, nullptr, &inst->sound) != MA_SUCCESS) {

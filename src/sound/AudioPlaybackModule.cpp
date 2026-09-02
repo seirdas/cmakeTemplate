@@ -15,12 +15,11 @@
 
     AudioPlaybackModule::AudioPlaybackModule(
         std::string const&  moduleName, 
-        void*               ctx, 
-        const void*         device_info
+        void*               ctx
     ) :
-        pimpl_(std::make_unique<Impl>(ctx, device_info)),
+        pimpl_(std::make_unique<Impl>(ctx)),
         initialized_(false),
-        running_(false),
+        threads_running_(false),
         name_(moduleName),
         globalVol_(100),
         selectedChannel_(0),
@@ -36,37 +35,16 @@
 
     // Inicialización -----------------------------------------------------------------------
 
-    bool AudioPlaybackModule::init(
-        void*               config, 
-        std::string const&  moduleName) 
-    {
+    bool AudioPlaybackModule::init(void* config) {
         if (initialized_)
-            return true;
+            return false;
 
         // Validar y asignar valores de variables miembro a partir de la config pasada (json)
         if (config)
             loadConfig(config);
 
-        // Ponerle nombre a este módulo (sobreescribe el de la config)
-        if (!moduleName.empty()) name_ = moduleName;
-
-        // Inicializar el dispositivo de reproducción
-        ma_engine_config deviceConfig = ma_engine_config_init();
-
-        // rellenar los parámetros de la configuración de miniaudio
-        deviceConfig.pContext = pimpl_->ctx;
-        deviceConfig.pPlaybackDeviceID = &pimpl_->device_info.id;
-
-        std::string deviceName = pimpl_->device_info.name;
-
-        // Inicializar
-        if (ma_engine_init(&deviceConfig, &pimpl_->engine) != MA_SUCCESS) {
-            SYS_ERROR("AudioPlaybackModule", moduleName + ": ma_engine_init failed");
-            return false;
-        }
-
         // Activar running para los hilos
-        running_ = true;
+        threads_running_ = true;
 
         // Inicializar el hilo de limpieza diferida
         SYS_INFO("PlaybackModule","Starting audio cleanup thread...");
@@ -74,7 +52,7 @@
         
         // Llega hasta aquí si se ha inicializado bien
         initialized_ = true;
-        return initialized_; //<- true
+        return true;
     }
 
     bool AudioPlaybackModule::isInitialized() const {
@@ -99,46 +77,65 @@
         if (!initialized_)
             return true;
 
+        // Marcar el módulo como no inicializado y detener hilos
+        initialized_     = false;
+        threads_running_ = false;
+
         SYS_INFO("PlaybackModule", "'" + name_ + "': Stopping PlaybackModule...");
 
-        running_ = false;
-
-        // Espera segura de hilos pitchout
+        // Espera de hilos de pitchout/fadeout
         if (active_fadeouts_threads_ > 0) {
             SYS_INFO("PlaybackModule", "'" + name_ + "': Waiting for active pitchout threads to finish...");
-            std::unique_lock<std::mutex> lock(playing_sounds_mtx_);
-            
-            // Espera bloqueante hasta que el contador de hilos llegue a 0
-            pitch_threads_cv_.wait(lock, [this]() { 
+
+            // Esperar a que no haya ningun sonido "apagándose"
+            std::unique_lock<std::mutex> lock(fadeout_threads_mtx_);
+            fadeout_threads_cv_.wait(lock, [this]() { 
                 return active_fadeouts_threads_ == 0; 
             });
         }
 
-        // Apagar el hilo de limpieza primero
+        // Apagar el hilo de limpieza
         if (cleanup_thread_.joinable()) {
-            SYS_INFO("PlaybackModule", "'" + name_ + "':Closing cleanup thread...");
-            cleanup_cv_.notify_all(); // Despertar al hilo para que finalice
+            SYS_INFO("PlaybackModule", "'" + name_ + "': Closing cleanup thread...");
+            cleanup_cv_.notify_all(); // Despertar al hilo para que finalice su bucle
             cleanup_thread_.join();
         }
 
-        // Limpiar instancias de sonidos activos
-        {
-            std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
-            SYS_INFO("PlaybackModule","'" + name_ + "': Unitializing active sounds...");
-            for (auto& [id, snd] : pimpl_->playing_sounds) {
-                ma_sound_uninit(&snd->sound);
-                if (snd->isBuffer)
-                    ma_audio_buffer_uninit(&snd->buffer);
-            }
-            pimpl_->playing_sounds.clear();
+        // Detener y limpiar los sonidos de todos los dispositivos registrados
+        SYS_INFO("PlaybackModule", "'" + name_ + "': Uninitializing active sounds across all devices...");
+        std::lock_guard<std::mutex> devicesLock(pimpl_->devices_mtx);
+        for (auto& DevInst : pimpl_->devices) {
+            if (!DevInst) continue;
+
+            // Proteger el mapa de sonidos en reproducción
+            std::lock_guard<std::mutex> lock(DevInst->playing_sounds_mtx);
+            
+            // Detener todas las reproducciones de este dispositivo
+            for (auto& [id, snd] : DevInst->playing_sounds)
+                if (snd) {
+                    ma_sound_stop(&snd->sound);
+                    if (snd->hasBuffer) 
+                        ma_audio_buffer_uninit(&snd->buffer);
+                }
+
+            // Limpiar el mapa
+            DevInst->playing_sounds.clear();
         }
-        cleanup_sounds();    // Asegurar limpieza
+        // Limpiar la cola diferida de sonidos pendientes por destruir
+        cleanup_sounds();
 
-        // Desinicializar el sistema
-        SYS_INFO("PlaybackModule","'" + name_ + "': Unitializing audio engine...");
-        ma_engine_uninit(&pimpl_->engine);
+        // Desinicializar motores y dispositivos iniciados en el Impl
+        /* (Lista protegida antes) */
+        for (auto& DevInst : pimpl_->devices) {
+            if (!DevInst || !DevInst->initialized) 
+                continue;
 
-        initialized_ = false;
+            ma_engine_uninit(&DevInst->engine);
+            ma_device_uninit(&DevInst->device);
+            DevInst->initialized = false;
+        }
+
+        SYS_INFO("PlaybackModule", "'" + name_ + "': Closed successfully.");
         return true;
     }
 
@@ -155,23 +152,194 @@
     }
 
 
+    // Dispositivos del módulo --------------------------------------------------------------
+
+    bool AudioPlaybackModule::addPlaybackDevice(
+        std::string const&  deviceName, 
+        unsigned int        channelSelected,
+        std::string const&  deviceAlias
+    ) {
+        // Comprobar si el contexto está inicializado
+        if (!pimpl_->ctx) {
+            SYS_WARN("AudioPlayback", "Cannot add new device: audio context not initialized");
+            return false;
+        }
+
+        // Comprobar resolutor de dispositivos
+        if (!onDeviceResolve_) {
+            SYS_WARN("AudioPlayback","Cannot add new device: Can't resolve device info.");
+            return false;
+        }
+
+        // Resolver alias efectivo: el explícito, o uno autogenerado a partir de nombre+canal
+        std::string effectiveAlias = deviceAlias.empty() 
+            ? (deviceName + "#" + std::to_string(channelSelected)) 
+            : deviceAlias;
+
+        // Proteger la lista de dispositivos para toda la operación de alta
+        std::lock_guard<std::mutex> devicesLock(pimpl_->devices_mtx);
+
+        // Comprobar que el alias no está ya en uso (evita colisiones "ADAT(1+2)#1" duplicado)
+        for (auto& dev : pimpl_->devices) {
+            if (dev->alias == effectiveAlias) {
+                SYS_WARN("AudioPlayback", "'" + name_ + "': alias '" + effectiveAlias + "' already in use");
+                return false;
+            }
+        }
+
+        // Obtiene la información del dispositivo (ma_device_info)
+        std::string realDeviceName = deviceName;
+        const ma_device_info* selectedDeviceInfo = 
+            static_cast<const ma_device_info*>(onDeviceResolve_(realDeviceName));
+        if (!selectedDeviceInfo) {
+            SYS_WARN("SoundMgr", "Failed to find device: '" + deviceName + "'");
+            return false;
+        }
+
+        // Nº de canales REALES del dispositivo
+        unsigned int channels = selectedDeviceInfo->nativeDataFormats[0].channels;
+        if (channelSelected > channels) {
+            SYS_WARN("PlaybackModule","'" + name_ + "': selected_channel " + std::to_string(channelSelected)
+                + " not available (Channels:" + std::to_string(channels) + ")");
+            return false;
+        }
+
+        // Instanciar la estructura del nuevo dispositivo
+        std::unique_ptr<Impl::DeviceInstance> instance = std::make_unique<Impl::DeviceInstance>();
+        instance->alias           = effectiveAlias;
+        instance->info            = *selectedDeviceInfo;
+        instance->selectedChannel = channelSelected;
+        instance->channels        = channels;
+        instance->owner           = this;
+
+        // Configurar ma_device
+        ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
+        deviceConfig.playback.pDeviceID = &selectedDeviceInfo->id;
+        deviceConfig.playback.format    = ma_format_f32;
+
+        // Establecer el enrutado de canal ANTES de ma_device_init
+        ma_channel channelMap[1];
+        if (channelSelected == 0) {
+            // Todos los canales disponibles seleccionados
+            deviceConfig.playback.channels    = channels;
+            deviceConfig.playback.pChannelMap = nullptr;
+        } else {
+            // Submix mono automático de miniaudio al canal AUX correspondiente
+            deviceConfig.playback.channels    = 1;
+            channelMap[0] = static_cast<ma_channel>(MA_CHANNEL_AUX_0 + (channelSelected - 1));
+            deviceConfig.playback.pChannelMap = channelMap;
+        }
+
+        // Inicializar device
+        if (ma_device_init(pimpl_->ctx, &deviceConfig, &instance->device) != MA_SUCCESS) {
+            SYS_WARN("AudioPlayback", "'" + name_ + "': failed to init device " + instance->info.name);
+            return false;
+        }
+
+        // Configurar ma_engine vinculado a este ma_device
+        ma_engine_config engineConfig = ma_engine_config_init();
+        engineConfig.pDevice  = &instance->device;
+        engineConfig.channels = (channelSelected == 0) ? 0 : 1; // 0=todos/1=mono
+
+        // Inicializar engine
+        if (ma_engine_init(&engineConfig, &instance->engine) != MA_SUCCESS) {
+            SYS_WARN("AudioPlayback", "'" + name_ + "': failed to init engine for " + instance->info.name);
+            ma_device_uninit(&instance->device);
+            return false;
+        }
+
+        // Marcar como inicializado y agregar al vector de dispositivos
+        instance->initialized = true;
+        pimpl_->devices.push_back(std::move(instance));
+
+        SYS_INFO("AudioPlayback", "'" + name_ + "': added device '" + effectiveAlias + "' (" 
+                + selectedDeviceInfo->name + ", channel " + std::to_string(channelSelected) + ")");
+        return true;
+    }
+
+    bool AudioPlaybackModule::removePlaybackDevice(std::string const& deviceAlias) {
+
+        // Proteger la lista de dispositivos para toda la operación de baja
+        std::lock_guard<std::mutex> devicesLock(pimpl_->devices_mtx);
+
+        // Localizar el device por alias
+        auto it = std::find_if(pimpl_->devices.begin(), pimpl_->devices.end(),
+            [&](std::unique_ptr<Impl::DeviceInstance> const& dev) {
+                return dev->alias == deviceAlias;
+            });
+
+        if (it == pimpl_->devices.end()) {
+            SYS_WARN("AudioPlayback", "'" + name_ + "': removePlaybackDevice: alias '" + deviceAlias + "' not found");
+            return false;
+        }
+
+        Impl::DeviceInstance* device = it->get();
+
+        SYS_INFO("AudioPlayback", "'" + name_ + "': removing device '" + deviceAlias + "'...");
+
+        // Detener y desinicializar de forma segura todos los sonidos activos de ESTE device.
+        // No pasan por la cola de limpieza diferida (t_cleanup): al eliminar el device
+        // no tiene sentido esperar al hilo de limpieza, se libera aquí mismo de forma síncrona.
+        {
+            std::lock_guard<std::mutex> soundsLock(device->playing_sounds_mtx);
+            for (auto& [name, snd] : device->playing_sounds) {
+                ma_sound_uninit(&snd->sound);
+                if (snd->hasBuffer)
+                    ma_audio_buffer_uninit(&snd->buffer);
+            }
+            device->playing_sounds.clear();
+        }
+
+        // Eliminar del vector: el destructor de DeviceInstance libera engine/device
+        // automáticamente (initialized == true en este punto)
+        pimpl_->devices.erase(it);
+
+        SYS_INFO("AudioPlayback", "'" + name_ + "': device '" + deviceAlias + "' removed");
+        return true;
+    }
+
+    void AudioPlaybackModule::setCallback_onDeviceResolve(std::function<const void*(std::string&)> cb) {
+        std::lock_guard<std::mutex> lk(onDeviceResolve_mtx_);
+        onDeviceResolve_ = std::move(cb); 
+    }
+
+    void AudioPlaybackModule::clearCallback_onDeviceResolve() {
+        std::lock_guard<std::mutex> lk(onDeviceResolve_mtx_);
+        onDeviceResolve_ = nullptr;
+    }
+
+    bool AudioPlaybackModule::hasCallback_onDeviceResolve() const {
+        std::lock_guard<std::mutex> lk(onDeviceResolve_mtx_);
+        return static_cast<bool>(onDeviceResolve_);
+    }
+
+
     // Ejecución ----------------------------------------------------------------------------
 
+    // REVISAR, SI ALIAS = "", APAGAR EN TODOS LOS DISPOSITIVOS
     void AudioPlaybackModule::stop(
-        std::string const& audioName, 
-        bool force,
-        unsigned int fadeOutMs,
-        unsigned int pitchOutMs )
+        std::string const&  audioName, 
+        std::string const&  deviceAlias, 
+        bool                force,
+        unsigned int        fadeOutMs,
+        unsigned int        pitchOutMs )
     {
+        // Resolver el dispositivo por alias
+        Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
+        if (!device) {
+            SYS_WARN("PlaybackModule", "stop: device alias '" + deviceAlias + "' not found/initialized");
+            return;
+        }
+
         // Info
         std::string stopType = (force) ? "forced" : "soft";
         SYS_INFO("PlaybackModule", "Commanded " + stopType + " stop to '" + audioName + "'");
 
-        // Buscar el sonido reproduciéndose
-        std::unique_lock<std::mutex> lock(playing_sounds_mtx_);
-        auto it = pimpl_->playing_sounds.find(audioName);
-        if (it == pimpl_->playing_sounds.end()) {
-            SYS_WARN("PlaybackModule","Error stopping audio: '" + audioName + "' not playing");
+        // Buscar el sonido reproduciéndose en el dispositivo seleccionado
+        std::unique_lock<std::mutex> lock(device->playing_sounds_mtx);
+        auto it = device->playing_sounds.find(audioName);
+        if (it == device->playing_sounds.end()) {
+            SYS_WARN("PlaybackModule","Error stopping audio: '" + audioName + "' not playing on '" + deviceAlias + "'");
             return;
         }
 
@@ -182,13 +350,13 @@
         if (fadeOutMs == 0 && pitchOutMs == 0) {
 
             // Si LoopMode activo, desactivar loop y dejar que acabe (lo gestiona el callback)
-            if(inst->loopMode) {
+            if (inst->loopMode) {
                 ma_sound_set_looping(&inst->sound, MA_FALSE);
                 inst->loopMode = false;
             }
     
             // Si forceStop de la instancia o param force activo, cortar inmediatamente
-            if(inst->forceStop || force) {
+            if (inst->forceStop || force) {
 
                 // Anulación de callback para evitar que miniaudio limpie duplicado al hacer stop
                 ma_sound_set_end_callback(&inst->sound, nullptr, nullptr);
@@ -197,7 +365,7 @@
                 lock.unlock();
 
                 // Manda el sonido a limpiar
-                stop_and_send_to_cleanup(&inst->sound);
+                stop_and_send_to_cleanup(&inst->sound, device);
                 SYS_INFO("PlaybackModule","'" + audioName + "': stop forced");
             }
 
@@ -212,7 +380,7 @@
         // Gestión de parada solo con fadeOut (mantendría loop si tuviera)
         if (fadeOutMs > 0) {
             SYS_INFO("PlaybackModule", "'" + audioName + "': fadeOut stop initiated");
-            start_fadeout_thread(audioName, &inst->sound, fadeOutMs);
+            start_fadeout_thread(audioName, device, &inst->sound, fadeOutMs);
         }
 
         // Gestión de parada con pitchOut (hilo manual)
@@ -220,6 +388,7 @@
             SYS_INFO("PlaybackModule", "'" + audioName + "': pitchOut stop initiated");
             start_pitchout_thread(
                 audioName, 
+                device,
                 &inst->sound, 
                 pitchOutMs, 
                 ma_sound_get_pitch(&inst->sound),   // toma el pìtch aquí bajo mutex
@@ -229,58 +398,84 @@
         }
     }
 
-    void AudioPlaybackModule::setVolume(std::string const& audioName, unsigned short volume) {
-        std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
+    void AudioPlaybackModule::setVolume(
+        std::string const&  audioName, 
+        unsigned short      volume, 
+        std::string const&  deviceAlias)
+    {
+        // Localizar instancia de dispositivo por alias
+        Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
+        if (!device) {
+            SYS_WARN("PlaybackModule", "setVolume: device alias '" + deviceAlias + "' not found/initialized");
+            return;
+        }
 
-        float volume_normalized = static_cast<float>(volume)/100;
+        // Proteger lista de sonidos en reproducción
+        std::lock_guard<std::mutex> lock(device->playing_sounds_mtx);
 
-        auto it = pimpl_->playing_sounds.find(audioName);
-        if (it != pimpl_->playing_sounds.end()) {
-            SYS_INFO("PlaybackModule","'" + audioName + "' volume changed: " + std::to_string((int)volume) + "/100");
+        // Normalizar volumen al rango de miniaudio (max=1.0f)
+        float volume_normalized = static_cast<float>(volume) / 100;
+
+        // Establecer el volumen del audio en reproducción
+        auto it = device->playing_sounds.find(audioName);
+        if (it != device->playing_sounds.end()) {
+            SYS_INFO("PlaybackModule","'" + audioName + "' volume changed: " + std::to_string((int)volume) + "/100 on '" + deviceAlias + "'");
             ma_sound_set_volume(&it->second->sound, volume_normalized);
         }
-        else SYS_WARN("PlaybackModule", "Change volume fail: '" + audioName + "' not found");
+        else SYS_WARN("PlaybackModule", "Change volume fail: '" + audioName + "' not found on '" + deviceAlias + "'");
     }
 
     void AudioPlaybackModule::setModuleVolume(unsigned short volume) {
 
         // Limitar el volumen global entre 0 y 100
-        globalVol_ = (volume < 100) ? volume : 100;
+        globalVol_ = (volume < 100) ? volume : (unsigned short)100;
 
-        // Proteger la lista de sonidos activos con el mutex del módulo
-        std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
-
-        // Actualizar los sonidos en reproducción utilizando su volumen base
-        float finalVolume = 0;
+        // Normalizar a rango de miniaudio (max = 1.0f)
         float globalFactor = static_cast<float>(globalVol_) / 100.0f;
-        for (auto& [id, inst] : pimpl_->playing_sounds) {
-            // inst->volume está en 0-100: normalizar antes de aplicar el factor global (0.0-1.0)
-            finalVolume = (static_cast<float>(inst->volume) / 100.0f) * globalFactor;
-            ma_sound_set_volume(&inst->sound, finalVolume);
+
+        // Iterar por cada dispositivo registrado
+        for (auto& device : pimpl_->devices) {
+            if (!device) continue;
+
+            // Proteger la lista de sonidos activos de este dispositivo específico
+            std::lock_guard<std::mutex> soundsLock(device->playing_sounds_mtx);
+
+            // Recorrer audios y modificar volumen
+            for (auto& [id, inst] : device->playing_sounds) {
+                if (inst) {
+                    float finalVolume = (static_cast<float>(inst->volume) / 100.0f) * globalFactor;
+                    ma_sound_set_volume(&inst->sound, finalVolume);
+                }
+            }
         }
     }
 
-    void AudioPlaybackModule::setPitch(std::string const& audioName, float pitch) {
-        std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
+    void AudioPlaybackModule::setPitch(
+        std::string const&  audioName, 
+        float               pitch, 
+        std::string const&  deviceAlias) 
+    {
+        // Localizar instancia de dispositivo por alias
+        Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
+        if (!device) {
+            SYS_WARN("PlaybackModule", "setVolume: device alias '" + deviceAlias + "' not found/initialized");
+            return;
+        }
 
-        auto it = pimpl_->playing_sounds.find(audioName);
-        if (it != pimpl_->playing_sounds.end()) {
+        // Proteger lista de sonidos en reproducción
+        std::lock_guard<std::mutex> lock(device->playing_sounds_mtx);
+
+        // Establecer el pitch del audio en reproducción
+        auto it = device->playing_sounds.find(audioName);
+        if (it != device->playing_sounds.end()) {
             SYS_INFO("PlaybackModule","'" + audioName + "': pitch changed:" + std::to_string(pitch));
             ma_sound_set_pitch(&it->second->sound, pitch);
         }
         else SYS_WARN("PlaybackModule", "Change pitch fail: '" + audioName + "' not found");
     }
 
-    void AudioPlaybackModule::setSelectedChannel(unsigned short channel){
-        selectedChannel_ = channel; 
-    }
-
 
     // Parámetros del módulo ----------------------------------------------------------------
-
-    std::string AudioPlaybackModule::getDeviceName() const {
-        return pimpl_->device_info.name;
-    }
 
     std::string AudioPlaybackModule::getModuleName() const {
         return name_;
@@ -288,21 +483,6 @@
 
     unsigned short AudioPlaybackModule::getModuleVolume() const {
         return globalVol_;
-    }
-
-    bool AudioPlaybackModule::isPlaying(std::string const& audioName) const {
-        std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
-
-        // Si no hay nombre, devuelve si la lista de sonidos en reproducción está vacía
-        if(audioName.empty()) 
-            return !pimpl_->playing_sounds.empty();
-
-        // si hay nombre, busca si ese nombre está en la lista de sonidos en reproducción
-        auto it = pimpl_->playing_sounds.find(audioName);
-        if (it == pimpl_->playing_sounds.end())
-            return false;
-
-        return ma_sound_is_playing(&it->second->sound);
     }
 
 
@@ -314,7 +494,7 @@
     ) :
         pimpl_(std::move(customImpl)),
         initialized_(false),
-        running_(false),
+        threads_running_(false),
         name_(moduleName),
         globalVol_(100),
         selectedChannel_(0),
@@ -331,16 +511,16 @@
         std::unique_ptr<Impl::SoundInstance> instanceToClean = nullptr;
 
         // Bucle de mientras haya sonidos pendientes de desinicializar
-        while ( running_ || !pimpl_->cleanup_queue.empty()) {
+        while ( threads_running_ || !pimpl_->cleanup_queue.empty()) {
 
             std::unique_lock<std::mutex> lock(cleanup_mtx_);
             // Esperar hasta que haya un sonido en cola o se ordene apagar
             cleanup_cv_.wait(lock, [this]() {
-                return !pimpl_->cleanup_queue.empty() || !running_;
+                return !pimpl_->cleanup_queue.empty() || !threads_running_;
             });
 
             // Si se ordenó apagar y ya no quedan sonidos por limpiar, salir del bucle
-            if (!running_ && pimpl_->cleanup_queue.empty())
+            if (!threads_running_ && pimpl_->cleanup_queue.empty())
                 break;
 
             // Extraer el sonido de la cola
@@ -358,7 +538,7 @@
                 ma_sound_uninit(&instanceToClean->sound);
 
                 // Si venía de un buffer generado (ej. morse), liberar también ese buffer
-                if (instanceToClean->isBuffer)
+                if (instanceToClean->hasBuffer)
                     ma_audio_buffer_uninit(&instanceToClean->buffer);
 
                 // Al llegar al final de este bloque, instanceToClean se destruye automáticamente
@@ -367,24 +547,28 @@
         }
     }
 
-    void AudioPlaybackModule::stop_and_send_to_cleanup(void* sound) {
+    void AudioPlaybackModule::stop_and_send_to_cleanup(void* sound, void* deviceAlias) {
+        // Obtener el sonido en su tipo ma_audio
         ma_sound* maSound = static_cast<ma_sound*>(sound);
+
+        // Obtener el dispositivo en su tipo DeviceInstance
+        Impl::DeviceInstance* devInst = static_cast<Impl::DeviceInstance*>(deviceAlias);
 
         // Parar el sonido
         ma_sound_stop(maSound);
 
         // Proteger la lista PlayingSounds
-        std::lock_guard<std::mutex> lock(playing_sounds_mtx_);
+        std::lock_guard<std::mutex> lock(devInst->playing_sounds_mtx);
 
         // Buscar la clave del sonido que ha terminado
-        for (auto it = pimpl_->playing_sounds.begin(); it != pimpl_->playing_sounds.end(); ++it) {
+        for (auto it = devInst->playing_sounds.begin(); it != devInst->playing_sounds.end(); ++it) {
             if (&it->second->sound == maSound) {
 
                 // Notificar que el audio ha terminado
                 SYS_INFO("PlaybackModule", "'" + it->second->name + "': audio finished");
 
                 // Extraer el nodo del mapa sin destruir la memoria del unique_ptr
-                auto node = pimpl_->playing_sounds.extract(it);
+                auto node = devInst->playing_sounds.extract(it);
 
                 // Mover la propiedad de la instancia a la cola de limpieza
                 {
@@ -409,7 +593,7 @@
             pimpl_->cleanup_queue.pop();
             if (instanceToClean) {
                 ma_sound_uninit(&instanceToClean->sound);
-                if (instanceToClean->isBuffer)
+                if (instanceToClean->hasBuffer)
                     ma_audio_buffer_uninit(&instanceToClean->buffer);
             }
         }
@@ -420,12 +604,15 @@
 
     void AudioPlaybackModule::start_fadeout_thread(
         std::string const&  audioName,
+        void*               deviceAlias,
         void*               soundPtr,
         unsigned int        totalTransitionMs)
     {
-
         // Obtener el sonido en su tipo ma_audio
         ma_sound* sound = static_cast<ma_sound*>(soundPtr);
+
+        // Obtener el dispositivo en su tipo DeviceInstance
+        Impl::DeviceInstance* devInst = static_cast<Impl::DeviceInstance*>(deviceAlias);
 
         // Activar el fadeout de miniaudio
         ma_sound_set_fade_in_milliseconds(
@@ -435,25 +622,27 @@
         active_fadeouts_threads_++;
 
         // Iniciar un hilo para gestionar la limpieza del sonido cuando acaba el fadeout
-        std::thread([this, audioName, sound, totalTransitionMs]() {
+        std::thread([this, audioName, devInst, sound, totalTransitionMs]() {
             struct ThreadGuard {
                 AudioPlaybackModule* module;
                 ~ThreadGuard() {
                     module->active_fadeouts_threads_--;
-                    module->pitch_threads_cv_.notify_all();
+                    module->fadeout_threads_cv_.notify_all();
                 }
             } guard{this};
 
             // Esperar el tiempo exacto del fadeout
             std::this_thread::sleep_for(std::chrono::milliseconds(totalTransitionMs));
 
-            if (!running_) return;
+            // Comprobar si los hilos deben seguir corriendo
+            if (!threads_running_) return;
 
-            std::unique_lock<std::mutex> asyncLock(playing_sounds_mtx_);
+            // Proteger lista de sonidos en reproducción
+            std::unique_lock<std::mutex> asyncLock(devInst->playing_sounds_mtx);
 
             // Verificar que el sonido no haya sido destruido durante el sleep
-            auto it = pimpl_->playing_sounds.find(audioName);
-            if (it != pimpl_->playing_sounds.end() && &it->second->sound == sound) {
+            auto it = devInst->playing_sounds.find(audioName);
+            if (it != devInst->playing_sounds.end() && &it->second->sound == sound) {
                 
                 // Quitar loop y anular callback para evitar invocaciones duplicadas
                 ma_sound_set_looping(sound, MA_FALSE);
@@ -464,29 +653,34 @@
                 asyncLock.unlock();
 
                 // Parar y enviar a limpiar
-                stop_and_send_to_cleanup(sound);
+                stop_and_send_to_cleanup(sound, devInst);
             }
         }).detach();
     }
 
     void AudioPlaybackModule::start_pitchout_thread(
-        std::string const& audioName,
-        void* soundPtr,
-        unsigned int totalTransitionMs,
-        float startPitch,
-        bool cleanup)
+        std::string const&  audioName,
+        void*               deviceAlias,
+        void*               soundPtr,
+        unsigned int        totalTransitionMs,
+        float               startPitch,
+        bool                cleanup)
     {
         // Incrementar el contador de hilos activos antes de lanzar
         active_fadeouts_threads_++;
 
-        std::thread([this, audioName, soundPtr, totalTransitionMs, startPitch, cleanup]() {
+        // Obtener el dispositivo en su tipo DeviceInstance
+        Impl::DeviceInstance* devInst = static_cast<Impl::DeviceInstance*>(deviceAlias);
+
+        // Iniciar un hilo para gestionar la limpieza del sonido cuando acaba el fadeout
+        std::thread([this, audioName, devInst, soundPtr, totalTransitionMs, startPitch, cleanup]() {
 
             // Estructura lambda para decrementar el contador de hilos al salir siempre (RAII)
             struct ThreadGuard {
                 AudioPlaybackModule* module;
                 ~ThreadGuard() {
                     module->active_fadeouts_threads_--;
-                    module->pitch_threads_cv_.notify_all(); // Avisar a close() si está esperando
+                    module->fadeout_threads_cv_.notify_all(); // Avisar a close() si está esperando
                 }
             } guard{this};
             
@@ -503,7 +697,7 @@
             while (elapsedTime < totalTransitionMs) {
 
                 // Abortar si se está cerrando (antes de esperar)
-                if (!running_)
+                if (!threads_running_)
                     return;
 
                 // Esperar el tiempo entre bajadas de pitch
@@ -511,15 +705,15 @@
                 elapsedTime += stepMs;
 
                 // Abortar si se está cerrando (después de esperar)
-                if (!running_)
+                if (!threads_running_)
                     return;
 
                 // Proteger la lista de playingSounds
-                std::lock_guard<std::mutex> asyncLock(playing_sounds_mtx_);
+                std::lock_guard<std::mutex> asyncLock(devInst->playing_sounds_mtx);
 
                 // Comprobar si el sonido aún existe (pudo haber sido limpiado por endCallback u otro evento)
-                auto itAsync = pimpl_->playing_sounds.find(audioName);
-                if (itAsync == pimpl_->playing_sounds.end() || &itAsync->second->sound != sound) {
+                auto itAsync = devInst->playing_sounds.find(audioName);
+                if (itAsync == devInst->playing_sounds.end() || &itAsync->second->sound != sound) {
                     return;
                 }
 
@@ -529,19 +723,19 @@
                 ma_sound_set_pitch(sound, std::max(0.01f, currentPitch));
             }
 
+            // Info
             SYS_INFO("PlaybackModule", "'" + audioName + "': pitchout stop complete");
-
 
             // Comprobar si este hilo se encarga de limpiar el audio
             if (!cleanup)
                 return;
 
             // Proteger la lista de playingSounds
-            std::unique_lock<std::mutex> asyncLock(playing_sounds_mtx_);
+            std::unique_lock<std::mutex> asyncLock(devInst->playing_sounds_mtx);
 
             // Comprobar si el sonido aún existe
-            auto itAsync = pimpl_->playing_sounds.find(audioName);
-            if (itAsync != pimpl_->playing_sounds.end() && &itAsync->second->sound == sound) {
+            auto itAsync = devInst->playing_sounds.find(audioName);
+            if (itAsync != devInst->playing_sounds.end() && &itAsync->second->sound == sound) {
 
                 // Apagar el modo loop (opcional)
                 ma_sound_set_looping(sound, MA_FALSE);
@@ -554,7 +748,7 @@
                 asyncLock.unlock();
 
                 // Parar y enviar a limpiar
-                stop_and_send_to_cleanup(sound);
+                stop_and_send_to_cleanup(sound, devInst);
             }
         }).detach();
     }

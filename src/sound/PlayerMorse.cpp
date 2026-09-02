@@ -10,8 +10,8 @@
     #include <cmath>
 
 
-    PlayerMorse::PlayerMorse(std::string const& moduleName, void* ctx, const void* device_info) :
-        AudioPlaybackModule(moduleName, ctx, device_info),
+    PlayerMorse::PlayerMorse(std::string const& moduleName, void* ctx) :
+        AudioPlaybackModule(moduleName, ctx),
         frequency_Hz_(1350),
         punto_ms_(100),
         raya_ms_(300),
@@ -27,13 +27,23 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool PlayerMorse::playMorse(
-        std::string const& texto,
-        std::string const& audioName,
-        unsigned short     volume,
-        bool               loop) 
+        std::string const&  texto,
+        std::string const&  audioName,
+        std::string const&  deviceAlias,
+        unsigned short      volume,   
+        bool                loop,     
+        bool                forceStop,
+        unsigned short      pitch)
     {
         if (!initialized_)
             return false;
+
+        // Resolver el dispositivo de playback por su alias
+        Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
+        if (!device) {
+            SYS_WARN("AudioPlaybackModule", "playMorse: device alias '" + deviceAlias + "' not found/initialized");
+            return false;
+        }
 
         // Establecer el nombre id de este audio (el mismo texto de morse si no tiene)
         std::string usedName = audioName.empty() ? texto : audioName;
@@ -63,10 +73,10 @@
             SYS_WARN("AudioPlaybackModule", "playMorse: fallo al crear el buffer de audio");
             return false; 
         }
-        inst->isBuffer = true; 
+        inst->hasBuffer = true; 
 
-        // Envolver el buffer como un sonido reproducible por el motor
-        if (ma_sound_init_from_data_source(&pimpl_->engine, &inst->buffer, 0, nullptr, &inst->sound) !=MA_SUCCESS){
+        // Envolver el buffer como un sonido reproducible por el motor seleccionado
+        if (ma_sound_init_from_data_source(&device->engine, &inst->buffer, 0, nullptr, &inst->sound) != MA_SUCCESS) {
             ma_audio_buffer_uninit(&inst->buffer);
             SYS_WARN("AudioPlaybackModule", "playMorse: fallo al inicializar el sonido");
             return false; 
@@ -75,24 +85,21 @@
         //Establecer parámetros de la reproducción
         ma_sound_set_volume(&inst->sound, static_cast<float>(volume) / 100.0f);
         ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE :MA_FALSE);
-        float pan = (selectedChannel_ == 1) ? -1.0f : (selectedChannel_ == 2) ? 1.0f : 0.0f;
-        ma_sound_set_pan(&inst->sound, pan);
 
-
-        // Vincluar el fin de la reproducción al endCallback
+        // Vincular el fin de la reproducción al endCallback
         ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
 
         //Guardar parámetros en la instancia de sonido
         inst->loopMode = loop;
         inst->name     = usedName; 
 
-        // Guardar en el mapa y reproducir
+        // Guardar en el mapa del device seleccionado y reproducir
         {
-            std::lock_guard<std::mutex> soundsLock(playing_sounds_mtx_);
-            pimpl_->playing_sounds[usedName] = std::move(inst);
+            std::lock_guard<std::mutex> soundsLock(device->playing_sounds_mtx);
+            device->playing_sounds[usedName] = std::move(inst);
 
-            SYS_INFO("PlaybackModule","'" + usedName + "': init playing morse...");
-            ma_sound_start(&pimpl_->playing_sounds[usedName]->sound);
+            SYS_INFO("PlaybackModule","'" + usedName + "': init playing morse on '" + deviceAlias + "'...");
+            ma_sound_start(&device->playing_sounds[usedName]->sound);
         }
 
         return true;
@@ -127,14 +134,6 @@
     
     void PlayerMorse::setSampleRate(unsigned int hz) {
         sampleRate_ = hz;
-    }
-
-    void PlayerMorse::setNombre(std::string const& nombre) {
-        nombre_ = nombre;
-    }
-
-    std::string PlayerMorse::getNombre() const {
-        return nombre_;
     }
 
 

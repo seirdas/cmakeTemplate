@@ -913,7 +913,7 @@
 		PopItemWidth();
 		SameLine();
 		if (Button("+ Add player##ttsAdd", ImVec2(180, 36)) && ttsNewName[0] != '\0') {
-			snd->addPlayerTTS(nullptr, ttsNewName, "");
+			snd->addPlayerTTS(nullptr, ttsNewName);
 			ttsNewName[0] = '\0';
 		}
 
@@ -1014,7 +1014,7 @@
 				PushID(i);
 
 				// Obtener el dispositivo de captura
-				acm = snd->getCapture(captureName);
+				acm = snd->getCaptureModule(captureName);
 
 				if (!acm) {
 					PopID();
@@ -1026,7 +1026,7 @@
 					TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
 					SameLine();
 					if (SmallButton("x"))
-						snd->removeCaptureDevice(captureName);
+						snd->removeCaptureModule(captureName);
 
 
 				} else {
@@ -1040,7 +1040,7 @@
 						acm->StopRec();
 					SameLine();
 					if (SmallButton("x"))
-						snd->removeCaptureDevice(captureName);
+						snd->removeCaptureModule(captureName);
 
 
 					SameLine();
@@ -1113,7 +1113,7 @@
 				} else {
 					for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 						if (Selectable(entradas[n].c_str())) {
-							snd->addCaptureDevice(nullptr, entradas[n], entradas[n]);
+							snd->addCaptureModule(nullptr, entradas[n]);
 							show_device_selector = false;               // Cierra el popup
 						}
 					}
@@ -1272,7 +1272,7 @@
 		PopItemWidth();
 		SameLine();
 		if (Button("+ Add player##audioAdd", ImVec2(180, 36)) && audioNewName[0] != '\0') {
-			snd->addPlayerAudio(nullptr, audioNewName, "");
+			snd->addPlayerAudio(nullptr, audioNewName);
 			audioNewName[0] = '\0';
 		}
 
@@ -1599,7 +1599,7 @@
 							PushID(i);
 
 							// Obtener el dispositivo de captura
-							acm = snd->getCapture(captureName);
+							acm = snd->getCaptureModule(captureName);
 
 							if (!acm)
 								continue;
@@ -1609,7 +1609,7 @@
 								TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
 								SameLine();
 								if (SmallButton("x")) 
-									snd->removeCaptureDevice(captureName);
+									snd->removeCaptureModule(captureName);
 								
 								
 							} else {
@@ -1623,7 +1623,7 @@
 									acm->StopRec();
 								SameLine();
 								if (SmallButton("x"))
-									snd->removeCaptureDevice(captureName);
+									snd->removeCaptureModule(captureName);
 								
 	
 								SameLine();
@@ -1696,7 +1696,7 @@
 							} else {
 								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
 									if (Selectable(entradas[n].c_str())) {
-										snd->addCaptureDevice(nullptr, entradas[n], entradas[n]);
+										snd->addCaptureModule(nullptr, entradas[n], entradas[n]);
 										show_device_selector = false;               // Cierra el popup
 									}
 								}

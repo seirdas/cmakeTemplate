@@ -15,9 +15,8 @@ public:
      * @brief Constructor del módulo.
      *  Utiliza el constructor de la clase padre
      * @param ctx (ma_context*) Contexto de mini audio.
-     * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
-    PlayerAudio(std::string const& moduleName, void* ctx, const void* device_info);
+    PlayerAudio(std::string const& moduleName, void* ctx);
 
     /**
      * @brief Destructor del módulo
@@ -25,11 +24,9 @@ public:
      */
     ~PlayerAudio() override = default;
 
-    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
-    PlayerAudio(PlayerAudio const&) = delete;
-    PlayerAudio& operator=(PlayerAudio const&) = delete;
-
-    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    // Sin copia ni movimiento
+    PlayerAudio(const PlayerAudio&) = delete;
+    PlayerAudio& operator=(const PlayerAudio&) = delete;
     PlayerAudio(PlayerAudio&&) = delete;
     PlayerAudio& operator=(PlayerAudio&&) = delete;
 
@@ -43,10 +40,7 @@ public:
      * @param playbackName Nombre asignado a este módulo
      * @return true si se inicia correctamente, false en caso contrario.
      */
-    bool init(
-        void*               config          = nullptr, 
-        std::string const&  playbackName    = ""
-    ) override;
+    bool init(void* config = nullptr) override;
 
     /**
      * @brief Añade a la liberación de recursos las cosas específicas de este módulo
@@ -60,45 +54,20 @@ public:
     /**
      * @brief Reproduce un archivo de audio con las configuraciones especificadas.
      * @param filepath Ruta del archivo de audio.
-     * @param volume Volumen del sonido (0 a 100)
-     * @param loop Modo de repetición
-     * @param forceStop Fuerza la parada si se desactiva (de lo contrario, deja terminar el wav)
-     * @param pitch Tono del sonido (0.0f - )
-     * @return Un identificador único para la instancia del sonido
+     * @param deviceAlias Alias del dispositivo por el que reproducir.
+     * @param volume Volumen del sonido (0 a 100).
+     * @param loop Modo de repetición.
+     * @param forceStop Si activado, fuerza la parada (de lo contrario, deja terminar el audio).
+     * @param pitch Tono del sonido (default 1.0f).
      */
     void playAudio(
         const std::string&  filepath,
-        unsigned short      volume = 100,
-        bool                loop = false,
-        bool                forceStop = false,
-        unsigned short      pitch = 1
+        const std::string&  deviceAlias = "",
+        unsigned short      volume      = 100,
+        bool                loop        = false,
+        bool                forceStop   = false,
+        unsigned short      pitch       = 1
     );
-
-    /**
-     * @brief Reproduce un archivo de audio buscándolo por nombre dentro de la carpeta
-     *  configurada para este playback (ver @p audioFolder del constructor).
-     * @param filename Nombre del archivo (ej. "ding.wav"), sin ruta.
-     * @param volume Volumen del sonido (0 a 100)
-     * @param loop Modo de repetición
-     * @param forceStop Fuerza la parada si se desactiva (de lo contrario, deja terminar el wav)
-     * @param pitch Tono del sonido ( 1.0f = "normal" )
-     */
-    void playFromFolder(
-        std::string const&  filename,
-        unsigned short      volume,
-        bool                loop,
-        bool                forceStop,
-        unsigned short      pitch
-    );
-
-
-// Parámetros del módulo ----------------------------------------------------------------
-
-    /**
-     * @brief Establece la ruta de la carpeta de audios de este módulo
-     * @param audioFolder Ruta de la carpeta de audios
-     */
-    void setAudioFolder(std::string const& audioFolder);
 
 
 private:

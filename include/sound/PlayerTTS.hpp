@@ -20,9 +20,8 @@ public:
      * @brief Constructor del módulo.
      *  Utiliza el constructor de la clase padre
      * @param ctx (ma_context*) Contexto de mini audio.
-     * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
-    PlayerTTS(std::string const& moduleName, void* ctx, const void* device_info);
+    PlayerTTS(std::string const& moduleName, void* ctx);
 
     /**
      * @brief Destructor del módulo.
@@ -30,6 +29,12 @@ public:
      *  recursos de audio de la clase padre.
      */
     ~PlayerTTS() override;
+
+    // Sin copia ni movimiento
+    PlayerTTS(const PlayerTTS&) = delete;
+    PlayerTTS& operator=(const PlayerTTS&) = delete;
+    PlayerTTS(PlayerTTS&&) = delete;
+    PlayerTTS& operator=(PlayerTTS&&) = delete;
 
 
 // Inicialización -----------------------------------------------------------------------
@@ -41,7 +46,7 @@ public:
      * @param playbackName Nombre asignado a este módulo.
      * @return true si se ha iniciado correctamente, false en caso contrario.
      */
-    bool init(void* config = nullptr, std::string const& playbackName = "") override;
+    bool init(void* config = nullptr) override;
 
     /**
      * @brief Detiene el hilo consumidor de textos y cierra el módulo

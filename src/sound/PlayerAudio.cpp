@@ -28,16 +28,16 @@
 
 
         // Añadir constructor para llamar al de la base
-        PlayerAudioImpl(void* ctx, const void* device_info)
-            : AudioPlaybackModule::Impl(ctx, device_info) {}
+        PlayerAudioImpl(void* ctx)
+            : AudioPlaybackModule::Impl(ctx) {}
         
     };
 
 
     // General ------------------------------------------------------------------------------
 
-    PlayerAudio::PlayerAudio(std::string const& moduleName, void* ctx, const void* device_info) :
-        AudioPlaybackModule(moduleName, std::make_unique<PlayerAudioImpl>(ctx, device_info))
+    PlayerAudio::PlayerAudio(std::string const& moduleName, void* ctx) :
+        AudioPlaybackModule(moduleName, std::make_unique<PlayerAudioImpl>(ctx))
     {
         // Añade cosas al Impl de la clase padre
     }
@@ -45,12 +45,9 @@
     
     // Inicialización -----------------------------------------------------------------------
 
-    bool PlayerAudio::init(
-        void*               config, 
-        std::string const&  playbackName)
-    {
+    bool PlayerAudio::init(void* config) {
         // Iniciar el padre y comprobar que lo hace bien
-        if (!AudioPlaybackModule::init(config, playbackName))
+        if (!AudioPlaybackModule::init(config))
             return false;
 
         // Iniciar el hilo del tiempo de vida de la caché de audios
@@ -65,7 +62,7 @@
         PlayerAudioImpl* pimpl_hija = static_cast<PlayerAudioImpl*>(pimpl_.get());
 
        
-        running_ = false;
+        threads_running_ = false;
 
         // Despertar y unir hilo del Reaper de caché
         if (cachereaper_thread_.joinable()) {
@@ -92,6 +89,7 @@
 
         void PlayerAudio::playAudio(
         std::string const&  filepath,
+        const std::string&  deviceAlias,
         unsigned short      volume,
         bool                loop,
         bool                forceStop,
@@ -161,32 +159,6 @@
         }
     }
 
-    void PlayerAudio::playFromFolder(
-        std::string const&  filename,
-        unsigned short      volume,
-        bool                loop,
-        bool                forceStop,
-        unsigned short      pitch)
-    {
-        if (audioFolder_.empty()) {
-            SYS_WARN("AudioPlaybackModule", "playFromFolder: audioFolder not defined");
-            return;
-        }
-
-        // Construye la ruta completa a partir de la carpeta configurada y el nombre del archivo
-        std::filesystem::path fullPath = std::filesystem::path(audioFolder_) / filename;
-
-        // Reproducir
-        playAudio(fullPath.string(), volume, loop, forceStop, pitch);
-    }
-
-
-    // Parámetros del módulo ----------------------------------------------------------------
-
-    void PlayerAudio::setAudioFolder(std::string const& audioFolder) {
-        audioFolder_ = audioFolder;
-    }
-
     
     // Caché --------------------------------------------------------------------------------
     
@@ -251,15 +223,15 @@
         // Mutex del reaper (se desbloquea en el wait_for)
         std::unique_lock<std::mutex> lock(cachereaper_mtx_);
 
-        while (running_) {
+        while (threads_running_) {
 
             // Espera hasta: cierre, haya algo que vigilar
             cachereaper_cv_.wait_for(lock, poll_interval, [this] {
-                return !running_;
+                return !threads_running_;
             });
 
             // Salir si no está activo el módulo (se está cerrando)
-            if (!running_) break;
+            if (!threads_running_) break;
 
             /* #TODO */
 

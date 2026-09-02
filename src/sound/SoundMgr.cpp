@@ -144,7 +144,7 @@
                 continue;
             }
 
-            addCaptureDevice(node, name);
+            addCaptureModule(node, name);
         }
 
         /* PLAYBACKS */
@@ -291,7 +291,7 @@
         if (defDevice.empty()) return false;
 
         // Añade el nuevo dispositivo playback
-        addPlayerAudio(nullptr, "playbackTest", defDevice);
+        addPlayerAudio(nullptr, "playbackTest");
 
         // Confirma que se ha agregado bien
         auto it = playersAudios_.find("playbackTest");
@@ -301,18 +301,17 @@
         // puntero al APM que acabamos de meter
         PlayerAudio* pm = getPlayerAudio("playbackTest");
         SYS_INFO("SoundMgr", "Testing module: '"
-            + pm->getModuleName() + "' ("
             + pm->getDeviceName() + ")");
 
         /* reproducir */
-        pm->playAudio("audio/ding.mp3", 100, true);
+        pm->playAudio("audio/ding.mp3", "", 100, true);
         pm->playAudio("audio/cat.mp3");
 
         SYS_INFO("SoundMgr", "Sleep for 500ms...");
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         // /* modificar mientras reproduce */
-        pm->setVolume("audio/cat.mp3", 40);
+        pm->setVolume("audio/cat.mp3", "", 40);
         std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         pm->setVolume("click", 30);
         pm->setPitch("audio/cat.mp3", 1.7f);
@@ -337,20 +336,19 @@
 
     // Módulos de Captura -------------------------------------------------------------------
 
-    bool SoundMgr::addCaptureDevice(
+    bool SoundMgr::addCaptureModule(
         void*               config,
-        std::string const&  moduleName, 
-        std::string const&  deviceName) 
+        std::string const&  moduleName) 
     {
         SYS_INFO("SoundMgr","Adding new Capture module...");
-        bool res = add_module(config, moduleName, deviceName, captures_, true);
+        bool res = add_module(config, moduleName, captures_, true);
 
         // Comprobar que se ha añadido bien
         if (!res)
             return false;
 
         // Le pasa los parámetros globales del suavizado de valores
-        AudioCaptureModule* acm = getCapture(moduleName);
+        AudioCaptureModule* acm = getCaptureModule(moduleName);
         acm->enableSmoothedValues(enabledSmoothedValues_);
         acm->setSmoothAttackCoeff(attackCoeff_);
         acm->setSmoothReleaseCoeff(releaseCoeff_);
@@ -358,11 +356,11 @@
         return res; //<- true
     }
 
-    bool SoundMgr::removeCaptureDevice(std::string const& moduleName) {
+    bool SoundMgr::removeCaptureModule(std::string const& moduleName) {
         return remove_module(moduleName, captures_);
     }
 
-    AudioCaptureModule* SoundMgr::getCapture(std::string moduleName) const {
+    AudioCaptureModule* SoundMgr::getCaptureModule(std::string moduleName) const {
         auto it = captures_.find(moduleName);
         return (it != captures_.end() && it->second) ? it->second.get() : nullptr;
     }
@@ -379,11 +377,10 @@
 
     bool SoundMgr::addPlayerAudio(
         void*               config,
-        std::string const&  moduleName, 
-        std::string const&  deviceName)
+        std::string const&  moduleName)
     {
         SYS_INFO("SoundMgr","Adding new PlayerAudio module...");
-        return add_module(config, moduleName, deviceName, playersAudios_, false);
+        return add_module(config, moduleName, playersAudios_, false);
     }
 
     bool SoundMgr::removePlayerAudio(std::string const& moduleName) {
@@ -407,11 +404,10 @@
 
     bool SoundMgr::addPlayerMorse(
         void* config,
-        std::string const& moduleName,
-        std::string const& deviceName) 
+        std::string const& moduleName) 
     {
         SYS_INFO("SoundMgr","Adding new PlayerMorse module...");
-        return add_module(config, moduleName, deviceName, playersMorse_, false);
+        return add_module(config, moduleName, playersMorse_, false);
     }
 
     bool SoundMgr::removePlayerMorse(std::string const& moduleName) {
@@ -435,11 +431,10 @@
 
     bool SoundMgr::addPlayerTTS(
         void* config,
-        std::string const& moduleName,
-        std::string const& deviceName) 
+        std::string const& moduleName) 
     {
         SYS_INFO("SoundMgr","Adding new PlayerTTS module...");
-        bool res = add_module(config, moduleName, deviceName, playersTTS_, false);
+        bool res = add_module(config, moduleName, playersTTS_, false);
 
         // Comprobar que se ha añadido bien
         if (!res)
@@ -619,7 +614,6 @@
     bool SoundMgr::add_module(
         void*               config, 
         std::string const&  moduleName, 
-        std::string const&  deviceName, 
         MapT&               map,
         bool                isCapture) 
     {
@@ -650,43 +644,6 @@
             if (usedModuleName.empty())
                 usedModuleName = "MODULE#" + std::to_string(rand());
         }
-        
-        // Nombre a usar para el dispositivo
-        std::string usedDeviceName;
-        {
-            // Intentar obtener nombre del parametro (predominante)
-            usedDeviceName = deviceName;
-
-            // Si se queda vacío, intentar obtener nombre de la config
-            if (usedDeviceName.empty() && config)
-                jsonMgr.get(cfg, "device", usedDeviceName);
-            
-            // Si se queda vacío, fallback a default si habilitado
-            if (usedDeviceName.empty() && fallbackToDefault_) {
-                SYS_INFO("SoundMgr","Device name not specified: fallback to default");
-                usedDeviceName = isCapture ? getDefaultCaptureDevice() : getDefaultPlaybackDevice();
-            }
-            
-            // Si se queda vacío, salir
-            if (usedDeviceName.empty()) {
-                SYS_WARN("SoundMgr","Cannot obtain device name");
-                return false;
-            }
-        }
-
-        // Obtiene la información del dispositivo (ma_device_info)
-        /* (Sobreescribe la variable realDeviceName por el nombre real) */
-        std::string realDeviceName = usedDeviceName;
-        const ma_device_info* selectedDeviceInfo = 
-            static_cast<const ma_device_info*>(get_device_info(realDeviceName, isCapture));
-        if (!selectedDeviceInfo) {
-            SYS_WARN("SoundMgr", "Failed to find device: '" + usedDeviceName + "'");
-            return false;
-        }
-
-        // Corrige la config con el nombre real completo del dispositivo encontrado
-        if (config) 
-            jsonMgr.set(static_cast<json*>(config), "device", realDeviceName);
 
         // Usar el tipo guardado en el std::unique_ptr del mapa
         using ModuleType = typename MapT::mapped_type::element_type;
@@ -695,8 +652,7 @@
         SYS_INFO("SoundMgr", "Creating new module: " + usedModuleName);
         std::unique_ptr<ModuleType> module = std::make_unique<ModuleType>(
             usedModuleName,
-            &pimpl_->snd_context_,
-            selectedDeviceInfo
+            &pimpl_->snd_context_
         );
 
         // Intentar inicializar
@@ -710,7 +666,10 @@
         // Guardar en el mapa correspondiente del parámetro
         SYS_INFO("SoundMgr", "Adding module to map...");
         map[usedModuleName] = std::move(module);
-        SYS_INFO("SoundMgr", "New module added: '" + usedModuleName + "' (" + realDeviceName + ")");
+
+        // Info
+        std::string type = isCapture ? "(capture)" : "(playback)";
+        SYS_INFO("SoundMgr", "New module added: '" + usedModuleName + "' " + type);
 
         // Notificar a observadores
         notify();
@@ -793,9 +752,9 @@
     bool SoundMgr::playbackTest()                           { return false; }
 
     // Módulos de Captura -------------------------------------------------------------------
-    bool SoundMgr::addCaptureDevice(void*, std::string const&, std::string const&) { return false; }
-    bool SoundMgr::removeCaptureDevice(std::string const&) { return false; }
-    AudioCaptureModule* SoundMgr::getCapture(std::string) const { return nullptr; }
+    bool SoundMgr::addCaptureModule(void*, std::string const&, std::string const&) { return false; }
+    bool SoundMgr::removeCaptureModule(std::string const&) { return false; }
+    AudioCaptureModule* SoundMgr::getCaptureModule(std::string) const { return nullptr; }
     std::vector<std::string> SoundMgr::getCaptureModuleNames() const { return {}; }
 
     // Módulos PlayerAudio ------------------------------------------------------------------

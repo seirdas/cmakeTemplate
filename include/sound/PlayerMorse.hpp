@@ -14,9 +14,8 @@ public:
      * @brief Constructor del módulo.
      *  Utiliza el constructor de la clase padre
      * @param ctx (ma_context*) Contexto de mini audio.
-     * @param device_info (ma_device_info*) Información del dispositivo de audio.
      */
-    PlayerMorse(std::string const& moduleName, void* ctx, const void* device_info);
+    PlayerMorse(std::string const& moduleName, void* ctx);
 
     /**
      * @brief Destructor del módulo
@@ -24,11 +23,9 @@ public:
      */
     ~PlayerMorse() override = default;
 
-    // Deshabilitar copia explícitamente (elimina warnings C4625 y C4626)
-    PlayerMorse(PlayerMorse const&) = delete;
-    PlayerMorse& operator=(PlayerMorse const&) = delete;
-
-    // (Opcional) Si necesitas mover la instancia, habilita o elimina el movimiento:
+    // Sin copia ni movimiento
+    PlayerMorse(const PlayerMorse&) = delete;
+    PlayerMorse& operator=(const PlayerMorse&) = delete;
     PlayerMorse(PlayerMorse&&) = delete;
     PlayerMorse& operator=(PlayerMorse&&) = delete;
 
@@ -40,16 +37,22 @@ public:
      * @details El propio módulo convierte el texto a pitidos y lo gestiona igual que un
      *  audio de archivo (identificado por @p audioName).
      * @param texto Texto a codificar (letras/números soportados por el diccionario Morse).
+     * @param deviceAlias Alias del dispositivo por el que reproducir.
      * @param audioName Nombre con el que se identifica este sonido.
      * @param volume Volumen del sonido (0 a 100).
      * @param loop Modo de repetición.
+     * @param forceStop Si activado, fuerza la parada (de lo contrario, deja terminar el audio).
+     * @param pitch Tono del sonido (default 1.0f).
      * @return true si se ha generado y empezado a reproducir correctamente, false en caso contrario.
      */
     bool playMorse(
-        std::string const& texto,
-        std::string const& audioName    = "",
-        unsigned short     volume       = 100,
-        bool               loop         = false
+        std::string const&  texto,
+        const std::string&  deviceAlias = "",
+        std::string const&  audioName   = "",
+        unsigned short      volume      = 100,
+        bool                loop        = false,
+        bool                forceStop   = false,
+        unsigned short      pitch       = 1
     );
 
 
@@ -97,20 +100,6 @@ public:
      */
     void setSampleRate(unsigned int hz);
 
-    /**
-     * @brief Establece el nombre del grupo de morse al que pertenece este módulo (ej. "ADF", "VOR").
-     * @details Es el "name" de la entrada del json de la que salió este módulo. Sirve para
-     *  poder buscarlo luego por nombre + dispositivo, sin tener que reconstruir ningún texto.
-     * @param nombre Nombre del grupo de morse.
-     */
-    void setNombre(std::string const& nombre);
-
-    /**
-     * @brief Devuelve el nombre del grupo de morse al que pertenece este módulo (ej. "ADF", "VOR").
-     * @return Nombre del grupo de morse.
-     */
-    std::string getNombre() const;
-
 
 private:
 
@@ -134,5 +123,4 @@ private:
     unsigned int       espacioEntreLetras_;     ///< Silencio entre letras de la misma palabra (ms).
     unsigned int       espacioEntreMorse_;      ///< Duración del silencio entre palabras (loop) (ms).
     unsigned int       sampleRate_;             ///< Frecuencia de muestreo (Hz) del audio generado.
-    std::string        nombre_;                 ///< Nombre del grupo de morse al que pertenece (ej. "ADF", "VOR").
 };
