@@ -87,11 +87,13 @@
         ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE :MA_FALSE);
 
         // Vincular el fin de la reproducción al endCallback
-        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
+        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, device);
 
         //Guardar parámetros en la instancia de sonido
-        inst->loopMode = loop;
-        inst->name     = usedName; 
+        inst->loopMode  = loop;
+        inst->name      = usedName;
+        inst->forceStop = forceStop;
+        inst->pitch     = pitch;
 
         // Guardar en el mapa del device seleccionado y reproducir
         {

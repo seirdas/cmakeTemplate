@@ -359,7 +359,7 @@
             if (inst->forceStop || force) {
 
                 // Anulación de callback para evitar que miniaudio limpie duplicado al hacer stop
-                ma_sound_set_end_callback(&inst->sound, nullptr, nullptr);
+                ma_sound_set_end_callback(&inst->sound, nullptr, device);
 
                 // Liberar el lock para evitar bloqueo en send_to_cleanup
                 lock.unlock();
@@ -647,7 +647,7 @@
                 // Quitar loop y anular callback para evitar invocaciones duplicadas
                 ma_sound_set_looping(sound, MA_FALSE);
                 it->second->loopMode = false;
-                ma_sound_set_end_callback(sound, nullptr, nullptr);
+                ma_sound_set_end_callback(sound, nullptr, devInst);
 
                 // Unlocking previo a send_to_cleanup
                 asyncLock.unlock();
@@ -742,7 +742,7 @@
                 itAsync->second->loopMode = false;
 
                 // Anulación de callback para evitar que miniaudio limpie duplicado al hacer stop
-                ma_sound_set_end_callback(sound, nullptr, nullptr);
+                ma_sound_set_end_callback(sound, nullptr, devInst);
 
                 // Unlocking previo a send_to_cleanup
                 asyncLock.unlock();
