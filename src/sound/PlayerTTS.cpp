@@ -58,9 +58,11 @@
         std::string const&  text, 
         std::string const&  modelName, 
         std::string const&  audioName,
+        const std::string&  deviceAlias,
         unsigned short      volume,
         bool                loop,
-        bool                forceStop)
+        bool                forceStop,
+        unsigned short      pitch)
     {
 
         // Comprobaciones previas
@@ -76,6 +78,10 @@
             SYS_WARN("PlayerTTS","Cannot generate audio: TTS callback function don't defined");
             return false;
         }
+        if (!pimpl_->find_device(deviceAlias)) {
+            SYS_WARN("PlayerTTS", "playTTS: device alias '" + deviceAlias + "' not found/initialized");
+            return false;
+        }
 
         std::lock_guard<std::mutex> lock(cola_textos_mtx_);
 
@@ -84,6 +90,7 @@
         element.modelName   = modelName;
         element.text        = text;
         element.audioName   = (audioName.empty()) ? text : audioName;
+        element.deviceAlias = deviceAlias;
         element.volume      = volume;
         element.loop        = loop;
         element.forceStop   = forceStop;
@@ -144,9 +151,6 @@
 
             // Reproducir elemento
             reproducir_elemento(element);
-
-            // Esperar un rato hasta reproducir el siguiente paquete
-            std::this_thread::sleep_for(std::chrono::seconds(2));   // (poner tiempo como variable)
         }
 
         SYS_INFO("PlayerTTS::t_data_consumer", "Thread stopped.");
@@ -158,6 +162,13 @@
 
     bool PlayerTTS::reproducir_elemento(queueElement element) {
 
+        // Resolver el dispositivo de playback por su alias
+        Impl::DeviceInstance* device = pimpl_->find_device(element.deviceAlias);
+        if (!device) {
+            SYS_WARN("PlaybackModule", "playAudio: device alias '" + element.deviceAlias + "' not found/initialized");
+            return false;
+        }
+
         // Guardar el texto que se está procesando
         texto_en_proceso_ = element.text;
 
@@ -168,8 +179,6 @@
             texto_en_proceso_.clear();
             return false;
         }
-
-        // Reproducir audio por el playback
 
         // Crear la instancia de sonido
         auto inst = std::make_unique<Impl::SoundInstance>();
@@ -184,7 +193,7 @@
         );
         config.sampleRate = audio.sample_rate;
 
-        // Copiar los datos generados a un buffer propio de miniaudio
+        // Copiar los datos generados al buffer de la instancia
         if (ma_audio_buffer_init_copy(&config, &inst->buffer) != MA_SUCCESS) {
             SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al crear el buffer de audio");
             texto_en_proceso_.clear();
@@ -193,7 +202,7 @@
         inst->hasBuffer = true;
 
         // Envolver el buffer como un sonido reproducible por el motor
-        if (ma_sound_init_from_data_source(&pimpl_->engine, &inst->buffer, 0, nullptr, &inst->sound) != MA_SUCCESS) {
+        if (ma_sound_init_from_data_source(&device->engine, &inst->buffer, 0, nullptr, &inst->sound) != MA_SUCCESS) {
             ma_audio_buffer_uninit(&inst->buffer);
             SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al inicializar el sonido");
             texto_en_proceso_.clear();
@@ -214,13 +223,13 @@
         inst->name      = element.audioName;
         inst->volume    = element.volume;
 
-        // Guardar en el mapa y reproducir
+        // Guardar en el mapa del dispositivo y reproducir
         {
-            std::lock_guard<std::mutex> soundsLock(playing_sounds_mtx_);
-            pimpl_->playing_sounds[element.audioName] = std::move(inst);
+            std::lock_guard<std::mutex> soundsLock(device->playing_sounds_mtx);
+            device->playing_sounds[element.audioName] = std::move(inst);
 
-            SYS_INFO("PlayerTTS","'" + element.audioName + "': init playing TTS...");
-            ma_sound_start(&pimpl_->playing_sounds[element.audioName]->sound);
+            SYS_INFO("PlayerTTS","'" + element.audioName + "': init playing TTS on '" + element.deviceAlias + "'...");
+            ma_sound_start(&device->playing_sounds[element.audioName]->sound);
         }
 
         // Limpiar el texto que se está procesando

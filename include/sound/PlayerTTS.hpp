@@ -72,9 +72,11 @@ public:
         std::string const&  text, 
         std::string const&  modelName, 
         std::string const&  audioName   = "",
+        const std::string&  deviceAlias = "",
         unsigned short      volume      = 100,
         bool                loop        = false,
-        bool                forceStop   = true
+        bool                forceStop   = true,
+        unsigned short      pitch       = 1
     );
 
 
@@ -124,27 +126,28 @@ private:
 /************ Variables ********************************************************/
 
 // Funciones inyectadas
-    TTSFunction             onTextToAudio_cb_;         ///< Función inyectada para pasar de texto a audio
-    std::mutex              onTextToAudio_mtx_;        ///< Mutex para onTextToAudio
+    TTSFunction             onTextToAudio_cb_;          ///< Función inyectada para pasar de texto a audio
+    std::mutex              onTextToAudio_mtx_;         ///< Mutex para onTextToAudio
 
 // Datos
-    std::string             playbackName_;          ///< Nombre del playback por el que se reproduce
-    std::string             texto_en_proceso_;      ///< Texto que está procesando (generando->reproduciendo) el módulo
+    std::string             playbackName_;              ///< Nombre del playback por el que se reproduce
+    std::string             texto_en_proceso_;          ///< Texto que está procesando (generando->reproduciendo) el módulo
 
 // Cola de textos a procesar
 
     /** @brief Elemento de la cola de textos */
     struct queueElement {
-        std::string     text;       ///< Texto a reproducir
-        std::string     modelName;  ///< Nombre del modelo de voz TTS a usar
-        std::string     audioName;  ///< Nombre con el que se identifica este sonido una vez generado
-        unsigned short  volume;     ///< Volume de reproducción
-        bool            loop;       ///< Loop activado/desactivado
-        bool            forceStop;  ///< Si activado, corta inmediatamente el audio si se le ordena
+        std::string     text;                           ///< Texto a reproducir
+        std::string     modelName;                      ///< Nombre del modelo de voz TTS a usar
+        std::string     audioName;                      ///< Nombre con el que se identifica este sonido una vez generado
+        std::string     deviceAlias;                    ///< Dispositivo de reproducción
+        unsigned short  volume;                         ///< Volume de reproducción
+        bool            loop;                           ///< Loop activado/desactivado
+        bool            forceStop;                      ///< Si activado, corta inmediatamente el audio si se le ordena
     };
-    std::queue<queueElement>    cola_textos_;       ///< Cola de textos pendientes de reproducir
-    std::mutex                  cola_textos_mtx_;   ///< Mutex para cola de textos
-    std::condition_variable     cola_textos_cv_;    ///< Condition variable para cola de textos
-    std::thread                 data_consumer_thread_;     ///< Hilo dedicado a procesar la cola de textos
+    std::queue<queueElement>    cola_textos_;           ///< Cola de textos pendientes de reproducir
+    std::mutex                  cola_textos_mtx_;       ///< Mutex para cola de textos
+    std::condition_variable     cola_textos_cv_;        ///< Condition variable para cola de textos
+    std::thread                 data_consumer_thread_;  ///< Hilo dedicado a procesar la cola de textos
 
 };
