@@ -45,6 +45,8 @@
             PlayingSoundsList       playing_sounds;             ///< Sonidos en reproducción en este dispositivo
             std::mutex              playing_sounds_mtx;         ///< Mutex para lista de sonidos en reproducción
 
+            DeviceInstance() = default;
+            
             ~DeviceInstance() {
                 if (initialized) {
                     ma_engine_uninit(&engine);
