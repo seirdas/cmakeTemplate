@@ -75,11 +75,26 @@ private:
 // Caché --------------------------------------------------------------------------------
     
     /**
+     * @brief Construye la clave compuesta usada para indexar tanto la caché de
+     *  audios precargados como el mapa de sonidos en reproducción.
+     * @details La caché está indexada por (alias + filepath), porque un
+     *  ma_sound cacheado solo se puede copiar (ma_sound_init_copy) sobre el mismo
+     *  engine con el que se cargó, y cada device tiene su propio ma_engine.
+     * @param deviceAlias Alias del dispositivo de playback (ver addPlaybackDevice).
+     * @param filepath Ruta del archivo de audio.
+     * @return Clave compuesta con el formato "alias|filepath".
+     */
+    std::string make_cache_key(const std::string& deviceAlias, const std::string& filepath);
+
+    /**
      * @brief Precarga un archivo de audio en la caché.
      * @param filepath Ruta del archivo de audio.
+     * @param deviceAlias Alias del dispositivo por el que reproducir.
      * @return true si la precarga tiene éxito, false en caso contrario.
      */
-    bool preload_audio_on_cache(const std::string& filepath);
+    bool preload_audio_on_cache(
+        const std::string& filepath, 
+        const std::string& deviceAlias);
 
     /**
      * @brief Hilo de trabajo para la limpieza y descarga diferida de audios en caché.

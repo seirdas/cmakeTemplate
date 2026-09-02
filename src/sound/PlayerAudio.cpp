@@ -87,7 +87,7 @@
 
     // Ejecución ----------------------------------------------------------------------------
 
-        void PlayerAudio::playAudio(
+    void PlayerAudio::playAudio(
         std::string const&  filepath,
         const std::string&  deviceAlias,
         unsigned short      volume,
@@ -95,15 +95,25 @@
         bool                forceStop,
         unsigned short      pitch)
     {
-        // Obtener PIMPL de esta clase hija
-        PlayerAudioImpl* pimpl_hija = static_cast<PlayerAudioImpl*>(pimpl_.get());
-
         // Comprobar si el contexto está inicializado
         if (!initialized_)
             return;
 
+        // Resolver el dispositivo de playback por su alias
+        Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
+        if (!device) {
+            SYS_WARN("PlaybackModule", "playAudio: device alias '" + deviceAlias + "' not found/initialized");
+            return;
+        }
+
+        // Obtener PIMPL de esta clase hija
+        PlayerAudioImpl* pimpl_hija = static_cast<PlayerAudioImpl*>(pimpl_.get());
+
+        // Clave compuesta
+        const std::string cacheKey = make_cache_key(deviceAlias, filepath);
+
         // Asegurar precarga de audio en caché (devuelve true si ya estaba precargado)
-        if (!preload_audio_on_cache(filepath)) {
+        if (!preload_audio_on_cache(filepath, deviceAlias)) {
             SYS_WARN("AudioPlaybackModule", "Could not preload: " + filepath);
             return;
         }
@@ -111,14 +121,16 @@
         // Crear la instancia de sonido
         auto inst = std::make_unique<Impl::SoundInstance>();
 
-        // Bloquear caché para leer la muestra precargada de forma segura
+        // Leer audio en caché 
         {
+            // Proteger caché
             std::lock_guard<std::mutex> cacheLock(pimpl_hija->sounds_cache_mtx_);
-            auto it = pimpl_hija->sounds_cache.find(filepath);
+            auto it = pimpl_hija->sounds_cache.find(cacheKey);
             if (it == pimpl_hija->sounds_cache.end()) return;
 
+            // Leer muestra precargada
             ma_result res = ma_sound_init_copy(
-                &pimpl_->engine,
+                &device->engine,
                 &it->second->sound,
                 0,
                 nullptr,
@@ -135,11 +147,9 @@
         ma_sound_set_volume(&inst->sound, ma_volume);  // (va de 0.0 a 1.0)
         ma_sound_set_pitch(&inst->sound, pitch);
         ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE : MA_FALSE);
-        float pan = (selectedChannel_ == 1) ? -1.0f : (selectedChannel_ == 2) ? 1.0f : 0.0f;
-        ma_sound_set_pan(&inst->sound, pan);
 
         // Vincular el fin de la reproducción al endCallback
-        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
+        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, device);
 
         // Guardar parámetros en la instancia de sonido guardado
         inst->loopMode  = loop;
@@ -150,26 +160,42 @@
         // Guardar en el mapa y reproducir
         {
             // Guardar la instancia de sonido en la lista de sonidos reproduciéndose
-            std::lock_guard<std::mutex> soundsLock(playing_sounds_mtx_);
-            pimpl_->playing_sounds[filepath] = std::move(inst);
+            std::lock_guard<std::mutex> soundsLock(device->playing_sounds_mtx);
+            device->playing_sounds[cacheKey] = std::move(inst);
 
             // Comenzar a reproducir (tomo directamente el sonido de la lista de playing_sounds)
-            SYS_INFO("PlaybackModule","'" + filepath + "': init playing...");
-            ma_sound_start(&pimpl_->playing_sounds[filepath]->sound);
+            SYS_INFO("PlaybackModule","'" + filepath + "': init playing on '" + deviceAlias + "'...");
+            ma_sound_start(&device->playing_sounds[cacheKey]->sound);
         }
     }
 
     
     // Caché --------------------------------------------------------------------------------
     
-    bool PlayerAudio::preload_audio_on_cache(const std::string& filepath) {
+    std::string PlayerAudio::make_cache_key(const std::string& deviceAlias, const std::string& filepath) {
+        return deviceAlias + "|" + filepath;
+    }
+
+    bool PlayerAudio::preload_audio_on_cache(
+        const std::string& filepath, 
+        const std::string& deviceAlias)
+    {
+        // Comprobar si el contexto está inicializado
+        if (!initialized_)
+            return false;
 
         // Obtener PIMPL de esta clase hija
         PlayerAudioImpl* pimpl_hija = static_cast<PlayerAudioImpl*>(pimpl_.get());
 
-        // Comprobar si el contexto está inicializado
-        if (!initialized_)
+        // Obtener instancia de dispositivo
+        Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
+        if (!device) {
+            SYS_WARN("PlayerAudio", "preload: device alias '" + deviceAlias + "' not found");
             return false;
+        }
+
+        // Obtener clave compuesta de sonido en caché
+        const std::string cacheKey = make_cache_key(deviceAlias, filepath);
 
         // Proteger el mapa de caché de sonidos
         std::unique_lock<std::mutex> lock(pimpl_hija->sounds_cache_mtx_);
@@ -181,20 +207,21 @@
         // Desproteger mapa para la carga de miniaudio
         lock.unlock();
 
-        // Crear una instancia de la estructura de la caché de audios (es como un AudioCacheInstance* inst)
+        // Crear una instancia de la estructura de la caché de audios
         std::unique_ptr<PlayerAudioImpl::AudioCacheInstance> inst = 
             std::make_unique<PlayerAudioImpl::AudioCacheInstance>();
 
         // Inicializar el audio de la instancia a partir del archivo
         if (ma_sound_init_from_file(
-            &pimpl_->engine,
+            &device->engine,
             filepath.c_str(),
             MA_SOUND_FLAG_DECODE,
             nullptr,
             nullptr,
             &inst->sound) != MA_SUCCESS)
         {
-            SYS_WARN("AudioPlaybackModule", "Failed to load audio file: " + filepath);
+            SYS_WARN("AudioPlaybackModule", "Failed to load audio file: " + filepath 
+                + " on device '" + deviceAlias + "'");
             return false;
         }
 
@@ -233,29 +260,30 @@
             // Salir si no está activo el módulo (se está cerrando)
             if (!threads_running_) break;
 
-            /* #TODO */
-
             // Bloquear mutex de la lista de sonidos
             std::unique_lock<std::mutex> soundsLock(pimpl_hija->sounds_cache_mtx_);
 
             // Comprobar si hay algo que comprobar (xd)
             if (pimpl_hija->sounds_cache.empty()) continue;
 
-            // Compara el tiempo de los modelos con el actual
+            // Obtiene el tiempo actual para comparar
             auto now = std::chrono::steady_clock::now();
 
             // Borrar si se ha superado el tiempo y no se está usando (así para evitar segmentation-fault)
-            bool isCurrentlyPlaying = false;
             for (auto it = pimpl_hija->sounds_cache.begin(); it != pimpl_hija->sounds_cache.end(); ) {
                 if (now - it->second->time >= keep_alive_seconds_) {
 
-                    // No liberar de la caché si hay algún sonido sonando
-                    isCurrentlyPlaying = false;
+                    // Comprobar si esa cacheKey sigue en reproducción EN ALGÚN device
+                    bool isCurrentlyPlaying = false;
                     {
-                        std::unique_lock<std::mutex> pLock(playing_sounds_mtx_);
-                        // Comprobar si la ruta coincide con alguno de los activos
-                        if (pimpl_->playing_sounds.count(it->first))
-                            isCurrentlyPlaying = true;
+                        std::lock_guard<std::mutex> devicesLock(pimpl_->devices_mtx);
+                        for (auto& dev : pimpl_->devices) {
+                            std::lock_guard<std::mutex> pLock(dev->playing_sounds_mtx);
+                            if (dev->playing_sounds.count(it->first)) {
+                                isCurrentlyPlaying = true;
+                                break;
+                            }
+                        }
                     }
 
                     if (!isCurrentlyPlaying) {
@@ -263,7 +291,6 @@
                         ma_sound_uninit(&it->second->sound);
                         it = pimpl_hija->sounds_cache.erase(it);
                     } else {
-                        // Renovar expiración para reintentar en el siguiente ciclo
                         it->second->time = now;
                         ++it;
                     }
