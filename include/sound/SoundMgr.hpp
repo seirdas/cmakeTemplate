@@ -310,11 +310,18 @@ private:
      *  sustituyendo el nombre por parámetro por el nombre completo real
      * @param myDeviceName Nombre del dispositivo
      *  MODIFICABLE al nombre real completo si aplica
-     * @param isCapture Indica si es de la lista de dispositivos de captura. 
-     *  En su defecto, se utilizará la lista de dispositivos de reproducción playback
+    * @param isCapture @c true si es dispositivo de captura, @c false si es playback
      * @return (ma_device_info*) Información del dispositivo (si se encuentra)
      */
     const void* get_device_info(std::string& myDeviceName, bool isCapture) const;
+
+    /**
+    * @brief Asegura que un ma_device_info tenga toda la info detallada explícitamente 
+    * @param info (ma_device_info) Puntero a la entrada dentro de pPlaybackDevInfos_/pCaptureDevInfos_
+    * @param isCapture @c true si es dispositivo de captura, @c false si es playback
+    * @return El mismo puntero recibido, ya con nativeDataFormats poblado si tuvo éxito
+    */
+    const void* ensure_detailed_info(void* info, bool isCapture) const;
 
     /**
      * @brief "Shortcut" para obtener ma_device_info de 
@@ -339,6 +346,7 @@ private:
      * @tparam MapT 
      * @param name Nombre del módulo
      * @param map Mapa al que añadir el módulo
+     * @param isCapture @c true si es dispositivo de captura, @c false si es playback
      * @return @c true Si el módulo se ha añadido, @c false en caso contrario
      */
     template <typename MapT>

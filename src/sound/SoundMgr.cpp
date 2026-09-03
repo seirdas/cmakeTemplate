@@ -558,9 +558,9 @@
         // Si encuentra un dispositivo con el nombre entero literal, no busca parecidos
         for (ma_uint32 i = 0; i < devInfosSize; ++i)
             if (myDevName == devInfos[i].name)  
-                return &devInfos[i];
+                return ensure_detailed_info(&devInfos[i], isCapture);
 
-        // Si no ha encontrado nada literalmente igual y llega hasta aquí, busca parecidos (ignore case)
+        // Si no ha encontrado nada literalmente igual, busca parecidos (ignore case)
         ma_device_info* selectedDeviceInfo  = nullptr;  // Dispositivo a devolver
         std::size_t count    = 0;                       // Número de coincidencias
         std::string realDevName;                        // Nombre de dispositivo a sustituir si se encuentra
@@ -604,8 +604,39 @@
         if (!realDevName.empty()) 
             myDevName = realDevName;
 
-        // Devolver el dispositivo
-        return selectedDeviceInfo;
+        // Sin coincidencias: nada que resolver
+        if (!selectedDeviceInfo)
+            return nullptr;
+
+        // Devolver la info
+        return ensure_detailed_info(selectedDeviceInfo, isCapture);
+    }
+
+    const void* SoundMgr::ensure_detailed_info(void* info, bool isCapture) const {
+        // Comprobar si hay info
+        if (!info)
+            return nullptr;
+
+        // Cast de ma_device_info de parámetro
+        const ma_device_info* ma_info = static_cast<const ma_device_info*>(info);
+
+        // Obtener el tipo de dispositivo 
+        ma_device_type  devType      = (isCapture) ? ma_device_type_capture     : ma_device_type_playback;
+
+        // Estructura con info detallada a devolver
+        ma_device_info  detailed{};
+
+        // Obtener información detallada del dispositivo completo
+        if (ma_context_get_device_info(&pimpl_->snd_context_, devType, &ma_info->id, &detailed) != MA_SUCCESS) {
+            SYS_WARN("SoundMgr", "Failed to get detailed info for device '" + std::string(ma_info->name) + "'");
+            return nullptr;
+        }
+
+        // Sobrescribir la entrada de la caché
+        ma_device_info* mutable_info = const_cast<ma_device_info*>(ma_info);
+        *mutable_info = detailed;
+
+        return mutable_info;
     }
 
     const void* SoundMgr::get_playback_device_info(std::string& myDeviceName) const {
