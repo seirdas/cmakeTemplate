@@ -1,6 +1,5 @@
 #include "sound/SoundMgr.hpp"
 #include "sound/AudioCaptureModule.hpp"
-#include "sound/AudioPlaybackModule.hpp"
 #include "sound/PlayerAudio.hpp"
 #include "sound/PlayerMorse.hpp"
 #include "sound/PlayerTTS.hpp"
@@ -661,6 +660,11 @@
             usedModuleName,
             &pimpl_->snd_context_
         );
+
+        // Agregar el callback para resolver dispositivos según el tipo de módulo
+        module->setCallback_onDeviceResolve([this, isCapture](std::string& devName) -> const void* {
+            return get_device_info(devName, isCapture);
+        });
 
         // Intentar inicializar
         SYS_INFO("SoundMgr", "Initializing module...");
