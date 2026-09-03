@@ -7,9 +7,9 @@
     #include <miniaudio.h>
     #include "system/SystemMgr.hpp"
     #include "files/JsonMgr.hpp"
-    #include <filesystem>               // Controla directorios, rutas, etc.
     
     #include "sound/APM_Imp.hpp"         // PIMPL de AudioPlaybackModule
+
 
     // General ------------------------------------------------------------------------------
 
@@ -74,11 +74,12 @@
     }
 
     bool AudioPlaybackModule::close() {
+        
+        // Si no está inicializado, no hacer nada
         if (!initialized_)
-            return true;
+            return false;
 
         // Marcar el módulo como no inicializado y detener hilos
-        initialized_     = false;
         threads_running_ = false;
 
         SYS_INFO("PlaybackModule", "'" + name_ + "': Stopping PlaybackModule...");
@@ -135,6 +136,11 @@
             DevInst->initialized = false;
         }
 
+        // Limpieza de todos los dispositivos
+        pimpl_->devices.clear();
+
+        // Marcar como no inicializado y salir
+        initialized_ = false;
         SYS_INFO("PlaybackModule", "'" + name_ + "': Closed successfully.");
         return true;
     }
@@ -157,8 +163,8 @@
     bool AudioPlaybackModule::addPlaybackDevice(
         std::string const&  deviceName, 
         unsigned int        channelSelected,
-        std::string const&  deviceAlias
-    ) {
+        std::string const&  deviceAlias) 
+    {
         // Comprobar si el contexto está inicializado
         if (!pimpl_->ctx) {
             SYS_WARN("AudioPlayback", "Cannot add new device: audio context not initialized");
@@ -179,7 +185,7 @@
         // Proteger la lista de dispositivos para toda la operación de alta
         std::lock_guard<std::mutex> devicesLock(pimpl_->devices_mtx);
 
-        // Comprobar que el alias no está ya en uso (evita colisiones "ADAT(1+2)#1" duplicado)
+        // Comprobar que el alias no está ya en uso (evita colisiones)
         for (auto& dev : pimpl_->devices) {
             if (dev->alias == effectiveAlias) {
                 SYS_WARN("AudioPlayback", "'" + name_ + "': alias '" + effectiveAlias + "' already in use");
@@ -204,7 +210,7 @@
             return false;
         }
 
-        // Instanciar la estructura del nuevo dispositivo
+        // Instanciar el nuevo dispositivo
         std::unique_ptr<Impl::DeviceInstance> instance = std::make_unique<Impl::DeviceInstance>();
         instance->alias           = effectiveAlias;
         instance->info            = *selectedDeviceInfo;

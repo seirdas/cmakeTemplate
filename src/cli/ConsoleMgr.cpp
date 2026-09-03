@@ -963,7 +963,9 @@ bool ConsoleMgr::execute_playback_command(
             return true;
         }
         try {
-            mod->setSelectedChannel(static_cast<unsigned short>(std::stoi(chStr)));
+            // #TODO Revisar
+            //mod->setSelectedChannel(static_cast<unsigned short>(std::stoi(chStr)));
+            int borrame = 2;
         } catch (std::exception const&) {
             print_error("Invalid <channel>, must be numeric.");
         }

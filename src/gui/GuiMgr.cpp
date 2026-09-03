@@ -1029,7 +1029,10 @@
 				}
 
 				// Si el dispositivo se ha desconectado, mostrar aviso en rojo
-				if (!acm->isValid()) {
+
+				// #TODO Revisar
+
+				if (/*!acm->isValid()*/ false) {
 					TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
 					SameLine();
 					if (SmallButton("x"))
@@ -1041,10 +1044,14 @@
 					Text("%s", captureName.c_str());
 					SameLine();
 					if (SmallButton("Grabar"))
-						acm->StartRec(acm->getModuleName() + "_REC");
+						// #TODO Revisar
+						int a = 0;
+						//acm->StartRec(acm->getModuleName() + "_REC");
 					SameLine();
 					if (SmallButton("Parar"))
-						acm->StopRec();
+						// #TODO Revisar
+						int a = 0;
+						//acm->StopRec();
 					SameLine();
 					if (SmallButton("x"))
 						snd->removeCaptureModule(captureName);
@@ -1052,33 +1059,38 @@
 
 					SameLine();
 
-					Text("%s", std::to_string(acm->getBufferSize()).c_str());
-					Text("%s", std::to_string(acm->getRecBufferSize()).c_str());
+					// #TODO Revisar
+					//Text("%s", std::to_string(acm->getBufferSize()).c_str());
+					//Text("%s", std::to_string(acm->getRecBufferSize()).c_str());
 
 					SameLine();
 
 					// --- Selector de canal (se adapta al nº de canales del dispositivo) ---
 					{
+						// #TODO revisar
+						/*
 						int nCh = acm->getNumChannels();
 						int sel = acm->getSelectedChannel();
 						std::string chPreview = (sel == 0) ? std::string("Todos") : ("Canal " + std::to_string(sel));
 						SetNextItemWidth(90);
 						if (BeginCombo("##ch", chPreview.c_str())) {
 							if (Selectable("Todos", sel == 0))
-								acm->setSelectedChannel(0);
+							acm->setSelectedChannel(0);
 							for (int c = 1; c <= nCh; ++c) {
 								std::string chLabel = "Canal " + std::to_string(c);
 								if (Selectable(chLabel.c_str(), sel == c))
-									acm->setSelectedChannel(static_cast<unsigned short>(c));
+								acm->setSelectedChannel(static_cast<unsigned short>(c));
 							}
 							EndCombo();
 						}
+						*/
 					}
 
 					SameLine();
 
 					// Medidor VU - barra vertical RMS
-					float LevelVal = acm->getRmsLevel();
+					// #TODO Revisar
+					float LevelVal = 50.0f; // acm->getRmsLevel();
 
 					ImVec4 barColor;
 					if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
@@ -1629,7 +1641,9 @@
 								continue;
 
 							// Si el dispositivo se ha desconectado, mostrar aviso en rojo
-							if (!acm->isValid()) {
+
+							// #TODO Revisar
+							if (false /*!acm->isValid()*/) {
 								TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
 								SameLine();
 								if (SmallButton("x")) 
@@ -1641,44 +1655,47 @@
 								Text("%s", captureName.c_str());
 								SameLine();
 								if (SmallButton("Grabar"))
-									acm->StartRec(acm->getModuleName() + "_REC");
+									// #TODO Revisar
+									int borrame = 4;
+									//acm->StartRec(acm->getModuleName() + "_REC");
 								SameLine();
 								if (SmallButton("Parar"))
-									acm->StopRec();
+									// #TODO Revisar
+									int borrame = 5;
+									// acm->StopRec();
 								SameLine();
 								if (SmallButton("x"))
 									snd->removeCaptureModule(captureName);
 								
 	
 								SameLine();
-	
-								Text("%s", std::to_string(acm->getBufferSize()).c_str());
-								Text("%s", std::to_string(acm->getRecBufferSize()).c_str());
-
-								SameLine();
 
 								// --- Selector de canal (se adapta al nº de canales del dispositivo) ---
 								{
+									// #TODO Revisar
+									/*
 									int nCh = acm->getNumChannels();
 									int sel = acm->getSelectedChannel();
 									std::string chPreview = (sel == 0) ? std::string("Todos") : ("Canal " + std::to_string(sel));
 									SetNextItemWidth(90);
 									if (BeginCombo("##ch", chPreview.c_str())) {
 										if (Selectable("Todos", sel == 0))
-											acm->setSelectedChannel(0);
+										acm->setSelectedChannel(0);
 										for (int c = 1; c <= nCh; ++c) {
 											std::string chLabel = "Canal " + std::to_string(c);
 											if (Selectable(chLabel.c_str(), sel == c))
-												acm->setSelectedChannel(static_cast<unsigned short>(c));
+											acm->setSelectedChannel(static_cast<unsigned short>(c));
 										}
 										EndCombo();
 									}
+									*/
 								}
 
 								SameLine();
 
 								// Medidor VU - barra vertical RMS
-								float LevelVal = acm->getRmsLevel();
+								// #TODO Revisar
+								float LevelVal = 50.0f; //acm->getRmsLevel();
 
 								ImVec4 barColor;
 								if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde

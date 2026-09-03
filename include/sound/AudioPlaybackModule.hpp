@@ -181,12 +181,6 @@ public:
         float               pitch,
         std::string const&  deviceAlias
     );
-
-    /**
-     * @brief Establece por qué canal del dispositivo (estéreo) se reproduce el audio.
-     * @param channel Canal seleccionado: 0 = ambos canales, 1 = canal 1, 2 = canal 2.
-     */
-    void setSelectedChannel(unsigned short channel);
    
 
 // Parámetros del módulo ----------------------------------------------------------------

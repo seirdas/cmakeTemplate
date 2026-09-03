@@ -252,16 +252,19 @@
             return false;
         }
 
+        // #TODO Revisar
+        /*
         // Si hay algun dispositivo con is_valid = false se reinicializa
         for (auto& [name, aim] : captures_) {
             if (aim->isValid()) continue;
-
+            
             for (ma_uint32 i = 0; i < pimpl_->captureDevCount_; ++i)
-                if (aim->getDeviceName() == pimpl_->pCaptureDevInfos_[i].name)
-                    for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++)
-                        if (aim->init(nullptr))
-                            break;
+            if (aim->getDeviceName() == pimpl_->pCaptureDevInfos_[i].name)
+            for (unsigned int tries = 0; tries < MAX_REINIT_ATTEMPTS; tries++)
+            if (aim->init(nullptr))
+            break;
         }
+        */
 
         // #TODO Hacer lo mismo para playbacks
 

@@ -33,6 +33,8 @@
 
         /** @brief Información de dispositivo de reproducción */
         struct DeviceInstance {
+
+            // Información del dispositivo
             std::string             alias;                      ///< Nombre identificativo del playback
             ma_device_info          info;                       ///< Información del dispositivo
             ma_device               device;                     ///< Dispositivo (ma)
@@ -42,9 +44,13 @@
             bool                    initialized     = false;    ///< Bandera de inicialización
             AudioPlaybackModule*    owner           = nullptr;  ///< Dueño, necesario para callbacks
 
+            // Sonidos en reproducción
             PlayingSoundsList       playing_sounds;             ///< Sonidos en reproducción en este dispositivo
             std::mutex              playing_sounds_mtx;         ///< Mutex para lista de sonidos en reproducción
 
+
+            /************ Métodos ******************/
+            
             DeviceInstance() = default;
             
             ~DeviceInstance() {
@@ -107,8 +113,8 @@
         
         /**
          * @brief Helper para encontrar un DeviceInstance a partir del alias
-         * @param deviceAlias alias de la instancia playback
-         * @return DeviceInstance* ptr a instancia de datos de dispositivo playback
+         * @param deviceAlias alias de la instancia de dispositivo
+         * @return DeviceInstance* ptr a instancia de datos de dispositivo
          */
         DeviceInstance* find_device(std::string const& deviceAlias) {
             
