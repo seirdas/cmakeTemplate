@@ -223,6 +223,13 @@ private:
      */
     void panelCommsMatrix();
 
+    /**
+     * @brief Panel "Personas": lista de roles con buscador a la izquierda y,
+     *  al seleccionar uno, un hueco de detalle a la derecha.
+     * @note De momento solo la parte visual (lista de roles fija, sin datos reales).
+     */
+    void panelPositions();
+
 // Carga de imágenes/iconos -------------------------------------------------------------
    
     /**
@@ -452,7 +459,11 @@ private:
     std::unordered_map<std::string, PlayerUIState> playerUIState_;   ///< Clave: idPrefix + "::" + nombre del player
 
 // Navegación (sidebar)
-    int             activeSection_            = 0;              ///< Sección activa del sidebar: 0=Sounds,1=Totalmix,2=Symetrix,3=Network,4=TTS,5=Capture
+    int             activeSection_            = 0;              ///< Sección activa del sidebar: 0=Sounds,1=Totalmix,2=Symetrix,3=Network,4=TTS,5=Capture,6=Communications,7=Personas
+
+// Estado del panel "Personas" (solo visual por ahora)
+    char            positionsFilter_[64]     = "";             ///< Texto del buscador de roles
+    int             positionsSelected_       = -1;             ///< Índice del rol seleccionado (-1 = ninguno)
     bool            showAppearanceWindow_     = false;          ///< Ventana flotante de "Apariencia", abierta desde el menú Ajustes
     bool            showNetworkCheckingWindow_ = false;         ///< Ventana flotante de "Network Checking", abierta desde el menú Ajustes
 

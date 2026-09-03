@@ -54,6 +54,215 @@
                     "out": 0,
                     "spk_out": 0
                 }
+            },
+            {
+                "alias": "3hombre",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "4hombre",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "5hombre",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "inst1",
+                "is_instructor": true,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "inst2",
+                "is_instructor": true,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "inst3",
+                "is_instructor": true,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "inst4",
+                "is_instructor": true,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "obs1",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "obs2",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "obs3",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
+            },
+            {
+                "alias": "obs4",
+                "is_instructor": false,
+                "symetrix": {
+                    "id_in_fx_input_selector": 0,
+                    "id_in_input_sel": 0,
+                    "id_in_vox_threshold": 0,
+                    "id_out_gain_fader": 0,
+                    "id_out_gain_mute": 0,
+                    "supermatrix_in": 0,
+                    "supermatrix_out": 0
+                },
+                "totalmix": {
+                    "fx": 0,
+                    "in": 0,
+                    "out": 0,
+                    "spk_out": 0
+                }
             }
         ]
     },

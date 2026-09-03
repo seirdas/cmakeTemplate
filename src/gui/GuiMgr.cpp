@@ -466,6 +466,7 @@
 				case 4: panelTTS(); break;
 				case 5: panelCapture(); break;
 				case 6: panelCommsMatrix(); break;
+				case 7: panelPositions(); break;
 				default: break;
 			}
 		}
@@ -600,6 +601,7 @@
 		navItem("Totalmix", 1);
 		navItem("Symetrix", 2);
 		navItem("Network",  3);
+		navItem("Personas", 7);
 
 		Dummy(ImVec2(0, 14));
 		TextDisabled("HERRAMIENTAS");
@@ -1383,6 +1385,87 @@
 		}
 	}
 
+	void GuiMgr::panelPositions() {
+
+		// Lista de roles: de momento FIJA (solo visual). Coincide con el config.json.
+		struct RoleInfo { const char* name; bool instructor; };
+		static const RoleInfo roles[] = {
+			{ "PILOT",   false }, { "COPILOT", false },
+			{ "3hombre", false }, { "4hombre", false }, { "5hombre", false },
+			{ "inst1",   true  }, { "inst2",   true  }, { "inst3",   true  }, { "inst4", true },
+			{ "obs1",    false }, { "obs2",    false }, { "obs3",    false }, { "obs4",  false },
+		};
+		const int numRoles = static_cast<int>(std::size(roles));
+
+		SeparatorText("Personas");
+		Dummy(ImVec2(0, 4));
+
+		const float listW = 220.0f;
+		const float h     = GetContentRegionAvail().y;
+
+		PushStyleVar(ImGuiStyleVar_ChildRounding, popup_titlebar_rounding_);
+		const ImGuiChildFlags cf = ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding;
+
+		// minúsculas "a mano" para poder filtrar sin distinguir mayúsculas/minúsculas
+		auto lower = [](std::string s) {
+			for (char& c : s) if (c >= 'A' && c <= 'Z') c = static_cast<char>(c + 32);
+			return s;
+		};
+
+		// -------------------------------------------------------------- Lista (izquierda)
+		if (BeginChild("##roles_list", ImVec2(listW, h), cf)) {
+
+			TextDisabled("ROLES");
+			Separator();
+			Dummy(ImVec2(0, 2));
+
+			SetNextItemWidth(-FLT_MIN);
+			InputTextWithHint("##rolefilter", "buscar...", positionsFilter_, sizeof(positionsFilter_));
+			Dummy(ImVec2(0, 4));
+
+			const std::string needle = lower(positionsFilter_);
+
+			for (int i = 0; i < numRoles; ++i) {
+				if (!needle.empty() && lower(roles[i].name).find(needle) == std::string::npos)
+					continue;
+
+				// Punto de estado (gris: aún sin datos reales)
+				generate_dot(ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
+
+				if (Selectable(roles[i].name, positionsSelected_ == i))
+					positionsSelected_ = i;
+			}
+		}
+		EndChild();
+
+		SameLine();
+
+		// -------------------------------------------------------------- Detalle (derecha)
+		if (BeginChild("##role_detail", ImVec2(0, h), cf)) {
+
+			if (positionsSelected_ < 0 || positionsSelected_ >= numRoles) {
+				TextDisabled("<- Selecciona un rol en la lista de la izquierda.");
+			} else {
+				const RoleInfo& r = roles[positionsSelected_];
+
+				SetWindowFontScale(1.4f);
+				Text("%s", r.name);
+				SetWindowFontScale(1.0f);
+				Dummy(ImVec2(0, 8));
+
+				Text("Instructor:");
+				SameLine();
+				Text(r.instructor ? "si" : "no");
+
+				Dummy(ImVec2(0, 12));
+				TextDisabled("(datos reales pendientes de conectar con PositionsMgr)");
+			}
+		}
+		EndChild();
+
+		PopStyleVar();
+	}
+
 
 	// Carga de imágenes/iconos -------------------------------------------------------------
 
@@ -1684,6 +1767,7 @@
 	void GuiMgr::panelNetwork()                             { }
 	void GuiMgr::panelNetworkChecking()                     { }
 	void GuiMgr::panelAppearance()                          { }
+	void GuiMgr::panelPositions()                           { }
 	void GuiMgr::panelPlaceholder(const char*, const char*) { }
 	void GuiMgr::playerCard(std::string const&, std::string const&, AudioPlaybackModule*, std::function<void()> const&, std::function<void()> const&, std::function<void()> const&, std::function<void()> const&, float) { }
 
