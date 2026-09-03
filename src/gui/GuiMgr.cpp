@@ -213,6 +213,10 @@
 		ImGui_ImplGlfw_InitForOpenGL(window_, true);
 		ImGui_ImplOpenGL3_Init("#version 130");     // Versión de OpenGL
 
+		// Aplicar pantalla completa si venía activada en la config
+		if (fullscreen_)
+			set_fullscreen(true);
+
 		// marcar que está inicializado
 		initialized_ = true;
 		return true;
