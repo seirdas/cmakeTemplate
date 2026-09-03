@@ -126,7 +126,11 @@
             // Proteger caché
             std::lock_guard<std::mutex> cacheLock(pimpl_hija->sounds_cache_mtx_);
             auto it = pimpl_hija->sounds_cache.find(cacheKey);
-            if (it == pimpl_hija->sounds_cache.end()) return;
+            if (it == pimpl_hija->sounds_cache.end()) 
+                {
+                    SYS_WARN("PlaybackModule", "'" + name_ + "' playAudio: cannot found '" + filepath + "' on cache");
+                    return;
+                }
 
             // Leer muestra precargada
             ma_result res = ma_sound_init_copy(
