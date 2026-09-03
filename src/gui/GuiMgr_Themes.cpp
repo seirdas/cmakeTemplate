@@ -59,15 +59,16 @@
 
     void GuiMgr::saveConfig() {
 
-        // #TODO
-        /* Pendiente de gestionar o la configuración del módulo o del propio GuiMgr */
-
         if (!config_) return;
-        
-        // Toma la configuración con la que se ha inicializado el módulo
+
+        // Toma la configuración con la que se ha inicializado el módulo y sobrescribe
+        // el tema actual (set, no get_or_set: la clave ya existe y hay que actualizarla).
         json* cfg = static_cast<json*>(config_);
         JsonMgr& jsonMgr = JsonMgr::instance();
-        jsonMgr.get_or_set(cfg, "theme_selected", theme_selected_);
+        jsonMgr.set(cfg, "theme_selected", theme_selected_);
+
+        // Volcar a disco ya: no hay flush de json en el cierre de la app.
+        jsonMgr.update();
     }
 
     void GuiMgr::Style_Dashboard() {

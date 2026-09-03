@@ -137,12 +137,6 @@ private:
     void main_window();
 
     /**
-     * @brief Gestión de la columna derecha (legado: pestañas de prueba/demo).
-     * @details Ya no se llama desde main_window(); se conserva como espacio de pruebas.
-     */
-    void columnaDerecha();
-
-    /**
      * @brief Barra de estado inferior: FPS y versión de la app.
      */
     void status_bar_bottom();
@@ -164,7 +158,7 @@ private:
     void panelTTS();
 
     /**
-     * @brief Panel de dispositivos de captura/grabación (movido desde columnaDerecha()).
+     * @brief Panel de dispositivos de captura/grabación.
      */
     void panelCapture();
 

@@ -831,28 +831,30 @@
 
 		Text("Tema:");
 		SameLine();
+
+		// Etiqueta visible (con espacios) y su id canónico (sin espacios): el id es
+		// el que entiende apply_theme() y el que se guarda en el json. Mismo orden.
 		static const char* theme_items[] = {
-			"Dashboard",
-			"Adobe Inspired",
-			"Ayu Dark",
-			"Confy",
-			"Dark Cyan",
-			"Default Dark",
-			"Default Light",
-			"Everforest",
-			"FutureDark",
-			"Gold",
-			"Hazy Dark",
-			"Kazam's Cherry",
-			"Light Orange",
-			"Quick Minimal Look",
-			"Modern",
-			"Microfrost",
-			"Moonlight",
-			"Sonic Riders",
-			"VisualStudio"
+			"Dashboard", "Adobe Inspired", "Ayu Dark", "Confy", "Dark Cyan",
+			"Default Dark", "Default Light", "Everforest", "FutureDark", "Gold",
+			"Hazy Dark", "Kazam's Cherry", "Light Orange", "Quick Minimal Look",
+			"Modern", "Microfrost", "Moonlight", "Sonic Riders", "VisualStudio"
 		};
-		static int item_selected_idx;
+		static const char* theme_ids[] = {
+			"Dashboard", "AdobeInspired", "AyuDark", "Confy", "DarkCyan",
+			"DefaultDark", "DefaultLight", "Everforest", "FutureDark", "Gold",
+			"HazyDark", "KazamsCherry", "LightOrange", "QuickMinimalLook",
+			"Modern", "Microfrost", "Moonlight", "SonicRiders", "VisualStudio"
+		};
+		static_assert(std::size(theme_items) == std::size(theme_ids), "themes desincronizados");
+
+		// Índice inicial: el tema que venga de la config (theme_selected_)
+		static int item_selected_idx = [this]() {
+			for (int i = 0; i < static_cast<int>(std::size(theme_ids)); ++i)
+				if (theme_selected_ == theme_ids[i]) return i;
+			return 6; // DefaultLight
+		}();
+
 		if (BeginCombo("##cbth", theme_items[item_selected_idx]))
 		{
 			// Recorremos todas las opciones
@@ -862,32 +864,10 @@
 				// **SELECTABLE**: se ejecuta *una sola vez* cuando el usuario
 				// hace click (o pulsa Enter) sobre la opción.
 				if (Selectable(theme_items[n], is_selected)) {
-					// ----> CAMBIO DE SELECCIÓN <----
-					item_selected_idx = n;                     // actualizar índice
-
-					// ----> ACCIÓN A EJECUTAR ----
-					switch(n){
-						case 0: Style_Dashboard(); 			break;
-						case 1: Style_AdobeInspired(); 		break;
-						case 2: Style_AyuDark(); 			break;
-						case 3: Style_Confy(); 				break;
-						case 4: Style_DarkCyan(); 			break;
-						case 5: Style_DefaultDark(); 		break;
-						case 6: Style_DefaultLight();		break;
-						case 7: Style_Everforest(); 		break;
-						case 8: Style_FutureDark(); 		break;
-						case 9: Style_Gold(); 				break;
-						case 10: Style_HazyDark(); 			break;
-						case 11: Style_KazamsCherry(); 		break;
-						case 12: Style_LightOrange(); 		break;
-						case 13: Style_QuickMinimalLook(); 	break;
-						case 14: Style_Modern(); 			break;
-						case 15: Style_Microfrost(); 		break;
-						case 16: Style_Moonlight(); 		break;
-						case 17: Style_SonicRiders(); 		break;
-						case 18: Style_VisualStudio(); 		break;
-
-					}
+					item_selected_idx = n;
+					theme_selected_   = theme_ids[n]; // id canónico
+					apply_theme();                    // aplica el Style_ correspondiente
+					saveConfig();                     // lo persiste en el json
 				}
 
 				// Mantener el foco visual en el elemento activo
@@ -1345,377 +1325,6 @@
 		SetWindowFontScale(1.0f);
 	}
 
-	void GuiMgr::columnaDerecha() {
-		//  COLUMNA DERECHA (Layout principal)
-		BeginGroup(); 
-		{
-			static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
-			if (BeginTabBar("MyTabBar", tab_bar_flags)) {
-
-				if (BeginTabItem("Sounds")) {
-					panelSounds();
-					EndTabItem();
-				}
-
-				if (BeginTabItem("Playground")) {
-
-					Text("Espacio preparado para duplicar o probar funciones");
-
-					EndTabItem();
-				}
-
-				if (BeginTabItem("Demo1")) {
-					// Test imagen
-					if (BeginTable("demo1tab", 3))
-					{
-						// No sale nada antes de estos dos
-						TableNextRow();
-						TableNextColumn();
-						
-						Text("Test Imagen:");
-						TableNextColumn();
-						Text("Test imagen fallida");
-						TableNextColumn();
-						Text("Test imagen precargada");
-						TableNextRow();
-						TableNextColumn();
-						Image(get_image("imageres/cat.png"), ImVec2(200,100));
-						TableNextColumn();
-						Image(get_image("imageres/nonexist?"), ImVec2(200,100));
-						TableNextColumn();
-						Image(get_image("imageres/cat.png"), ImVec2(100,200));
-
-						EndTable();
-					}
-					
-					// Test spinners
-					ImSpinner::SpinnerAng8(           "Ang",     16, 2);	SameLine(0.0, -1.0);
-					ImSpinner::SpinnerPulsar(         "Pulsar",  16, 2);	SameLine(0.0, -1.0);
-					ImSpinner::SpinnerClock(          "Clock",   16, 2);	SameLine(0.0, -1.0);
-					ImSpinner::SpinnerAtom(           "atom",    16, 2);	SameLine(0.0, -1.0);
-					ImSpinner::SpinnerSwingDots(      "wheel",   16, 6);	SameLine(0.0, -1.0);
-					ImSpinner::SpinnerFadeDots(		  "dots",	 16, 2, ImColor(.5f,.5f,.5f));		
-					SameLine(0.0, -1.0);
-					ImSpinner::SpinnerRainbowMix(     "Rmix",    16, 2, ImColor(1.0f,1.0f,1.0f),4);	
-					SameLine(0.0, -1.0);
-					ImSpinner::SpinnerDotsToBar(      "tobar",   16, 2, ImColor(1.0f,1.0f,1.0f),4);	
-					SameLine(0.0, -1.0);
-					ImSpinner::SpinnerBarChartRainbow("rainbow", 16, 4, ImColor(1.0f,1.0f,1.0f),4);
-
-					EndTabItem();
-				}
-
-				if (BeginTabItem("knobs")) { 
-					// Valores de ejemplo
-					static float val1 = 0;
-					static float val2 = 0;
-					static float val3 = 0;
-					static float val4 = 0;
-					static int 	 val5 = 1;
-					static float val6 = 1;
-					static float val7 = 500.0f;
-
-					// Test knobs
-					ImGuiKnobs::Knob("Gain", &val1, -6.0f, 6.0f, 0.1f, "%.1fdB", ImGuiKnobVariant_Tick, 0,ImGuiKnobFlags_ValueTooltip | ImGuiKnobFlags_NoTitle);
-					SameLine();
-					ImGuiKnobs::Knob("Mix", &val2, -1.0f, 1.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped);
-					SameLine();
-					ImGuiKnobs::Knob("Pitch", &val3, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_ValueTooltip | ImGuiKnobFlags_NoTitle | ImGuiKnobFlags_NoInput);
-					SameLine();
-					ImGuiKnobs::Knob("Dry", &val4, -6.0f, 6.0f, 0.1f, "%.1f", ImGuiKnobVariant_Stepped, 0, 0, 10, 1.570796f, 3.141592f);
-					SameLine();
-					ImGuiKnobs::KnobInt("Wet", &val5, 1, 10, 0.1f, "%i", ImGuiKnobVariant_Stepped, 0, 0, 10);
-					SameLine();
-					ImGuiKnobs::Knob("Vertical", &val6, 0.f, 10.f, 0.1f, "%.1f", ImGuiKnobVariant_Space, 0, ImGuiKnobFlags_DragVertical);
-					SameLine();
-					ImGuiKnobs::Knob("Logarithmic", &val7, 20, 20000, 20.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 0, ImGuiKnobFlags_Logarithmic | ImGuiKnobFlags_AlwaysClamp);
-					
-					// Double click to reset
-					if (IsItemActive() && IsMouseDoubleClicked(0)) {
-						val1 = 0; val2 = 0; val3 = 0; val4 = 0;	val5 = 0; val6 = 0;	val7 = 0;
-					}
-
-					EndTabItem();
-				}
-
-				// COMUNICACIONES (TABLA CON KNOBS)
-				if (BeginTabItem("Communications")) {
-					// Definimos los nombres de las columnas. 
-					const char* col_names[] = { "TX/RX", "Piloto", "Copiloto", "3Hombre", "IOS OnBoard", "IOS Offboard 1", "IOS OffBoard 2" };
-					
-					// Calculamos el número de columnas dinámicamente
-					const int num_col = (int)(sizeof(col_names) / sizeof(col_names[0]));
-					const int num_rows = num_col-1; // Puedes cambiar esto por una constante o variable de tu lógica
-
-					// Matriz de valores para los Knobs: [Filas][Columnas]
-					static float k_vals[num_rows][num_col];
-
-					//style_->TableAngledHeadersAngle = 35.0f;
-
-					if (BeginTable("KnobTable", num_col, ImGuiTableFlags_ScrollY | ImGuiTableFlags_Borders, ImVec2(0, 0))) {
-						
-						// Primera columna (Nombres de canales)
-						TableSetupColumn(col_names[0], ImGuiTableColumnFlags_WidthFixed, 100.0f);
-						
-						// Resto de columnas (Angled Headers)
-						for (int n = 1; n < num_col; n++) {
-							TableSetupColumn(col_names[n], ImGuiTableColumnFlags_AngledHeader | ImGuiTableColumnFlags_WidthFixed, 55.0f);
-						}
-
-						TableAngledHeadersRow();
-						TableHeadersRow();
-
-						for (int row = 0; row < num_rows; row++) {
-							PushID(row);
-							TableNextRow(ImGuiTableRowFlags_None, 65.0f);
-							
-							// Columna 0: Etiqueta del canal
-							TableSetColumnIndex(0);
-							AlignTextToFramePadding();
-							Text("%s", col_names[row+1]);
-
-							// Columnas 1 a N: Knobs
-							for (int col = 1; col < num_col; col++) {
-								if (TableSetColumnIndex(col)) {
-									PushID(col);
-									
-									float c_width = GetColumnWidth();
-									// Centramos el knob (40.0f es su diámetro)
-									SetCursorPosX(GetCursorPosX() + (c_width - 40.0f) * 0.5f);								
-									ImGuiKnobs::Knob("##vol", &k_vals[row][col], 0.0f, 100.0f, 1.0f, "%.1f", ImGuiKnobVariant_WiperOnly, 40.0f, ImGuiKnobFlags_ValueTooltip | ImGuiKnobFlags_NoTitle);
-									
-									PopID();
-								}
-							}
-							PopID();
-						}
-						EndTable();
-					}
-					EndTabItem();
-				}
-
-				if (BeginTabItem("TTS")) {
-					// --- CONFIGURACIÓN PREVIA ---
-					static int selected_idx = 0;
-					std::string current_model = (!soundsData_.tts.loaded_models.empty()) ? soundsData_.tts.loaded_models[selected_idx] : "";
-	
-					static std::string proc_text;
-
-					/* De momento esto no se usa, comento porque sino logea todo el rato cannot process text*/
-					// proc_text = ctrl_->getTTSProcessingText(current_model);
-					// bool is_busy = !proc_text.empty();
-					
-
-					static char manual_buffer[2048] = ""; 
-
-					// --- LAYOUT ---
-
-					Text("TTS Content:");
-
-					// Definimos un alto para que ambos lados midan lo mismo
-					float content_height = GetTextLineHeight() * 12;
-
-					// COLUMNA IZQUIERDA: InputText
-					// Usamos un Child o simplemente calculamos el ancho para dejar espacio a la derecha
-					static float right_panel_width = 250.0f; // Ancho fijo para el panel de controles
-					static float input_width = GetContentRegionAvail().x - right_panel_width - GetStyle().ItemSpacing.x;
-
-					BeginGroup(); // Agrupamos el input para que Sameline funcione con el bloque siguiente
-
-						ImGuiInputTextFlags flags = ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_WordWrap;
-						if (ctrl_->isOnlineMode()) {
-							flags |= ImGuiInputTextFlags_ReadOnly;
-							PushStyleColor(ImGuiCol_Text, GetStyle().Colors[ImGuiCol_TextDisabled]);
-							InputTextMultiline("##ttstext_v", const_cast<char*>(proc_text.c_str()), proc_text.size(), 
-								ImVec2(input_width, content_height), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_WordWrap);
-							PopStyleColor();
-						} else {
-							InputTextMultiline("##ttstext_e", manual_buffer, IM_ARRAYSIZE(manual_buffer), 
-								ImVec2(input_width, content_height), flags);
-						}
-					EndGroup();
-
-					SameLine();
-
-					// COLUMNA DERECHA: Combo y Botón
-					BeginChild("ControlsPanel", ImVec2(right_panel_width, content_height), false);
-						
-						Text("Voice Model:");
-
-						// Desactiva visualmente y bloquea interacción
-						bool is_online = ctrl_->isOnlineMode();
-						if (is_online) BeginDisabled(); // Si es online, todo lo que sigue se deshabilita
-
-						SetNextItemWidth(-FLT_MIN); // Que ocupe todo el ancho del child
-						const char* preview_value = (soundsData_.tts.loaded_models.empty()) ? "" : soundsData_.tts.loaded_models[selected_idx].c_str();
-						if (BeginCombo("##cb_model", preview_value)) {
-							for (int n = 0; n < static_cast<int>(soundsData_.tts.loaded_models.size()); ++n) {
-								if (Selectable(soundsData_.tts.loaded_models[n].c_str(), selected_idx == n)) selected_idx = n;
-							}
-							EndCombo();
-						}
-
-						Spacing(); Spacing();
-
-						if (Button("Generate Wav", ImVec2(-FLT_MIN, 40))) { 
-							// Usamos el buffer manual que el usuario ha escrito
-							ctrl_->getSoundsModule()->getTTSCore()->generateWav(current_model, manual_buffer, current_model);
-						}
-						if (is_online) EndDisabled(); // Cerramos el bloque de deshabilitado
-
-					EndChild();
-
-
-
-					EndTabItem();
-				}
-				
-				if (BeginTabItem("audio")) {
-
-					SoundMgr* snd = ctrl_->getSoundsModule();
-
-					// Pide al controlador la lista de micrófonos disponibles en este momento
-					std::vector<std::string> entradas = snd->getAvailableCaptures();
-
-					// Lista con los nombres de los dispositivos que el usuario ha activado
-					static std::vector<std::string> dispositivos_activos;
-					dispositivos_activos = snd->getCaptureModuleNames();
-
-					// Flag para abrir/cerrar la ventana flotante del selector
-					static bool show_device_selector = false;
-
-					// --- Muestra los dispositivos activos ---
-					Text("Dispositivos activos:");
-					if (dispositivos_activos.empty()) {
-						TextDisabled("  (ninguno)");   // Si no hay ninguno, muestra texto gris
-					} else {
-
-						// #TODO (rehacer)
-
-						AudioCaptureModule* acm = nullptr;
-
-						short i = 0;
-						for (std::string const& captureName : dispositivos_activos) {
-							PushID(i);
-
-							// Obtener el dispositivo de captura
-							acm = snd->getCapture(captureName);
-
-							if (!acm)
-								continue;
-
-							// Si el dispositivo se ha desconectado, mostrar aviso en rojo
-							if (!acm->isValid()) {
-								TextColored(ImVec4(1, 0, 0, 1), " %s - DESCONECTADO", captureName.c_str());
-								SameLine();
-								if (SmallButton("x")) 
-									snd->removeCaptureDevice(captureName);
-								
-								
-							} else {
-								
-								Text("%s", captureName.c_str());
-								SameLine();
-								if (SmallButton("Grabar"))
-									acm->StartRec(acm->getModuleName() + "_REC");
-								SameLine();
-								if (SmallButton("Parar"))
-									acm->StopRec();
-								SameLine();
-								if (SmallButton("x"))
-									snd->removeCaptureDevice(captureName);
-								
-	
-								SameLine();
-	
-								Text("%s", std::to_string(acm->getBufferSize()).c_str());
-								Text("%s", std::to_string(acm->getRecBufferSize()).c_str());
-
-								SameLine();
-
-								// --- Selector de canal (se adapta al nº de canales del dispositivo) ---
-								{
-									int nCh = acm->getNumChannels();
-									int sel = acm->getSelectedChannel();
-									std::string chPreview = (sel == 0) ? std::string("Todos") : ("Canal " + std::to_string(sel));
-									SetNextItemWidth(90);
-									if (BeginCombo("##ch", chPreview.c_str())) {
-										if (Selectable("Todos", sel == 0))
-											acm->setSelectedChannel(0);
-										for (int c = 1; c <= nCh; ++c) {
-											std::string chLabel = "Canal " + std::to_string(c);
-											if (Selectable(chLabel.c_str(), sel == c))
-												acm->setSelectedChannel(static_cast<unsigned short>(c));
-										}
-										EndCombo();
-									}
-								}
-
-								SameLine();
-
-								// Medidor VU - barra vertical RMS
-								float LevelVal = acm->getRmsLevel();
-
-								ImVec4 barColor;
-								if      (LevelVal < 60.f) 	barColor = ImVec4(0.18f, 0.80f, 0.18f, 1.0f); // verde
-								else if (LevelVal < 85.f) 	barColor = ImVec4(1.00f, 0.75f, 0.00f, 1.0f); // amarillo
-								else						barColor = ImVec4(0.90f, 0.15f, 0.15f, 1.0f); // rojo
-
-								if (ImPlot::BeginPlot("##vu", ImVec2(30, 70),
-									ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText |
-									ImPlotFlags_NoMenus  | ImPlotFlags_NoTitle     | ImPlotFlags_NoFrame))
-								{
-									ImPlot::SetupAxes(nullptr, nullptr,
-										ImPlotAxisFlags_NoDecorations,
-										ImPlotAxisFlags_NoDecorations);
-									ImPlot::SetupAxisLimits(ImAxis_X1, 0.5, 1.5, ImGuiCond_Always);
-									ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0, 100.0, ImGuiCond_Always);
-									ImPlot::SetNextFillStyle(barColor);
-									ImPlot::PlotBars("##bar", &LevelVal, 1, 0.9, 1.0);
-									ImPlot::EndPlot();
-								}
-							}
-							i++;
-							PopID();
-						}
-						
-					}
-
-					// Botón para abrir el selector de dispositivos disponibles
-					if (Button("Selecciona dispositivo disponible"))
-						show_device_selector = true;
-
-					SameLine();
-
-					// --- Ventana flotante: selector de dispositivos disponibles ---
-					if (show_device_selector) {
-						SetNextWindowSize(ImVec2(400, 300), ImGuiCond_FirstUseEver);    // Tamaño inicial de la ventana
-						if (Begin("Dispositivos de entrada", &show_device_selector)) {  // &show_device_selector: la X de la ventana la cierra
-							if (entradas.empty()) {
-								TextDisabled("No hay dispositivos disponibles.");
-							} else {
-								for (int n = 0; n < static_cast<int>(entradas.size()); ++n) {
-									if (Selectable(entradas[n].c_str())) {
-										snd->addCaptureDevice(nullptr, entradas[n], entradas[n]);
-										show_device_selector = false;               // Cierra el popup
-									}
-								}
-							}
-						}
-						End();
-					}
-
-					EndTabItem();
-				}
-	
-				EndTabBar();
-			}
-
-		}
-		EndGroup();       // grupo principal
-
-	}
-
     void GuiMgr::panelCommsMatrix() {
 		// Definimos los nombres de las columnas. 
 		const char* col_names[] = { "TX/RX", "Piloto", "Copiloto", "3Hombre", "IOS OnBoard", "IOS Offboard 1", "IOS OffBoard 2" };
@@ -2062,9 +1671,7 @@
 	// Elementos de interfaz ----------------------------------------------------------------
 	void GuiMgr::mainmenu_bar()                             { }
 	void GuiMgr::main_window()                              { }
-	void GuiMgr::columnaDerecha()                           { }
 	void GuiMgr::generate_dot(ImVec4 const&)                   { }
-	void GuiMgr::status_bar_top()                           { }
 	void GuiMgr::status_bar_bottom()                        { }
 	void GuiMgr::sidebar_nav()                              { }
 	void GuiMgr::panelSounds()                              { }
