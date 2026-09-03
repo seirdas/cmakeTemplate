@@ -69,10 +69,6 @@ public:
 
 // Ejecución ----------------------------------------------------------------------------
 
-    bool addPosition();
-
-    bool removePosition();
-
     /**
      * @brief Busca una posición por su nombre/alias.
      * @param name Nombre/alias de la posición.
@@ -80,6 +76,10 @@ public:
      */
     Position* getPosition(std::string const& name);
 
+    /**
+     * @brief Lista los alias de todas las posiciones cargadas.
+     * @return Vector con los nombres/alias de las posiciones.
+     */
     std::vector<std::string> getPositions();
 
 
