@@ -113,6 +113,10 @@ bool AppController::init() {
     init_module(sym_, "Symetrix",           enable_flags_.sym);
     init_module(dds_, "FastDDS",            enable_flags_.dds);
     init_module(cds_, "CycloneDDS",         enable_flags_.cds);
+
+    // TEMPORAL: prueba manual de publish/subscribe FastDDS (a quitar cuando esté validado)
+    if (dds_ && dds_->isInitialized())
+        dds_->test();
     init_module(ico_, "iComm",              enable_flags_.ico);
     init_module(comms_, "Comms",            enable_flags_.com);
     init_module(tones_, "Tones",            enable_flags_.tns);
@@ -266,6 +270,10 @@ bool AppController::Run() {
 
     Symetrix* AppController::getSymetrixModule() {
         return sym_.get();
+    }
+
+    FastDDS* AppController::getFastDDSModule() {
+        return dds_.get();
     }
 
 

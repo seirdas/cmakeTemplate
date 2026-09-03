@@ -8,6 +8,7 @@ class NetMgr;
 class SoundMgr;
 class TotalMix;
 class Symetrix;
+class FastDDS;
 
 
 /**
@@ -109,5 +110,11 @@ public:
      * @return Puntero a gestor de symetrix
      */
     virtual Symetrix* getSymetrixModule() = 0;
+
+    /**
+     * @brief Devuelve la instancia de gestor de FastDDS
+     * @return Puntero a gestor de FastDDS
+     */
+    virtual FastDDS* getFastDDSModule() = 0;
 
 };

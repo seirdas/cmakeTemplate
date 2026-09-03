@@ -1,0 +1,5 @@
+
+struct FastDDSTest {
+    long id;
+    string message;
+};

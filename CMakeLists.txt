@@ -182,7 +182,7 @@ import_dependency( IMGUILIB         ON     imgui_lib          gui/lib-imgui)
 import_dependency( STB              ON     stb_lib            gui/lib-stb)
 import_dependency( JSON             ON     nlohmann_json      file/lib-json)
 import_dependency( TINYXML          ON     tinyxml2_lib       file/lib-xml)
-import_dependency( FASTDDS          OFF    fastdds_lib        dds/lib-fastdds)    # Necesita instalar Fastdds 3.2.2, OpenSSL y Java JDK
+import_dependency( FASTDDS          ON     fastdds_lib        dds/lib-fastdds)    # Necesita instalar Fastdds 3.2.2, OpenSSL y Java JDK
 import_dependency( CYCLONEDDSCXX    OFF    cycloneddscxx_lib  dds/lib-cycloneddscxx)
 import_dependency( OPENDDS          OFF    opendds_lib        dds/lib-opendds)
 

@@ -60,9 +60,16 @@ public:
 
     /**
      * @brief Cierra y limpia todos los componentes de la clase.
-     * @details Esto incluye los datos PIMPL: Participant, publisher, subscriber, etc. 
+     * @details Esto incluye los datos PIMPL: Participant, publisher, subscriber, etc.
      */
     void close();
+
+    /**
+     * @brief Ejemplo de uso de FastDDS: crea (si hace falta) un topic de prueba
+     *  y publica un mensaje. Como writer y reader viven en el mismo participant,
+     *  el propio proceso debería recibir lo que publica.
+     */
+    void test();
 
 private:
 

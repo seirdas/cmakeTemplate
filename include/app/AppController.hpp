@@ -147,6 +147,12 @@ public:
      */
     Symetrix* getSymetrixModule() override;
 
+    /**
+     * @brief Devuelve la instancia de gestor de FastDDS
+     * @return Puntero a gestor de FastDDS
+     */
+    FastDDS* getFastDDSModule() override;
+
 
 private:
 

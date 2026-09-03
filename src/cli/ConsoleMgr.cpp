@@ -13,6 +13,7 @@
 #include "sound/AudioPlaybackModule.hpp"
 #include "devices/TotalMix.hpp"
 #include "devices/Symetrix.hpp"
+#include "dds/FastDDS.hpp"
 #include "net/NetMgr.hpp"
 #include "net/UdpSocket.hpp"
 
@@ -415,6 +416,7 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
                   "  totalmix, tmx <args>   -- Execute totalmix-related commands\n"
                   "  network, net <args>    -- Execute network-related commands (add, devices, remove)\n"
                   "  online <args>          -- Switch online/offline mode\n"
+                  "  ddstest                -- TEMPORAL: publica un mensaje de prueba FastDDS\n"
                   "  exit                   -- Exit the application\n"
                   "\n"
                   "Use '[command] help' for more information about a command"
@@ -428,6 +430,16 @@ void ConsoleMgr::execute_cmd(std::string const& command) {
             }
             // Secuencia ANSI: \033[2J (Limpia pantalla) + \033[H (Mueve cursor a 0,0)
             print("\033[2J\033[H");
+        }},
+
+        { "ddstest", [this](std::vector<std::string> const& tokens) {
+            if (tokens.size() == 2 && tokens[1] == "help") {
+                print("Publica un mensaje de prueba en FastDDSTestTopic (FastDDS).\n");
+                return;
+            }
+            FastDDS* dds = ctrl_ ? ctrl_->getFastDDSModule() : nullptr;
+            if (!dds) { print("FastDDS module not available"); return; }
+            dds->test();
         }},
 
         { "version", [this](std::vector<std::string> const& tokens) {
