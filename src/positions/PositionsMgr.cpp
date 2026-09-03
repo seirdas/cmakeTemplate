@@ -3,6 +3,7 @@
 #include "positions/Position.hpp"
 #include "system/SystemMgr.hpp"
 #include "files/JsonMgr.hpp"
+#include <vector>
 
 #include <string>
 
@@ -23,17 +24,25 @@ PositionsMgr::~PositionsMgr() {
 // Métodos comunes de módulo (IModule) --------------------------------------------------
 
 bool PositionsMgr::init(void* config) {
+    // IModule::init() guarda la config y llama a loadConfig(), que es donde se
+    // crean las Position a partir del array "positions" del json.
     if (!IModule::init(config))
         return false;
-    
 
-    // #TODO
+    std::size_t n;
+    {
+        std::lock_guard<std::mutex> lock(positions_mtx_);
+        n = positions_.size();
+    }
 
-    
-    SYS_WARN("PositionsMgr","Comms logic not yet fully implemented");
-    
+    if (n == 0)
+        SYS_WARN("PositionsMgr", "No positions defined in config");
+    else
+        SYS_INFO("PositionsMgr", "Initialized " + std::to_string(n) + " position(s)");
+
     return true;
 }
+
 
 void PositionsMgr::loadConfig(void* config) {
     if (!config)
@@ -45,29 +54,29 @@ void PositionsMgr::loadConfig(void* config) {
 
     
     // Inicializar cada Position definida en el json
-    std::string name;
     std::vector<json*> config_Positions = jsonMgr.getArrayElements(cfg, "positions");
-    for (json* const cfg_node : config_Positions) {
-        name = "";
-        std::unique_ptr<Position> pers = std::make_unique<Position>();
 
-        // Obtener el nombre desde aquí (puesto 'alias' para que salga lo primero)
+    std::lock_guard<std::mutex> lock(positions_mtx_);
+    for (json* const cfg_node : config_Positions) {
+        std::string name;
         jsonMgr.get(cfg_node, "alias", name);
 
         // Sin 'alias' no hay clave para la lista: se descarta
         if (name.empty()) {
-            SYS_WARN("PositionsMgr","Skipping position without 'alias'");
+            SYS_WARN("PositionsMgr", "Skipping position without 'alias'");
             continue;
         }
 
-        // Inicializar la Position con los datos de la configuración
+        // Crear e inicializar la Position con los datos de la configuración
+        std::unique_ptr<Position> pers = std::make_unique<Position>();
         if (!pers->init(cfg_node)) {
-            SYS_WARN("PositionsMgr","Cannot initialize new position '" + name + "'");
+            SYS_WARN("PositionsMgr", "Cannot initialize position '" + name + "'");
             continue;
         }
 
-        // Agregar Position creada a la lista de Positions
+        // Agregar Position creada a la lista
         positions_[name] = std::move(pers);
+        SYS_INFO("PositionsMgr", "Position created: " + name);
     }
 
 }
@@ -91,4 +100,15 @@ Position* PositionsMgr::getPosition(std::string const& name) {
         return nullptr;
 
     return it->second.get();
+}
+
+std::vector<std::string> PositionsMgr::getPositions() {
+    std::lock_guard<std::mutex> lock(positions_mtx_);
+
+    std::vector<std::string> names;
+    names.reserve(positions_.size());
+    for (auto const& [name, pos] : positions_)
+        names.push_back(name);
+
+    return names;
 }

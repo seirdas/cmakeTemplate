@@ -130,7 +130,7 @@ JsonMgr& JsonMgr::instance() {
         std::vector<json*> resultado;
 
         // Lo devuelve vacio si no cumple requisitos
-        if (parent == nullptr && !parent->contains(key))
+        if (parent == nullptr || !parent->contains(key))
             return resultado;
 
         // Push de elementos en el vector
