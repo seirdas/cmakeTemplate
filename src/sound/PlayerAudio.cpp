@@ -37,7 +37,8 @@
     // General ------------------------------------------------------------------------------
 
     PlayerAudio::PlayerAudio(std::string const& moduleName, void* ctx) :
-        AudioPlaybackModule(moduleName, std::make_unique<PlayerAudioImpl>(ctx))
+        AudioPlaybackModule(moduleName, std::make_unique<PlayerAudioImpl>(ctx)),
+        keep_alive_seconds_(200)
     {
         // Añade cosas al Impl de la clase padre
     }
@@ -61,7 +62,6 @@
         // Obtener PIMPL de esta clase hija
         PlayerAudioImpl* pimpl_hija = static_cast<PlayerAudioImpl*>(pimpl_.get());
 
-       
         threads_running_ = false;
 
         // Despertar y unir hilo del Reaper de caché
@@ -96,8 +96,10 @@
         unsigned short      pitch)
     {
         // Comprobar si el contexto está inicializado
-        if (!initialized_)
+        if (!initialized_) {
+            SYS_WARN("PlaybackModule", "playAudio called but module is not initialized");
             return;
+        }
 
         // Resolver el dispositivo de playback por su alias
         Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
@@ -127,10 +129,10 @@
             std::lock_guard<std::mutex> cacheLock(pimpl_hija->sounds_cache_mtx_);
             auto it = pimpl_hija->sounds_cache.find(cacheKey);
             if (it == pimpl_hija->sounds_cache.end()) 
-                {
-                    SYS_WARN("PlaybackModule", "'" + name_ + "' playAudio: cannot found '" + filepath + "' on cache");
-                    return;
-                }
+            {
+                SYS_WARN("PlaybackModule", "'" + name_ + "' playAudio: cannot found '" + filepath + "' on cache");
+                return;
+            }
 
             // Leer muestra precargada
             ma_result res = ma_sound_init_copy(
@@ -185,8 +187,10 @@
         const std::string& deviceAlias)
     {
         // Comprobar si el contexto está inicializado
-        if (!initialized_)
+        if (!initialized_) {
+            SYS_WARN("PlaybackModule", "preload_audio_on_cache called but module is not initialized");
             return false;
+        }
 
         // Obtener PIMPL de esta clase hija
         PlayerAudioImpl* pimpl_hija = static_cast<PlayerAudioImpl*>(pimpl_.get());
@@ -205,7 +209,7 @@
         std::unique_lock<std::mutex> lock(pimpl_hija->sounds_cache_mtx_);
 
         // Comprobar si ya está precargado
-        if (pimpl_hija->sounds_cache.count(filepath))
+        if (pimpl_hija->sounds_cache.count(cacheKey))
             return true;
 
         // Desproteger mapa para la carga de miniaudio
@@ -238,7 +242,7 @@
         lock.lock();
 
         // Guardar el audio generado en la caché
-        pimpl_hija->sounds_cache[filepath] = std::move(inst);
+        pimpl_hija->sounds_cache[cacheKey] = std::move(inst);
 
         return true;
     }

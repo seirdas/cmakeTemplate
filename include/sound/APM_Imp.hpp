@@ -100,6 +100,19 @@
         }
 
         /**
+         * @brief Data callback del device de reproducción: alimenta el engine.
+         * @details Se invoca desde el hilo de audio en tiempo real de miniaudio.
+         *  Necesario porque al pasar un ma_device propio a ma_engine_init (pDevice),
+         *  miniaudio no conecta automáticamente el callback del device con el engine.
+         */
+        static void playbackDataCallback(ma_device* pDevice, void* pOutput, const void* /*pInput*/, ma_uint32 frameCount) {
+            auto* dev = static_cast<DeviceInstance*>(pDevice->pUserData);
+            if (dev) {
+                ma_engine_read_pcm_frames(&dev->engine, pOutput, frameCount, nullptr);
+            }
+        }
+
+        /**
         * @brief Marca como finalizado el sonido que acaba de reproducirse (finaliza)
         * @details Invocado directamente desde el hilo de procesamiento en tiempo real de Miniaudio (evitar logica pesada)
         * @param userData Datos del usuario, típicamente el puntero a esta instancia.

@@ -182,17 +182,6 @@
             ? (deviceName + "#" + std::to_string(channelSelected)) 
             : deviceAlias;
 
-        // Proteger la lista de dispositivos para toda la operación de alta
-        std::lock_guard<std::mutex> devicesLock(pimpl_->devices_mtx);
-
-        // Comprobar que el alias no está ya en uso (evita colisiones)
-        for (auto& dev : pimpl_->devices) {
-            if (dev->alias == effectiveAlias) {
-                SYS_WARN("AudioPlayback", "'" + name_ + "': alias '" + effectiveAlias + "' already in use");
-                return false;
-            }
-        }
-
         // Obtiene la información del dispositivo (ma_device_info)
         std::string realDeviceName = deviceName;
         const ma_device_info* selectedDeviceInfo = 
@@ -210,6 +199,17 @@
             return false;
         }
 
+        // Proteger la lista de dispositivos para toda la operación de alta
+        std::lock_guard<std::mutex> devicesLock(pimpl_->devices_mtx);
+
+        // Comprobar que el alias no está ya en uso (evita colisiones)
+        for (auto& dev : pimpl_->devices) {
+            if (dev->alias == effectiveAlias) {
+                SYS_WARN("AudioPlayback", "'" + name_ + "': alias '" + effectiveAlias + "' already in use");
+                return false;
+            }
+        }
+
         // Instanciar el nuevo dispositivo
         std::unique_ptr<Impl::DeviceInstance> instance = std::make_unique<Impl::DeviceInstance>();
         instance->alias           = effectiveAlias;
@@ -222,19 +222,28 @@
         ma_device_config deviceConfig = ma_device_config_init(ma_device_type_playback);
         deviceConfig.playback.pDeviceID = &selectedDeviceInfo->id;
         deviceConfig.playback.format    = ma_format_f32;
+        deviceConfig.dataCallback       = Impl::playbackDataCallback;
+        deviceConfig.pUserData          = instance.get();
 
         // Establecer el enrutado de canal ANTES de ma_device_init
+        /*
         ma_channel channelMap[1];
         if (channelSelected == 0) {
             // Todos los canales disponibles seleccionados
             deviceConfig.playback.channels    = channels;
             deviceConfig.playback.pChannelMap = nullptr;
         } else {
-            // Submix mono automático de miniaudio al canal AUX correspondiente
+            // Submix mono automático de miniaudio al canal correspondiente
             deviceConfig.playback.channels    = 1;
-            channelMap[0] = static_cast<ma_channel>(MA_CHANNEL_AUX_0 + (channelSelected - 1));
+            
+            // Obtener el mapa de canales nativo completo para la cantidad total de canales
+            ma_channel fullDeviceMap[MA_MAX_CHANNELS];
+            ma_channel_map_init_standard(ma_standard_channel_map_default, fullDeviceMap, MA_MAX_CHANNELS, channels);
+            
+            channelMap[0] = fullDeviceMap[channelSelected - 1];
             deviceConfig.playback.pChannelMap = channelMap;
         }
+        */
 
         // Inicializar device
         if (ma_device_init(pimpl_->ctx, &deviceConfig, &instance->device) != MA_SUCCESS) {
@@ -254,12 +263,22 @@
             return false;
         }
 
+        // Arrancar explícitamente el dispositivo de hardware para que comience el callback PCM
+        if (ma_device_start(&instance->device) != MA_SUCCESS) {
+            SYS_WARN("AudioPlayback", "'" + name_ + "': failed to start device " + instance->info.name);
+            ma_engine_uninit(&instance->engine);
+            ma_device_uninit(&instance->device);
+            return false;
+        }
+
         // Marcar como inicializado y agregar al vector de dispositivos
         instance->initialized = true;
         pimpl_->devices.push_back(std::move(instance));
 
         SYS_INFO("AudioPlayback", "'" + name_ + "': added device '" + effectiveAlias + "' (" 
                 + selectedDeviceInfo->name + ", channel " + std::to_string(channelSelected) + ")");
+
+
         return true;
     }
 
