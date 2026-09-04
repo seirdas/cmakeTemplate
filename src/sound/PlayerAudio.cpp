@@ -43,6 +43,9 @@
         // Añade cosas al Impl de la clase padre
     }
 
+    PlayerAudio::~PlayerAudio() {
+        close();
+    }
     
     // Inicialización -----------------------------------------------------------------------
 

@@ -21,7 +21,7 @@ public:
      * @brief Destructor del módulo
      *  Utiliza el destructor de la clase padre
      */
-    ~PlayerMorse() override = default;
+    ~PlayerMorse() override;
 
     // Sin copia ni movimiento
     PlayerMorse(const PlayerMorse&) = delete;

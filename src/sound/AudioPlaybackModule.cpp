@@ -115,6 +115,7 @@
             for (auto& [id, snd] : DevInst->playing_sounds)
                 if (snd) {
                     ma_sound_stop(&snd->sound);
+                    ma_sound_uninit(&snd->sound);
                     if (snd->hasBuffer) 
                         ma_audio_buffer_uninit(&snd->buffer);
                 }
@@ -131,8 +132,8 @@
             if (!DevInst || !DevInst->initialized) 
                 continue;
 
-            ma_engine_uninit(&DevInst->engine);
             ma_device_uninit(&DevInst->device);
+            ma_engine_uninit(&DevInst->engine);
             DevInst->initialized = false;
         }
 
@@ -266,8 +267,8 @@
         // Arrancar explícitamente el dispositivo de hardware para que comience el callback PCM
         if (ma_device_start(&instance->device) != MA_SUCCESS) {
             SYS_WARN("AudioPlayback", "'" + name_ + "': failed to start device " + instance->info.name);
-            ma_engine_uninit(&instance->engine);
             ma_device_uninit(&instance->device);
+            ma_engine_uninit(&instance->engine);
             return false;
         }
 

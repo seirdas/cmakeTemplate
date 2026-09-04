@@ -191,24 +191,32 @@
         // Limpieza de módulos de captura
         if (!captures_.empty()) {
             SYS_INFO("SoundMgr", "Closing capture modules...");
+            for (auto& [name, player] : captures_)
+                player->close();
             captures_.clear();
         }
 
         // Limpieza de módulos playback de audios
         if (!playersAudios_.empty()) {
             SYS_INFO("SoundMgr", "Closing Audio Player modules...");
+            for (auto& [name, player] : playersAudios_)
+                player->close();
             playersAudios_.clear();
         }
         
         // Limpieza de módulos playback de Morse
         if (!playersMorse_.empty()) {
             SYS_INFO("SoundMgr", "Closing Morse Player modules...");
+            for (auto& [name, player] : playersMorse_)
+                player->close();
             playersMorse_.clear();
         }
         
         // Limpieza de módulos playback de TTS
         if (!playersTTS_.empty()) {
             SYS_INFO("SoundMgr", "Closing TTS Player modules...");
+            for (auto& [name, player] : playersTTS_)
+                player->close();
             playersTTS_.clear();
         }
 

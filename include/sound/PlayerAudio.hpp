@@ -20,7 +20,7 @@ public:
      * @brief Destructor del módulo
      *  Utiliza el destructor de la clase padre
      */
-    ~PlayerAudio() override = default;
+    ~PlayerAudio() override;
 
     // Sin copia ni movimiento
     PlayerAudio(const PlayerAudio&) = delete;

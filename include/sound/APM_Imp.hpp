@@ -55,8 +55,8 @@
             
             ~DeviceInstance() {
                 if (initialized) {
-                    ma_engine_uninit(&engine);
                     ma_device_uninit(&device);
+                    ma_engine_uninit(&engine);
                 }
             }
 
@@ -93,8 +93,8 @@
             // Desinicializar los dispositivos inicializados
             for (auto& dev : devices) {
                 if (dev->initialized) {
-                    ma_engine_uninit(&dev->engine);
                     ma_device_uninit(&dev->device);
+                    ma_engine_uninit(&dev->engine);
                 }
             }
         }
