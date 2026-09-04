@@ -226,14 +226,9 @@
         deviceConfig.dataCallback       = Impl::playbackDataCallback;
         deviceConfig.pUserData          = instance.get();
 
-        // Establecer el enrutado de canal ANTES de ma_device_init (#TODO)
-        /*
-        ma_channel channelMap[1];
-        if (channelSelected == 0) {
-            // Todos los canales disponibles seleccionados
-            deviceConfig.playback.channels    = channels;
-            deviceConfig.playback.pChannelMap = nullptr;
-        } else {
+        // Establecer el enrutado de canal ANTES de ma_device_init
+        if (channelSelected != 0) {
+            ma_channel channelMap[1];
             // Submix mono automático de miniaudio al canal correspondiente
             deviceConfig.playback.channels    = 1;
             
@@ -244,7 +239,6 @@
             channelMap[0] = fullDeviceMap[channelSelected - 1];
             deviceConfig.playback.pChannelMap = channelMap;
         }
-        */
 
         // Inicializar device
         if (ma_device_init(pimpl_->ctx, &deviceConfig, &instance->device) != MA_SUCCESS) {

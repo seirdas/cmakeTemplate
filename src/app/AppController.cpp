@@ -234,15 +234,17 @@ bool AppController::Run() {
     PlayerTTS* pt = snd_->getPlayerTTS("TEST");
     if (pt) {
         pt->addPlaybackDevice("alta", 0);
-        pt->playTTS("audio/cat.mp3", "en_us-danny-low", "alta#0", "ATIS1");
+        //pt->playTTS("audio/cat.mp3", "en_us-danny-low", "alta#0", "ATIS1");
     }
     
     // Audio
     snd_->addPlayerAudio(nullptr, "TEST");
     PlayerAudio* pa = snd_->getPlayerAudio("TEST");
     if (pa) {
-        pa->addPlaybackDevice("alta", 0);
-        pa->playAudio("audio/ding.mp3", "alta#0");
+        pa->addPlaybackDevice("alta", 2);
+        pa->addPlaybackDevice("alta", 1);
+        pa->playAudio("audio/ding.mp3", "alta#2", 100, true);
+        pa->playAudio("audio/cat.mp3", "alta#1");
     }
     
     // Morse
@@ -250,7 +252,7 @@ bool AppController::Run() {
     PlayerMorse* pm = snd_->getPlayerMorse("TEST");
     if (pm) {
         pm->addPlaybackDevice("alta", 0);
-        pm->playMorse("ZASOS", "NAV", "alta#0");
+        //pm->playMorse("ZASOS", "NAV", "alta#0");
     }
     
     
