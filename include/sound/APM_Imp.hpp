@@ -121,7 +121,7 @@
         static void endCallback(void* userData, ma_sound* sound) {
             auto* devInst = static_cast<DeviceInstance*>(userData);
             if (devInst && devInst->owner)
-                devInst->owner->stop_and_send_to_cleanup(sound, devInst);
+                devInst->owner->stop_and_send_to_cleanup(sound, devInst);   // CUIDADO con el tiempo que tarda, puede ser crítico
         }
         
         /**

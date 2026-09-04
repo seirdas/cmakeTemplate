@@ -30,7 +30,7 @@
     // Ejecución ----------------------------------------------------------------------------
 
     bool PlayerMorse::playMorse(
-        std::string const&  texto,
+        std::string const&  text,
         std::string const&  audioName,
         std::string const&  deviceAlias,
         unsigned short      volume,   
@@ -38,8 +38,13 @@
         bool                forceStop,
         unsigned short      pitch)
     {
+        // Comprobaciones previas
         if (!initialized_)
             return false;
+        if (text.empty()) {
+            SYS_WARN("PlayerTTS","Cannot play: Text empty");
+            return false;
+        }
 
         // Resolver el dispositivo de playback por su alias
         Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
@@ -49,12 +54,12 @@
         }
 
         // Establecer el nombre id de este audio (el mismo texto de morse si no tiene)
-        std::string usedName = audioName.empty() ? texto : audioName;
+        std::string usedName = audioName.empty() ? text : audioName;
 
         // Generar el audio a partir del texto
-        std::vector<float> audio = generate_morse_audio(texto);
+        std::vector<float> audio = generate_morse_audio(text);
         if(audio.empty()) {
-            SYS_WARN("AudioPlaybackModule", "playMorse: audio vacío para '" + texto + "'"); 
+            SYS_WARN("AudioPlaybackModule", "playMorse: generated empty audio from '" + text + "'"); 
             return false; 
         }
 
@@ -86,6 +91,7 @@
         }
 
         //Establecer parámetros de la reproducción
+        float ma_volume = (static_cast<float>(volume) / 100.0f) * static_cast<float>(globalVol_) / 100.0f;
         ma_sound_set_volume(&inst->sound, static_cast<float>(volume) / 100.0f);
         ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE :MA_FALSE);
 
@@ -96,6 +102,7 @@
         inst->loopMode  = loop;
         inst->name      = usedName;
         inst->forceStop = forceStop;
+        inst->volume    = volume;
         inst->pitch     = pitch;
 
         // Guardar en el mapa del device seleccionado y reproducir

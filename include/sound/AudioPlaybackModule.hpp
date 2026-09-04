@@ -230,9 +230,9 @@ protected:
      * @details Mueve la instancia de sonido a una cola de limpieza, la cual
      *   se desinicializarán en diferido por un hilo independiente.
      * @param sound sonido (ma_sound)
-     * @param deviceAlias (Impl::DeviceInstance*) Dispositivo donde se reproduce el sonido.
+     * @param devInst (Impl::DeviceInstance*) Dispositivo donde se reproduce el sonido.
      */
-    void stop_and_send_to_cleanup(void* sound, void* deviceAlias);
+    void stop_and_send_to_cleanup(void* sound, void* voidDevInst);
 
     /**
      * @brief Libera de la memoria los sonidos de la lista de limpieza

@@ -226,7 +226,7 @@
         deviceConfig.dataCallback       = Impl::playbackDataCallback;
         deviceConfig.pUserData          = instance.get();
 
-        // Establecer el enrutado de canal ANTES de ma_device_init
+        // Establecer el enrutado de canal ANTES de ma_device_init (#TODO)
         /*
         ma_channel channelMap[1];
         if (channelSelected == 0) {
@@ -573,12 +573,12 @@
         }
     }
 
-    void AudioPlaybackModule::stop_and_send_to_cleanup(void* sound, void* deviceAlias) {
+    void AudioPlaybackModule::stop_and_send_to_cleanup(void* sound, void* voidDevInst) {
         // Obtener el sonido en su tipo ma_audio
         ma_sound* maSound = static_cast<ma_sound*>(sound);
 
         // Obtener el dispositivo en su tipo DeviceInstance
-        Impl::DeviceInstance* devInst = static_cast<Impl::DeviceInstance*>(deviceAlias);
+        Impl::DeviceInstance* devInst = static_cast<Impl::DeviceInstance*>(voidDevInst);
 
         // Parar el sonido
         ma_sound_stop(maSound);

@@ -57,8 +57,8 @@
     bool PlayerTTS::playTTS(
         std::string const&  text, 
         std::string const&  modelName, 
+        std::string const&  deviceAlias,
         std::string const&  audioName,
-        const std::string&  deviceAlias,
         unsigned short      volume,
         bool                loop,
         bool                forceStop,
@@ -66,6 +66,8 @@
     {
 
         // Comprobaciones previas
+        if (!initialized_)
+            return false;
         if (text.empty()) {
             SYS_WARN("PlayerTTS","Cannot play: Text empty");
             return false;
@@ -78,26 +80,78 @@
             SYS_WARN("PlayerTTS","Cannot generate audio: TTS callback function don't defined");
             return false;
         }
-        if (!pimpl_->find_device(deviceAlias)) {
-            SYS_WARN("PlayerTTS", "playTTS: device alias '" + deviceAlias + "' not found/initialized");
+        
+        Impl::DeviceInstance* device = pimpl_->find_device(deviceAlias);
+        if (!device) {
+            SYS_WARN("PlaybackModule", "playAudio: device alias '" + deviceAlias + "' not found/initialized");
             return false;
         }
 
-        std::lock_guard<std::mutex> lock(cola_textos_mtx_);
+        // Generar audio (muestras + sample rate real del modelo usado)
+        AudioData audio = onTextToAudio_cb_(modelName, text);
+        if (audio.samples.empty()) {
+            SYS_WARN("PlayerTTS", "Empty audio generated from " + modelName);
+            texto_en_proceso_.clear();
+            return false;
+        }
 
-        // Encolamos los datos para que el hilo los procese
-        queueElement element;
-        element.modelName   = modelName;
-        element.text        = text;
-        element.audioName   = (audioName.empty()) ? text : audioName;
-        element.deviceAlias = deviceAlias;
-        element.volume      = volume;
-        element.loop        = loop;
-        element.forceStop   = forceStop;
-        cola_textos_.push(element);
+        // Crear la instancia de sonido
+        auto inst = std::make_unique<Impl::SoundInstance>();
 
-        // Despertamos al hilo de procesamiento si estaba dormido
-        cola_textos_cv_.notify_one();
+        // Describir el audio generado (formato, canales, tamaño, puntero a los datos)
+        ma_audio_buffer_config config = ma_audio_buffer_config_init(
+            ma_format_f32,
+            1,
+            audio.samples.size(),
+            audio.samples.data(),
+            nullptr
+        );
+        config.sampleRate = audio.sample_rate;
+
+        // Copiar los datos generados al buffer de la instancia
+        if (ma_audio_buffer_init_copy(&config, &inst->buffer) != MA_SUCCESS) {
+            SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al crear el buffer de audio");
+            return false;
+        }
+        inst->hasBuffer = true;
+
+        // Envolver el buffer como un sonido reproducible por el motor
+        if (ma_sound_init_from_data_source(&device->engine, &inst->buffer, 0, nullptr, &inst->sound) != MA_SUCCESS) {
+            ma_audio_buffer_uninit(&inst->buffer);
+            SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al inicializar el sonido");
+            texto_en_proceso_.clear();
+            return false;
+        }
+
+        // Establecer parámetros de la reproducción
+        float ma_volume = (static_cast<float>(volume) / 100.0f) * static_cast<float>(globalVol_) / 100.0f;
+        ma_sound_set_volume(&inst->sound, ma_volume);  // (va de 0.0 a 1.0)
+        ma_sound_set_looping(&inst->sound, (loop) ? MA_TRUE : MA_FALSE);
+
+        // Vincular el fin de la reproducción al endCallback
+        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, device);
+
+        // Guardar parámetros en la instancia de sonido
+        inst->loopMode  = loop;
+        inst->forceStop = forceStop;
+        inst->name      = audioName;
+        inst->volume    = volume;
+        inst->pitch     = pitch;
+
+        // Guardar en el mapa del dispositivo y reproducir
+        {
+            std::lock_guard<std::mutex> soundsLock(device->playing_sounds_mtx);
+            device->playing_sounds[audioName] = std::move(inst);
+
+            SYS_INFO("PlayerTTS","'" + audioName + "': init playing TTS on '" + deviceAlias + "'...");
+            ma_sound_start(&device->playing_sounds[audioName]->sound);
+        }
+
+        // Limpiar el texto que se está procesando
+        texto_en_proceso_.clear();
+
+        // Notificar que ha terminado de reproducir (iComm)
+        /* #TODO */
 
         return true;
     }
@@ -123,6 +177,7 @@
 
 // Hilos --------------------------------------------------------------------------------
 
+    // #TODO Nunca se llama, he probado primero a reproducir normal. hay que implementar
     void PlayerTTS::t_data_consumer() {
 
         // Elemento a reproducir de la cola
@@ -161,84 +216,8 @@
 // Procesado de elementos de la cola ----------------------------------------------------
 
     bool PlayerTTS::reproducir_elemento(queueElement element) {
-
-        // Resolver el dispositivo de playback por su alias
-        Impl::DeviceInstance* device = pimpl_->find_device(element.deviceAlias);
-        if (!device) {
-            SYS_WARN("PlaybackModule", "playAudio: device alias '" + element.deviceAlias + "' not found/initialized");
-            return false;
-        }
-
-        // Guardar el texto que se está procesando
-        texto_en_proceso_ = element.text;
-
-        // Generar audio (muestras + sample rate real del modelo usado)
-        AudioData audio = onTextToAudio_cb_(element.modelName, element.text);
-        if (audio.samples.empty()) {
-            SYS_WARN("PlayerTTS", "Empty audio generated from " + element.modelName);
-            texto_en_proceso_.clear();
-            return false;
-        }
-
-        // Crear la instancia de sonido
-        auto inst = std::make_unique<Impl::SoundInstance>();
-
-        // Describir el audio generado (formato, canales, tamaño, puntero a los datos)
-        ma_audio_buffer_config config = ma_audio_buffer_config_init(
-            ma_format_f32,
-            1,
-            audio.samples.size(),
-            audio.samples.data(),
-            nullptr
-        );
-        config.sampleRate = audio.sample_rate;
-
-        // Copiar los datos generados al buffer de la instancia
-        if (ma_audio_buffer_init_copy(&config, &inst->buffer) != MA_SUCCESS) {
-            SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al crear el buffer de audio");
-            texto_en_proceso_.clear();
-            return false;
-        }
-        inst->hasBuffer = true;
-
-        // Envolver el buffer como un sonido reproducible por el motor
-        if (ma_sound_init_from_data_source(&device->engine, &inst->buffer, 0, nullptr, &inst->sound) != MA_SUCCESS) {
-            ma_audio_buffer_uninit(&inst->buffer);
-            SYS_WARN("PlayerTTS", "reproducir_elemento: fallo al inicializar el sonido");
-            texto_en_proceso_.clear();
-            return false;
-        }
-
-        // Establecer parámetros de la reproducción
-        float ma_volume = (static_cast<float>(element.volume) / 100.0f) * static_cast<float>(globalVol_) / 100.0f;
-        ma_sound_set_volume(&inst->sound, ma_volume);  // (va de 0.0 a 1.0)
-        ma_sound_set_looping(&inst->sound, (element.loop) ? MA_TRUE : MA_FALSE);
-
-        // Vincular el fin de la reproducción al endCallback
-        ma_sound_set_end_callback(&inst->sound, pimpl_->endCallback, this);
-
-        // Guardar parámetros en la instancia de sonido
-        inst->loopMode  = element.loop;
-        inst->forceStop = element.forceStop;
-        inst->name      = element.audioName;
-        inst->volume    = element.volume;
-
-        // Guardar en el mapa del dispositivo y reproducir
-        {
-            std::lock_guard<std::mutex> soundsLock(device->playing_sounds_mtx);
-            device->playing_sounds[element.audioName] = std::move(inst);
-
-            SYS_INFO("PlayerTTS","'" + element.audioName + "': init playing TTS on '" + element.deviceAlias + "'...");
-            ma_sound_start(&device->playing_sounds[element.audioName]->sound);
-        }
-
-        // Limpiar el texto que se está procesando
-        texto_en_proceso_.clear();
-
-        // Notificar que ha terminado de reproducir (iComm)
-        /* #TODO */
-
-        return true;
+        // #TODO
+        return false;
     }
 
 

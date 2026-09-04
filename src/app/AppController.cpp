@@ -206,7 +206,59 @@ void AppController::close() {
     SYS_INFO("AppController","AppController closed successfully");
 }
 
+
+// test audio
+#include "sound/AudioCaptureModule.hpp"
+#include "sound/PlayerAudio.hpp"
+#include "sound/PlayerMorse.hpp"
+#include "sound/PlayerTTS.hpp"
+#include "sound/TTSCore.hpp"
+
 bool AppController::Run() {
+
+
+    // Prueba sounds
+    for (auto& name : snd_->getAvailableCaptures())
+        SYS_INFO("test","capture: " + name);    
+    for (auto& name : snd_->getAvailablePlaybacks())
+        SYS_INFO("test","playback: " + name);
+
+    TTSCore* tts = snd_->getTTSCore();
+    for (auto& name : tts->getLoadedModels())
+        SYS_INFO("test","ttsmodels: " + name);
+
+
+
+    // TTS
+    snd_->addPlayerTTS(nullptr, "TEST");
+    PlayerTTS* pt = snd_->getPlayerTTS("TEST");
+    if (pt) {
+        pt->addPlaybackDevice("alta", 0);
+        pt->playTTS("audio/cat.mp3", "en_us-danny-low", "alta#0", "ATIS1");
+    }
+    
+    // Audio
+    snd_->addPlayerAudio(nullptr, "TEST");
+    PlayerAudio* pa = snd_->getPlayerAudio("TEST");
+    if (pa) {
+        pa->addPlaybackDevice("alta", 0);
+        pa->playAudio("audio/ding.mp3", "alta#0");
+    }
+    
+    // Morse
+    snd_->addPlayerMorse(nullptr, "TEST");
+    PlayerMorse* pm = snd_->getPlayerMorse("TEST");
+    if (pm) {
+        pm->addPlaybackDevice("alta", 0);
+        pm->playMorse("ZASOS", "NAV", "alta#0");
+    }
+    
+    
+
+
+
+
+
     SYS_INFO("AppController","Running app...");
     if (enable_flags_.gui && gui_ && gui_->isInitialized())
         return gui_->Run();     // Bloquea en la ventana en modo GUI
